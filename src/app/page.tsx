@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import Link from 'next/link';
 import Image from 'next/image';
+import { courses } from '@/data/CourseData'; // ** 1. Importation des données des cours **
 
 // Composant pour simuler les étoiles de notation
 const StarRating = ({ rating = 5 }: { rating: number }) => (
@@ -20,6 +21,33 @@ const ImagePlaceholder = ({ children, className }: { children: React.ReactNode, 
     </div>
   </div>
 );
+
+
+// ** 2. Configuration pour les Offres Spéciales **
+// Nous sélectionnons les trois premiers cours de CourseData et ajoutons des informations spécifiques à l'affichage.
+const specialOffers = courses.slice(0, 3).map((course, index) => {
+  // Réutilisation des chemins SVG des icônes d'origine pour les 3 types de cours.
+  const iconPaths = [
+    "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4", // Icone pour Informatique/Langages
+    "M9.75 17L9 20l-1 1h8l-1-1v-3m0 0h-3m3 0h-1m-1-5a2 2 0 11-4 0 2 2 0 014 0zM12 9V5", // Icone pour IA
+    "M9.663 17h4.673M12 3v18", // Icone pour Économie/Innovation
+  ];
+  
+  // Utilisation de la catégorie comme courte description pour remplacer le texte statique.
+  const description = course.category;
+  const subInfo = `${course.author.name} | Catégorie: ${course.category}`;
+
+  return {
+    id: course.id,
+    title: course.title,
+    iconPath: iconPaths[index],
+    description: description,
+    // La note est fixée à 5 pour correspondre au contenu original
+    rating: 5, 
+    link: `/courses/${course.id}`, // Lien vers la page détaillée du cours
+    subInfo: subInfo,
+  };
+});
 
 
 export default function HomePage() {
@@ -111,7 +139,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Special Offers Section - Adaptée à la capture 2 */}
+      {/* Special Offers Section - DYNAMIQUE */}
       <section className="py-16 bg-white sm:py-20 lg:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl text-center mb-12">
@@ -131,56 +159,29 @@ export default function HomePage() {
                 />
             </div>
 
-            {/* Cartes des Offres */}
+            {/* Cartes des Offres DYNAMIQUES */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Course 1: Développement Web Moderne */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
-                <p className="text-sm font-semibold text-purple-600 mb-1 flex items-center space-x-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                  <Link href="#" className="text-purple-600 hover:text-purple-700 font-medium flex items-center justify-end space-x-1">
-                   <span>Développement Web Moderne</span>
-                </Link>
-                  
-                </p>
-                <p className="text-sm text-gray-500">Prof. A. Cooper, Harvard University | Année: 2024</p>
-                <StarRating rating={5} />
-                <p className="text-gray-700 mt-2">
-                  Apprenez les technologies modernes du développement web.
-                </p>
-              </div>
-
-              {/* Course 2: Créativité et Innovation */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
-                <p className="text-sm font-semibold text-purple-600 mb-1 flex items-center space-x-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v18" /></svg>
-                  <Link href="#" className="text-purple-600 hover:text-purple-700 font-medium flex items-center justify-end space-x-1">
-                   <span>Créativité et Innovation</span>
-                </Link>
-                 
-
-                </p>
-                <p className="text-sm text-gray-500">Prof. R. Vermont, University of California | Année: 2023</p>
-                <StarRating rating={5} />
-                <p className="text-gray-700 mt-2">
-                  Techniques pour stimuler la créativité et favoriser l'innovation.
-                </p>
-              </div>
-              
-              {/* Course 3: Introduction à l'IA */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
-                <p className="text-sm font-semibold text-purple-600 mb-1 flex items-center space-x-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1v-3m0 0h-3m3 0h-1m-1-5a2 2 0 11-4 0 2 2 0 014 0zM12 9V5" /></svg>
-                  <Link href="#" className="text-purple-600 hover:text-purple-700 font-medium flex items-center justify-end space-x-1">
-                   <span>Introduction à l'IA</span>
-                  </Link>
-                 
-                </p>
-                <p className="text-sm text-gray-500">Prof. J. Williams, Stanford University | Année: 2024</p>
-                <StarRating rating={5} />
-                <p className="text-gray-700 mt-2">
-                  Explorez les fondements et les applications de l'intelligence artificielle.
-                </p>
-              </div>
+              {specialOffers.map((course) => (
+                <div key={course.id} className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
+                  <p className="text-sm font-semibold text-purple-600 mb-1 flex items-center space-x-2">
+                    {/* SVG Icone dynamique */}
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={course.iconPath} />
+                    </svg>
+                    {/* Titre du cours dynamique */}
+                    <Link href={course.link} className="text-purple-600 hover:text-purple-700 font-medium flex items-center justify-end space-x-1">
+                      <span>{course.title}</span>
+                    </Link>
+                  </p>
+                  {/* Infos Auteur/Catégorie dynamiques */}
+                  <p className="text-sm text-gray-500">{course.subInfo}</p>
+                  <StarRating rating={course.rating} />
+                  {/* Description (Catégorie) dynamique */}
+                  <p className="text-gray-700 mt-2">
+                    {course.description}
+                  </p>
+                </div>
+              ))}
 
               <div className="text-right mt-6">
                 <Link href="/courses" className="text-purple-600 hover:text-purple-700 font-medium flex items-center justify-end space-x-1">
@@ -194,7 +195,7 @@ export default function HomePage() {
       </section>
 
 
-      {/* Testimonials Section */}
+      {/* Testimonials Section (Maintenu) */}
       <section className="py-16 bg-gray-60 sm:py-20 lg:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl text-center mb-12">

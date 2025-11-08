@@ -676,7 +676,7 @@ export const courses = [
       "views": 1600,
       "likes": 550,
       "downloads": 140,
-      "previewImage": "/images/cybersecurite.jpg",
+      "previewImage": "/images/secu.jpg",
       "sections": [
         {
           "title": "Introduction à la Cyber-sécurité",
@@ -740,10 +740,10 @@ export const courses = [
       "prerequisites": [
         "Connaissances de base en technologie et en éducation"
       ],
-      "image": "/images/realite_virtuelle.png",
+      "image": "/images/ia.jpg",
       "author": {
         "name": "Dr. Sarah White",
-        "image": "/images/blog/author-07.png",
+        "image": "/images/blog/author-01.png",
         "designation": "Université de Harvard"
       },
       "duration": "30 heures",
@@ -826,10 +826,10 @@ export const courses = [
       "prerequisites": [
         "Connaissances de base en finance et en technologie"
       ],
-      "image": "/images/blockchain.png",
+      "image": "/images/secu.jpg",
       "author": {
         "name": "Dr. Robert Black",
-        "image": "/images/blog/author-08.png",
+        "image": "/images/blog/author-03.png",
         "designation": "Université de New York"
       },
       "duration": "35 heures",
@@ -913,10 +913,10 @@ export const courses = [
       "prerequisites": [
         "Connaissances de base en communication et en gestion"
       ],
-      "image": "/images/negociation.png",
+      "image": "/images/image12.png",
       "author": {
         "name": "Dr. Laura Green",
-        "image": "/images/blog/author-09.png",
+        "image": "/images/blog/author-01.png",
         "designation": "Université de Londres"
       },
       "duration": "20 heures",
@@ -995,7 +995,7 @@ export const courses = [
       "downloads": 95,
       "author": {
         "name": "Pr. BATCHAKUI Bernabé",
-        "image": "/images/photo prof.jpg"
+        "image": "/images/photo prof.jpeg"
       },
       "conclusion": "Félicitations pour avoir complété ce cours d'introduction à la théorie des langages et à la compilation! Vous avez acquis des connaissances fondamentales qui vous seront utiles pour comprendre les concepts avancés en informatique théorique.",
       "learningObjectives": [

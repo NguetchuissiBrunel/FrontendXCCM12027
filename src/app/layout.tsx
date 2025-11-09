@@ -8,8 +8,8 @@ import Footer from '@/components/layout/Footer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'XCCM - Plateforme de création de contenu pédagogique',
-  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM',
+  title: 'XCCM1 - Plateforme de création de contenu pédagogique',
+  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
 };
 
 export default function RootLayout({

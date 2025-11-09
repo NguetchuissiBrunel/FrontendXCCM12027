@@ -1,6 +1,7 @@
+// src/components/layout/Footer.tsx
 import Link from 'next/link';
 
-// Icônes (inchangées)
+// Icônes
 const PhoneIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.5l1 4-3.5 1.5M16 12l2.5-3.5 4 1-1.5 3.5m-14 0l-3.5 1.5 4 1 2.5-3.5m10 3.5l-3.5 1.5 4 1 2.5-3.5m-3 3.5l-2.5 3.5-4-1 1.5-3.5m-7 3.5L5 19a2 2 0 002 2h3.5l1-4-3.5-1.5zM12 12c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5z" /></svg>
 );
@@ -13,9 +14,8 @@ const MapPinIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-gray-900 dark:bg-gray-950 text-white transition-colors duration-300">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
-        {/* CORRECTION : Grille plus responsive */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
           
           {/* Section 1: Brand & Contact Info */}
@@ -24,7 +24,7 @@ const Footer = () => {
               <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-lg">
                 <span className="text-white font-extrabold text-lg">XC</span>
               </div>
-              <span className="text-2xl font-bold tracking-tight">XCCM</span>
+              <span className="text-2xl font-bold tracking-tight">XCCM1</span>
             </Link>
             <p className="text-gray-400 text-sm max-w-md">
               Plateforme de création et de partage de contenu pédagogique. 
@@ -34,7 +34,7 @@ const Footer = () => {
             <div className="space-y-2 pt-4">
                 <div className="flex items-center space-x-3 text-sm text-gray-400">
                     <MailIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
-                    <a href="mailto:contact@xccm.com" className="hover:text-purple-300">contact@xccm.com</a>
+                    <a href="mailto:contact@xccm.com" className="hover:text-purple-300 transition-colors">contact@xccm1.com</a>
                 </div>
                 <div className="flex items-center space-x-3 text-sm text-gray-400">
                     <PhoneIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
@@ -92,11 +92,11 @@ const Footer = () => {
                 type="email"
                 placeholder="Votre adresse email"
                 aria-label="Adresse email pour la newsletter"
-                className="w-full min-w-0 appearance-none rounded-lg border border-transparent bg-gray-700 py-3 px-4 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-colors shadow-inner"
+                className="w-full min-w-0 appearance-none rounded-lg border border-transparent bg-gray-700 dark:bg-gray-800 py-3 px-4 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-colors shadow-inner"
               />
               <button
                 type="submit"
-                className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-md text-sm"
+                className="w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white py-3 px-6 rounded-lg transition-colors font-medium shadow-md text-sm"
               >
                 S'abonner
               </button>

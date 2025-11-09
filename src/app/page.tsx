@@ -52,7 +52,7 @@ const specialOffers = courses.slice(0, 3).map((course, index) => {
 
 export default function HomePage() {
   return (
-   <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white pt-16">
+   <div className="min-h-screen bg-linear-to-b from-purple-50 to-white pt-16">
       {/* Tout le contenu de la page commence ici, il sera désormais décalé de 4rem */}
       {/* Hero Section */}
       <section className="relative bg-white pt-10 pb-20 overflow-hidden border-b border-gray-100">

@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaChartLine, FaRocket } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type FormData = {
   email: string;
@@ -41,13 +42,14 @@ const SignupPage = () => {
     role: 'student',
     firstName: '',
     lastName: '',
-    photoUrl: '/images/default-profile.avif',
+    photoUrl: '/images/Applying Lean to Education -.jpeg',
     city: '',
     university: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string>('/images/default-profile.avif');
+  const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
+  const router = useRouter(); // <-- Initialiser le router
 
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
@@ -122,7 +124,7 @@ const SignupPage = () => {
           id: userId,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          photoUrl: formData.photoUrl || '/images/default-profile.avif',
+          photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
           promotion: formData.promotion || '',
           specialization: formData.specialization || '',
           level: formData.level || '',
@@ -140,7 +142,7 @@ const SignupPage = () => {
           id: userId,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          photoUrl: formData.photoUrl || '/images/default-profile.avif',
+          photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
           university: formData.university || '',
           city: formData.city || '',
           grade: formData.grade || '',
@@ -152,13 +154,13 @@ const SignupPage = () => {
       }
   
       // Rediriger vers le tableau de bord
-      window.location.href = formData.role === 'student' ? '/etudashboard' : '/profdashboard';
+     router.push(formData.role === 'student' ? '/etudashboard' : '/profdashboard');
     } catch (error) {
       setErrors({ submit: "Une erreur est survenue lors de l'inscription." });
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData]);
+  }, [formData , router]);
 
   const renderStep1 = useMemo(() => (
     <motion.div

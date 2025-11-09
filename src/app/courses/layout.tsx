@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
+import Navbar from '@/components/layout/Navbar';
 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -17,16 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>
+      <div className={inter.className}>
         <div className="min-h-screen flex flex-col">
-       
-          <main className="grow">
+          <Navbar />
+          <div className="grow">
             {children}
-          </main>
-        
+          </div>
         </div>
-      </body>
-    </html>
+      </div>
   );
 }

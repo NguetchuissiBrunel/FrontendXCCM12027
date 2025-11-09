@@ -285,7 +285,7 @@ const SigninPage = () => {
         transition={{ delay: 0.6 }}
       >
         <span className="text-gray-600">Vous n'avez pas de compte ? </span>
-        <Link href="/signup" className="text-purple-600 hover:text-purple-700 transition-colors">
+        <Link href="/register" className="text-purple-600 hover:text-purple-700 transition-colors">
           Inscrivez-vous
         </Link>
       </motion.div>

@@ -245,6 +245,10 @@ const SignupPage = () => {
       >
         Suivant
       </button>
+      <span className="text-gray-600">Vous avez deja un compte ? </span>
+            <Link href="/login" className="text-purple-600 hover:text-purple-700 transition-colors">
+              Connectez-vous
+            </Link>
     </motion.div>
   ), [formData, errors, handleNext]);
 
@@ -351,7 +355,7 @@ const SignupPage = () => {
               <input
                 type="text"
                 placeholder="Spécialisation"
-                value={formData.specialization}
+                value={formData.specialization || ''}
                 onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
               />
@@ -374,7 +378,7 @@ const SignupPage = () => {
               <input
                 type="text"
                 placeholder="Grade"
-                value={formData.grade}
+                value={formData.grade || ''}
                 onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
               />
@@ -384,7 +388,7 @@ const SignupPage = () => {
               <input
                 type="text"
                 placeholder="Matières enseignées (séparer par des virgules)"
-                value={formData.subjects?.join(', ')}
+                value={formData.subjects?.join(', ') || []}
                 onChange={(e) => setFormData({ ...formData, subjects: e.target.value.split(', ') })}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
               />
@@ -408,6 +412,10 @@ const SignupPage = () => {
           {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
         </button>
       </div>
+      <span className="text-gray-600">Vous avez deja un compte ? </span>
+            <Link href="/login" className="text-purple-600 hover:text-purple-700 transition-colors">
+              Connectez-vous
+            </Link>
       
       {errors.submit && <p className="text-red-500 text-sm text-center">{errors.submit}</p>}
     </motion.div>

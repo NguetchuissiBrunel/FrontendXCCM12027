@@ -47,6 +47,7 @@ const SignupPage = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string>('/images/default-profile.avif');
 
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
@@ -64,6 +65,33 @@ const SignupPage = () => {
       setCurrentStep(2);
     }
   }, [currentStep, validateStep1]);
+
+  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Vérifier le type de fichier
+      if (!file.type.startsWith('image/')) {
+        setErrors({ ...errors, photo: 'Veuillez sélectionner une image valide' });
+        return;
+      }
+      
+      // Vérifier la taille (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors({ ...errors, photo: 'L\'image ne doit pas dépasser 5MB' });
+        return;
+      }
+
+      // Convertir en base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPhotoPreview(base64String);
+        setFormData({ ...formData, photoUrl: base64String });
+        setErrors({ ...errors, photo: '' });
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [formData, errors]);
 
   const handleSubmit = useCallback(() => {
     setIsSubmitting(true);
@@ -258,15 +286,37 @@ const SignupPage = () => {
         </div>
 
         {/* Photo de profil */}
-        <div className="relative">
-          <FaCamera className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="URL de votre photo de profil"
-            value={formData.photoUrl}
-            onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
-          />
+        <div className="space-y-3">
+          <div className="flex items-center space-x-4">
+            {/* Prévisualisation de la photo */}
+            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 shadow-lg">
+              <img 
+                src={photoPreview} 
+                alt="Prévisualisation" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            
+            {/* Bouton de téléchargement */}
+            <div className="flex-1">
+              <label 
+                htmlFor="photo-upload" 
+                className="flex items-center justify-center px-4 py-3 bg-linear-to-r from-purple-600 to-indigo-600 text-white rounded-lg cursor-pointer hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                <FaCamera className="mr-2" />
+                Choisir une photo
+              </label>
+              <input
+                id="photo-upload"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <p className="text-xs text-gray-500 mt-2">JPG, PNG ou JPEG (Max. 5MB)</p>
+              {errors.photo && <p className="text-red-500 text-sm mt-1">{errors.photo}</p>}
+            </div>
+          </div>
         </div>
 
         {/* Ville et Université */}
@@ -306,7 +356,7 @@ const SignupPage = () => {
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
               />
             </div>
-            <div className="relative">
+            {/* <div className="relative">
               <FaChartLine className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
@@ -315,7 +365,7 @@ const SignupPage = () => {
                 onChange={(e) => setFormData({ ...formData, averageGrade: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
               />
-            </div>
+            </div> */}
           </>
         ) : (
           <>
@@ -333,7 +383,7 @@ const SignupPage = () => {
               <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Matières enseignées"
+                placeholder="Matières enseignées (séparer par des virgules)"
                 value={formData.subjects?.join(', ')}
                 onChange={(e) => setFormData({ ...formData, subjects: e.target.value.split(', ') })}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
@@ -343,31 +393,41 @@ const SignupPage = () => {
         )}
       </div>
 
-      <button
-        onClick={handleSubmit}
-        className="w-full bg-linear-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
-      </button>
+      <div className="flex space-x-4">
+        <button
+          onClick={() => setCurrentStep(1)}
+          className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-all duration-300"
+        >
+          Retour
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="flex-1 bg-linear-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
+        </button>
+      </div>
+      
+      {errors.submit && <p className="text-red-500 text-sm text-center">{errors.submit}</p>}
     </motion.div>
-  ), [formData, isSubmitting, handleSubmit]);
+  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);
 
   return (
     <div
-  className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-4 sm:px-6 lg:px-8"
-  style={{ backgroundImage: "url('/images/fond5.jpeg')" }}
->
-  {/* Overlay sombre pour rendre le texte lisible */}
-  <div className="absolute inset-0 bg-black/40"></div>
+      className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-4 sm:px-6 lg:px-8"
+      style={{ backgroundImage: "url('/images/fond5.jpeg')" }}
+    >
+      {/* Overlay sombre pour rendre le texte lisible */}
+      <div className="absolute inset-0 bg-black/40"></div>
 
-  {/* Contenu du formulaire au-dessus de l’overlay */}
-  <div className="relative z-10 w-full max-w-md">
-    <AnimatePresence mode="wait">
-      {currentStep === 1 ? renderStep1 : renderStep2}
-    </AnimatePresence>
-  </div>
-</div>
+      {/* Contenu du formulaire au-dessus de l'overlay */}
+      <div className="relative z-10 w-full max-w-md">
+        <AnimatePresence mode="wait">
+          {currentStep === 1 ? renderStep1 : renderStep2}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 };
 

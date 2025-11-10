@@ -72,9 +72,6 @@ const Navbar = () => {
   // Liens de navigation de base
   const baseNavLinks = [
     { href: '/', label: 'Accueil', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
-    { href: '/library', label: 'Bibliothèque', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> },
-    { href: '/editor', label: 'Éditer', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg> },
-    { href: '/aide', label: 'Aide', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9.247a3.75 3.75 0 100-7.494 3.75 3.75 0 000 7.494zM16.5 13.5v6M13.5 16.5h6M3 21v-2c0-1.03.39-2.028 1.097-2.768A7 7 0 0112 15a7 7 0 017.903 3.232c.707.74 1.097 1.738 1.097 2.768v2H3z" /></svg> },
     { href: '/bibliotheque', label: 'Bibliothèque', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> },
   ];
 
@@ -87,7 +84,7 @@ const Navbar = () => {
 
   // Lien "Aide" pour tous
   const helpNavLink = {
-    href: '/help', 
+    href: '/aide', 
     label: 'Aide', 
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9.247a3.75 3.75 0 100-7.494 3.75 3.75 0 000 7.494zM16.5 13.5v6M13.5 16.5h6M3 21v-2c0-1.03.39-2.028 1.097-2.768A7 7 0 0112 15a7 7 0 017.903 3.232c.707.74 1.097 1.738 1.097 2.768v2H3z" /></svg>
   };

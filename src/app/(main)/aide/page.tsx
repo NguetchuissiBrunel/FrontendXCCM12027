@@ -162,69 +162,14 @@ const helpItems: HelpItem[] = useMemo(() => [
     setSubmitted(true);
   };
 
-  // 11. Correction de la logique 'useEffect'
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const loading = loadingProgress < 100; // 'loading' est dérivé de 'loadingProgress'
 
-  useEffect(() => {
-    if (loadingProgress < 100) {
-      const interval = setInterval(() => {
-        setLoadingProgress((prev) => Math.min(prev + 10, 100));
-      }, 300);
-      return () => clearInterval(interval);
-    }
-    // Plus besoin de 'else { setLoading(false) }', ce qui supprime l'erreur
-  }, [loadingProgress]);
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md z-50">
-        <div className="w-full max-w-md p-6 text-center bg-gray-800 rounded-lg shadow-lg">
-          <h1 className="text-3xl font-bold text-white mb-4">Chargement...</h1>
-          <p className="text-gray-400 mb-8">
-            Bien vouloir patienter pendant le chargement de votre page. 🙏
-          </p>
-  
-          <div className="relative mb-6">
-            <div className="w-full bg-gray-300 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-purple-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${loadingProgress}%` }}
-              ></div>
-            </div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 text-white font-semibold">
-              {loadingProgress}% Chargé
-            </div>
-          </div>
-  
-          <div className="mt-4 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-purple-500"></div>
-          </div>
-  
-          <div className="mt-4 text-gray-400">
-            <p>Merci de votre patience!</p>
-          </div>
-  
-          {/* Ajout de petites touches de violet */}
-          <div className="absolute inset-0 rounded-lg border border-purple-500 opacity-30"></div>
-        </div>
-  
-        {/* Optional: Add a blur effect to the background */}
-        <style jsx>{`
-          body {
-            filter: blur(5px);
-          }
-        `}</style>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-800 flex flex-col">
       {/* Header Section */}
       <div className="relative flex-grow">
         <div className="relative h-[300px] sm:h-[400px]">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-800 to-purple-300 bg-cover bg-center bg-no-repeat dark:bg-[url('/images/ima15.avif')] bg-[url('/images/ima3.jpeg')]">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-800 to-purple-300 bg-cover bg-center bg-no-repeat bg-[url('/images/ima15.avif')] bg-[url('/images/ima3.jpeg')]">
             <div className="absolute inset-0 bg-purple-900/50 dark:bg-purple-900/50" />
           </div>
           
@@ -466,7 +411,7 @@ const helpItems: HelpItem[] = useMemo(() => [
           )}
         </div>
         {/* 16. Correction Linter: Remplacer <img> par <Image> */}
-        <div className="w-full md:w-1/2 overflow-hidden dark:hidden relative">
+        <div className="w-full md:w-1/2 overflow-hidden relative  h-64 md:h-auto rounded-lg">
           <Image 
             src="/images/ima20.jpeg" 
             alt="Feedback illustration" 

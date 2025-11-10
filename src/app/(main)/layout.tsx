@@ -1,9 +1,8 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import RouteLoading from '@/components/ui/RouteLoading'; 
-import './globals.css';
-
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,17 +17,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>
+   
+      <div className={inter.className}>
         <div className="min-h-screen flex flex-col">
-       
-          <main className="grow">
-            <RouteLoading/>
+          <Navbar />
+          <div className="grow">
             {children}
-          </main>
-        
+          </div>
+          <Footer />
         </div>
-      </body>
-    </html>
+      </div>
+ 
   );
 }

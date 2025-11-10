@@ -1,0 +1,484 @@
+"use client";
+
+import React, { useState, useEffect, useMemo } from 'react';
+// 1. Importer 'Image' de Next.js
+import Image from 'next/image'; 
+import { 
+  FaFileAlt, FaSearch, FaKey, FaUser, 
+  FaFileUpload, FaShare, FaCreditCard, 
+  FaBook, FaUserPlus, FaHeadset,FaTimes 
+} from 'react-icons/fa';
+
+import { Heart, Star, Send, Mail, User, MessageSquare, ThumbsUp, Award, Gift, Smile } from 'lucide-react';
+
+
+// 2. Définir une interface pour vos objets 'helpItems'
+interface HelpItem {
+  title: string;
+  icon: React.ReactElement; // Le type pour un composant JSX
+  solution: string;
+}
+
+const ContactPage = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  // 3. Préciser le type du tableau dans useState
+  // 4. Préciser que le type est 'number' ou 'null'
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState({ name: '', email: '', rating: '5', comments: '' });
+  const [thankYouMessage, setThankYouMessage] = useState(false);
+  // Clic sur une suggestion ferme l'overlay
+  const handleSuggestionClick = (item: HelpItem) => {
+    setSearchQuery(item.title);
+    console.log(item.solution);
+    closeSearch(); 
+  };
+
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [feedbackForm, setFeedbackForm] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+  
+  
+// 5. Appliquer le type 'HelpItem[]'
+const helpItems: HelpItem[] = useMemo(() => [
+  {
+    title: "Problème de connexion",
+    icon: <FaKey className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Vérifiez vos identifiants, effacez le cache du navigateur, ou utilisez la fonction 'mot de passe oublié'. Si le problème persiste, contactez le support."
+  },
+  {
+    title: "Mot de passe oublié",
+    icon: <FaUser className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Suivez les instructions envoyées à votre email pour réinitialiser votre mot de passe."
+  },
+  {
+    title: "Service client",
+    icon: <FaHeadset className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Notre équipe est disponible 24/7. Contactez-nous par chat en direct ou envoyez un email à support@xccm.com pour une assistance rapide."
+  },
+  {
+    title: "Changer de compte",
+    icon: <FaUserPlus className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Accédez aux paramètres du compte, sélectionnez 'Changer de compte' et suivez les étapes pour basculer vers un autre profil."
+  },
+  {
+    title: "Créer mon premier document",
+    icon: <FaFileUpload className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Cliquez sur le bouton '+' dans votre tableau de bord, choisissez un modèle ou commencez avec une page blanche."
+  },
+  {
+    title: "Partager ma composition",
+    icon: <FaShare className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Ouvrez votre composition, cliquez sur 'Partager' en haut à droite, et choisissez votre méthode de partage préférée."
+  },
+  {
+    title: "Renouveler mon abonnement",
+    icon: <FaCreditCard className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Allez dans 'Paramètres → Abonnement', sélectionnez votre plan et suivez les instructions de paiement."
+  },
+  {
+    title: "Tuto global",
+    icon: <FaBook className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+    solution: "Explorez notre guide complet étape par étape. Accédez à 'Aide → Tutoriels' pour des vidéos et guides détaillés."
+  }
+], []); // <-- Le tableau de dépendances vide [] est crucial
+
+  // NOUVELLES FONCTIONS POUR GÉRER L'OVERLAY
+  const openSearch = () => setIsSearchOverlayOpen(true);
+  
+  const closeSearch = () => setIsSearchOverlayOpen(false);
+
+  // Fonction pour basculer l'overlay et vider la recherche
+  const toggleSearchOverlay = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isSearchOverlayOpen) {
+      setSearchQuery(''); // Vide la recherche en fermant
+      closeSearch();
+    } else {
+      openSearch();
+    }
+  };
+
+  // NOUVELLE LOGIQUE avec useMemo
+  const filteredItems = useMemo(() => {
+    if (searchQuery.trim() === '') {
+      return []; // Retourne un tableau vide
+    }
+    // Retourne le tableau filtré
+    return helpItems.filter(item => 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, helpItems]); // Dépendances: se recalcule si searchQuery ou helpItems changent
+  // 8. Typer le paramètre 'index'
+  const toggleFaq = (index: number) => {
+    setFaqOpen(faqOpen === index ? null : index);
+  };
+
+  const faqItems = [
+    {
+      question: "Comment réinitialiser mon mot de passe ?",
+      answer: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Vous recevrez un email avec des instructions."
+    },
+    { 
+      question: "Comment contacter le support client ?",
+      answer: "Notre équipe est disponible 24/7. Vous pouvez nous contacter par chat en direct ou par email."
+    },
+    {
+      question: "Puis-je changer mon adresse email ?",
+      answer: "Oui, vous pouvez changer votre adresse email dans les paramètres de votre compte."
+    },
+    {
+      question: "Comment accéder à mes documents ?",
+      answer: "Connectez-vous à votre compte et accédez à votre tableau de bord pour voir vos documents."
+    },
+    {
+      question: "Y a-t-il des frais de retard pour les abonnements ?",
+      answer: "Oui, des frais peuvent s'appliquer si vous ne renouvelez pas votre abonnement à temps."
+    }
+  ];
+
+  const stats = [
+    { icon: <ThumbsUp className="text-purple-500" />, value: '98%', label: 'Satisfaction' },
+    { icon: <MessageSquare className="text-purple-500" />, value: '24/7', label: 'Support' },
+    { icon: <Award className="text-purple-500" />, value: '50k+', label: 'Reviews' },
+    { icon: <Gift className="text-purple-500" />, value: '200+', label: 'Features' }
+  ];
+
+  // 9. Typer le paramètre 'e'
+  const handleFeedbackChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFeedback({ ...feedback, [name]: value });
+  };
+
+  // 10. Typer le paramètre 'e'
+  const handleSubmitFeedback = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(feedbackForm);
+    setSubmitted(true);
+  };
+
+  // 11. Correction de la logique 'useEffect'
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const loading = loadingProgress < 100; // 'loading' est dérivé de 'loadingProgress'
+
+  useEffect(() => {
+    if (loadingProgress < 100) {
+      const interval = setInterval(() => {
+        setLoadingProgress((prev) => Math.min(prev + 10, 100));
+      }, 300);
+      return () => clearInterval(interval);
+    }
+    // Plus besoin de 'else { setLoading(false) }', ce qui supprime l'erreur
+  }, [loadingProgress]);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md z-50">
+        <div className="w-full max-w-md p-6 text-center bg-gray-800 rounded-lg shadow-lg">
+          <h1 className="text-3xl font-bold text-white mb-4">Chargement...</h1>
+          <p className="text-gray-400 mb-8">
+            Bien vouloir patienter pendant le chargement de votre page. 🙏
+          </p>
+  
+          <div className="relative mb-6">
+            <div className="w-full bg-gray-300 h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-purple-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
+            </div>
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 text-white font-semibold">
+              {loadingProgress}% Chargé
+            </div>
+          </div>
+  
+          <div className="mt-4 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-purple-500"></div>
+          </div>
+  
+          <div className="mt-4 text-gray-400">
+            <p>Merci de votre patience!</p>
+          </div>
+  
+          {/* Ajout de petites touches de violet */}
+          <div className="absolute inset-0 rounded-lg border border-purple-500 opacity-30"></div>
+        </div>
+  
+        {/* Optional: Add a blur effect to the background */}
+        <style jsx>{`
+          body {
+            filter: blur(5px);
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-800 flex flex-col">
+      {/* Header Section */}
+      <div className="relative flex-grow">
+        <div className="relative h-[300px] sm:h-[400px]">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-800 to-purple-300 bg-cover bg-center bg-no-repeat dark:bg-[url('/images/ima15.avif')] bg-[url('/images/ima3.jpeg')]">
+            <div className="absolute inset-0 bg-purple-900/50 dark:bg-purple-900/50" />
+          </div>
+          
+          <div className="container mx-auto relative h-full flex flex-col items-center justify-center">
+            <div className="w-full max-w-4xl text-center px-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white dark:text-white flex items-center">
+                <FaFileAlt className="mr-4" />
+                {/* 12. Correction Linter: &apos; */}
+                Centre d&apos;aide de XCCM
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-white mb-6 dark:text-gray-100 sm:mb-8 max-w-2xl mx-auto">
+                Votre satisfaction est notre engagement : des solutions simples et rapides à portée de main... Contactez-nous !
+              </p>
+
+              {/* ----- NOUVEAU BLOC DE RECHERCHE (DEBUT) ----- */}
+              
+              <div className={`max-w-xl w-full mx-auto ${isSearchOverlayOpen 
+                  ? 'z-50 fixed top-20 left-1/2 -translate-x-1/2 px-4' // Se fixe à 5rem (80px) du haut
+                  : 'relative' // Reste normal dans l'en-tête
+                }`}>
+                <form onSubmit={(e) => e.preventDefault()} className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    onFocus={openSearch} 
+                    placeholder="Rechercher une solution..."
+                    className="w-full pl-12 pr-16 py-4 text-gray-900 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base bg-white dark:bg-gray-800 "
+                  />
+                  <button
+                    type="button" 
+                    onClick={toggleSearchOverlay} 
+                    className="absolute right-2 p-2 sm:p-3 text-white bg-purple-600 dark:bg-purple-700 rounded-full hover:bg-purple-700 transition-colors"
+                  >
+                    {isSearchOverlayOpen ? (
+                      <FaTimes className="w-4 h-4 sm:w-5 sm:h-5" />
+                    ) : (
+                      <FaSearch className="w-4 h-4 sm:w-5 sm:h-5" />
+                    )}
+                  </button>
+                </form>
+              </div>
+
+              {/* NOUVEL OVERLAY PLEIN ÉCRAN */}
+              {isSearchOverlayOpen && (
+                <div 
+                  // Ajout d'un effet de flou (backdrop-blur) pour un look plus moderne
+                  className="fixed inset-0 top-0 left-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-40 overflow-y-auto"
+                >
+                  {/* Padding pour laisser la place au formulaire de recherche (pt-40 = 160px) */}
+                  <div className="container mx-auto px-4 py-8 pt-40"> 
+                    
+                    {/* Logique d'affichage des résultats (maintenant dans l'overlay) */}
+                    {searchQuery.trim() === '' && (
+                      <div className="text-center text-gray-500 dark:text-gray-400 py-10">
+                        <p>Commencez à taper pour rechercher un sujet...</p>
+                      </div>
+                    )}
+
+                    {searchQuery.trim() !== '' && (
+                      filteredItems.length > 0 ? (
+                        <div className="space-y-4 max-w-xl mx-auto">
+                          <h2 className="text-gray-500 dark:text-gray-400 mb-4 font-semibold">Résultats pour &quot;{searchQuery}&quot;</h2>
+                          {filteredItems.map((item, index) => (
+                            <div 
+                              key={index} 
+                              className="cursor-pointer p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-shadow"
+                              onClick={() => handleSuggestionClick(item)} // <-- Appel corrigé
+                            >
+                              <h3 className="text-purple-900 dark:text-purple-300 font-semibold">{item.title}</h3>
+                              <span className="text-gray-600 dark:text-gray-400 block mt-1">{item.solution}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-500 dark:text-gray-400 py-10">
+                          <p>Aucun résultat trouvé pour &quot;{searchQuery}&quot;.</p>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+            {/* ----- NOUVEAU BLOC DE RECHERCHE (FIN) ----- */}
+            </div>
+          </div>
+        </div>
+
+        {/* Help Items Section */}
+        {/* Les erreurs 'title' et 'solution' sont corrigées grâce au type 'HelpItem' */}
+        <div className="container mx-auto px-4 py-8 ">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {helpItems.map((item, index) => (
+              <div key={index} className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 flex flex-col justify-between">
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-4">{item.icon}</div>
+                  <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-700 mb-3">{item.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-300">{item.solution}</p>
+                </div>
+                <div className="mt-auto w-full bg-gradient-to-r from-purple-400 to-purple-900 text-center p-2 rounded-b-lg">
+                  <a href="#faq" className="text-white font-semibold">Plus de questions</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* FAQ Section */}
+      <div id="faq" className="container mx-auto px-4 py-8">
+        <h2 className="text-3xl dark:text-gray-300 font-bold mb-4">Foire Aux Questions (FAQ)</h2>
+        <div className="space-y-4">
+          {faqItems.map((item, index) => (
+            <div key={index} className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4">
+              <button 
+                className="flex justify-between items-center w-full text-left"
+                onClick={() => toggleFaq(index)}
+              >
+                <span className="font-semibold text-purple-900 dark:text-purple-800">{item.question}</span>
+                <span>{faqOpen === index ? '-' : '+'}</span>
+              </button>
+              {faqOpen === index && (
+                <p className="mt-2 text-gray-600 dark:text-gray-400">{item.answer}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tutorial Section */}
+      <div className="container bg-purple-100 dark:bg-gray-900 rounded-lg mx-auto px-4 py-8 flex flex-col md:flex-row items-start">
+      </div>
+      {/* Feedback */}
+      <div className="container w-full bg-white dark:bg-gray-800 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h2 className="text-4xl text-black dark:text-gray-400 font-bold mb-4 flex items-center justify-center gap-2">
+              <Heart className="text-black dark:text-gray-400 w-10 h-10" />
+              Votre avis nous tient à cœur
+            </h2>
+            <p className="text-black dark:text-gray-500 text-lg max-w-2xl mx-auto">
+              Aidez-nous à améliorer votre expérience en partageant vos impressions
+            </p>
+          </div>
+
+          {/* Stats Section */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+            {stats.map((stat, index) => (
+              <div key={index} className="bg-gray-200 dark:bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-3 text-2xl">{stat.icon}</div>
+                  <div className="text-2xl font-bold dark:text-purple-600 text-purple-900 mb-1">{stat.value}</div>
+                  <div className="text-black dark:text-gray-500">{stat.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 14. CORRECTION DE SYNTAXE : L'accolade '}' en trop est retirée */}
+          {submitted ? (
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
+              <Smile className="w-16 h-16 text-purple-500 dark:text-purple-800 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-purple-900 dark:text-purple-800 mb-2">Merci pour votre feedback !</h3>
+              <p className="text-gray-600 dark:text-gray-400 ">Votre avis est précieux pour nous améliorer.</p>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg">
+              {/* Rating Section */}
+              <div className="mb-8 text-center">
+                <div className="flex justify-center gap-2 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-8 h-8 cursor-pointer transition-colors duration-200 ${
+                        (hoverRating || rating) >= star
+                          ? 'fill-purple-500 text-purple-500 dark:text-purple-400 dark:fill-purple-400'
+                          : 'text-gray-300'
+                      }`}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setRating(star)}
+                    />
+                  ))}
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 font-bold">Sélectionnez une note</p>
+              </div>
+
+              {/* Feedback Form */}
+              <form onSubmit={handleSubmitFeedback} className="space-y-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 text-purple-500 dark:text-purple-400" />
+                      <input
+                        type="text"
+                        placeholder="Votre nom"
+                        className="w-full pl-10 pr-4 py-2 border-2 border-purple-100 dark:text-gray-100 dark:border-purple-100 dark:bg-gray-600 rounded-lg focus:border-purple-500 dark:focus:border-purple-500 focus:outline-none"
+                        value={feedbackForm.name}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFeedbackForm({...feedbackForm, name: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 text-purple-500 dark:text-purple-400" />
+                      <input
+                        type="email"
+                        placeholder="Votre email"
+                        className="w-full pl-10 pr-4 py-2 border-2 border-purple-100 dark:text-gray-100 dark:border-purple-100 dark:bg-gray-600 rounded-lg focus:border-purple-500 dark:focus:border-purple-500 focus:outline-none"
+                        value={feedbackForm.email}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFeedbackForm({...feedbackForm, email: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <MessageSquare className="absolute left-3 top-3 text-purple-500 dark:text-purple-400" />
+                  <textarea
+                    placeholder="Votre message"
+                    // 15. Correction Linter: 'rows' doit être un nombre
+                    rows={4}
+                    className="w-full pl-10 pr-4 py-2 border-2 border-purple-100 dark:text-gray-100 dark:border-purple-100 dark:bg-gray-600 rounded-lg focus:border-purple-500 dark:focus:border-teal-500 focus:outline-none"
+                    value={feedbackForm.message}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFeedbackForm({...feedbackForm, message: e.target.value})}
+                  />
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-purple-400 to-purple-900 hover:bg-purple-700 dark:hover:bg-teal-400 text-white dark:text-gray-200 font-semibold py-3 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
+                >
+                  <Send className="w-5 h-5" />
+                  Envoyer mon feedback
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+        {/* 16. Correction Linter: Remplacer <img> par <Image> */}
+        <div className="w-full md:w-1/2 overflow-hidden dark:hidden relative">
+          <Image 
+            src="/images/ima20.jpeg" 
+            alt="Feedback illustration" 
+            layout="fill"
+            objectFit="cover"
+            className="w-full h-full"
+          />
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+export default ContactPage;

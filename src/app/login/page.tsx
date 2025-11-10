@@ -156,9 +156,9 @@ const SigninPage = () => {
   const renderForm = useMemo(() => (
     <motion.div
       {...pageTransition}
-      className="space-y-6 bg-white p-8 rounded-2xl shadow-lg"
+      className="space-y-6 bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 transition-colors duration-300"
     >
-      <h2 className="text-2xl font-semibold text-center bg-linear-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+      <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
         Connexion
       </h2>
 
@@ -169,20 +169,20 @@ const SigninPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="email"
             name="email"
             placeholder="Votre adresse email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
           {errors.email && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-red-500 text-sm mt-1"
+              className="text-red-500 dark:text-red-400 text-sm mt-1"
             >
               {errors.email}
             </motion.p>
@@ -195,20 +195,20 @@ const SigninPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="password"
             name="password"
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
           {errors.password && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-red-500 text-sm mt-1"
+              className="text-red-500 dark:text-red-400 text-sm mt-1"
             >
               {errors.password}
             </motion.p>
@@ -226,8 +226,8 @@ const SigninPage = () => {
             onClick={() => setFormData({ ...formData, role: 'student' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
               formData.role === 'student' 
-                ? 'bg-linear-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
             }`}
           >
             <FaGraduationCap className="mr-2" /> Étudiant
@@ -237,8 +237,8 @@ const SigninPage = () => {
             onClick={() => setFormData({ ...formData, role: 'teacher' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
               formData.role === 'teacher'
-                ? 'bg-linear-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
             }`}
           >
             <FaChalkboardTeacher className="mr-2" /> Enseignant
@@ -251,7 +251,7 @@ const SigninPage = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <Link href="#" className="text-purple-600 hover:text-purple-700 transition-colors">
+          <Link href="#" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
             Mot de passe oublié ?
           </Link>
         </motion.div>
@@ -259,7 +259,7 @@ const SigninPage = () => {
 
       <motion.button
         onClick={handleSubmit}
-        className="w-full bg-linear-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
         disabled={isSubmitting}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -272,7 +272,7 @@ const SigninPage = () => {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-red-500 text-sm text-center mt-2"
+          className="text-red-500 dark:text-red-400 text-sm text-center mt-2"
         >
           {errors.submit}
         </motion.p>
@@ -284,15 +284,15 @@ const SigninPage = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
       >
-        <span className="text-gray-600">Vous n'avez pas de compte ? </span>
-        <Link href="/register" className="text-purple-600 hover:text-purple-700 transition-colors">
+        <span className="text-gray-600 dark:text-gray-400">Vous n'avez pas de compte ? </span>
+        <Link href="/register" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
           Inscrivez-vous
         </Link>
       </motion.div>
       
       {users.length > 0 && (
         <motion.div
-          className="text-xs text-center mt-2 text-gray-400"
+          className="text-xs text-center mt-2 text-gray-400 dark:text-gray-500"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
@@ -305,19 +305,19 @@ const SigninPage = () => {
 
   return (
     <div 
-    className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
-    style={{ backgroundImage: "url('/images/fond5.jpeg')" }} // <-- ton image ici
-  >
-    {/* Overlay pour assombrir un peu l'image */}
-    <div className="absolute inset-0 bg-black/40"></div>
+      className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center transition-colors duration-300"
+      style={{ backgroundImage: "url('/images/fond5.jpeg')" }}
+    >
+      {/* Overlay pour assombrir un peu l'image */}
+      <div className="absolute inset-0 bg-black/30 dark:bg-black/60 transition-colors duration-300"></div>
 
-    {/* Contenu du formulaire au-dessus de l'overlay */}
-    <div className="relative z-10 w-full max-w-md px-4 sm:px-6 lg:px-8">
-      <AnimatePresence mode="wait">
-        {renderForm}
-      </AnimatePresence>
+      {/* Contenu du formulaire au-dessus de l'overlay */}
+      <div className="relative z-10 w-full max-w-md px-4 sm:px-6 lg:px-8">
+        <AnimatePresence mode="wait">
+          {renderForm}
+        </AnimatePresence>
+      </div>
     </div>
-  </div>
   );
 };
 

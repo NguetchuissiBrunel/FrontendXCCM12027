@@ -4,85 +4,74 @@
  * Main editor page route matching original XCCM implementation structure.
  * Route: /editor
  * 
- * CURRENT STATUS: Phase 1 - Foundation setup
- * - Type system from original implementation ✅
- * - Color scheme with all 6 types ✅  
- * - Mock data matching original structure ✅
+ * CURRENT STATUS: Phase 2 - Layout Structure Complete
+ * - Three-column layout ✅
+ * - Fixed sidebars with IconBar ✅
+ * - Responsive right panel toggle ✅
  * 
  * @author JOHAN
  * @date November 2025
  */
 
 import React from 'react';
+import EditorLayout from '@/components/editor/EditorLayout';
 
 /**
  * Editor Page Component
  * 
- * This will render the complete editor interface with:
- * - LEFT: Table of Contents (TOC) sidebar
- * - CENTER: Main editor (WYSIWYG)
- * - RIGHT: Structure de cours (course structure browser)
- * - IconBar for toggling right panel views
+ * Wraps the EditorLayout component to provide the complete editor interface.
+ * The layout handles:
+ * - LEFT: Table of Contents (TOC) sidebar (288px)
+ * - CENTER: Main editor (flexible)
+ * - RIGHT: IconBar (40px) + Structure de cours panel (288px when open)
  */
 export default function EditorPage() {
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gray-50">
-      {/* Temporary status page - will be replaced with actual editor in Phase 2 */}
-      
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900">
-            XCCM Editor
-          </h1>
-          <p className="mt-4 text-xl text-gray-600">
-            Phase 1: Foundation Complete ✅
+    <EditorLayout>
+      {/* Main editor content area */}
+      <div className="space-y-6">
+        {/* Phase 2 Status */}
+        <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+          <h2 className="text-lg font-semibold text-purple-900">
+            Phase 2: Layout Structure ✅
+          </h2>
+          <p className="mt-2 text-sm text-purple-700">
+            Three-column layout with IconBar toggle is now active!
           </p>
-          <p className="mt-2 text-gray-500">
-            Next: Phase 2 - Layout Structure
-          </p>
-          
-          {/* Status Indicators */}
-          <div className="mt-8 space-y-2">
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-600">
-                Types from original implementation ✅
-              </span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-600">
-                6 content types with colors ✅
-              </span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-600">
-                Mock data structure matches original ✅
-              </span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-              <span className="text-sm text-gray-600">
-                Editor route active (placeholder)
-              </span>
-            </div>
+        </div>
+
+        {/* Layout features */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-base font-medium text-gray-900">Features Implemented:</h3>
+            <ul className="mt-2 space-y-1 text-sm text-gray-600">
+              <li>✅ Fixed header (64px) with title input</li>
+              <li>✅ Left sidebar - Table des Matières (288px)</li>
+              <li>✅ Center editor - Flexible width with A4-like page</li>
+              <li>✅ Right IconBar - Toggle buttons (40px)</li>
+              <li>✅ Right panel - Structure de cours (288px, collapsible)</li>
+              <li>✅ Filter pills showing all 6 content types</li>
+            </ul>
           </div>
-          
-          {/* Color Preview */}
-          <div className="mt-8">
-            <p className="mb-3 text-sm font-medium text-gray-700">Content Type Colors:</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <span className="badge-course rounded px-3 py-1 text-xs">Course</span>
-              <span className="badge-section rounded px-3 py-1 text-xs">Section</span>
-              <span className="badge-chapter rounded px-3 py-1 text-xs">Chapter</span>
-              <span className="badge-paragraph rounded px-3 py-1 text-xs">Paragraph</span>
-              <span className="badge-notion rounded px-3 py-1 text-xs">Notion</span>
-              <span className="badge-exercise rounded px-3 py-1 text-xs">Exercise</span>
-            </div>
+
+          <div>
+            <h3 className="text-base font-medium text-gray-900">Try It:</h3>
+            <ul className="mt-2 space-y-1 text-sm text-gray-600">
+              <li>→ Click the icon in right IconBar to toggle Structure de cours panel</li>
+              <li>→ See all 6 color-coded filter pills in the right panel</li>
+              <li>→ Resize window to see layout responsiveness</li>
+            </ul>
           </div>
         </div>
+
+        {/* Next phase preview */}
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <h3 className="text-sm font-semibold text-gray-700">Next: Phase 3</h3>
+          <p className="mt-1 text-xs text-gray-600">
+            Table of Contents component with hierarchical tree structure
+          </p>
+        </div>
       </div>
-    </div>
+    </EditorLayout>
   );
 }

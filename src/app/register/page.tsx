@@ -4,6 +4,8 @@ import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCam
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import axios from "axios";
+import toast, { Toaster } from 'react-hot-toast';
 
 type FormData = {
   email: string;
@@ -90,66 +92,70 @@ const SignupPage = () => {
     }
   }, [formData, errors]);
 
-  const handleSubmit = useCallback(() => {
-    setIsSubmitting(true);
-    try {
-      const userId = `${
-        formData.role === 'student' ? 'ETU' : 'ENS'
-      }${new Date().getFullYear()}${Math.random().toString(36).substr(2, 9)}`;
-  
-      const newUser = {
+  const handleSubmit = useCallback(async () => {
+  setIsSubmitting(true);
+  try {
+    const userId = `${
+      formData.role === 'student' ? 'ETU' : 'ENS'
+    }${new Date().getFullYear()}${Math.random().toString(36).substr(2, 9)}`;
+
+    const newUser = {
+      id: userId,
+      ...formData,
+      registrationDate: new Date().toISOString(),
+    };
+
+    // ✅ Envoi vers json-server (port 4000)
+    await axios.post("http://localhost:4000/users", newUser);
+
+    // ✅ (Optionnel) Sauvegarde locale pour accès rapide
+    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    localStorage.setItem('userRole', formData.role);
+
+    if (formData.role === 'student') {
+      localStorage.setItem('studentInfo', JSON.stringify({
         id: userId,
-        ...formData,
-        registrationDate: new Date().toISOString(),
-      };
-  
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      localStorage.setItem('users', JSON.stringify([...existingUsers, newUser]));
-  
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      localStorage.setItem('userRole', formData.role);
-  
-      if (formData.role === 'student') {
-        localStorage.setItem('studentInfo', JSON.stringify({
-          id: userId,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
-          promotion: formData.promotion || '',
-          specialization: formData.specialization || '',
-          level: formData.level || '',
-          university: formData.university || '',
-          city: formData.city || '',
-          averageGrade: formData.averageGrade || '',
-          currentSemester: formData.currentSemester || '',
-          major: formData.major || '',
-          minor: formData.minor || '',
-          interests: formData.interests || [],
-          activities: formData.activities || []
-        }));
-      } else {
-        localStorage.setItem('teacherInfo', JSON.stringify({
-          id: userId,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
-          university: formData.university || '',
-          city: formData.city || '',
-          grade: formData.grade || '',
-          certification: formData.certification || '',
-          subjects: formData.subjects || [],
-          teachingGrades: formData.teachingGrades || [],
-          teachingGoal: formData.teachingGoal || ''
-        }));
-      }
-  
-      router.push(formData.role === 'student' ? '/etudashboard' : '/profdashboard');
-    } catch (error) {
-      setErrors({ submit: "Une erreur est survenue lors de l'inscription." });
-    } finally {
-      setIsSubmitting(false);
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
+        promotion: formData.promotion || '',
+        specialization: formData.specialization || '',
+        level: formData.level || '',
+        university: formData.university || '',
+        city: formData.city || '',
+        averageGrade: formData.averageGrade || '',
+        currentSemester: formData.currentSemester || '',
+        major: formData.major || '',
+        minor: formData.minor || '',
+        interests: formData.interests || [],
+        activities: formData.activities || []
+      }));
+    } else {
+      localStorage.setItem('teacherInfo', JSON.stringify({
+        id: userId,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
+        university: formData.university || '',
+        city: formData.city || '',
+        grade: formData.grade || '',
+        certification: formData.certification || '',
+        subjects: formData.subjects || [],
+        teachingGrades: formData.teachingGrades || [],
+        teachingGoal: formData.teachingGoal || ''
+      }));
     }
-  }, [formData, router]);
+
+    toast.success("Inscription réussie !");
+    // ✅ Redirection selon le rôle
+    router.push(formData.role === 'student' ? '/etudashboard' : '/profdashboard');
+  } catch (error) {
+    console.error("Erreur lors de l'enregistrement :", error);
+    setErrors({ submit: "Une erreur est survenue lors de l'inscription." });
+  } finally {
+    setIsSubmitting(false);
+  }
+}, [formData, router]);
 
   const renderStep1 = useMemo(() => (
     <motion.div
@@ -392,6 +398,8 @@ const SignupPage = () => {
       </div>
       
       {errors.submit && <p className="text-red-500 dark:text-red-400 text-sm text-center">{errors.submit}</p>}
+      {/* Toaster */}
+      <Toaster position="top-right" reverseOrder={false} />
     </motion.div>
   ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);
 

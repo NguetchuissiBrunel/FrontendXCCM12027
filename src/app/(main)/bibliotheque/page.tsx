@@ -82,28 +82,47 @@ const Bibliotheque = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
-      {/* Bannière d'en-tête */}
-      <div className="relative h-80 bg-gradient-to-r from-purple-900 to-purple-600 overflow-hidden">
-        {/* Image de fond */}
-        <div className="absolute inset-0">
+  <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
+    {/* Bannière d'en-tête */}
+    <div className="relative h-80 bg-gradient-to-r from-purple-900 to-purple-600 overflow-hidden">
+      
+      {/* Conteneur d'image avec position absolute */}
+      <div className="absolute inset-0">
+        {/* Image mode clair */}
+        <div className="dark:hidden h-full">
           <Image 
             src="/images/ima5.jpg" 
-            alt="Bibliothèque" 
+            alt="bibliotheque clair" 
             fill
-            className="object-cover"
+            className="object-cover w-full h-full"
             priority
           />
         </div>
         
-        {/* Contenu au-dessus de l'image */}
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col items-center justify-center text-center">
-          <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-lg">Bibliothèque</h1>
-          <p className="text-xl text-white/90 mb-8 drop-shadow">
-            Découvrez tous nos cours et ressources pédagogiques
-          </p>
+        {/* Image mode sombre */}
+        <div className="hidden dark:block h-full">
+          <Image 
+            src="/images/fond3.jpg" 
+            alt="bibliotheque mode sombre" 
+            fill
+            className="object-cover w-full h-full"
+            priority
+          />
         </div>
+        
+        {/* Overlay pour améliorer la lisibilité du texte */}
+        <div className="absolute inset-0 bg-black/10 dark:bg-black/30"></div>
       </div>
+      
+      {/* Contenu au-dessus de l'image */}
+      <div className="relative z-10 container mx-auto px-4 h-full flex flex-col items-center justify-center text-center">
+        <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-lg">Bibliothèque</h1>
+        <p className="text-xl text-white/90 mb-8 drop-shadow">
+          Découvrez tous nos cours et ressources pédagogiques
+        </p>
+      </div>
+    </div>
+
 
       {/* Barre de recherche*/}
       <div className="container mx-auto px-4  -mt-8 relative z-20">

@@ -25,6 +25,8 @@ import {
   FaPaperPlane,
   FaTimes
 } from 'react-icons/fa';
+import TableOfContents from './TableOfContents';
+import { mockTOCItems } from '@/data/mockEditorData';
 
 interface EditorLayoutProps {
   children?: React.ReactNode;
@@ -125,17 +127,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       <div className="flex flex-1 overflow-hidden">
         {/* LEFT SIDEBAR - Table of Contents */}
         <aside className="w-72 border-r border-gray-200 bg-white overflow-y-auto">
-          <div className="p-4">
-            <h2 className="mb-4 text-sm font-semibold text-gray-700">
-              Table des Matières
-            </h2>
-            <div className="text-sm text-gray-500">
-              Glissez et déposez des éléments de la structure ici
-            </div>
-            <div className="mt-4 text-xs text-gray-400">
-              Depuis la barre latérale de structure
-            </div>
-          </div>
+          <TableOfContents 
+            items={mockTOCItems}
+            onItemClick={(itemId) => console.log('TOC item clicked:', itemId)}
+          />
         </aside>
 
         {/* CENTER - Main Editor */}

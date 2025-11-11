@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
 
 const Navbar = () => {
@@ -12,6 +12,7 @@ const Navbar = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'student' | 'teacher' | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   // Charger le thème et les informations utilisateur
   useEffect(() => {
@@ -37,6 +38,14 @@ const Navbar = () => {
       setUserRole(role);
     }
   }, []);
+
+  // Vérifier si un lien est actif
+  const isActiveLink = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(href);
+  };
 
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
@@ -71,15 +80,23 @@ const Navbar = () => {
 
   // Liens de navigation de base
   const baseNavLinks = [
-    { href: '/', label: 'Accueil', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
-    { href: '/bibliotheque', label: 'Bibliothèque', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> },
+    { 
+      href: '/', 
+      label: 'Accueil', 
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> 
+    },
+    { 
+      href: '/bibliotheque', 
+      label: 'Bibliothèque', 
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> 
+    },
   ];
 
   // Lien "Éditer" seulement pour les enseignants
   const teacherNavLink = {
     href: '/editor', 
     label: 'Éditer', 
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+    icon: <FaEdit className="w-5 h-5" />
   };
 
   // Lien "Aide" pour tous
@@ -134,17 +151,39 @@ const Navbar = () => {
 
           {/* GROUPE CENTRE : Navigation Centrée */}
           <div className="hidden lg:flex items-center justify-center flex-1">
-            <div className="flex items-center space-x-2">
-              {navLinks.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center space-x-2 group hover:bg-purple-50 dark:hover:bg-gray-800"
-                >
-                  <span className="w-5 h-5 text-purple-500 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">{item.icon}</span>
-                  <span className="ml-1">{item.label}</span>
-                </Link>
-              ))}
+            <div className="flex items-center space-x-1">
+              {navLinks.map((item) => {
+                const isActive = isActiveLink(item.href);
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={`
+                      relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center space-x-2
+                      ${isActive 
+                        ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 shadow-sm' 
+                        : 'text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-gray-800'
+                      }
+                    `}
+                  >
+                    <span className={`
+                      w-5 h-5 transition-colors
+                      ${isActive 
+                        ? 'text-purple-600 dark:text-purple-400' 
+                        : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-300'
+                      }
+                    `}>
+                      {item.icon}
+                    </span>
+                    <span className="ml-1">{item.label}</span>
+                    
+                    {/* Indicateur de page active (petit point en bas) */}
+                    {isActive && (
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full"></div>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
@@ -190,7 +229,13 @@ const Navbar = () => {
                 {/* Bouton Mon Compte */}
                 <button
                   onClick={handleMyAccount}
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg hover:border-purple-200 dark:hover:border-purple-800 flex items-center space-x-2"
+                  className={`
+                    px-4 py-2 text-sm font-medium transition-all duration-300 border rounded-lg flex items-center space-x-2
+                    ${isActiveLink('/etudashboard') || isActiveLink('/profdashboard')
+                      ? 'text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30'
+                      : 'text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 border-transparent hover:border-purple-200 dark:hover:border-purple-800'
+                    }
+                  `}
                 >
                   <FaUser className="w-4 h-4" />
                   <span>Mon Compte</span>
@@ -210,7 +255,13 @@ const Navbar = () => {
               <div className="flex items-center space-x-3">
                 <Link 
                   href="/login" 
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg hover:border-purple-200 dark:hover:border-purple-800 flex items-center space-x-2 hidden sm:flex"
+                  className={`
+                    px-4 py-2 text-sm font-medium transition-all duration-300 border rounded-lg flex items-center space-x-2
+                    ${isActiveLink('/login')
+                      ? 'text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30'
+                      : 'text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 border-transparent hover:border-purple-200 dark:hover:border-purple-800'
+                    }
+                  `}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -219,7 +270,13 @@ const Navbar = () => {
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md transform hover:scale-[1.02] flex items-center space-x-2"
+                  className={`
+                    px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 shadow-md flex items-center space-x-2
+                    ${isActiveLink('/register')
+                      ? 'bg-purple-700 dark:bg-purple-600 text-white border border-purple-300 dark:border-purple-500'
+                      : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white border-transparent hover:scale-[1.02]'
+                    }
+                  `}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -247,17 +304,37 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="lg:hidden border-t border-gray-200 dark:border-gray-700">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-900">
-              {navLinks.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span className="w-5 h-5 text-gray-400 dark:text-gray-500">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+              {navLinks.map((item) => {
+                const isActive = isActiveLink(item.href);
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={`
+                      block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-all duration-300
+                      ${isActive
+                        ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-600'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                      }
+                    `}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className={`
+                      w-5 h-5
+                      ${isActive 
+                        ? 'text-purple-600 dark:text-purple-400' 
+                        : 'text-gray-400 dark:text-gray-500'
+                      }
+                    `}>
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                    {isActive && (
+                      <span className="ml-auto w-2 h-2 bg-purple-600 rounded-full"></span>
+                    )}
+                  </Link>
+                );
+              })}
 
               <button 
                 onClick={toggleDarkMode}
@@ -299,7 +376,13 @@ const Navbar = () => {
                         handleMyAccount();
                         setIsMenuOpen(false);
                       }}
-                      className="w-full text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-colors"
+                      className={`
+                        w-full block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-all duration-300
+                        ${isActiveLink('/etudashboard') || isActiveLink('/profdashboard')
+                          ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-600'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                        }
+                      `}
                     >
                       <FaUser className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                       <span>Mon Compte</span>
@@ -311,7 +394,7 @@ const Navbar = () => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white block px-3 py-2 rounded-md text-base font-medium transition-colors flex items-center space-x-3 justify-center"
+                      className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white block px-3 py-2 rounded-md text-base font-medium transition-colors flex items-center space-x-3 justify-center"
                     >
                       <FaSignOutAlt className="w-5 h-5" />
                       <span>Déconnexion</span>
@@ -321,7 +404,13 @@ const Navbar = () => {
                   <>
                     <Link 
                       href="/login" 
-                      className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-colors"
+                      className={`
+                        block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-all duration-300
+                        ${isActiveLink('/login')
+                          ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-600'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                        }
+                      `}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -331,7 +420,13 @@ const Navbar = () => {
                     </Link>
                     <Link 
                       href="/register" 
-                      className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white block px-3 py-2 rounded-md text-base font-medium transition-colors flex items-center space-x-3 justify-center"
+                      className={`
+                        block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 flex items-center space-x-3 justify-center
+                        ${isActiveLink('/register')
+                          ? 'bg-purple-700 dark:bg-purple-600 text-white border border-purple-300 dark:border-purple-500'
+                          : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white'
+                        }
+                      `}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

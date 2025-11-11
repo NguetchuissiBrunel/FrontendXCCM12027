@@ -92,9 +92,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-gray-50">
-      {/* HEADER - Fixed top toolbar */}
-      <header className="flex h-16 items-center border-b border-gray-200 bg-white px-4 shadow-sm">
+    <div className="mt-16 flex h-screen w-screen flex-col overflow-hidden bg-gray-50">
+      {/* HEADER - Editor toolbar */}
+      <header className="flex h-16 shrink-0 items-center border-b border-gray-200 bg-white px-4 shadow-sm">
         <div className="flex w-full items-center justify-between">
           {/* Left: Logo/Title */}
           <div className="flex items-center gap-3">
@@ -103,11 +103,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           </div>
 
           {/* Center: Document title */}
-          <div className="flex-1 px-8">
+          <div className="px-8">
             <input
               type="text"
               placeholder="Titre du document"
-              className="w-full max-w-md rounded border border-gray-300 px-3 py-1 text-center text-lg focus:border-purple-500 focus:outline-none"
+              className="w-80 rounded border border-gray-300 px-3 py-1 text-center text-lg focus:border-purple-500 focus:outline-none"
               defaultValue="Nouveau Document"
             />
           </div>

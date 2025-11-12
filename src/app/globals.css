@@ -1,3 +1,302 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* ============================================================================
+   XCCM EDITOR - CSS CUSTOM PROPERTIES (CSS Variables)
+   ============================================================================
+   
+   Color and spacing variables extracted from original XCCM implementation.
+   These match the exact color scheme used in the working editor.
+   
+   @author JOHAN
+   @date November 2025
+============================================================================ */
+
+:root {
+  /* ------------------------------------------------------------------------
+     HIERARCHY COLORS - All 6 Content Types
+     ------------------------------------------------------------------------ 
+     Color scheme from original implementation:
+     Course (Blue) > Section/Partie (Purple) > Chapter/Chapitre (Green) > 
+     Paragraph/Paragraphe (Orange) > Notion (Red) + Exercise (Indigo)
+  */
+  
+  /* Course (Cours) - Blue - Top level */
+  --color-course: #3B82F6;
+  --color-course-light: #60A5FA;
+  --color-course-dark: #2563EB;
+  --color-course-bg: #DBEAFE;      /* Very light blue for backgrounds */
+  
+  /* Section/Partie - Purple/Violet - Level 1 */
+  --color-section: #8B5CF6;
+  --color-section-light: #A78BFA;
+  --color-section-dark: #7C3AED;
+  --color-section-bg: #EDE9FE;     /* Very light purple */
+  
+  /* Chapter/Chapitre - Green - Level 2 */
+  --color-chapter: #10B981;
+  --color-chapter-light: #34D399;
+  --color-chapter-dark: #059669;
+  --color-chapter-bg: #D1FAE5;     /* Very light green */
+  
+  /* Paragraph/Paragraphe - Orange/Yellow - Level 3 */
+  --color-paragraph: #F59E0B;
+  --color-paragraph-light: #FBBF24;
+  --color-paragraph-dark: #D97706;
+  --color-paragraph-bg: #FEF3C7;   /* Very light orange */
+  
+  /* Notion - Red - Level 4 */
+  --color-notion: #EF4444;
+  --color-notion-light: #F87171;
+  --color-notion-dark: #DC2626;
+  --color-notion-bg: #FEE2E2;      /* Very light red */
+  
+  /* Exercise/Exercice - Indigo - Special type */
+  --color-exercise: #6366F1;
+  --color-exercise-light: #818CF8;
+  --color-exercise-dark: #4F46E5;
+  --color-exercise-bg: #E0E7FF;    /* Very light indigo */
+  
+  /* ------------------------------------------------------------------------
+     UI COLORS - General Interface Elements
+     ------------------------------------------------------------------------ */
+  
+  /* Primary brand color - Indigo */
+  --color-primary: #6366F1;
+  --color-primary-hover: #4F46E5;
+  --color-primary-active: #4338CA;
+  
+  /* Secondary accent color - Purple */
+  --color-secondary: #8B5CF6;
+  --color-secondary-hover: #7C3AED;
+  
+  /* Success, Warning, Error states */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* Neutral grays for text and backgrounds */
+  --color-background: #F9FAFB;     /* Gray-50 - Main app background */
+  --color-surface: #FFFFFF;        /* White - Card/panel backgrounds */
+  --color-surface-elevated: #FFFFFF; /* Slightly elevated surfaces */
+  
+  /* Borders */
+  --color-border: #E5E7EB;         /* Gray-200 - Default borders */
+  --color-border-light: #F3F4F6;   /* Gray-100 - Subtle borders */
+  --color-border-dark: #D1D5DB;    /* Gray-300 - Emphasized borders */
+  
+  /* Text colors */
+  --color-text-primary: #111827;   /* Gray-900 - Main text */
+  --color-text-secondary: #6B7280; /* Gray-500 - Secondary text */
+  --color-text-muted: #9CA3AF;     /* Gray-400 - Muted/disabled text */
+  --color-text-inverse: #FFFFFF;   /* White - Text on dark backgrounds */
+  
+  /* ------------------------------------------------------------------------
+     SPACING & SIZING - Layout Dimensions
+     ------------------------------------------------------------------------ */
+  
+  /* Sidebar widths */
+  --width-toc-sidebar: 288px;      /* 18rem / w-72 - Left TOC panel */
+  --width-notions-sidebar: 320px;  /* 20rem / w-80 - Right library panel */
+  
+  /* Editor header height */
+  --height-editor-header: 64px;    /* 4rem / h-16 - Top toolbar */
+  
+  /* Page dimensions (for multi-page view) */
+  --width-editor-page: 816px;      /* A4-like width (8.5in at 96dpi) */
+  --min-height-editor-page: 1056px; /* A4-like height (11in at 96dpi) */
+  
+  /* Spacing scale (complementing Tailwind's defaults) */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  
+  /* ------------------------------------------------------------------------
+     SHADOWS - Depth & Elevation
+     ------------------------------------------------------------------------ */
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* ------------------------------------------------------------------------
+     TRANSITIONS - Animation Durations
+     ------------------------------------------------------------------------ */
+  
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  --transition-slow: 300ms;
+  
+  /* Easing functions */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  
+  /* ------------------------------------------------------------------------
+     Z-INDEX LAYERS - Stacking Order
+     ------------------------------------------------------------------------ */
+  
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  
+  /* ------------------------------------------------------------------------
+     BORDER RADIUS - Rounded Corners
+     ------------------------------------------------------------------------ */
+  
+  --radius-sm: 0.25rem;    /* 4px - Small elements */
+  --radius-md: 0.375rem;   /* 6px - Default */
+  --radius-lg: 0.5rem;     /* 8px - Cards */
+  --radius-xl: 0.75rem;    /* 12px - Large cards */
+  --radius-2xl: 1rem;      /* 16px - Modal */
+  --radius-full: 9999px;   /* Fully rounded (pills) */
+}
+
+/* ============================================================================
+   DARK MODE SUPPORT (Optional - for future enhancement)
+   ============================================================================
+   
+   When dark mode is enabled, these colors will override the light theme.
+   Currently not implemented, but structure is ready.
+============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode overrides would go here */
+    /* --color-background: #111827; */
+    /* --color-surface: #1F2937; */
+    /* etc. */
+  }
+}
+
+/* ============================================================================
+   BASE STYLES - Global Resets & Defaults
+   ============================================================================ */
+
+* {
+  /* Improve box model behavior */
+  box-sizing: border-box;
+}
+
+body {
+  /* Use system font stack for better performance and native feel */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+               'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 
+               'Helvetica Neue', sans-serif;
+  
+  /* Enable font smoothing for better text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Default background */
+  background-color: var(--color-background);
+  
+  /* Default text color */
+  color: var(--color-text-primary);
+}
+
+/* ============================================================================
+   UTILITY CLASSES - Reusable CSS Classes
+   ============================================================================
+   
+   These complement Tailwind's utilities with XCCM-specific patterns
+============================================================================ */
+
+/* Hierarchy color badges - solid backgrounds */
+.badge-course {
+  background-color: var(--color-course);
+  color: white;
+}
+
+.badge-section {
+  background-color: var(--color-section);
+  color: white;
+}
+
+.badge-chapter {
+  background-color: var(--color-chapter);
+  color: white;
+}
+
+.badge-paragraph {
+  background-color: var(--color-paragraph);
+  color: white;
+}
+
+.badge-notion {
+  background-color: var(--color-notion);
+  color: white;
+}
+
+.badge-exercise {
+  background-color: var(--color-exercise);
+  color: white;
+}
+
+/* Hover states for interactive elements */
+.interactive-hover {
+  transition: all var(--transition-normal) var(--ease-in-out);
+}
+
+.interactive-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Editor page styling (for multi-page view) */
+.editor-page {
+  width: var(--width-editor-page);
+  min-height: var(--min-height-editor-page);
+  background: white;
+  box-shadow: var(--shadow-lg);
+  margin: 2rem auto;
+  padding: 3rem;
+}
+
+/* Scrollbar styling for better aesthetics */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-border-light);
+  border-radius: var(--radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark);
+  border-radius: var(--radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* ============================================================================
+   PRINT STYLES - For PDF Export
+   ============================================================================ */
+
+@media print {
+  /* Hide navigation and sidebars when printing */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Ensure content fits on page */
+  .editor-page {
+    box-shadow: none;
+    margin: 0;
+    page-break-inside: avoid;
+  }
+}

@@ -13,7 +13,24 @@
       "university": "ENSPY",
       "specialization": "Informatique",
       "registrationDate": "2025-11-11T19:00:51.687Z",
-      "lastLogin": "2025-11-12T10:54:08.191Z"
+      "lastLogin": "2025-11-12T12:05:09.516Z"
+    },
+    {
+      "id": "ENS2025wull2xdvf",
+      "email": "landrybrunel5@gmail.com",
+      "password": "lokiloki",
+      "confirmPassword": "lokiloki",
+      "role": "teacher",
+      "firstName": "nguetchuissi",
+      "lastName": "brunel",
+      "photoUrl": "/images/Applying Lean to Education -.jpeg",
+      "city": "yaoundé",
+      "university": "melen",
+      "grade": "prof",
+      "subjects": [
+        "SVT23"
+      ],
+      "registrationDate": "2025-11-12T12:05:44.766Z"
     }
   ]
 }

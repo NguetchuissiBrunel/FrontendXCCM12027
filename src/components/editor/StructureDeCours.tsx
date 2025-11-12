@@ -299,7 +299,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     <div className="flex h-full flex-col bg-white">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-800">Structure de cours</h2>
+        <h2 className="text-sm font-semibold text-gray-800">Importer des connaissances</h2>
         <button onClick={onClose} className="text-gray-400 transition-colors hover:text-gray-600">
           <FaTimes className="text-sm" />
         </button>

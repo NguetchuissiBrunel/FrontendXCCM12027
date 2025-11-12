@@ -8,6 +8,7 @@ interface Teacher {
   rating: number;
   students: number;
   image: string;
+  university?: string;
 }
 
 interface TeachersCardProps {
@@ -36,6 +37,9 @@ export default function TeachersCard({ teachers }: TeachersCardProps) {
             <div className="text-center mb-4">
               <h3 className="font-bold text-gray-800 mb-1">{teacher.name}</h3>
               <p className="text-sm text-gray-600">{teacher.subject}</p>
+              {teacher.university && (
+                <p className="text-xs text-gray-500 mt-1">{teacher.university}</p>
+              )}
             </div>
 
             {/* Stats */}

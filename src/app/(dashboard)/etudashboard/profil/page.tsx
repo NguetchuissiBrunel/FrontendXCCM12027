@@ -1,8 +1,128 @@
 // app/etudashboard/profil/page.tsx
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { Award, BookOpen, Clock } from 'lucide-react';
 
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  photoUrl?: string;
+  specialization?: string;
+  level?: string;
+  university?: string;
+  city?: string;
+  promotion?: string;
+  averageGrade?: string;
+  currentSemester?: string;
+  major?: string;
+  minor?: string;
+  interests?: string[];
+  activities?: string[];
+}
+
 export default function StudentProfile() {
+  const [user, setUser] = useState<User | null>(null);
+  const [editedUser, setEditedUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const currentUser = localStorage.getItem('currentUser');
+    
+    if (!currentUser) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const userData = JSON.parse(currentUser);
+      
+      if (userData.role !== 'student') {
+        router.push('/profdashboard');
+        return;
+      }
+      
+      setUser(userData);
+      setEditedUser(userData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données utilisateur:', error);
+      router.push('/login');
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditedUser(user);
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!editedUser) return;
+    
+    setIsSaving(true);
+    try {
+      // Mettre à jour dans db.json
+      await fetch(`http://localhost:4000/users/${editedUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editedUser),
+      });
+
+      // Mettre à jour localStorage
+      localStorage.setItem('currentUser', JSON.stringify(editedUser));
+      
+      setUser(editedUser);
+      setIsEditing(false);
+      
+      // Toast de succès (optionnel)
+      alert('Profil mis à jour avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert('Erreur lors de la sauvegarde du profil');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChange = (field: keyof User, value: string) => {
+    if (!editedUser) return;
+    setEditedUser({
+      ...editedUser,
+      [field]: value
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !editedUser) return null;
+
+  const displayName = `${editedUser.firstName} ${editedUser.lastName}`;
+  const userLevel = editedUser.specialization || editedUser.level || 'Étudiant';
+  const initials = `${editedUser.firstName[0]}${editedUser.lastName[0]}`;
+
   const grades = [
     { subject: 'Excellent', value: 35, color: 'bg-purple-600' },
     { subject: 'Bien', value: 25, color: 'bg-purple-400' },
@@ -14,17 +134,38 @@ export default function StudentProfile() {
     <div className="flex min-h-screen bg-purple-50">
       <Sidebar 
         userRole="student" 
-        userName="cz xcz" 
-        userLevel="Master 2 • ads"
+        userName={displayName}
+        userLevel={userLevel}
         activeTab="profil"
       />
       
       <main className="flex-1 p-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-purple-700">Mon Profil Étudiant</h1>
-          <button className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors">
-            ✏️ Modifier
-          </button>
+          {!isEditing ? (
+            <button 
+              onClick={handleEdit}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+            >
+              ✏️ Modifier
+            </button>
+          ) : (
+            <div className="flex gap-3">
+              <button 
+                onClick={handleCancel}
+                className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {isSaving ? 'Enregistrement...' : '💾 Enregistrer'}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-6">
@@ -32,36 +173,120 @@ export default function StudentProfile() {
           <div className="col-span-1 space-y-6">
             {/* Profile Picture */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="w-32 h-32 mx-auto bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-4xl font-bold mb-4">
-                CX
-              </div>
+              {editedUser.photoUrl ? (
+                <img 
+                  src={editedUser.photoUrl} 
+                  alt={displayName}
+                  className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
+                />
+              ) : (
+                <div className="w-32 h-32 mx-auto bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-4xl font-bold mb-4">
+                  {initials}
+                </div>
+              )}
               <div className="text-center">
-                <p className="text-sm text-gray-500">No. Etudiant</p>
-                <p className="font-semibold">ETU2025iqdprusph</p>
-                <h2 className="text-2xl font-bold text-gray-800 mt-2">cz xcz</h2>
+                <p className="text-sm text-gray-500">No. Étudiant</p>
+                <p className="font-semibold">{editedUser.id}</p>
+                <h2 className="text-2xl font-bold text-gray-800 mt-2">{displayName}</h2>
               </div>
             </div>
 
             {/* Profile Details */}
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
+              {/* Spécialisation */}
               <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold">Parcours:</p>
-                <p className="font-semibold text-gray-800">ads</p>
+                <p className="text-sm text-purple-600 font-semibold mb-2">Spécialisation:</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedUser.specialization || ''}
+                    onChange={(e) => handleChange('specialization', e.target.value)}
+                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: Informatique"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{editedUser.specialization || 'Non spécifié'}</p>
+                )}
               </div>
               
+              {/* Niveau */}
               <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold">Niveau:</p>
-                <p className="font-semibold text-gray-800">Master 2</p>
+                <p className="text-sm text-purple-600 font-semibold mb-2">Niveau:</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedUser.level || ''}
+                    onChange={(e) => handleChange('level', e.target.value)}
+                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: Master 2"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{editedUser.level || 'Non spécifié'}</p>
+                )}
               </div>
               
+              {/* Université */}
               <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold">Université:</p>
-                <p className="font-semibold text-gray-800">cad</p>
+                <p className="text-sm text-purple-600 font-semibold mb-2">Université:</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedUser.university || ''}
+                    onChange={(e) => handleChange('university', e.target.value)}
+                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: ENSPY"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{editedUser.university || 'Non spécifié'}</p>
+                )}
               </div>
               
+              {/* Ville */}
               <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold">Objectif:</p>
-                <p className="font-semibold text-gray-800">Devenir pilote et parcourir le monde dans mon avion.</p>
+                <p className="text-sm text-purple-600 font-semibold mb-2">Ville:</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedUser.city || ''}
+                    onChange={(e) => handleChange('city', e.target.value)}
+                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: Yaoundé"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{editedUser.city || 'Non spécifié'}</p>
+                )}
+              </div>
+
+              {/* Majeure */}
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-purple-600 font-semibold mb-2">Majeure:</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedUser.major || ''}
+                    onChange={(e) => handleChange('major', e.target.value)}
+                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: Intelligence Artificielle"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{editedUser.major || 'Non spécifié'}</p>
+                )}
+              </div>
+
+              {/* Mineure */}
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-purple-600 font-semibold mb-2">Mineure:</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedUser.minor || ''}
+                    onChange={(e) => handleChange('minor', e.target.value)}
+                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: Data Science"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{editedUser.minor || 'Non spécifié'}</p>
+                )}
               </div>
             </div>
           </div>
@@ -75,7 +300,7 @@ export default function StudentProfile() {
                   <BookOpen className="text-purple-600" size={32} />
                 </div>
                 <p className="text-sm text-gray-500 mb-1">Nombre de cours participé</p>
-                <p className="text-4xl font-bold text-purple-600">22</p>
+                <p className="text-4xl font-bold text-purple-600">0</p>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -83,7 +308,7 @@ export default function StudentProfile() {
                   <Award className="text-purple-600" size={32} />
                 </div>
                 <p className="text-sm text-gray-500 mb-1">Certifications obtenues</p>
-                <p className="text-4xl font-bold text-purple-600">05</p>
+                <p className="text-4xl font-bold text-purple-600">0</p>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -91,7 +316,20 @@ export default function StudentProfile() {
                   <Clock className="text-purple-600" size={32} />
                 </div>
                 <p className="text-sm text-gray-500 mb-1">Assiduité</p>
-                <p className="text-4xl font-bold text-purple-600">95%</p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editedUser.averageGrade || '0'}
+                    onChange={(e) => handleChange('averageGrade', e.target.value)}
+                    className="text-4xl font-bold text-purple-600 w-24 border-b-2 border-purple-300 focus:outline-none focus:border-purple-500"
+                  />
+                ) : (
+                  <p className="text-4xl font-bold text-purple-600">
+                    {editedUser.averageGrade || '0'}%
+                  </p>
+                )}
               </div>
             </div>
 
@@ -175,6 +413,23 @@ export default function StudentProfile() {
                 </div>
               </div>
             </div>
+
+            {/* Interests & Activities */}
+            {(user.interests && user.interests.length > 0) && (
+              <div className="bg-white rounded-2xl p-8 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Centres d'intérêt</h3>
+                <div className="flex flex-wrap gap-2">
+                  {user.interests.map((interest, index) => (
+                    <span 
+                      key={index}
+                      className="bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

@@ -1,14 +1,71 @@
 // app/etudashboard/cours/page.tsx
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { BookOpen } from 'lucide-react';
 
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  specialization?: string;
+  level?: string;
+}
+
 export default function StudentCourses() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const currentUser = localStorage.getItem('currentUser');
+    
+    if (!currentUser) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const userData = JSON.parse(currentUser);
+      
+      if (userData.role !== 'student') {
+        router.push('/profdashboard');
+        return;
+      }
+      
+      setUser(userData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données utilisateur:', error);
+      router.push('/login');
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const displayName = `${user.firstName} ${user.lastName}`;
+  const userLevel = user.specialization || user.level || 'Étudiant';
+
   return (
-    <div className="flex min-h-screen bg-purple-50">
+    <div className="flex min-h-screen bg-purple-50 py-15">
       <Sidebar 
         userRole="student" 
-        userName="cz xcz" 
-        userLevel="Master 2 • ads"
+        userName={displayName}
+        userLevel={userLevel}
         activeTab="cours"
       />
       

@@ -1,4 +1,6 @@
 // components/professor/ProfileCard.tsx
+'use client';
+import { useState } from 'react';
 import { Users, Award, Clock } from 'lucide-react';
 
 interface Professor {
@@ -11,6 +13,7 @@ interface Professor {
   totalStudents: number;
   participationRate: number;
   publications: number;
+  photoUrl?: string;
   performanceDistribution: Array<{
     range: string;
     value: number;
@@ -20,16 +23,103 @@ interface Professor {
 
 interface ProfileCardProps {
   professor: Professor;
+  onUpdate?: (updatedProfessor: Professor) => void;
 }
 
-export default function ProfileCard({ professor }: ProfileCardProps) {
+export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editedProfessor, setEditedProfessor] = useState<Professor>(professor);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditedProfessor(professor);
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Récupérer l'utilisateur complet depuis localStorage
+      const currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        const userData = JSON.parse(currentUser);
+        
+        // Mettre à jour les champs modifiables
+        const updatedUser = {
+          ...userData,
+          city: editedProfessor.city,
+          university: editedProfessor.university,
+          grade: editedProfessor.grade,
+          certification: editedProfessor.certification,
+        };
+
+        // Mettre à jour dans db.json
+        await fetch(`http://localhost:4000/users/${editedProfessor.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedUser),
+        });
+
+        // Mettre à jour localStorage
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        
+        setIsEditing(false);
+        
+        // Appeler le callback si fourni
+        if (onUpdate) {
+          onUpdate(editedProfessor);
+        }
+        
+        alert('Profil mis à jour avec succès !');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert('Erreur lors de la sauvegarde du profil');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChange = (field: keyof Professor, value: string | number) => {
+    setEditedProfessor({
+      ...editedProfessor,
+      [field]: value
+    });
+  };
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-purple-700">Profil de l'Enseignant</h2>
-        <button className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors">
-          ✏️ Modifier
-        </button>
+        {!isEditing ? (
+          <button 
+            onClick={handleEdit}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+          >
+            ✏️ Modifier
+          </button>
+        ) : (
+          <div className="flex gap-3">
+            <button 
+              onClick={handleCancel}
+              className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+            >
+              Annuler
+            </button>
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              {isSaving ? 'Enregistrement...' : '💾 Enregistrer'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-8">
@@ -151,7 +241,7 @@ export default function ProfileCard({ professor }: ProfileCardProps) {
 
             {/* Legend */}
             <div className="grid grid-cols-2 gap-4">
-              {professor.performanceDistribution.map((item, index) => (
+              {editedProfessor.performanceDistribution.map((item, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div className={`w-4 h-4 ${item.color} rounded`}></div>
                   <span className="text-sm font-medium text-gray-700">{item.range}</span>

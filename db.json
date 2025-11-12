@@ -27,7 +27,7 @@
       "city": "Yaounde",
       "university": "ENSPY",
       "specialization": "Informatique",
-      "registrationDate": "2025-11-12T07:24:03.931Z"
+      "registrationDate": "2025-11-12T07:24:03.931Z",
       "lastLogin": "2025-11-12T12:05:09.516Z"
     },
     {
@@ -45,7 +45,9 @@
       "subjects": [
         "SVT23"
       ],
-      "registrationDate": "2025-11-12T12:05:44.766Z"
+      "registrationDate": "2025-11-12T12:05:44.766Z",
+      "lastLogin": "2025-11-12T12:56:46.757Z",
+      "certification": "Non spécifiée"
     }
   ]
 }

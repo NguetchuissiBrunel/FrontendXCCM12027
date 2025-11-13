@@ -1,9 +1,11 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaChartLine, FaRocket } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import axios from "axios";
+import toast, { Toaster } from 'react-hot-toast';
 
 type FormData = {
   email: string;
@@ -15,7 +17,6 @@ type FormData = {
   photoUrl: string;
   city: string;
   university: string;
-  // Étudiant
   promotion?: string;
   specialization?: string;
   level?: string;
@@ -25,7 +26,6 @@ type FormData = {
   minor?: string;
   interests?: string[];
   activities?: string[];
-  // Enseignant
   grade?: string;
   certification?: string;
   subjects?: string[];
@@ -49,7 +49,7 @@ const SignupPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
-  const router = useRouter(); // <-- Initialiser le router
+  const router = useRouter();
 
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
@@ -71,19 +71,16 @@ const SignupPage = () => {
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Vérifier le type de fichier
       if (!file.type.startsWith('image/')) {
         setErrors({ ...errors, photo: 'Veuillez sélectionner une image valide' });
         return;
       }
       
-      // Vérifier la taille (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setErrors({ ...errors, photo: 'L\'image ne doit pas dépasser 5MB' });
         return;
       }
 
-      // Convertir en base64
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
@@ -95,72 +92,70 @@ const SignupPage = () => {
     }
   }, [formData, errors]);
 
-  const handleSubmit = useCallback(() => {
-    setIsSubmitting(true);
-    try {
-      // Générer un ID unique
-      const userId = `${
-        formData.role === 'student' ? 'ETU' : 'ENS'
-      }${new Date().getFullYear()}${Math.random().toString(36).substr(2, 9)}`;
-  
-      // Créer l'objet utilisateur
-      const newUser = {
+  const handleSubmit = useCallback(async () => {
+  setIsSubmitting(true);
+  try {
+    const userId = `${
+      formData.role === 'student' ? 'ETU' : 'ENS'
+    }${new Date().getFullYear()}${Math.random().toString(36).substr(2, 9)}`;
+
+    const newUser = {
+      id: userId,
+      ...formData,
+      registrationDate: new Date().toISOString(),
+    };
+
+    // ✅ Envoi vers json-server (port 4000)
+    await axios.post("http://localhost:4000/users", newUser);
+
+    // ✅ (Optionnel) Sauvegarde locale pour accès rapide
+    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    localStorage.setItem('userRole', formData.role);
+
+    if (formData.role === 'student') {
+      localStorage.setItem('studentInfo', JSON.stringify({
         id: userId,
-        ...formData,
-        registrationDate: new Date().toISOString(),
-      };
-  
-      // Sauvegarder dans localStorage
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      localStorage.setItem('users', JSON.stringify([...existingUsers, newUser]));
-  
-      // Stocker l'utilisateur courant
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      localStorage.setItem('userRole', formData.role);
-  
-      // Stocker également dans studentInfo ou teacherInfo selon le rôle
-      if (formData.role === 'student') {
-        localStorage.setItem('studentInfo', JSON.stringify({
-          id: userId,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
-          promotion: formData.promotion || '',
-          specialization: formData.specialization || '',
-          level: formData.level || '',
-          university: formData.university || '',
-          city: formData.city || '',
-          averageGrade: formData.averageGrade || '',
-          currentSemester: formData.currentSemester || '',
-          major: formData.major || '',
-          minor: formData.minor || '',
-          interests: formData.interests || [],
-          activities: formData.activities || []
-        }));
-      } else {
-        localStorage.setItem('teacherInfo', JSON.stringify({
-          id: userId,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
-          university: formData.university || '',
-          city: formData.city || '',
-          grade: formData.grade || '',
-          certification: formData.certification || '',
-          subjects: formData.subjects || [],
-          teachingGrades: formData.teachingGrades || [],
-          teachingGoal: formData.teachingGoal || ''
-        }));
-      }
-  
-      // Rediriger vers le tableau de bord
-     router.push(formData.role === 'student' ? '/etudashboard' : '/profdashboard');
-    } catch (error) {
-      setErrors({ submit: "Une erreur est survenue lors de l'inscription." });
-    } finally {
-      setIsSubmitting(false);
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
+        promotion: formData.promotion || '',
+        specialization: formData.specialization || '',
+        level: formData.level || '',
+        university: formData.university || '',
+        city: formData.city || '',
+        averageGrade: formData.averageGrade || '',
+        currentSemester: formData.currentSemester || '',
+        major: formData.major || '',
+        minor: formData.minor || '',
+        interests: formData.interests || [],
+        activities: formData.activities || []
+      }));
+    } else {
+      localStorage.setItem('teacherInfo', JSON.stringify({
+        id: userId,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
+        university: formData.university || '',
+        city: formData.city || '',
+        grade: formData.grade || '',
+        certification: formData.certification || '',
+        subjects: formData.subjects || [],
+        teachingGrades: formData.teachingGrades || [],
+        teachingGoal: formData.teachingGoal || ''
+      }));
     }
-  }, [formData , router]);
+
+    toast.success("Inscription réussie !");
+    // ✅ Redirection selon le rôle
+    router.push(formData.role === 'student' ? '/etudashboard' : '/profdashboard');
+  } catch (error) {
+    console.error("Erreur lors de l'enregistrement :", error);
+    setErrors({ submit: "Une erreur est survenue lors de l'inscription." });
+  } finally {
+    setIsSubmitting(false);
+  }
+}, [formData, router]);
 
   const renderStep1 = useMemo(() => (
     <motion.div
@@ -168,61 +163,57 @@ const SignupPage = () => {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="space-y-6 bg-white p-8 rounded-2xl shadow-lg"
+      className="space-y-6 bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 transition-colors duration-300"
     >
-      <h2 className="text-2xl font-semibold text-center bg-linear-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+      <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
         Créez votre compte
       </h2>
 
       <div className="space-y-4">
-        {/* Email */}
         <div className="relative">
-          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="email"
             placeholder="Votre adresse email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+          {errors.email && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.email}</p>}
         </div>
 
-        {/* Mot de passe */}
         <div className="relative">
-          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="password"
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
-          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+          {errors.password && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.password}</p>}
         </div>
 
-        {/* Confirmation du mot de passe */}
         <div className="relative">
-          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="password"
             placeholder="Confirmez votre mot de passe"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
-          {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+          {errors.confirmPassword && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
         </div>
 
-        {/* Rôle */}
         <div className="flex space-x-4">
           <button
             type="button"
             onClick={() => setFormData({ ...formData, role: 'student' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
               formData.role === 'student' 
-                ? 'bg-linear-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
             }`}
           >
             <FaGraduationCap className="mr-2" /> Étudiant
@@ -232,8 +223,8 @@ const SignupPage = () => {
             onClick={() => setFormData({ ...formData, role: 'teacher' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
               formData.role === 'teacher'
-                ? 'bg-linear-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
             }`}
           >
             <FaChalkboardTeacher className="mr-2" /> Enseignant
@@ -243,14 +234,16 @@ const SignupPage = () => {
 
       <button
         onClick={handleNext}
-        className="w-full bg-linear-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
       >
         Suivant
       </button>
-      <span className="text-gray-600">Vous avez deja un compte ? </span>
-            <Link href="/login" className="text-purple-600 hover:text-purple-700 transition-colors">
-              Connectez-vous
-            </Link>
+      <div className="text-center">
+        <span className="text-gray-600 dark:text-gray-400">Vous avez déjà un compte ? </span>
+        <Link href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
+          Connectez-vous
+        </Link>
+      </div>
     </motion.div>
   ), [formData, errors, handleNext]);
 
@@ -260,42 +253,39 @@ const SignupPage = () => {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="space-y-6 bg-white p-8 rounded-2xl shadow-lg"
+      className="space-y-6 bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 transition-colors duration-300"
     >
-      <h2 className="text-2xl font-semibold text-center bg-linear-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+      <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
         Complétez votre profil
       </h2>
 
       <div className="space-y-4">
-        {/* Prénom et Nom */}
         <div className="grid grid-cols-2 gap-4">
           <div className="relative">
-            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               placeholder="Prénom"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
             />
           </div>
           <div className="relative">
-            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               placeholder="Nom"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
             />
           </div>
         </div>
 
-        {/* Photo de profil */}
         <div className="space-y-3">
           <div className="flex items-center space-x-4">
-            {/* Prévisualisation de la photo */}
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 shadow-lg">
+            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 dark:border-purple-900/30 shadow-lg">
               <img 
                 src={photoPreview} 
                 alt="Prévisualisation" 
@@ -303,11 +293,10 @@ const SignupPage = () => {
               />
             </div>
             
-            {/* Bouton de téléchargement */}
             <div className="flex-1">
               <label 
                 htmlFor="photo-upload" 
-                className="flex items-center justify-center px-4 py-3 bg-linear-to-r from-purple-600 to-indigo-600 text-white rounded-lg cursor-pointer hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg"
+                className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg cursor-pointer hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg"
               >
                 <FaCamera className="mr-2" />
                 Choisir une photo
@@ -319,80 +308,66 @@ const SignupPage = () => {
                 onChange={handlePhotoUpload}
                 className="hidden"
               />
-              <p className="text-xs text-gray-500 mt-2">JPG, PNG ou JPEG (Max. 5MB)</p>
-              {errors.photo && <p className="text-red-500 text-sm mt-1">{errors.photo}</p>}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">JPG, PNG ou JPEG (Max. 5MB)</p>
+              {errors.photo && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.photo}</p>}
             </div>
           </div>
         </div>
 
-        {/* Ville et Université */}
         <div className="grid grid-cols-2 gap-4">
           <div className="relative">
-            <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               placeholder="Ville"
               value={formData.city}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
             />
           </div>
           <div className="relative">
-            <FaUniversity className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaUniversity className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               placeholder="Université"
               value={formData.university}
               onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
             />
           </div>
         </div>
 
-        {/* Informations spécifiques */}
         {formData.role === 'student' ? (
-          <>
-            <div className="relative">
-              <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Spécialisation"
-                value={formData.specialization || ''}
-                onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
-              />
-            </div>
-            {/* <div className="relative">
-              <FaChartLine className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Moyenne générale"
-                value={formData.averageGrade}
-                onChange={(e) => setFormData({ ...formData, averageGrade: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
-              />
-            </div> */}
-          </>
+          <div className="relative">
+            <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <input
+              type="text"
+              placeholder="Spécialisation"
+              value={formData.specialization || ''}
+              onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            />
+          </div>
         ) : (
           <>
             <div className="relative">
-              <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Grade"
                 value={formData.grade || ''}
                 onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
               />
             </div>
             <div className="relative">
-              <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Matières enseignées (séparer par des virgules)"
-                value={formData.subjects?.join(', ') || []}
+                value={formData.subjects?.join(', ') || ''}
                 onChange={(e) => setFormData({ ...formData, subjects: e.target.value.split(', ') })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
               />
             </div>
           </>
@@ -402,36 +377,39 @@ const SignupPage = () => {
       <div className="flex space-x-4">
         <button
           onClick={() => setCurrentStep(1)}
-          className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-all duration-300"
+          className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-300 border border-gray-300 dark:border-gray-700"
         >
           Retour
         </button>
         <button
           onClick={handleSubmit}
-          className="flex-1 bg-linear-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
         </button>
       </div>
-      <span className="text-gray-600">Vous avez deja un compte ? </span>
-            <Link href="/login" className="text-purple-600 hover:text-purple-700 transition-colors">
-              Connectez-vous
-            </Link>
       
-      {errors.submit && <p className="text-red-500 text-sm text-center">{errors.submit}</p>}
+      <div className="text-center">
+        <span className="text-gray-600 dark:text-gray-400">Vous avez déjà un compte ? </span>
+        <Link href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
+          Connectez-vous
+        </Link>
+      </div>
+      
+      {errors.submit && <p className="text-red-500 dark:text-red-400 text-sm text-center">{errors.submit}</p>}
+      {/* Toaster */}
+      <Toaster position="top-right" reverseOrder={false} />
     </motion.div>
   ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);
 
   return (
     <div
-      className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-4 sm:px-6 lg:px-8"
+      className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-4 sm:px-6 lg:px-8 transition-colors duration-300"
       style={{ backgroundImage: "url('/images/fond5.jpeg')" }}
     >
-      {/* Overlay sombre pour rendre le texte lisible */}
-      <div className="absolute inset-0 bg-black/40"></div>
+      <div className="absolute inset-0 bg-black/30 dark:bg-black/60 transition-colors duration-300"></div>
 
-      {/* Contenu du formulaire au-dessus de l'overlay */}
       <div className="relative z-10 w-full max-w-md">
         <AnimatePresence mode="wait">
           {currentStep === 1 ? renderStep1 : renderStep2}

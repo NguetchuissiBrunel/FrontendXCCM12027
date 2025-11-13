@@ -1,19 +1,106 @@
-// app/profdashboard/page.tsx
+// app/(dashboard)/profdashboard/page.tsx
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ProfileCard from '@/components/professor/ProfileCard';
 import CompositionsCard from '@/components/professor/CompositionsCard';
 import TeachersCard from '@/components/professor/TeachersCard';
+import axios from 'axios';
+
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  photoUrl?: string;
+  city?: string;
+  university?: string;
+  grade?: string;
+  certification?: string;
+  subjects?: string[];
+  teachingGrades?: string[];
+  teachingGoal?: string;
+}
+
+interface Teacher {
+  id: string;
+  firstName: string;
+  lastName: string;
+  subjects?: string[];
+  university?: string;
+}
 
 export default function ProfessorDashboard() {
+  const [user, setUser] = useState<User | null>(null);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const loadData = async () => {
+      const currentUser = localStorage.getItem('currentUser');
+      
+      if (!currentUser) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const userData = JSON.parse(currentUser);
+        
+        if (userData.role !== 'teacher') {
+          router.push('/etudashboard');
+          return;
+        }
+        
+        setUser(userData);
+
+        // Charger les autres enseignants depuis db.json
+        try {
+          const response = await axios.get('http://localhost:4000/users');
+          const allTeachers = response.data.filter(
+            (u: User) => u.role === 'teacher' && u.id !== userData.id
+          );
+          setTeachers(allTeachers);
+        } catch (error) {
+          console.error('Erreur lors du chargement des enseignants:', error);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données utilisateur:', error);
+        router.push('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   const professor = {
-    id: 'PRF001',
-    name: 'Jean-Marie BILBAULT',
-    city: 'Paris',
-    university: 'Sorbonne Université',
-    grade: 'Professeur des Universités',
-    certification: 'PhD en Mathématiques',
-    totalStudents: 245,
+    id: user.id,
+    name: `${user.firstName} ${user.lastName}`,
+    city: user.city || 'Non spécifiée',
+    university: user.university || 'Non spécifiée',
+    grade: user.grade || 'Enseignant',
+    certification: user.certification || 'Non spécifiée',
+    totalStudents: 0, // À implémenter avec les données réelles
     participationRate: 92,
-    publications: 25,
+    publications: 0, // À implémenter avec les données réelles
+    photoUrl: user.photoUrl,
     performanceDistribution: [
       { range: 'Excellent', value: 35, color: 'bg-purple-600' },
       { range: 'Bien', value: 30, color: 'bg-purple-400' },
@@ -23,113 +110,27 @@ export default function ProfessorDashboard() {
   };
 
   const compositions = [
-    {
-      id: '1',
-      title: 'Algèbre Avancée',
-      class: 'Master 2',
-      participants: 120,
-      likes: 72,
-      downloads: 200
-    },
-    {
-      id: '2',
-      title: 'Physique Quantique',
-      class: 'Doctorat',
-      participants: 45,
-      likes: 54,
-      downloads: 130
-    },
-    {
-      id: '3',
-      title: 'Génétique et évolution',
-      class: 'Licence en Biologie',
-      participants: 35,
-      likes: 60,
-      downloads: 130
-    },
-    {
-      id: '4',
-      title: 'Les équations différentielles non linéaires',
-      class: 'Master 2 en Mathématiques Appliquées',
-      participants: 50,
-      likes: 72,
-      downloads: 100
-    }
+    // Pour l'instant vide - à implémenter plus tard
   ];
 
-  const teachers = [
-    {
-      id: '1',
-      name: 'Marie Laurent',
-      subject: 'Informatique',
-      rating: 4.9,
-      students: 320,
-      image: '/placeholder-teacher.jpg'
-    },
-    {
-      id: '2',
-      name: 'Pierre Martin',
-      subject: 'Biologie',
-      rating: 4.8,
-      students: 200,
-      image: '/placeholder-teacher.jpg'
-    },
-    {
-      id: '3',
-      name: 'Sophie Dufresne',
-      subject: 'Mathématiques',
-      rating: 4.7,
-      students: 180,
-      image: '/placeholder-teacher.jpg'
-    },
-    {
-      id: '4',
-      name: 'Julien Dupont',
-      subject: 'Informatique',
-      rating: 4.9,
-      students: 250,
-      image: '/placeholder-teacher.jpg'
-    },
-    {
-      id: '5',
-      name: 'Claire Lefevre',
-      subject: 'Chimie',
-      rating: 4.8,
-      students: 150,
-      image: '/placeholder-teacher.jpg'
-    },
-    {
-      id: '6',
-      name: 'Antoine Leroy',
-      subject: 'Physique',
-      rating: 4.6,
-      students: 200,
-      image: '/placeholder-teacher.jpg'
-    },
-    {
-      id: '7',
-      name: 'Lucie Moreau',
-      subject: 'Littérature Française',
-      rating: 4.7,
-      students: 100,
-      image: '/placeholder-teacher.jpg'
-    },
-    {
-      id: '8',
-      name: 'Nicolas Robert',
-      subject: 'Histoire',
-      rating: 4.8,
-      students: 220,
-      image: '/placeholder-teacher.jpg'
-    }
-  ];
+  const teachersList = teachers.map(t => ({
+    id: t.id,
+    name: `${t.firstName} ${t.lastName}`,
+    subject: t.subjects?.[0] || 'Enseignement',
+    rating: 4.5,
+    students: 0,
+    image: '',
+    university: t.university
+  }));
 
   return (
-    <div className="min-h-screen bg-purple-50">
+    <div className="min-h-screen bg-purple-50 py-15">
       {/* Top Section with Welcome */}
       <div className="bg-white px-8 py-6 mb-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-purple-700 mb-3">Bienvenue Professeur !</h1>
+          <h1 className="text-4xl font-bold text-purple-700 mb-3">
+            Bienvenue Professeur {user.firstName} !
+          </h1>
           <p className="text-gray-600 italic">
             "L'éducation est l'arme la plus puissante que vous puissiez utiliser pour changer le monde." - Nelson Mandela
           </p>
@@ -142,10 +143,26 @@ export default function ProfessorDashboard() {
         <ProfileCard professor={professor} />
 
         {/* Compositions Card */}
-        <CompositionsCard compositions={compositions} />
+        {compositions.length > 0 && (
+          <CompositionsCard compositions={compositions} />
+        )}
 
         {/* Teachers Network Card */}
-        <TeachersCard teachers={teachers} />
+        {teachersList.length > 0 && (
+          <TeachersCard teachers={teachersList} />
+        )}
+
+        {/* Message si pas d'autres enseignants */}
+        {teachersList.length === 0 && (
+          <div className="bg-white rounded-2xl p-12 shadow-sm text-center">
+            <h2 className="text-2xl font-bold text-purple-700 mb-4">
+              Rencontrez d'autres enseignants
+            </h2>
+            <p className="text-gray-600">
+              Aucun autre enseignant inscrit pour le moment. Invitez vos collègues à rejoindre la plateforme !
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

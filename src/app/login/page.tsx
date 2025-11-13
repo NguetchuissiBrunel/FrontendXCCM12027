@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import toast, { Toaster } from 'react-hot-toast';
 import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock } from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,9 +13,8 @@ type FormData = {
   role: 'student' | 'teacher'; 
 };
 
-// Définir le type User pour le localStorage
 type User = {
-  id: string;
+  id: string | number;
   fullName: string;
   email: string;
   password: string;
@@ -34,20 +35,6 @@ type User = {
   };
 };
 
-// Fonction pour charger les utilisateurs du localStorage
-const loadUsers = (): User[] => {
-  if (typeof window !== 'undefined') {
-    try {
-      const data = localStorage.getItem('users');
-      return data ? JSON.parse(data) : [];
-    } catch (error) {
-      console.error("Erreur lors du chargement des utilisateurs:", error);
-      return [];
-    }
-  }
-  return [];
-};
-
 const SigninPage = () => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -55,14 +42,23 @@ const SigninPage = () => {
     role: 'student',
   });
   const [users, setUsers] = useState<User[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
+  // Charger les utilisateurs depuis JSON Server avec axios
   useEffect(() => {
-    // Charger les utilisateurs au montage du composant
-    const loadedUsers = loadUsers();
-    setUsers(loadedUsers);
-    console.log("Utilisateurs chargés:", loadedUsers);
-    
-    // Restaurer le rôle précédent si disponible
+    const fetchUsers = async () => {
+      try {
+        const res = await axios.get<User[]>("http://localhost:4000/users");
+        setUsers(res.data);
+        console.log("Utilisateurs chargés depuis json-server:", res.data);
+      } catch (error) {
+        toast.error("Erreur lors du chargement des utilisateurs.");
+      }
+    };
+    fetchUsers();
+
     const savedRole = localStorage.getItem('userRole');
     if (savedRole === 'student' || savedRole === 'teacher') {
       setFormData(prev => ({
@@ -71,10 +67,6 @@ const SigninPage = () => {
       }));
     }
   }, []);
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
 
   const pageTransition = {
     initial: { opacity: 0, x: -20 },
@@ -93,75 +85,65 @@ const SigninPage = () => {
 
   const handleSubmit = useCallback(async () => {
     if (!validateForm()) return;
-
     setIsSubmitting(true);
 
     try {
-      // Récupérer les utilisateurs directement de l'état
-      const loadedUsers = loadUsers();
-      console.log("Tentative de connexion avec:", formData.email);
-      console.log("Utilisateurs disponibles:", loadedUsers);
-      
-      // Rechercher l'utilisateur sans tenir compte de la casse pour l'email
-      const user = loadedUsers.find(u => 
-        u.email.toLowerCase() === formData.email.toLowerCase() && 
-        u.password === formData.password
+      const user = users.find(
+        (u) =>
+          u.email.toLowerCase() === formData.email.toLowerCase() &&
+          u.password === formData.password
       );
-      
+
       if (!user) {
-        const emailExists = loadedUsers.some(u => 
-          u.email.toLowerCase() === formData.email.toLowerCase()
+        const emailExists = users.some(
+          (u) => u.email.toLowerCase() === formData.email.toLowerCase()
         );
-        
-        setErrors({
-          submit: emailExists ? 
-            "Mot de passe incorrect" : 
-            "Aucun compte associé à cet email"
-        });
+        const errorMessage = emailExists
+          ? "Mot de passe incorrect"
+          : "Aucun compte associé à cet email";
+        setErrors({ submit: errorMessage });
+        toast.error(errorMessage);
         setIsSubmitting(false);
         return;
       }
-      
-      // Mettre à jour la date de dernière connexion
-      user.lastLogin = new Date().toISOString();
-      
-      // Stocker l'utilisateur connecté
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem('userRole', user.role);
 
-      // Mettre à jour la liste des utilisateurs avec la date de dernière connexion
-      const updatedUsers = loadedUsers.map(u => 
-        u.id === user.id ? user : u
-      );
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      // Mettre à jour la date de dernière connexion dans json-server
+      const updatedUser = { ...user, lastLogin: new Date().toISOString() };
+      await axios.put(`http://localhost:4000/users/${user.id}`, updatedUser);
 
-      console.log("Connexion réussie, redirection vers:", user.role === 'student' ? '/etudashboard' : '/profdashboard');
-      
-      // Rediriger en fonction du rôle
-      if (user.role === 'student') {
-        router.push('/etudashboard');
-      } else if (user.role === 'teacher') {
-        router.push('/profdashboard');
+      // Sauvegarder les infos dans localStorage
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      localStorage.setItem("userRole", user.role);
+
+      toast.success("Connexion réussie !");
+
+      // Redirection selon le rôle
+      if (user.role === "student") {
+        router.push("/etudashboard");
+      } else if (user.role === "teacher") {
+        router.push("/profdashboard");
       } else {
-        router.push('/dashboard');
+        router.push("/dashboard");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erreur lors de la connexion:", error);
       setErrors({ submit: "Une erreur est survenue. Veuillez réessayer." });
+      toast.error("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, validateForm, router]);
+  }, [formData, users, validateForm, router]);
 
   const renderForm = useMemo(() => (
     <motion.div
       {...pageTransition}
-      className="space-y-6 bg-white p-8 rounded-2xl shadow-lg"
+      className="space-y-6 bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 transition-colors duration-300"
     >
-      <h2 className="text-2xl font-semibold text-center bg-linear-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+      <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
         Connexion
       </h2>
 
+      {/* Champ email */}
       <div className="space-y-4">
         <motion.div 
           className="relative"
@@ -169,52 +151,54 @@ const SigninPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="email"
             name="email"
             placeholder="Votre adresse email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
           {errors.email && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-red-500 text-sm mt-1"
+              className="text-red-500 dark:text-red-400 text-sm mt-1"
             >
               {errors.email}
             </motion.p>
           )}
         </motion.div>
 
+        {/* Champ mot de passe */}
         <motion.div 
           className="relative"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="password"
             name="password"
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
           {errors.password && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-red-500 text-sm mt-1"
+              className="text-red-500 dark:text-red-400 text-sm mt-1"
             >
               {errors.password}
             </motion.p>
           )}
         </motion.div>
 
+        {/* Choix du rôle */}
         <motion.div 
           className="flex space-x-4"
           initial={{ opacity: 0, y: 10 }}
@@ -226,8 +210,8 @@ const SigninPage = () => {
             onClick={() => setFormData({ ...formData, role: 'student' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
               formData.role === 'student' 
-                ? 'bg-linear-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
             }`}
           >
             <FaGraduationCap className="mr-2" /> Étudiant
@@ -237,8 +221,8 @@ const SigninPage = () => {
             onClick={() => setFormData({ ...formData, role: 'teacher' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
               formData.role === 'teacher'
-                ? 'bg-linear-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
             }`}
           >
             <FaChalkboardTeacher className="mr-2" /> Enseignant
@@ -251,15 +235,16 @@ const SigninPage = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <Link href="#" className="text-purple-600 hover:text-purple-700 transition-colors">
+          <Link href="#" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
             Mot de passe oublié ?
           </Link>
         </motion.div>
       </div>
 
+      {/* Bouton de soumission */}
       <motion.button
         onClick={handleSubmit}
-        className="w-full bg-linear-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
         disabled={isSubmitting}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -272,7 +257,7 @@ const SigninPage = () => {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-red-500 text-sm text-center mt-2"
+          className="text-red-500 dark:text-red-400 text-sm text-center mt-2"
         >
           {errors.submit}
         </motion.p>
@@ -284,15 +269,15 @@ const SigninPage = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
       >
-        <span className="text-gray-600">Vous n'avez pas de compte ? </span>
-        <Link href="/register" className="text-purple-600 hover:text-purple-700 transition-colors">
+        <span className="text-gray-600 dark:text-gray-400">Vous n'avez pas de compte ? </span>
+        <Link href="/register" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
           Inscrivez-vous
         </Link>
       </motion.div>
       
       {users.length > 0 && (
         <motion.div
-          className="text-xs text-center mt-2 text-gray-400"
+          className="text-xs text-center mt-2 text-gray-400 dark:text-gray-500"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
@@ -300,24 +285,23 @@ const SigninPage = () => {
           {users.length} utilisateur(s) enregistré(s)
         </motion.div>
       )}
+      {/* Toaster */}
+      <Toaster position="top-right" reverseOrder={false} />
     </motion.div>
   ), [formData, errors, handleSubmit, isSubmitting, users.length]);
 
   return (
     <div 
-    className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
-    style={{ backgroundImage: "url('/images/fond5.jpeg')" }} // <-- ton image ici
-  >
-    {/* Overlay pour assombrir un peu l'image */}
-    <div className="absolute inset-0 bg-black/40"></div>
-
-    {/* Contenu du formulaire au-dessus de l'overlay */}
-    <div className="relative z-10 w-full max-w-md px-4 sm:px-6 lg:px-8">
-      <AnimatePresence mode="wait">
-        {renderForm}
-      </AnimatePresence>
+      className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center transition-colors duration-300"
+      style={{ backgroundImage: "url('/images/fond5.jpeg')" }}
+    >
+      <div className="absolute inset-0 bg-black/30 dark:bg-black/60 transition-colors duration-300"></div>
+      <div className="relative z-10 w-full max-w-md px-4 sm:px-6 lg:px-8">
+        <AnimatePresence mode="wait">
+          {renderForm}
+        </AnimatePresence>
+      </div>
     </div>
-  </div>
   );
 };
 

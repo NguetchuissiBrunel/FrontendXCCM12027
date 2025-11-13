@@ -68,15 +68,29 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="mt-12 lg:mt-0">
+            <div className="mt-12 lg:mt-0 w-full  rounded-xl shadow-lg dark:shadow-gray-900/50 relative">
+            {/* Image mode clair */}
+            <div className="dark:hidden">
               <Image 
                 src="/images/image1.png" 
                 alt="acceuil" 
                 width={1000}
                 height={1000}
-                className="w-full h-full rounded-xl shadow-lg dark:shadow-gray-900/50"
+                className="w-full rounded-xl"
               />
             </div>
+            
+            {/* Image mode sombre */}
+            <div className="hidden dark:block">
+              <Image 
+                src="/images/image3.png" 
+                alt="acceuil mode sombre" 
+                width={1000}
+                height={1000}
+                className="w-full  rounded-xl"
+              />
+            </div>
+          </div>
           </div>
         </div>
       </section>

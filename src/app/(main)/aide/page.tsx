@@ -38,12 +38,35 @@ const ContactPage = () => {
   const [feedbackForm, setFeedbackForm] = useState({
     name: '',
     email: '',
-    message: ''
+    message: '',
+    rating: 0
   });
   const [submitted, setSubmitted] = useState(false);
-  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
-  
-  
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);  
+
+   const handleSubmitFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+   // Validation basique
+    if (!feedbackForm.name || !feedbackForm.email || !feedbackForm.message) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+  setSubmitted(true);
+
+  };
+
+  const resetForm = () => {
+    setSubmitted(false);
+    setFeedbackForm({
+      name: '',
+      email: '',
+      message: '',
+      rating: 0
+    });
+    setRating(0);
+  };
+
 // 5. Appliquer le type 'HelpItem[]'
 const helpItems: HelpItem[] = useMemo(() => [
   {
@@ -152,80 +175,25 @@ const helpItems: HelpItem[] = useMemo(() => [
   // 9. Typer le paramètre 'e'
   const handleFeedbackChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFeedback({ ...feedback, [name]: value });
+    setFeedbackForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  // 10. Typer le paramètre 'e'
-  const handleSubmitFeedback = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log(feedbackForm);
-    setSubmitted(true);
-  };
 
-  // 11. Correction de la logique 'useEffect'
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const loading = loadingProgress < 100; // 'loading' est dérivé de 'loadingProgress'
 
-  useEffect(() => {
-    if (loadingProgress < 100) {
-      const interval = setInterval(() => {
-        setLoadingProgress((prev) => Math.min(prev + 10, 100));
-      }, 300);
-      return () => clearInterval(interval);
-    }
-    // Plus besoin de 'else { setLoading(false) }', ce qui supprime l'erreur
-  }, [loadingProgress]);
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md z-50">
-        <div className="w-full max-w-md p-6 text-center bg-gray-800 rounded-lg shadow-lg">
-          <h1 className="text-3xl font-bold text-white mb-4">Chargement...</h1>
-          <p className="text-gray-400 mb-8">
-            Bien vouloir patienter pendant le chargement de votre page. 🙏
-          </p>
-  
-          <div className="relative mb-6">
-            <div className="w-full bg-gray-300 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-purple-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${loadingProgress}%` }}
-              ></div>
-            </div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 text-white font-semibold">
-              {loadingProgress}% Chargé
-            </div>
-          </div>
-  
-          <div className="mt-4 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-purple-500"></div>
-          </div>
-  
-          <div className="mt-4 text-gray-400">
-            <p>Merci de votre patience!</p>
-          </div>
-  
-          {/* Ajout de petites touches de violet */}
-          <div className="absolute inset-0 rounded-lg border border-purple-500 opacity-30"></div>
-        </div>
-  
-        {/* Optional: Add a blur effect to the background */}
-        <style jsx>{`
-          body {
-            filter: blur(5px);
-          }
-        `}</style>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-800 flex flex-col">
       {/* Header Section */}
       <div className="relative flex-grow">
         <div className="relative h-[300px] sm:h-[400px]">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-800 to-purple-300 bg-cover bg-center bg-no-repeat dark:bg-[url('/images/ima15.avif')] bg-[url('/images/ima3.jpeg')]">
-            <div className="absolute inset-0 bg-purple-900/50 dark:bg-purple-900/50" />
+         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat 
+                    bg-[url('/images/fond9.jpeg')] 
+                    dark:bg-[url('/images/unnamed.jpg')]">
+            <div className="absolute inset-0 bg-purple-900/35 dark:bg-purple-900/30" />
           </div>
           
           <div className="container mx-auto relative h-full flex flex-col items-center justify-center">
@@ -252,8 +220,7 @@ const helpItems: HelpItem[] = useMemo(() => [
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                     onFocus={openSearch} 
                     placeholder="Rechercher une solution..."
-                    className="w-full pl-12 pr-16 py-4 text-gray-900 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base bg-white dark:bg-gray-800 "
-                  />
+                    className="w-full pl-12 pr-16 py-4 text-gray-900 dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base bg-white dark:bg-gray-800"                  />
                   <button
                     type="button" 
                     onClick={toggleSearchOverlay} 
@@ -355,108 +322,124 @@ const helpItems: HelpItem[] = useMemo(() => [
       </div>
 
       {/* Tutorial Section */}
-      <div className="container bg-purple-100 dark:bg-gray-900 rounded-lg mx-auto px-4 py-8 flex flex-col md:flex-row items-start">
+      <div className="container bg-purple-100 dark:bg-purple-800 rounded-lg mx-auto px-4 py-8 flex flex-col md:flex-row items-start">
       </div>
       {/* Feedback */}
-      <div className="container w-full bg-white dark:bg-gray-800 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
+      <div className="container w-full bg-white dark:bg-gray-900 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
+        <div className="w-full md:w-1/2">
+          <div className="text-center mb-8">
             <h2 className="text-4xl text-black dark:text-gray-400 font-bold mb-4 flex items-center justify-center gap-2">
               <Heart className="text-black dark:text-gray-400 w-10 h-10" />
               Votre avis nous tient à cœur
             </h2>
-            <p className="text-black dark:text-gray-500 text-lg max-w-2xl mx-auto">
+            <p className="text-black dark:text-gray-500 text-lg">
               Aidez-nous à améliorer votre expérience en partageant vos impressions
             </p>
           </div>
 
           {/* Stats Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {stats.map((stat, index) => (
-              <div key={index} className="bg-gray-200 dark:bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-3 text-2xl">{stat.icon}</div>
-                  <div className="text-2xl font-bold dark:text-purple-600 text-purple-900 mb-1">{stat.value}</div>
-                  <div className="text-black dark:text-gray-500">{stat.label}</div>
-                </div>
+              <div key={index} className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg text-center">
+                <div className="mb-2 text-xl">{stat.icon}</div>
+                <div className="text-lg font-bold dark:text-purple-600 text-purple-900">{stat.value}</div>
+                <div className="text-sm text-black dark:text-gray-400">{stat.label}</div>
               </div>
             ))}
           </div>
 
-          {/* 14. CORRECTION DE SYNTAXE : L'accolade '}' en trop est retirée */}
+          {/* Formulaire de feedback */}
           {submitted ? (
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
-              <Smile className="w-16 h-16 text-purple-500 dark:text-purple-800 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-purple-900 dark:text-purple-800 mb-2">Merci pour votre feedback !</h3>
-              <p className="text-gray-600 dark:text-gray-400 ">Votre avis est précieux pour nous améliorer.</p>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
+              <Smile className="w-16 h-16 text-purple-500 dark:text-purple-400 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-purple-900 dark:text-purple-400 mb-2">
+                Merci pour votre feedback !
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Votre avis est précieux pour nous améliorer.
+              </p>
+              <button
+                onClick={resetForm}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Donner un autre avis
+              </button>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
               {/* Rating Section */}
-              <div className="mb-8 text-center">
-                <div className="flex justify-center gap-2 mb-4">
+              <div className="mb-6 text-center">
+                <div className="flex justify-center gap-1 mb-3">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
+                    <button
                       key={star}
-                      className={`w-8 h-8 cursor-pointer transition-colors duration-200 ${
-                        (hoverRating || rating) >= star
-                          ? 'fill-purple-500 text-purple-500 dark:text-purple-400 dark:fill-purple-400'
-                          : 'text-gray-300'
-                      }`}
+                      type="button"
+                      onClick={() => setRating(star)}
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(0)}
-                      onClick={() => setRating(star)}
-                    />
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-8 h-8 transition-colors duration-200 ${
+                          (hoverRating || rating) >= star
+                            ? 'fill-purple-500 text-purple-500 dark:text-purple-400 dark:fill-purple-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
                   ))}
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 font-bold">Sélectionnez une note</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  {rating > 0 ? `Vous avez donné ${rating} étoile${rating > 1 ? 's' : ''}` : 'Sélectionnez une note'}
+                </p>
               </div>
 
               {/* Feedback Form */}
-              <form onSubmit={handleSubmitFeedback} className="space-y-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 text-purple-500 dark:text-purple-400" />
-                      <input
-                        type="text"
-                        placeholder="Votre nom"
-                        className="w-full pl-10 pr-4 py-2 border-2 border-purple-100 dark:text-gray-100 dark:border-purple-100 dark:bg-gray-600 rounded-lg focus:border-purple-500 dark:focus:border-purple-500 focus:outline-none"
-                        value={feedbackForm.name}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFeedbackForm({...feedbackForm, name: e.target.value})}
-                      />
-                    </div>
+              <form onSubmit={handleSubmitFeedback} className="space-y-4">
+                <div className="flex flex-col gap-4">
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Votre nom"
+                      value={feedbackForm.name}
+                      onChange={handleFeedbackChange}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none"
+                      required
+                    />
                   </div>
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 text-purple-500 dark:text-purple-400" />
-                      <input
-                        type="email"
-                        placeholder="Votre email"
-                        className="w-full pl-10 pr-4 py-2 border-2 border-purple-100 dark:text-gray-100 dark:border-purple-100 dark:bg-gray-600 rounded-lg focus:border-purple-500 dark:focus:border-purple-500 focus:outline-none"
-                        value={feedbackForm.email}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFeedbackForm({...feedbackForm, email: e.target.value})}
-                      />
-                    </div>
+                  
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Votre email"
+                      value={feedbackForm.email}
+                      onChange={handleFeedbackChange}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none"
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="relative">
-                  <MessageSquare className="absolute left-3 top-3 text-purple-500 dark:text-purple-400" />
+                  <MessageSquare className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
                   <textarea
-                    placeholder="Votre message"
-                    // 15. Correction Linter: 'rows' doit être un nombre
+                    name="message"
+                    placeholder="Votre message..."
                     rows={4}
-                    className="w-full pl-10 pr-4 py-2 border-2 border-purple-100 dark:text-gray-100 dark:border-purple-100 dark:bg-gray-600 rounded-lg focus:border-purple-500 dark:focus:border-teal-500 focus:outline-none"
                     value={feedbackForm.message}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFeedbackForm({...feedbackForm, message: e.target.value})}
+                    onChange={handleFeedbackChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none resize-none"
+                    required
                   />
                 </div>
 
                 <button 
                   type="submit"
-                  className="w-full bg-gradient-to-r from-purple-400 to-purple-900 hover:bg-purple-700 dark:hover:bg-teal-400 text-white dark:text-gray-200 font-semibold py-3 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   <Send className="w-5 h-5" />
                   Envoyer mon feedback
@@ -465,18 +448,18 @@ const helpItems: HelpItem[] = useMemo(() => [
             </div>
           )}
         </div>
-        {/* 16. Correction Linter: Remplacer <img> par <Image> */}
-        <div className="w-full md:w-1/2 overflow-hidden dark:hidden relative">
+        
+        {/* Image Section */}
+        <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
           <Image 
             src="/images/ima20.jpeg" 
             alt="Feedback illustration" 
-            layout="fill"
-            objectFit="cover"
-            className="w-full h-full"
+            fill
+            className="object-cover w-full h-full"
+            priority
           />
         </div>
       </div>
-
     </div>
   );
 };

@@ -82,7 +82,6 @@ export default function SupportTechnique() {
 
   return (
     <>
-      <Navbar />
       
       {/* HERO avec Background Image */}
       {/* HERO avec Image LOCALE */}
@@ -236,8 +235,6 @@ export default function SupportTechnique() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </>
   );
 }

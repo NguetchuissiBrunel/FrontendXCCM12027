@@ -44,7 +44,7 @@ export default function AboutPage() {
 
   return (
     <>
-      <Navbar />
+      
       <main className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white pt-16">
         
         {/* HERO SECTION */}
@@ -316,7 +316,7 @@ export default function AboutPage() {
           </div>
         </div>
       </main>
-      <Footer />
+      
     </>
   );
 }

@@ -28,7 +28,7 @@ export default function LegalMentions() {
 
   return (
     <>
-      <Navbar />
+     
       <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           {/* Header Hero */}
@@ -342,7 +342,6 @@ export default function LegalMentions() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

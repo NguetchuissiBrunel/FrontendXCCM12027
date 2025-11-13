@@ -42,7 +42,6 @@ export default function PrivacyPolicy() {
 
   return (
     <>
-      <Navbar />
       <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Hero Section */}
@@ -343,7 +342,6 @@ export default function PrivacyPolicy() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

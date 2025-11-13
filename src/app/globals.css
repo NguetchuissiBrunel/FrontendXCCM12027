@@ -24,15 +24,18 @@
   body { background: white !important; }
   .bg-gradient-to-r, .bg-gradient-to-br { background: white !important; }
   * { color: black !important; }
+
+
 /* ============================================================================
    XCCM EDITOR - CSS CUSTOM PROPERTIES (CSS Variables)
    ============================================================================
    
    Color and spacing variables extracted from original XCCM implementation.
    These match the exact color scheme used in the working editor.
-   
+*/
    @author JOHAN
    @date November 2025
+
 
 :root {
   /* ------------------------------------------------------------------------
@@ -198,7 +201,6 @@
     /* --color-surface: #1F2937; */
     /* etc. */
   }
-}
 
 /* ============================================================================
    BASE STYLES - Global Resets & Defaults

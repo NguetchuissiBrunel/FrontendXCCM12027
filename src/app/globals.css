@@ -1,6 +1,29 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Global styles for print media */
+@media print {
+  .print\\:hidden { display: none !important; }
+  body { background: white !important; }
+  .shadow-lg, .shadow-sm { box-shadow: none !important; }
+  a { color: #000 !important; text-decoration: underline; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+@media print {
+  .print\\:hidden { display: none !important; }
+  nav, aside, footer, button, .shadow-lg { display: none !important; }
+  body { background: white !important; }
+  .bg-gradient-to-r, .bg-gradient-to-br { background: white !important; }
+  * { color: black !important; }
 /* ============================================================================
    XCCM EDITOR - CSS CUSTOM PROPERTIES (CSS Variables)
    ============================================================================
@@ -10,7 +33,6 @@
    
    @author JOHAN
    @date November 2025
-============================================================================ */
 
 :root {
   /* ------------------------------------------------------------------------
@@ -168,7 +190,6 @@
    
    When dark mode is enabled, these colors will override the light theme.
    Currently not implemented, but structure is ready.
-============================================================================ */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -210,7 +231,6 @@ body {
    ============================================================================
    
    These complement Tailwind's utilities with XCCM-specific patterns
-============================================================================ */
 
 /* Hierarchy color badges - solid backgrounds */
 .badge-course {

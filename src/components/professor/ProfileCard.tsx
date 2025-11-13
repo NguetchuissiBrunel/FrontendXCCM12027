@@ -51,10 +51,13 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
         // Mettre à jour les champs modifiables
         const updatedUser = {
           ...userData,
+          firstName: editedProfessor.name.split(' ')[0],
+          lastName: editedProfessor.name.split(' ').slice(1).join(' '),
           city: editedProfessor.city,
           university: editedProfessor.university,
           grade: editedProfessor.grade,
           certification: editedProfessor.certification,
+          photoUrl: editedProfessor.photoUrl,
         };
 
         // Mettre à jour dans db.json
@@ -91,6 +94,48 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
       ...editedProfessor,
       [field]: value
     });
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner une image valide');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert("L'image ne doit pas dépasser 5MB");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setEditedProfessor({
+          ...editedProfessor,
+          photoUrl: base64String
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleNameChange = (field: 'firstName' | 'lastName', value: string) => {
+    const names = editedProfessor.name.split(' ');
+    if (field === 'firstName') {
+      const newName = `${value} ${names[1] || ''}`;
+      setEditedProfessor({
+        ...editedProfessor,
+        name: newName.trim()
+      });
+    } else {
+      const newName = `${names[0] || ''} ${value}`;
+      setEditedProfessor({
+        ...editedProfessor,
+        name: newName.trim()
+      });
+    }
   };
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm">

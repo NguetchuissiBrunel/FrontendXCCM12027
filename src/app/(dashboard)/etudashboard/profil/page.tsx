@@ -106,6 +106,31 @@ export default function StudentProfile() {
     });
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner une image valide');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert("L'image ne doit pas dépasser 5MB");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setEditedUser({
+          ...editedUser,
+          photoUrl: base64String
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-purple-50">
@@ -173,21 +198,69 @@ export default function StudentProfile() {
           <div className="col-span-1 space-y-6">
             {/* Profile Picture */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              {editedUser.photoUrl ? (
-                <img 
-                  src={editedUser.photoUrl} 
-                  alt={displayName}
-                  className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
-                />
-              ) : (
-                <div className="w-32 h-32 mx-auto bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-4xl font-bold mb-4">
-                  {initials}
-                </div>
-              )}
+              <div className="relative w-32 h-32 mx-auto mb-4">
+                {editedUser.photoUrl ? (
+                  <img 
+                    src={editedUser.photoUrl} 
+                    alt={displayName}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-4xl font-bold">
+                    {initials}
+                  </div>
+                )}
+                
+                {/* Edit Photo Button */}
+                {isEditing && (
+                  <label 
+                    htmlFor="photo-upload"
+                    className="absolute bottom-0 right-0 bg-purple-600 text-white rounded-full p-2 cursor-pointer hover:bg-purple-700 transition-colors shadow-lg"
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className="h-5 w-5" 
+                      viewBox="0 0 20 20" 
+                      fill="currentColor"
+                    >
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+              
               <div className="text-center">
                 <p className="text-sm text-gray-500">No. Étudiant</p>
                 <p className="font-semibold">{editedUser.id}</p>
-                <h2 className="text-2xl font-bold text-gray-800 mt-2">{displayName}</h2>
+                
+                {/* Editable Name */}
+                {isEditing ? (
+                  <div className="mt-2 space-y-2">
+                    <input
+                      type="text"
+                      value={editedUser.firstName}
+                      onChange={(e) => handleChange('firstName', e.target.value)}
+                      className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Prénom"
+                    />
+                    <input
+                      type="text"
+                      value={editedUser.lastName}
+                      onChange={(e) => handleChange('lastName', e.target.value)}
+                      className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Nom"
+                    />
+                  </div>
+                ) : (
+                  <h2 className="text-2xl font-bold text-gray-800 mt-2">{displayName}</h2>
+                )}
               </div>
             </div>
 
@@ -316,20 +389,9 @@ export default function StudentProfile() {
                   <Clock className="text-purple-600" size={32} />
                 </div>
                 <p className="text-sm text-gray-500 mb-1">Assiduité</p>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedUser.averageGrade || '0'}
-                    onChange={(e) => handleChange('averageGrade', e.target.value)}
-                    className="text-4xl font-bold text-purple-600 w-24 border-b-2 border-purple-300 focus:outline-none focus:border-purple-500"
-                  />
-                ) : (
-                  <p className="text-4xl font-bold text-purple-600">
-                    {editedUser.averageGrade || '0'}%
-                  </p>
-                )}
+                <p className="text-4xl font-bold text-purple-600">
+                  {editedUser.averageGrade || '0'}%
+                </p>
               </div>
             </div>
 

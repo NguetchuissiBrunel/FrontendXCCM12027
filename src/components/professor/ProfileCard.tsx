@@ -30,6 +30,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedProfessor, setEditedProfessor] = useState<Professor>(professor);
+  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -43,12 +44,10 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Récupérer l'utilisateur complet depuis localStorage
       const currentUser = localStorage.getItem('currentUser');
       if (currentUser) {
         const userData = JSON.parse(currentUser);
         
-        // Mettre à jour les champs modifiables
         const updatedUser = {
           ...userData,
           firstName: editedProfessor.name.split(' ')[0],
@@ -60,7 +59,6 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           photoUrl: editedProfessor.photoUrl,
         };
 
-        // Mettre à jour dans db.json
         await fetch(`http://localhost:4000/users/${editedProfessor.id}`, {
           method: 'PUT',
           headers: {
@@ -69,12 +67,10 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           body: JSON.stringify(updatedUser),
         });
 
-        // Mettre à jour localStorage
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         
         setIsEditing(false);
         
-        // Appeler le callback si fourni
         if (onUpdate) {
           onUpdate(editedProfessor);
         }
@@ -137,6 +133,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
       });
     }
   };
+
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm">
       <div className="flex items-center justify-between mb-8">
@@ -171,35 +168,125 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
         {/* Left: Profile Image & Basic Info */}
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-100">
-            <div className="w-32 h-32 mx-auto bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-4xl font-bold mb-4">
-              JB
+            <div className="relative w-32 h-32 mx-auto mb-4">
+              <img 
+                src={editedProfessor.photoUrl || defaultAvatar} 
+                alt={editedProfessor.name}
+                className="w-full h-full rounded-full object-cover"
+              />
+              
+              {/* Edit Photo Button */}
+              {isEditing && (
+                <label 
+                  htmlFor="prof-photo-upload"
+                  className="absolute bottom-0 right-0 bg-purple-600 text-white rounded-full p-2 cursor-pointer hover:bg-purple-700 transition-colors shadow-lg"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-5 w-5" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                  >
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                  <input
+                    id="prof-photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
+            
             <div className="text-center">
               <p className="text-sm text-gray-500">No. Enseignant</p>
-              <p className="font-semibold">{professor.id}</p>
-              <h3 className="text-2xl font-bold text-gray-800 mt-2">{professor.name}</h3>
+              <p className="font-semibold">{editedProfessor.id}</p>
+              
+              {/* Editable Name */}
+              {isEditing ? (
+                <div className="mt-2 space-y-2">
+                  <input
+                    type="text"
+                    value={editedProfessor.name.split(' ')[0]}
+                    onChange={(e) => handleNameChange('firstName', e.target.value)}
+                    className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Prénom"
+                  />
+                  <input
+                    type="text"
+                    value={editedProfessor.name.split(' ').slice(1).join(' ')}
+                    onChange={(e) => handleNameChange('lastName', e.target.value)}
+                    className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Nom"
+                  />
+                </div>
+              ) : (
+                <h3 className="text-2xl font-bold text-gray-800 mt-2">{editedProfessor.name}</h3>
+              )}
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="bg-purple-50 rounded-lg p-4">
-              <p className="text-sm text-purple-600 font-semibold">Ville:</p>
-              <p className="font-semibold text-gray-800">{professor.city}</p>
+              <p className="text-sm text-purple-600 font-semibold mb-2">Ville:</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedProfessor.city}
+                  onChange={(e) => handleChange('city', e.target.value)}
+                  className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold text-gray-800"
+                  placeholder="Ex: Paris"
+                />
+              ) : (
+                <p className="font-semibold text-gray-800">{editedProfessor.city}</p>
+              )}
             </div>
             
             <div className="bg-purple-50 rounded-lg p-4">
-              <p className="text-sm text-purple-600 font-semibold">Université:</p>
-              <p className="font-semibold text-gray-800">{professor.university}</p>
+              <p className="text-sm text-purple-600 font-semibold mb-2">Université:</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedProfessor.university}
+                  onChange={(e) => handleChange('university', e.target.value)}
+                  className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold text-gray-800"
+                  placeholder="Ex: Sorbonne Université"
+                />
+              ) : (
+                <p className="font-semibold text-gray-800">{editedProfessor.university}</p>
+              )}
             </div>
             
             <div className="bg-purple-50 rounded-lg p-4">
-              <p className="text-sm text-purple-600 font-semibold">Grade:</p>
-              <p className="font-semibold text-gray-800">{professor.grade}</p>
+              <p className="text-sm text-purple-600 font-semibold mb-2">Grade:</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedProfessor.grade}
+                  onChange={(e) => handleChange('grade', e.target.value)}
+                  className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold text-gray-800"
+                  placeholder="Ex: Professeur des Universités"
+                />
+              ) : (
+                <p className="font-semibold text-gray-800">{editedProfessor.grade}</p>
+              )}
             </div>
             
             <div className="bg-purple-50 rounded-lg p-4">
-              <p className="text-sm text-purple-600 font-semibold">Certification:</p>
-              <p className="font-semibold text-gray-800">{professor.certification}</p>
+              <p className="text-sm text-purple-600 font-semibold mb-2">Certification:</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedProfessor.certification}
+                  onChange={(e) => handleChange('certification', e.target.value)}
+                  className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold text-gray-800"
+                  placeholder="Ex: PhD en Mathématiques"
+                />
+              ) : (
+                <p className="font-semibold text-gray-800">{editedProfessor.certification}</p>
+              )}
             </div>
           </div>
         </div>
@@ -213,7 +300,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 <Users className="text-purple-600" size={32} />
               </div>
               <p className="text-sm text-gray-500 mb-1">Total Étudiants</p>
-              <p className="text-4xl font-bold text-purple-600">{professor.totalStudents}</p>
+              <p className="text-4xl font-bold text-purple-600">{editedProfessor.totalStudents}</p>
             </div>
 
             <div className="bg-purple-50 rounded-2xl p-6">
@@ -221,7 +308,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 <Clock className="text-purple-600" size={32} />
               </div>
               <p className="text-sm text-gray-500 mb-1">Taux de participation</p>
-              <p className="text-4xl font-bold text-purple-600">{professor.participationRate}%</p>
+              <p className="text-4xl font-bold text-purple-600">{editedProfessor.participationRate}%</p>
             </div>
 
             <div className="bg-purple-50 rounded-2xl p-6">
@@ -229,7 +316,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 <Award className="text-purple-600" size={32} />
               </div>
               <p className="text-sm text-gray-500 mb-1">Publications</p>
-              <p className="text-4xl font-bold text-purple-600">{professor.publications}</p>
+              <p className="text-4xl font-bold text-purple-600">{editedProfessor.publications}</p>
             </div>
           </div>
 

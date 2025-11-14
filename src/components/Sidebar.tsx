@@ -1,4 +1,6 @@
 // components/Sidebar.tsx
+'use client';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Home, User, BookOpen, Calendar } from 'lucide-react';
 
@@ -10,6 +12,23 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ userRole, userName, userLevel, activeTab }: SidebarProps) {
+  const [photoUrl, setPhotoUrl] = useState<string>('/images/Applying Lean to Education -.jpeg');
+
+  useEffect(() => {
+    // Récupérer la photo depuis localStorage
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      try {
+        const userData = JSON.parse(currentUser);
+        if (userData.photoUrl) {
+          setPhotoUrl(userData.photoUrl);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de la photo:', error);
+      }
+    }
+  }, []);
+
   const studentMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: Home, href: '/etudashboard' },
     { id: 'profil', label: 'Mon Profil', icon: User, href: '/etudashboard/profil' },
@@ -35,9 +54,11 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
       {/* User Profile */}
       <div className="bg-white/10 rounded-lg p-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-purple-300 rounded-full flex items-center justify-center text-purple-900 font-bold">
-            {userName.split(' ').map(n => n[0]).join('')}
-          </div>
+          <img 
+            src={photoUrl} 
+            alt={userName}
+            className="w-12 h-12 rounded-full object-cover"
+          />
           <div>
             <h3 className="font-semibold">{userName}</h3>
             <p className="text-sm text-purple-200">{userLevel}</p>

@@ -28,6 +28,25 @@
       "university": "ENSPY",
       "specialization": "Informatique",
       "registrationDate": "2025-11-12T07:24:03.931Z"
+    },
+    {
+      "id": "ENS2025jhck85f5x",
+      "email": "stacynkolo@gmail.com",
+      "password": "stacy2378#",
+      "confirmPassword": "stacy2378#",
+      "role": "teacher",
+      "firstName": "Stacy",
+      "lastName": "Nkolo",
+      "photoUrl": "/images/Applying Lean to Education -.jpeg",
+      "city": "Yaounde",
+      "university": "ENSPY",
+      "grade": "Professeure",
+      "subjects": [
+        "Analyse de Données",
+        "Réseaux",
+        "POO"
+      ],
+      "registrationDate": "2025-11-14T09:23:13.726Z"
     }
   ]
 }

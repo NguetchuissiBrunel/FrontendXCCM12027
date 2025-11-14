@@ -146,7 +146,7 @@ export default function StudentProfile() {
 
   const displayName = `${editedUser.firstName} ${editedUser.lastName}`;
   const userLevel = editedUser.specialization || editedUser.level || 'Étudiant';
-  const initials = `${editedUser.firstName[0]}${editedUser.lastName[0]}`;
+  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
 
   const grades = [
     { subject: 'Excellent', value: 35, color: 'bg-purple-600' },
@@ -156,7 +156,7 @@ export default function StudentProfile() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-purple-50">
+    <div className="flex min-h-screen bg-purple-50 py-15">
       <Sidebar 
         userRole="student" 
         userName={displayName}
@@ -199,17 +199,11 @@ export default function StudentProfile() {
             {/* Profile Picture */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="relative w-32 h-32 mx-auto mb-4">
-                {editedUser.photoUrl ? (
-                  <img 
-                    src={editedUser.photoUrl} 
-                    alt={displayName}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-4xl font-bold">
-                    {initials}
-                  </div>
-                )}
+                <img 
+                  src={editedUser.photoUrl || defaultAvatar} 
+                  alt={displayName}
+                  className="w-full h-full rounded-full object-cover"
+                />
                 
                 {/* Edit Photo Button */}
                 {isEditing && (

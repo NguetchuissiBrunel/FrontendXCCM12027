@@ -16,6 +16,8 @@ interface TeachersCardProps {
 }
 
 export default function TeachersCard({ teachers }: TeachersCardProps) {
+  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
+  
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm">
       <h2 className="text-2xl font-bold text-purple-700 mb-6">
@@ -29,9 +31,11 @@ export default function TeachersCard({ teachers }: TeachersCardProps) {
             className="bg-white border-2 border-purple-100 rounded-xl p-6 hover:border-purple-300 hover:shadow-md transition-all"
           >
             {/* Profile Image */}
-            <div className="w-20 h-20 mx-auto bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-2xl font-bold mb-4">
-              {teacher.name.split(' ').map(n => n[0]).join('')}
-            </div>
+            <img 
+              src={teacher.image || defaultAvatar}
+              alt={teacher.name}
+              className="w-20 h-20 mx-auto rounded-full object-cover mb-4"
+            />
 
             {/* Info */}
             <div className="text-center mb-4">

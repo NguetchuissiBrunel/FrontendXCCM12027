@@ -1,8 +1,9 @@
 /**
- * STRUCTURE DE COURS COMPONENT
+ * STRUCTURE DE COURS COMPONENT - WITH DARK MODE
  * 
  * Right sidebar panel displaying hierarchical course library.
  * Full hierarchy: Course → Section → Chapter → Paragraph → Notion → Exercise
+ * Dark mode support added.
  * 
  * @author JOHAN
  * @date November 2025
@@ -22,12 +23,12 @@ interface StructureDeCoursProps {
 // Helper to get background color class for items
 const getItemBgClass = (type: ItemType) => {
   const bgColors: Record<ItemType, string> = {
-    course: 'bg-blue-50 border-blue-200 hover:border-blue-300',
-    section: 'bg-purple-50 border-purple-200 hover:border-purple-300',
-    chapter: 'bg-green-50 border-green-200 hover:border-green-300',
-    paragraph: 'bg-orange-50 border-orange-200 hover:border-orange-300',
-    notion: 'bg-red-50 border-red-200 hover:border-red-300',
-    exercise: 'bg-indigo-50 border-indigo-200 hover:border-indigo-300',
+    course: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700',
+    section: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700',
+    chapter: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700',
+    paragraph: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700',
+    notion: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700',
+    exercise: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 hover:border-indigo-300 dark:hover:border-indigo-700',
   };
   return bgColors[type];
 };
@@ -296,38 +297,38 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   };
 
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-white dark:bg-gray-800">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-800">Importer des connaissances</h2>
-        <button onClick={onClose} className="text-gray-400 transition-colors hover:text-gray-600">
+      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Importer des connaissances</h2>
+        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300">
           <FaTimes className="text-sm" />
         </button>
       </div>
 
       {/* Search */}
-      <div className="border-b border-gray-200 px-4 py-3">
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <div className="relative">
           <input
             type="text"
             placeholder="Rechercher..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 py-2 pl-9 pr-3 text-sm focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-500 dark:focus:ring-purple-400 transition-colors"
           />
-          <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="border-b border-gray-200 px-4 py-3">
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <div className="mb-2 flex items-center gap-1.5">
-          <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
-          <span className="text-sm font-medium text-gray-600">Filtres</span>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Filtres</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {filterTypes.map(({ type, label, badgeClass }) => (
@@ -336,7 +337,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
               onClick={() => toggleFilter(type)}
               className={`${badgeClass} cursor-pointer rounded-full px-2.5 py-1 text-xs transition-all ${
                 activeFilters.includes(type) 
-                  ? 'ring-2 ring-purple-400 ring-offset-1' 
+                  ? 'ring-2 ring-purple-400 dark:ring-purple-500 ring-offset-1 dark:ring-offset-gray-800' 
                   : 'hover:opacity-90'
               }`}
             >

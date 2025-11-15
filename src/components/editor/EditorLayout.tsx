@@ -105,7 +105,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          <button className="rounded bg-white dark:bg-gray-200 bg-opacity-20 dark:bg-opacity-30 px-4 py-1.5 text-sm font-medium text-black hover:bg-opacity-30 dark:hover:bg-opacity-40 transition-all">
+          <button className="rounded bg-white dark:bg-gray-200 bg-opacity-20 dark:bg-opacity-30 px-4 py-1.5 text-sm font-medium text-black hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">
             Sauvegarder
           </button>
           <button className="rounded bg-white dark:bg-gray-200 px-4 py-1.5 text-sm font-medium text-purple-700 dark:text-purple-800 hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">

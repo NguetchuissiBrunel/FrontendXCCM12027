@@ -73,7 +73,6 @@ export default function StudentProfile() {
     
     setIsSaving(true);
     try {
-      // Mettre à jour dans db.json
       await fetch(`http://localhost:4000/users/${editedUser.id}`, {
         method: 'PUT',
         headers: {
@@ -82,13 +81,11 @@ export default function StudentProfile() {
         body: JSON.stringify(editedUser),
       });
 
-      // Mettre à jour localStorage
       localStorage.setItem('currentUser', JSON.stringify(editedUser));
       
       setUser(editedUser);
       setIsEditing(false);
       
-      // Toast de succès (optionnel)
       alert('Profil mis à jour avec succès !');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -106,12 +103,38 @@ export default function StudentProfile() {
     });
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner une image valide');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert("L'image ne doit pas dépasser 5MB");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        if (!editedUser) return;
+        setEditedUser({
+          ...editedUser,
+          photoUrl: base64String
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
         </div>
       </div>
     );
@@ -121,17 +144,17 @@ export default function StudentProfile() {
 
   const displayName = `${editedUser.firstName} ${editedUser.lastName}`;
   const userLevel = editedUser.specialization || editedUser.level || 'Étudiant';
-  const initials = `${editedUser.firstName[0]}${editedUser.lastName[0]}`;
+  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
 
   const grades = [
-    { subject: 'Excellent', value: 35, color: 'bg-purple-600' },
+    { subject: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
     { subject: 'Bien', value: 25, color: 'bg-purple-400' },
-    { subject: 'Passable', value: 20, color: 'bg-purple-300' },
-    { subject: 'Faible', value: 20, color: 'bg-purple-200' },
+    { subject: 'Passable', value: 20, color: 'bg-purple-300 dark:bg-purple-400' },
+    { subject: 'Faible', value: 20, color: 'bg-purple-200 dark:bg-purple-300' },
   ];
 
   return (
-    <div className="flex min-h-screen bg-purple-50">
+    <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
       <Sidebar 
         userRole="student" 
         userName={displayName}
@@ -141,11 +164,11 @@ export default function StudentProfile() {
       
       <main className="flex-1 p-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-purple-700">Mon Profil Étudiant</h1>
+          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">Mon Profil Étudiant</h1>
           {!isEditing ? (
             <button 
               onClick={handleEdit}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
             >
               ✏️ Modifier
             </button>
@@ -153,14 +176,14 @@ export default function StudentProfile() {
             <div className="flex gap-3">
               <button 
                 onClick={handleCancel}
-                className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 Annuler
               </button>
               <button 
                 onClick={handleSave}
                 disabled={isSaving}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
               >
                 {isSaving ? 'Enregistrement...' : '💾 Enregistrer'}
               </button>
@@ -172,120 +195,160 @@ export default function StudentProfile() {
           {/* Left Column - Profile Info */}
           <div className="col-span-1 space-y-6">
             {/* Profile Picture */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              {editedUser.photoUrl ? (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+              <div className="relative w-32 h-32 mx-auto mb-4">
                 <img 
-                  src={editedUser.photoUrl} 
+                  src={editedUser.photoUrl || defaultAvatar} 
                   alt={displayName}
-                  className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
+                  className="w-full h-full rounded-full object-cover border-2 border-purple-200 dark:border-purple-500"
                 />
-              ) : (
-                <div className="w-32 h-32 mx-auto bg-purple-300 rounded-full flex items-center justify-center text-purple-900 text-4xl font-bold mb-4">
-                  {initials}
-                </div>
-              )}
+                
+                {isEditing && (
+                  <label 
+                    htmlFor="photo-upload"
+                    className="absolute bottom-0 right-0 bg-purple-600 dark:bg-purple-500 text-white rounded-full p-2 cursor-pointer hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className="h-5 w-5" 
+                      viewBox="0 0 20 20" 
+                      fill="currentColor"
+                    >
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+              
               <div className="text-center">
-                <p className="text-sm text-gray-500">No. Étudiant</p>
-                <p className="font-semibold">{editedUser.id}</p>
-                <h2 className="text-2xl font-bold text-gray-800 mt-2">{displayName}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No. Étudiant</p>
+                <p className="font-semibold text-gray-800 dark:text-white">{editedUser.id}</p>
+                
+                {isEditing ? (
+                  <div className="mt-2 space-y-2">
+                    <input
+                      type="text"
+                      value={editedUser.firstName}
+                      onChange={(e) => handleChange('firstName', e.target.value)}
+                      className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700 border border-purple-300 dark:border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Prénom"
+                    />
+                    <input
+                      type="text"
+                      value={editedUser.lastName}
+                      onChange={(e) => handleChange('lastName', e.target.value)}
+                      className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700 border border-purple-300 dark:border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Nom"
+                    />
+                  </div>
+                ) : (
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mt-2">{displayName}</h2>
+                )}
               </div>
             </div>
 
             {/* Profile Details */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 space-y-4">
               {/* Spécialisation */}
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold mb-2">Spécialisation:</p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Spécialisation:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.specialization || ''}
                     onChange={(e) => handleChange('specialization', e.target.value)}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Ex: Informatique"
+                    className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder={editedUser.specialization || "Ex: Informatique"}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800">{editedUser.specialization || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.specialization || 'Non spécifié'}</p>
                 )}
               </div>
               
               {/* Niveau */}
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold mb-2">Niveau:</p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Niveau:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.level || ''}
                     onChange={(e) => handleChange('level', e.target.value)}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Ex: Master 2"
+                    className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder={editedUser.level || "Ex: Master 2"}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800">{editedUser.level || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.level || 'Non spécifié'}</p>
                 )}
               </div>
               
               {/* Université */}
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold mb-2">Université:</p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Université:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.university || ''}
                     onChange={(e) => handleChange('university', e.target.value)}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Ex: ENSPY"
+                    className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder={editedUser.university || "Ex: ENSPY"}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800">{editedUser.university || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.university || 'Non spécifié'}</p>
                 )}
               </div>
               
               {/* Ville */}
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold mb-2">Ville:</p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Ville:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.city || ''}
                     onChange={(e) => handleChange('city', e.target.value)}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Ex: Yaoundé"
+                    className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder={editedUser.city || "Ex: Yaoundé"}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800">{editedUser.city || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.city || 'Non spécifié'}</p>
                 )}
               </div>
 
               {/* Majeure */}
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold mb-2">Majeure:</p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Majeure:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.major || ''}
                     onChange={(e) => handleChange('major', e.target.value)}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Ex: Intelligence Artificielle"
+                    className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder={editedUser.major || "Ex: Intelligence Artificielle"}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800">{editedUser.major || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.major || 'Non spécifié'}</p>
                 )}
               </div>
 
               {/* Mineure */}
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 font-semibold mb-2">Mineure:</p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Mineure:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.minor || ''}
                     onChange={(e) => handleChange('minor', e.target.value)}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Ex: Data Science"
+                    className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder={editedUser.minor || "Ex: Data Science"}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800">{editedUser.minor || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.minor || 'Non spécifié'}</p>
                 )}
               </div>
             </div>
@@ -295,56 +358,45 @@ export default function StudentProfile() {
           <div className="col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-3 gap-6">
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                  <BookOpen className="text-purple-600" size={32} />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
+                  <BookOpen className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 mb-1">Nombre de cours participé</p>
-                <p className="text-4xl font-bold text-purple-600">0</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Nombre de cours participé</p>
+                <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">0</p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                  <Award className="text-purple-600" size={32} />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
+                  <Award className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 mb-1">Certifications obtenues</p>
-                <p className="text-4xl font-bold text-purple-600">0</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Certifications obtenues</p>
+                <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">0</p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                  <Clock className="text-purple-600" size={32} />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
+                  <Clock className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 mb-1">Assiduité</p>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedUser.averageGrade || '0'}
-                    onChange={(e) => handleChange('averageGrade', e.target.value)}
-                    className="text-4xl font-bold text-purple-600 w-24 border-b-2 border-purple-300 focus:outline-none focus:border-purple-500"
-                  />
-                ) : (
-                  <p className="text-4xl font-bold text-purple-600">
-                    {editedUser.averageGrade || '0'}%
-                  </p>
-                )}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Assiduité</p>
+                <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">
+                  {editedUser.averageGrade || '0'}%
+                </p>
               </div>
             </div>
 
             {/* Grade Distribution */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-800 mb-6">Répartition des Notes</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Répartition des Notes</h3>
               
               <div className="space-y-6">
                 {grades.map((grade, index) => (
                   <div key={index}>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-gray-700">{grade.subject}</span>
-                      <span className="font-bold text-purple-600">{grade.value}%</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">{grade.subject}</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">{grade.value}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                       <div 
                         className={`${grade.color} h-3 rounded-full transition-all duration-500`}
                         style={{ width: `${grade.value}%` }}
@@ -364,6 +416,7 @@ export default function StudentProfile() {
                       r="40"
                       fill="none"
                       stroke="#e5e7eb"
+                      className="dark:stroke-gray-700"
                       strokeWidth="20"
                     />
                     <circle
@@ -372,6 +425,7 @@ export default function StudentProfile() {
                       r="40"
                       fill="none"
                       stroke="#7c3aed"
+                      className="dark:stroke-purple-500"
                       strokeWidth="20"
                       strokeDasharray="88 163"
                       transform="rotate(-90 50 50)"
@@ -393,6 +447,7 @@ export default function StudentProfile() {
                       r="40"
                       fill="none"
                       stroke="#c4b5fd"
+                      className="dark:stroke-purple-400"
                       strokeWidth="20"
                       strokeDasharray="50 201"
                       strokeDashoffset="-151"
@@ -404,6 +459,7 @@ export default function StudentProfile() {
                       r="40"
                       fill="none"
                       stroke="#ddd6fe"
+                      className="dark:stroke-purple-300"
                       strokeWidth="20"
                       strokeDasharray="50 201"
                       strokeDashoffset="-201"
@@ -416,13 +472,13 @@ export default function StudentProfile() {
 
             {/* Interests & Activities */}
             {(user.interests && user.interests.length > 0) && (
-              <div className="bg-white rounded-2xl p-8 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Centres d'intérêt</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Centres d'intérêt</h3>
                 <div className="flex flex-wrap gap-2">
                   {user.interests.map((interest, index) => (
                     <span 
                       key={index}
-                      className="bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium"
+                      className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-900/30 px-4 py-2 rounded-full text-sm font-medium"
                     >
                       {interest}
                     </span>

@@ -56,7 +56,6 @@ export default function ProfessorDashboard() {
         
         setUser(userData);
 
-        // Charger les autres enseignants depuis db.json
         try {
           const response = await axios.get('http://localhost:4000/users');
           const allTeachers = response.data.filter(
@@ -79,10 +78,10 @@ export default function ProfessorDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
         </div>
       </div>
     );
@@ -97,21 +96,19 @@ export default function ProfessorDashboard() {
     university: user.university || 'Non spécifiée',
     grade: user.grade || 'Enseignant',
     certification: user.certification || 'Non spécifiée',
-    totalStudents: 0, // À implémenter avec les données réelles
+    totalStudents: 0,
     participationRate: 92,
-    publications: 0, // À implémenter avec les données réelles
+    publications: 0,
     photoUrl: user.photoUrl,
     performanceDistribution: [
-      { range: 'Excellent', value: 35, color: 'bg-purple-600' },
+      { range: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
       { range: 'Bien', value: 30, color: 'bg-purple-400' },
-      { range: 'Passable', value: 20, color: 'bg-purple-300' },
-      { range: 'Faible', value: 15, color: 'bg-purple-200' },
+      { range: 'Passable', value: 20, color: 'bg-purple-300 dark:bg-purple-400' },
+      { range: 'Faible', value: 15, color: 'bg-purple-200 dark:bg-purple-300' },
     ]
   };
 
-  const compositions = [
-    // Pour l'instant vide - à implémenter plus tard
-  ];
+  const compositions = [];
 
   const teachersList = teachers.map(t => ({
     id: t.id,
@@ -124,14 +121,14 @@ export default function ProfessorDashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-purple-50 py-15">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
       {/* Top Section with Welcome */}
-      <div className="bg-white px-8 py-6 mb-8">
+      <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-purple-700 mb-3">
+          <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-400 mb-3">
             Bienvenue Professeur {user.firstName} !
           </h1>
-          <p className="text-gray-600 italic">
+          <p className="text-gray-600 dark:text-gray-300 italic">
             "L'éducation est l'arme la plus puissante que vous puissiez utiliser pour changer le monde." - Nelson Mandela
           </p>
         </div>
@@ -154,11 +151,11 @@ export default function ProfessorDashboard() {
 
         {/* Message si pas d'autres enseignants */}
         {teachersList.length === 0 && (
-          <div className="bg-white rounded-2xl p-12 shadow-sm text-center">
-            <h2 className="text-2xl font-bold text-purple-700 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
+            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
               Rencontrez d'autres enseignants
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Aucun autre enseignant inscrit pour le moment. Invitez vos collègues à rejoindre la plateforme !
             </p>
           </div>

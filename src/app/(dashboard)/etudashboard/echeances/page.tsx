@@ -73,22 +73,13 @@ export default function StudentDeadlines() {
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
           <div className="flex flex-col items-center justify-center">
-            <div className="relative mb-8">
-              <div className="w-64 h-64 bg-gradient-to-br from-yellow-100 to-orange-200 dark:from-yellow-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center">
-                <div className="w-48 h-48 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center">
-                  <div className="text-8xl">🎁</div>
-                </div>
-              </div>
-              <div className="absolute -top-8 -right-8">
-                <svg className="w-24 h-24 text-yellow-400 dark:text-yellow-500" viewBox="0 0 100 100">
-                  <path fill="currentColor" d="M50 10 L60 40 L90 40 L65 60 L75 90 L50 70 L25 90 L35 60 L10 40 L40 40 Z"/>
-                </svg>
-              </div>
-              <div className="absolute -bottom-8 -left-8">
-                <svg className="w-20 h-20 text-purple-400 dark:text-purple-500" viewBox="0 0 100 100">
-                  <path fill="currentColor" d="M50 10 L60 40 L90 40 L65 60 L75 90 L50 70 L25 90 L35 60 L10 40 L40 40 Z"/>
-                </svg>
-              </div>
+            {/* Image sans overlay pour affichage simple */}
+            <div className="relative w-full max-w-2xl h-96 mb-8 rounded-2xl overflow-hidden">
+              <img 
+                src="/images/open2.jpg" 
+                alt="Aucune échéance" 
+                className="w-full h-full object-cover" 
+              />
             </div>
 
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Aucune échéance à venir</h2>

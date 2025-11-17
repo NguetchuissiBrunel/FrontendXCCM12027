@@ -88,14 +88,27 @@ export default function StudentHome() {
           {/* Mes Cours */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-6">Mes Cours</h2>
-            <div className="flex-col items-center justify-center py-12">
-              <div className="relative mb-6">
-                <img src="/images/open.jpg" alt="Open the present" className="rounded-lg" />
+            <div className="flex flex-col items-center justify-center">
+              {/* Image avec overlay et bouton superposé */}
+              <div className="relative w-full h-80 mb-4 rounded-lg overflow-hidden">
+                <img 
+                  src="/images/open.jpg" 
+                  alt="Open the present" 
+                  className="w-full h-full object-cover opacity-40 dark:opacity-30" 
+                />
+                {/* Overlay gradient pour meilleure lisibilité */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-purple-50/50 dark:to-gray-900/50"></div>
+                
+                {/* Bouton centré sur l'image */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button className="bg-purple-600 dark:bg-purple-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-all hover:scale-105 flex items-center gap-2 shadow-2xl">
+                    <span className="text-2xl">+</span>
+                    <span>Commencer un Cours</span>
+                  </button>
+                </div>
               </div>
-              <button className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors flex items-center gap-2 shadow-lg">
-                + Commencer un Cours
-              </button>
-              <p className="text-gray-500 dark:text-gray-400 mt-4 text-center max-w-sm">
+              
+              <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
                 Pas de panique... Vous n'avez pas encore de cours. Dès que vous en commencerez un, vos cours s'afficheront ici.
               </p>
             </div>
@@ -104,11 +117,17 @@ export default function StudentHome() {
           {/* Prochaines Échéances */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-6">Prochaines Échéances</h2>
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="relative mb-6">
-                <img src="/images/open2.jpg" alt="Open the present 2" className="rounded-lg" />
+            <div className="flex flex-col items-center justify-center">
+              {/* Image de même hauteur */}
+              <div className="relative w-full h-80 mb-4 rounded-lg overflow-hidden">
+                <img 
+                  src="/images/open2.jpg" 
+                  alt="Open the present 2" 
+                  className="w-full h-full object-cover" 
+                />
               </div>
-              <p className="text-gray-500 dark:text-gray-400 text-center max-w-sm">
+              
+              <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
                 Aucune échéance pour le moment. Profitez de ce temps libre pour explorer de nouveaux cours !
               </p>
             </div>

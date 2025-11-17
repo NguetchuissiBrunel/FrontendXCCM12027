@@ -13,7 +13,7 @@
       "university": "ENSPY",
       "specialization": "Informatique",
       "registrationDate": "2025-11-11T19:00:51.687Z",
-      "lastLogin": "2025-11-11T19:35:18.815Z"
+      "lastLogin": "2025-11-12T13:04:48.798Z"
     },
     {
       "id": "ETU20256qwv0g3zh",
@@ -27,32 +27,11 @@
       "city": "Yaounde",
       "university": "ENSPY",
       "specialization": "Informatique",
-<<<<<<< HEAD
-      "registrationDate": "2025-11-12T07:24:03.931Z",
-      "lastLogin": "2025-11-14T14:09:15.971Z"
-    },
-    {
-      "id": "ENS2025jhck85f5x",
-      "email": "stacynkolo@gmail.com",
-      "password": "stacy2378#",
-      "confirmPassword": "stacy2378#",
-      "role": "teacher",
-      "firstName": "Stacy",
-      "lastName": "Nkolo",
-      "photoUrl": "/images/Applying Lean to Education -.jpeg",
-      "city": "Yaounde",
-      "university": "ENSPY",
-      "grade": "Professeure",
-      "subjects": [
-        "Analyse de Données",
-        "Réseaux",
-        "POO"
-      ],
-      "registrationDate": "2025-11-14T09:23:13.726Z",
-      "lastLogin": "2025-11-14T13:45:07.818Z"
-=======
       "registrationDate": "2025-11-12T07:24:03.931Z"
       "lastLogin": "2025-11-12T12:05:09.516Z"
+      "registrationDate": "2025-11-12T07:24:03.931Z",
+      "lastLogin": "2025-11-12T13:06:58.120Z",
+      "level": "Master 2"
     },
     {
       "id": "ENS2025wull2xdvf",
@@ -69,8 +48,9 @@
       "subjects": [
         "SVT23"
       ],
-      "registrationDate": "2025-11-12T12:05:44.766Z"
->>>>>>> 6760ea123bc3ea04eb2229cfd6da186687b606c8
+      "registrationDate": "2025-11-12T12:05:44.766Z",
+      "lastLogin": "2025-11-12T13:05:58.505Z",
+      "certification": "Non spécifiée"
     }
   ]
 }

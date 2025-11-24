@@ -45,7 +45,7 @@ export default function AboutPage() {
   return (
     <>
       
-      <main className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white pt-16">
+      <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
         
         {/* HERO SECTION */}
         <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8">

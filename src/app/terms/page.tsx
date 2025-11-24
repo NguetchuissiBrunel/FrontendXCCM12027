@@ -39,7 +39,7 @@ export default function TermsOfService() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+      <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
         <div className="max-w-5xl mx-auto">
           {/* Hero Header */}
           <div className="text-center mb-12">

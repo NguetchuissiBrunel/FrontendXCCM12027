@@ -186,7 +186,7 @@ const helpItems: HelpItem[] = useMemo(() => [
 
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-800 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
       {/* Header Section */}
       <div className="relative flex-grow">
         <div className="relative h-[300px] sm:h-[400px]">

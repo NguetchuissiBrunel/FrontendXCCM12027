@@ -322,3 +322,35 @@ body {
     page-break-inside: avoid;
   }
 }
+
+/* Tiptap styles*/
+/* TipTap Editor Styles */
+.ProseMirror.editor-area {
+  border: 3px solid #8B5CF6;
+  border-radius: 8px;
+  min-height: 600px;
+  padding: 40px;
+  background: white;
+  cursor: text;
+  outline: none !important;
+}
+
+/* Dark mode */
+.dark .ProseMirror.editor-area {
+  background: #b3b8c0;
+  border-color: #8B5CF6;
+}
+
+/* Focus state - slightly thicker border */
+.ProseMirror.editor-area:focus {
+  border-width: 4px;
+  border-color: #7C3AED;
+}
+
+.editor-focusable {
+  @apply border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 min-h-96 transition-all duration-200;
+}
+
+.editor-focusable:focus-within {
+  @apply border-purple-500 ring-4 ring-purple-500/20 shadow-lg;
+}

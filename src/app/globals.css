@@ -348,7 +348,7 @@ body {
 }
 
 .editor-focusable {
-  @apply border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 min-h-96 transition-all duration-200;
+  @apply border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-[#b3b8c0] min-h-96 transition-all duration-200;
 }
 
 .editor-focusable:focus-within {

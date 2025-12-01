@@ -23,6 +23,7 @@
     "framer-motion": "^11.18.2",
     "html-to-docx": "^1.8.0",
     "html2canvas": "^1.4.1",
+    "js-cookie": "^3.0.5",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.454.0",
     "next": "16.0.1",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/html-to-docx": "^1.8.0",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.19.24",
     "@types/pdfmake": "^0.2.12",
     "@types/react": "^19",

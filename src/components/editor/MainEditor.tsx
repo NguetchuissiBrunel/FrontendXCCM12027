@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
+import Color from '@tiptap/extension-color';
+import TextStyle from '@tiptap/extension-text-style';
+import Highlight from '@tiptap/extension-highlight';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
@@ -63,6 +66,11 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         defaultAlignment: 'left',
       }),
       Underline,
+      TextStyle,
+      Color,
+      Highlight.configure({
+        multicolor: true,
+      }),
     ],
     content: initialContent,
     editorProps: {
@@ -232,6 +240,24 @@ export const MainEditor: React.FC<MainEditorProps> = ({
           >
             <FaRemoveFormat />
           </ToolbarButton>
+
+          <Separator />
+
+          {/* Text Color */}
+          <input
+            type="color"
+            onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
+            title="Text Color"
+            className="w-10 h-9 rounded cursor-pointer"
+          />
+
+          {/* Highlight Color */}
+          <input
+            type="color"
+            onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
+            title="Highlight Color"
+            className="w-10 h-9 rounded cursor-pointer"
+          />
 
           <Separator />
 

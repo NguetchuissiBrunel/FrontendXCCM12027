@@ -18,7 +18,8 @@ import {
   FaUndo,
   FaRedo,
   FaCode,
-  FaMinus
+  FaMinus,
+  FaRemoveFormat
 } from 'react-icons/fa';
 
 interface MainEditorProps {
@@ -222,6 +223,14 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             isActive={editorState?.isStrike ?? false}
           >
             <FaStrikethrough />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
+            title="Clear Formatting"
+            isActive={false}
+          >
+            <FaRemoveFormat />
           </ToolbarButton>
 
           <Separator />

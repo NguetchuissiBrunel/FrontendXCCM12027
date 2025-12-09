@@ -17,7 +17,8 @@ import {
   FaStrikethrough,
   FaUndo,
   FaRedo,
-  FaCode
+  FaCode,
+  FaMinus
 } from 'react-icons/fa';
 
 interface MainEditorProps {
@@ -291,6 +292,14 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             isActive={editorState?.isCodeBlock ?? false}
           >
             <FaCode />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+            title="Horizontal Rule"
+            isActive={false}
+          >
+            <FaMinus />
           </ToolbarButton>
 
           <Separator />

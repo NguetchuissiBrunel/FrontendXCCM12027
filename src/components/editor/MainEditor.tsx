@@ -16,7 +16,8 @@ import {
   FaUnderline,
   FaStrikethrough,
   FaUndo,
-  FaRedo
+  FaRedo,
+  FaCode
 } from 'react-icons/fa';
 
 interface MainEditorProps {
@@ -108,6 +109,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isBulletList: ctx.editor.isActive('bulletList'),
         isOrderedList: ctx.editor.isActive('orderedList'),
         isBlockquote: ctx.editor.isActive('blockquote'),
+        isCodeBlock: ctx.editor.isActive('codeBlock'),
         currentHeading,
       };
     },
@@ -281,6 +283,14 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             isActive={editorState?.isBlockquote ?? false}
           >
             <FaQuoteLeft />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+            title="Code Block (Ctrl + Alt + C)"
+            isActive={editorState?.isCodeBlock ?? false}
+          >
+            <FaCode />
           </ToolbarButton>
 
           <Separator />

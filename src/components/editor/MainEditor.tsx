@@ -21,17 +21,17 @@ import {
 
 interface MainEditorProps {
   initialContent?: string;
-  onContentChange?: (content: string) => void;
+  onContentChange?: (content: string) => void;  
 }
 
 const headingOptions = [
   { value: 'paragraph', label: 'Normal Text', color: '#000000' },
-  { value: 1, label: 'Titre 1', color: '#3B82F6' },  // Blue - Course
-  { value: 2, label: 'Titre 2', color: '#8B5CF6' },  // Purple - Section
-  { value: 3, label: 'Titre 3', color: '#10B981' },  // Green - Chapter
-  { value: 4, label: 'Titre 4', color: '#F59E0B' },  // Orange - Paragraph
-  { value: 5, label: 'Titre 5', color: '#EF4444' },  // Red - Notion
-  { value: 6, label: 'Titre 6', color: '#6366F1' },  // Indigo - Exercise
+  { value: 1, label: 'Cours', color: '#3B82F6' },  // Blue - Course
+  { value: 2, label: 'Section', color: '#8B5CF6' },  // Purple - Section
+  { value: 3, label: 'Chapitre', color: '#10B981' },  // Green - Chapter
+  { value: 4, label: 'Paragraphe', color: '#F59E0B' },  // Orange - Paragraph
+  { value: 5, label: 'Notion', color: '#EF4444' },  // Red - Notion
+  { value: 6, label: 'Exercice', color: '#6366F1' },  // Indigo - Exercise
 ];
 
 export const MainEditor: React.FC<MainEditorProps> = ({ 
@@ -187,7 +187,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
           <HeadingDropdown/>
           
           < Separator/>
-          
+
           {/* Text Formatting */}
           <ToolbarButton
             onClick={() => editor?.chain().focus().toggleBold().run()}

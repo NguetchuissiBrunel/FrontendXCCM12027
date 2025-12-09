@@ -354,3 +354,36 @@ body {
 .editor-focusable:focus-within {
   @apply border-purple-500 ring-4 ring-purple-500/20 shadow-lg;
 }
+
+/* Fix for TipTap lists with prose class */
+.ProseMirror.prose ul,
+.ProseMirror.prose ol {
+  list-style-type: revert !important;
+  padding-left: 1.5rem !important;
+}
+
+.ProseMirror.prose ul {
+  list-style-type: disc !important;
+}
+
+.ProseMirror.prose ol {
+  list-style-type: decimal !important;
+}
+
+.ProseMirror.prose li {
+  margin: 0.25rem 0 !important;
+}
+
+/* Blockquote styling */
+.ProseMirror.prose blockquote {
+  border-left: 4px solid #8B5CF6 !important;
+  padding-left: 1rem !important;
+  margin: 1rem 0 !important;
+  font-style: italic !important;
+  color: #6b7280 !important;
+}
+
+.dark .ProseMirror.prose blockquote {
+  color: #9ca3af !important;
+  border-left-color: #A78BFA !important;
+}

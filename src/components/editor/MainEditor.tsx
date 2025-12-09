@@ -4,7 +4,15 @@ import React from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
-import { FaAlignLeft, FaAlignCenter, FaAlignRight, FaAlignJustify } from 'react-icons/fa';
+import { 
+  FaAlignLeft, 
+  FaAlignCenter, 
+  FaAlignRight, 
+  FaAlignJustify,
+  FaListUl,
+  FaListOl,
+  FaQuoteLeft
+} from 'react-icons/fa';
 
 interface MainEditorProps {
   initialContent?: string;
@@ -16,19 +24,18 @@ export const MainEditor: React.FC<MainEditorProps> = ({
   onContentChange 
 }) => {
   
-    const TextAlignWithShortcuts = TextAlign.extend({
-      addKeyboardShortcuts() {
-        return {
-          // Ctrl/Cmd + Shift + L → Align Left
-          'Mod-Shift-l': () => this.editor.commands.setTextAlign('left'),
-          'Mod-Shift-e': () => this.editor.commands.setTextAlign('center'),
-          'Mod-Shift-r': () => this.editor.commands.setTextAlign('right'),
-          'Mod-Shift-j': () => this.editor.commands.setTextAlign('justify'),
-        }
-      },
-    })
+  const TextAlignWithShortcuts = TextAlign.extend({
+    addKeyboardShortcuts() {
+      return {
+        'Mod-Shift-l': () => this.editor.commands.setTextAlign('left'),
+        'Mod-Shift-e': () => this.editor.commands.setTextAlign('center'),
+        'Mod-Shift-r': () => this.editor.commands.setTextAlign('right'),
+        'Mod-Shift-j': () => this.editor.commands.setTextAlign('justify'),
+      }
+    },
+  })
 
-    const editor = useEditor({
+  const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit,
@@ -57,6 +64,9 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isAlignCenter: false,
         isAlignRight: false,
         isAlignJustify: false,
+        isBulletList: false,
+        isOrderedList: false,
+        isBlockquote: false,
       };
       return {
         isBold: ctx.editor.isActive('bold'),
@@ -65,6 +75,9 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isAlignCenter: ctx.editor.isActive({ textAlign: 'center' }),
         isAlignRight: ctx.editor.isActive({ textAlign: 'right' }),
         isAlignJustify: ctx.editor.isActive({ textAlign: 'justify' }),
+        isBulletList: ctx.editor.isActive('bulletList'),
+        isOrderedList: ctx.editor.isActive('orderedList'),
+        isBlockquote: ctx.editor.isActive('blockquote'),
       };
     },
   });
@@ -109,7 +122,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
           <ToolbarButton
             onClick={() => editor?.chain().focus().toggleBold().run()}
             title="Bold (Ctrl + B)"
-            isActive={editorState?.isBold ?? false}   // ← Fixed!
+            isActive={editorState?.isBold ?? false}
           >
             <strong>B</strong>
           </ToolbarButton>
@@ -155,6 +168,33 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             isActive={editorState?.isAlignJustify ?? false}
           >
             <FaAlignJustify />
+          </ToolbarButton>
+
+          <Separator />
+
+          {/* Lists */}
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleBulletList().run()}
+            title="Bullet List (Ctrl + Shift + 8)"
+            isActive={editorState?.isBulletList ?? false}
+          >
+            <FaListUl />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+            title="Numbered List (Ctrl + Shift + 7)"
+            isActive={editorState?.isOrderedList ?? false}
+          >
+            <FaListOl />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+            title="Blockquote (Ctrl + Shift + B)"
+            isActive={editorState?.isBlockquote ?? false}
+          >
+            <FaQuoteLeft />
           </ToolbarButton>
 
         </div>

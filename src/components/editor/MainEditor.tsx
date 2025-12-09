@@ -14,7 +14,9 @@ import {
   FaListOl,
   FaQuoteLeft,
   FaUnderline,
-  FaStrikethrough
+  FaStrikethrough,
+  FaUndo,
+  FaRedo
 } from 'react-icons/fa';
 
 interface MainEditorProps {
@@ -221,6 +223,24 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <FaQuoteLeft />
           </ToolbarButton>
 
+          <Separator />
+          
+          {/* History */}
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().undo().run()}
+            title="Undo (Ctrl + Z)"
+            isActive={false}
+          >
+            <FaUndo />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().redo().run()}
+            title="Redo (Ctrl + Shift + Z)"
+            isActive={false}
+          >
+            <FaRedo />
+          </ToolbarButton>
         </div>
       </div>
 

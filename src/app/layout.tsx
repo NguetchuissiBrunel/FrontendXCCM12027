@@ -1,7 +1,8 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import RouteLoading from '@/components/ui/RouteLoading'; 
+import RouteLoading from '@/components/ui/RouteLoading';
+import { AuthProvider } from "@/contexts/AuthContext"; 
 import './globals.css';
 
 
@@ -24,7 +25,9 @@ export default function RootLayout({
        
           <main className="grow">
             <RouteLoading/>
-            {children}
+            <AuthProvider>
+				{children}
+            </AuthProvider>
           </main>
         
         </div>

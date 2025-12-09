@@ -4,6 +4,7 @@ import React from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
 import { 
   FaAlignLeft, 
   FaAlignCenter, 
@@ -11,7 +12,9 @@ import {
   FaAlignJustify,
   FaListUl,
   FaListOl,
-  FaQuoteLeft
+  FaQuoteLeft,
+  FaUnderline,
+  FaStrikethrough
 } from 'react-icons/fa';
 
 interface MainEditorProps {
@@ -44,6 +47,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         alignments: ['left', 'center', 'right', 'justify'],
         defaultAlignment: 'left',
       }),
+      Underline,
     ],
     content: initialContent,
     editorProps: {
@@ -60,6 +64,8 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       if (!ctx.editor) return { 
         isBold: false, 
         isItalic: false,
+        isUnderline: false,
+        isStrike: false,
         isAlignLeft: false,
         isAlignCenter: false,
         isAlignRight: false,
@@ -71,6 +77,8 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       return {
         isBold: ctx.editor.isActive('bold'),
         isItalic: ctx.editor.isActive('italic'),
+        isUnderline: ctx.editor.isActive('underline'),
+        isStrike: ctx.editor.isActive('strike'),
         isAlignLeft: ctx.editor.isActive({ textAlign: 'left' }),
         isAlignCenter: ctx.editor.isActive({ textAlign: 'center' }),
         isAlignRight: ctx.editor.isActive({ textAlign: 'right' }),
@@ -133,6 +141,22 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             isActive={editorState?.isItalic ?? false}
           >
             <em>I</em>
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleUnderline().run()}
+            title="Underline (Ctrl + U)"
+            isActive={editorState?.isUnderline ?? false}
+          >
+            <FaUnderline />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleStrike().run()}
+            title="Strikethrough (Ctrl + Shift + X)"
+            isActive={editorState?.isStrike ?? false}
+          >
+            <FaStrikethrough />
           </ToolbarButton>
 
           <Separator />

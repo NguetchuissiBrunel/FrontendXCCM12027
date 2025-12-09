@@ -24,6 +24,16 @@ interface MainEditorProps {
   onContentChange?: (content: string) => void;
 }
 
+const headingOptions = [
+  { value: 'paragraph', label: 'Normal Text', color: '#000000' },
+  { value: 1, label: 'Titre 1', color: '#3B82F6' },  // Blue - Course
+  { value: 2, label: 'Titre 2', color: '#8B5CF6' },  // Purple - Section
+  { value: 3, label: 'Titre 3', color: '#10B981' },  // Green - Chapter
+  { value: 4, label: 'Titre 4', color: '#F59E0B' },  // Orange - Paragraph
+  { value: 5, label: 'Titre 5', color: '#EF4444' },  // Red - Notion
+  { value: 6, label: 'Titre 6', color: '#6366F1' },  // Indigo - Exercise
+];
+
 export const MainEditor: React.FC<MainEditorProps> = ({ 
   initialContent, 
   onContentChange 
@@ -75,7 +85,17 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isBulletList: false,
         isOrderedList: false,
         isBlockquote: false,
+        currentHeading: 'paragraph',
       };
+
+      let currentHeading: string | number = 'paragraph';
+      for (let level = 1; level <= 6; level++) {
+        if (ctx.editor.isActive('heading', { level })) {
+          currentHeading = level;
+          break;
+        }
+      }
+
       return {
         isBold: ctx.editor.isActive('bold'),
         isItalic: ctx.editor.isActive('italic'),
@@ -88,6 +108,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isBulletList: ctx.editor.isActive('bulletList'),
         isOrderedList: ctx.editor.isActive('orderedList'),
         isBlockquote: ctx.editor.isActive('blockquote'),
+        currentHeading,
       };
     },
   });
@@ -121,12 +142,51 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2" />
   );
 
+  const HeadingDropdown = () => {
+    const currentOption = headingOptions.find(
+      opt => opt.value === editorState?.currentHeading
+    ) || headingOptions[0];
+
+    const handleChange = (value: string | number) => {
+      if (value === 'paragraph') {
+        editor?.chain().focus().setParagraph().run();
+      } else {
+        editor?.chain().focus().toggleHeading({ level: value as 1 | 2 | 3 | 4 | 5 | 6 }).run();
+      }
+    };
+
+    return (
+      <select
+        value={currentOption.value}
+        onChange={(e) => {
+          const val = e.target.value;
+          handleChange(val === 'paragraph' ? 'paragraph' : parseInt(val));
+        }}
+        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+        style={{ color: currentOption.color }}
+      >
+        {headingOptions.map(option => (
+          <option 
+            key={option.value} 
+            value={option.value}
+            style={{ color: option.color }}
+          >
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  };
+
   return (
     <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
       
       {/* Toolbar */}
       <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
         <div className="flex gap-2 items-center">
+          <HeadingDropdown/>
+          
+          < Separator/>
           
           {/* Text Formatting */}
           <ToolbarButton
@@ -224,7 +284,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
           </ToolbarButton>
 
           <Separator />
-          
+
           {/* History */}
           <ToolbarButton
             onClick={() => editor?.chain().focus().undo().run()}

@@ -87,7 +87,7 @@ export default function StudentHome() {
         <div className="grid grid-cols-2 gap-6">
           {/* Mes Cours */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-6">Mes Cours</h2>
+            
             <div className="flex flex-col items-center justify-center">
               {/* Image avec overlay et bouton superposé */}
               <div className="relative w-full h-80 mb-4 rounded-lg overflow-hidden">
@@ -102,21 +102,21 @@ export default function StudentHome() {
                 {/* Bouton centré sur l'image */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <button className="bg-purple-600 dark:bg-purple-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-all hover:scale-105 flex items-center gap-2 shadow-2xl">
-                    <span className="text-2xl">+</span>
-                    <span>Commencer un Cours</span>
+                    <span className="text-2xl"></span>
+                   
                   </button>
                 </div>
               </div>
               
               <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
-                Pas de panique... Vous n'avez pas encore de cours. Dès que vous en commencerez un, vos cours s'afficheront ici.
+               
               </p>
             </div>
           </div>
 
           {/* Prochaines Échéances */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-6">Prochaines Échéances</h2>
+            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-6"></h2>
             <div className="flex flex-col items-center justify-center">
               {/* Image de même hauteur */}
               <div className="relative w-full h-80 mb-4 rounded-lg overflow-hidden">
@@ -128,7 +128,6 @@ export default function StudentHome() {
               </div>
               
               <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
-                Aucune échéance pour le moment. Profitez de ce temps libre pour explorer de nouveaux cours !
               </p>
             </div>
           </div>

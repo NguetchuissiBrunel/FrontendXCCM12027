@@ -13,7 +13,7 @@
       "university": "ENSPY",
       "specialization": "Informatique",
       "registrationDate": "2025-11-11T19:00:51.687Z",
-      "lastLogin": "2025-11-12T13:04:48.798Z"
+      "lastLogin": "2025-12-11T13:54:40.182Z"
     },
     {
       "id": "ENS2025wull2xdvf",
@@ -31,7 +31,7 @@
         "SVT23"
       ],
       "registrationDate": "2025-11-12T12:05:44.766Z",
-      "lastLogin": "2025-12-11T12:50:23.164Z",
+      "lastLogin": "2025-12-11T15:42:45.971Z",
       "certification": "Non spécifiée"
     },
     {
@@ -83,6 +83,37 @@
         "SVT24"
       ],
       "registrationDate": "2025-12-11T12:46:26.218Z"
+    },
+    {
+      "id": "ETU2025he43akvj1",
+      "email": "lk@gmail.com",
+      "password": "loki2345",
+      "confirmPassword": "loki2345",
+      "role": "student",
+      "firstName": "loki",
+      "lastName": "luk",
+      "photoUrl": "/images/Applying Lean to Education -.jpeg",
+      "city": "yaoundé",
+      "university": "UY1",
+      "specialization": "commerce",
+      "registrationDate": "2025-12-11T13:55:44.190Z"
+    },
+    {
+      "id": "ENS202577t2tqpfr",
+      "email": "landrybrunel5@gmail.com",
+      "password": "lokiloki",
+      "confirmPassword": "lokiloki",
+      "role": "teacher",
+      "firstName": "jkio",
+      "lastName": "dqklsacxm ,z",
+      "photoUrl": "/images/Applying Lean to Education -.jpeg",
+      "city": "mklacsmx",
+      "university": "qcasx",
+      "grade": "edscax",
+      "subjects": [
+        "edsax"
+      ],
+      "registrationDate": "2025-12-11T15:43:37.454Z"
     }
   ]
 }

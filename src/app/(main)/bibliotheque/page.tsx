@@ -5,6 +5,7 @@ import { Search, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { courses } from '@/data/CourseData';
+import EnrollmentButton from '@/components/EnrollmentButton';
 
 // Composant pour les étoiles de notation
 const StarRating = ({ rating = 5 }: { rating: number }) => (
@@ -219,7 +220,6 @@ const Bibliotheque = () => {
                     </svg>
                     <span>{formatNumber(course.views)}</span>
                   </span>
-                  
                   <button className="flex items-center space-x-1 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -233,6 +233,15 @@ const Bibliotheque = () => {
                     </svg>
                     <span>{formatNumber(course.downloads)}</span>
                   </button>
+
+                  <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <EnrollmentButton 
+                      courseId={course.id}
+                      size="sm"
+                      variant="primary"
+                      fullWidth
+                    />
+                  </div>
                 </div>
               </div>
             </div>

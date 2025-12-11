@@ -5,6 +5,10 @@ import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, Boo
 import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
 import CourseSidebar from "@/components/CourseSidebar";
 import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/types/course";
+import EnrollmentButton from '@/components/EnrollmentButton';
+import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
+
 
 interface OrientationSelectorProps {
   isOpen: boolean;
@@ -66,6 +70,7 @@ interface CourseProps {
 }
 
 const Course: React.FC<CourseProps> = ({ courseData }) => {
+    const { user } = useAuth();
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState<number>(0);
@@ -324,7 +329,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
               <span className="flex items-center"><Download className="h-5 w-5 mr-2" /> {courseData.downloads} téléchargements</span>
             </div>
           </div>
-
+          
           {/* Content */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12">
             {!showExercise ? (

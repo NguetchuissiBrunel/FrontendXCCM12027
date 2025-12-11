@@ -41,12 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   // ==========================================
-  // 🔄 Charger l'utilisateur au démarrage
+  // 🔄 Charger l'utilisateur au démarrage + détecter changements localStorage
   // ==========================================
   useEffect(() => {
     const loadUser = () => {
       try {
-        // 1. Priorité au cookie (pour le middleware)
+        // 1. Vérifier d'abord le cookie
         const userCookie = Cookies.get('currentUser');
         
         if (userCookie) {
@@ -56,22 +56,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Synchroniser avec localStorage
           localStorage.setItem('currentUser', userCookie);
           localStorage.setItem('userRole', userData.role);
+          
+          console.log('✅ Utilisateur chargé depuis cookie:', userData.role);
         } else {
-          // 2. Fallback localStorage (si cookie expiré)
+          // 2. Fallback localStorage (si cookie expiré OU si login/register n'a pas créé de cookie)
           const userStorage = localStorage.getItem('currentUser');
           
           if (userStorage) {
             const userData = JSON.parse(userStorage);
             
-            // Recréer le cookie
+            console.log('⚠️ Cookie manquant mais localStorage trouvé - Création du cookie...');
+            
+            // 🔥 CRÉER LE COOKIE MANQUANT
             Cookies.set('currentUser', userStorage, COOKIE_OPTIONS);
             Cookies.set('userRole', userData.role, COOKIE_OPTIONS);
             
             setUser(userData);
+            
+            console.log('✅ Cookie créé depuis localStorage:', userData.role);
+          } else {
+            console.log('ℹ️ Aucun utilisateur connecté');
           }
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'utilisateur:', error);
+        console.error('❌ Erreur lors du chargement de l\'utilisateur:', error);
         // Nettoyer les données corrompues
         Cookies.remove('currentUser');
         Cookies.remove('userRole');
@@ -83,7 +91,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     loadUser();
+
+    // 🔥 Écouter les changements de localStorage (pour détecter login/register)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'currentUser' && e.newValue) {
+        console.log('🔔 localStorage modifié - Rechargement utilisateur...');
+        loadUser();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
+
+  // 🔥 NOUVEAU : Écouter les changements de route pour recharger l'utilisateur
+  useEffect(() => {
+    console.log('📍 Route changée:', pathname);
+    
+    // Vérifier si localStorage a été modifié mais pas encore synchronisé
+    const userStorage = localStorage.getItem('currentUser');
+    const userCookie = Cookies.get('currentUser');
+    
+    if (userStorage && !userCookie) {
+      console.log('🔄 Synchronisation cookie après changement de route...');
+      try {
+        const userData = JSON.parse(userStorage);
+        Cookies.set('currentUser', userStorage, COOKIE_OPTIONS);
+        Cookies.set('userRole', userData.role, COOKIE_OPTIONS);
+        setUser(userData);
+        console.log('✅ Cookie synchronisé - Rôle:', userData.role);
+      } catch (error) {
+        console.error('❌ Erreur parsing localStorage:', error);
+      }
+    } else if (userStorage && userCookie) {
+      // 🔥 Vérifier que le cookie correspond bien au localStorage
+      try {
+        const storageData = JSON.parse(userStorage);
+        const cookieData = JSON.parse(userCookie);
+        
+        if (storageData.role !== cookieData.role || storageData.id !== cookieData.id) {
+          console.warn('⚠️ Désynchronisation détectée ! Mise à jour du cookie...');
+          Cookies.set('currentUser', userStorage, COOKIE_OPTIONS);
+          Cookies.set('userRole', storageData.role, COOKIE_OPTIONS);
+          setUser(storageData);
+          console.log('✅ Cookie mis à jour - Nouveau rôle:', storageData.role);
+        }
+      } catch (error) {
+        console.error('❌ Erreur vérification sync:', error);
+      }
+    }
+  }, [pathname]);
+
+  // 🔥 POLLING : Vérifier toutes les 500ms si localStorage a changé (pendant les 5 premières secondes)
+  useEffect(() => {
+    let pollCount = 0;
+    const maxPolls = 10; // 10 x 500ms = 5 secondes
+    
+    const pollInterval = setInterval(() => {
+      pollCount++;
+      
+      const userStorage = localStorage.getItem('currentUser');
+      const userCookie = Cookies.get('currentUser');
+      
+      if (userStorage && (!userCookie || !user)) {
+        console.log('🔄 [POLL] Détection localStorage sans cookie - Synchronisation...');
+        try {
+          const userData = JSON.parse(userStorage);
+          Cookies.set('currentUser', userStorage, COOKIE_OPTIONS);
+          Cookies.set('userRole', userData.role, COOKIE_OPTIONS);
+          setUser(userData);
+          console.log('✅ [POLL] Synchronisation réussie - Rôle:', userData.role);
+          clearInterval(pollInterval); // Arrêter le polling
+        } catch (error) {
+          console.error('❌ [POLL] Erreur:', error);
+        }
+      }
+      
+      if (pollCount >= maxPolls) {
+        clearInterval(pollInterval);
+        console.log('⏹️ [POLL] Arrêt du polling');
+      }
+    }, 500);
+
+    return () => clearInterval(pollInterval);
+  }, [user]);
 
   // ==========================================
   // 🔐 Fonction de connexion
@@ -101,6 +195,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('userRole', userData.role);
     
     console.log('✅ Connexion réussie:', userData.role);
+    console.log('✅ Cookie créé:', Cookies.get('currentUser') ? 'OUI' : 'NON');
+    
+    // Redirection selon le rôle
+    setTimeout(() => {
+      const redirectPath = userData.role === 'student' ? '/etudashboard' : '/profdashboard';
+      window.location.href = redirectPath;
+    }, 100);
   };
 
   // ==========================================

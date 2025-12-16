@@ -104,7 +104,7 @@ export default Node.create<SectionOptions>({
       setSection:
         () =>
         ({ commands }) => {
-          return commands.setNode(this.name);
+          return commands.wrapIn(this.name);
         },
     };
   },

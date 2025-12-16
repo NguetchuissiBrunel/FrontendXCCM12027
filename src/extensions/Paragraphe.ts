@@ -104,7 +104,7 @@ export default Node.create<ParagrapheOptions>({
       setParagraphe:
         () =>
         ({ commands }) => {
-          return commands.setNode(this.name);
+          return commands.wrapIn(this.name);
         },
     };
   },

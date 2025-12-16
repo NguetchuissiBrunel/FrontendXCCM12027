@@ -104,7 +104,7 @@ export default Node.create<ChapitreOptions>({
       setChapitre:
         () =>
         ({ commands }) => {
-          return commands.setNode(this.name);
+          return commands.wrapIn(this.name);
         },
     };
   },

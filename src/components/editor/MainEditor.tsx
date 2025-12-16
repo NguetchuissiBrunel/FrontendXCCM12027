@@ -10,6 +10,13 @@ import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+
+// Custom XCCM Hierarchy Nodes
+import Section from '../../extensions/Section';
+import Chapitre from '../../extensions/Chapitre';
+import Paragraphe from '../../extensions/Paragraphe';
+import Notion from '../../extensions/Notion';
+import Exercice from '../../extensions/Exercice';
 import { 
   FaAlignLeft, 
   FaAlignCenter, 
@@ -37,12 +44,12 @@ interface MainEditorProps {
 
 const headingOptions = [
   { value: 'paragraph', label: 'Normal Text', color: '#000000' },
-  { value: 1, label: 'Cours', color: '#3B82F6' },  // Blue - Course
-  { value: 2, label: 'Section', color: '#8B5CF6' },  // Purple - Section
-  { value: 3, label: 'Chapitre', color: '#10B981' },  // Green - Chapter
-  { value: 4, label: 'Paragraphe', color: '#F59E0B' },  // Orange - Paragraph
-  { value: 5, label: 'Notion', color: '#EF4444' },  // Red - Notion
-  { value: 6, label: 'Exercice', color: '#6366F1' },  // Indigo - Exercise
+  { value: 1, label: 'Cours', color: '#3B82F6' },  // Blue - H1 (kept as heading)
+  { value: 'section', label: 'Section', color: '#8B5CF6' },  // Purple - Custom Node
+  { value: 'chapitre', label: 'Chapitre', color: '#10B981' },  // Green - Custom Node
+  { value: 'paragraphe', label: 'Paragraphe', color: '#F59E0B' },  // Orange - Custom Node
+  { value: 'notion', label: 'Notion', color: '#EF4444' },  // Red - Custom Node
+  { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
 export const MainEditor: React.FC<MainEditorProps> = ({ 
@@ -80,6 +87,11 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       Link.configure({
         openOnClick: false,
       }),
+      Section,
+      Chapitre,
+      Paragraphe,
+      Notion,
+      Exercice,
     ],
     content: initialContent,
     editorProps: {
@@ -109,10 +121,25 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       };
 
       let currentHeading: string | number = 'paragraph';
-      for (let level = 1; level <= 6; level++) {
-        if (ctx.editor.isActive('heading', { level })) {
-          currentHeading = level;
-          break;
+      
+      // Check for custom XCCM nodes first
+      if (ctx.editor.isActive('section')) {
+        currentHeading = 'section';
+      } else if (ctx.editor.isActive('chapitre')) {
+        currentHeading = 'chapitre';
+      } else if (ctx.editor.isActive('paragraphe')) {
+        currentHeading = 'paragraphe';
+      } else if (ctx.editor.isActive('notion')) {
+        currentHeading = 'notion';
+      } else if (ctx.editor.isActive('exercice')) {
+        currentHeading = 'exercice';
+      } else {
+        // Check for standard headings (H1-H6)
+        for (let level = 1; level <= 6; level++) {
+          if (ctx.editor.isActive('heading', { level })) {
+            currentHeading = level;
+            break;
+          }
         }
       }
 
@@ -189,7 +216,18 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     const handleChange = (value: string | number) => {
       if (value === 'paragraph') {
         editor?.chain().focus().setParagraph().run();
-      } else {
+      } else if (value === 'section') {
+        editor?.chain().focus().setSection().run();
+      } else if (value === 'chapitre') {
+        editor?.chain().focus().setChapitre().run();
+      } else if (value === 'paragraphe') {
+        editor?.chain().focus().setParagraphe().run();
+      } else if (value === 'notion') {
+        editor?.chain().focus().setNotion().run();
+      } else if (value === 'exercice') {
+        editor?.chain().focus().setExercice().run();
+      } else if (typeof value === 'number') {
+        // Standard heading (H1 for Cours)
         editor?.chain().focus().toggleHeading({ level: value as 1 | 2 | 3 | 4 | 5 | 6 }).run();
       }
     };
@@ -199,7 +237,9 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         value={currentOption.value}
         onChange={(e) => {
           const val = e.target.value;
-          handleChange(val === 'paragraph' ? 'paragraph' : parseInt(val));
+          // Parse as number if it's numeric, otherwise keep as string
+          const parsedVal = !isNaN(Number(val)) ? parseInt(val) : val;
+          handleChange(parsedVal);
         }}
         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
         style={{ color: currentOption.color }}

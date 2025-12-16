@@ -1,13 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import Highlight from '@tiptap/extension-highlight';
+import Image from '@tiptap/extension-image';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
 import { 
   FaAlignLeft, 
   FaAlignCenter, 
@@ -22,7 +24,10 @@ import {
   FaRedo,
   FaCode,
   FaMinus,
-  FaRemoveFormat
+  FaRemoveFormat,
+  FaImage,
+  FaLink,
+  FaUnlink
 } from 'react-icons/fa';
 
 interface MainEditorProps {
@@ -70,6 +75,10 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       Color,
       Highlight.configure({
         multicolor: true,
+      }),
+      Image,
+      Link.configure({
+        openOnClick: false,
       }),
     ],
     content: initialContent,
@@ -120,10 +129,28 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isOrderedList: ctx.editor.isActive('orderedList'),
         isBlockquote: ctx.editor.isActive('blockquote'),
         isCodeBlock: ctx.editor.isActive('codeBlock'),
+        isLink: ctx.editor.isActive('link'),  
         currentHeading,
       };
     },
   });
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const url = e.target?.result as string;
+        editor?.chain().focus().setImage({ src: url }).run();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
 
   const ToolbarButton = ({ 
     onClick,
@@ -191,181 +218,259 @@ export const MainEditor: React.FC<MainEditorProps> = ({
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
-      
-      {/* Toolbar */}
-      <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
-        <div className="flex gap-2 items-center">
-          <HeadingDropdown/>
-          
-          < Separator/>
+    <>
+      <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
+        
+        {/* Toolbar */}
+        <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
+          <div className="flex gap-2 items-center">
+            <HeadingDropdown/>
+            
+            < Separator/>
 
-          {/* Text Formatting */}
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleBold().run()}
-            title="Bold (Ctrl + B)"
-            isActive={editorState?.isBold ?? false}
-          >
-            <strong>B</strong>
-          </ToolbarButton>
+            {/* Text Formatting */}
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleBold().run()}
+              title="Bold (Ctrl + B)"
+              isActive={editorState?.isBold ?? false}
+            >
+              <strong>B</strong>
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleItalic().run()}
-            title="Italic (Ctrl + I)"
-            isActive={editorState?.isItalic ?? false}
-          >
-            <em>I</em>
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleItalic().run()}
+              title="Italic (Ctrl + I)"
+              isActive={editorState?.isItalic ?? false}
+            >
+              <em>I</em>
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleUnderline().run()}
-            title="Underline (Ctrl + U)"
-            isActive={editorState?.isUnderline ?? false}
-          >
-            <FaUnderline />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleUnderline().run()}
+              title="Underline (Ctrl + U)"
+              isActive={editorState?.isUnderline ?? false}
+            >
+              <FaUnderline />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleStrike().run()}
-            title="Strikethrough (Ctrl + Shift + X)"
-            isActive={editorState?.isStrike ?? false}
-          >
-            <FaStrikethrough />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleStrike().run()}
+              title="Strikethrough (Ctrl + Shift + X)"
+              isActive={editorState?.isStrike ?? false}
+            >
+              <FaStrikethrough />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
-            title="Clear Formatting"
-            isActive={false}
-          >
-            <FaRemoveFormat />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
+              title="Clear Formatting"
+              isActive={false}
+            >
+              <FaRemoveFormat />
+            </ToolbarButton>
 
-          <Separator />
+            <Separator />
 
-          {/* Text Color */}
-          <input
-            type="color"
-            onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
-            title="Text Color"
-            className="w-10 h-9 rounded cursor-pointer"
-          />
+            {/* Text Color */}
+            <input
+              type="color"
+              onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
+              title="Text Color"
+              className="w-10 h-9 rounded cursor-pointer"
+            />
 
-          {/* Highlight Color */}
-          <input
-            type="color"
-            onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
-            title="Highlight Color"
-            className="w-10 h-9 rounded cursor-pointer"
-          />
+            {/* Highlight Color */}
+            <input
+              type="color"
+              onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
+              title="Highlight Color"
+              className="w-10 h-9 rounded cursor-pointer"
+            />
 
-          <Separator />
+            <Separator />
 
-          {/* Text Alignment */}
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-            title="Align Left (Ctrl + Shift + L)"
-            isActive={editorState?.isAlignLeft ?? false}
-          >
-            <FaAlignLeft />
-          </ToolbarButton>
+            {/* Image Upload */}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-            title="Align Center (Ctrl + Shift + E)"
-            isActive={editorState?.isAlignCenter ?? false}
-          >
-            <FaAlignCenter />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => imageInputRef.current?.click()}
+              title="Insert Image"
+              isActive={false}
+            >
+              <FaImage />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-            title="Align Right (Ctrl + Shift + R)"
-            isActive={editorState?.isAlignRight ?? false}
-          >
-            <FaAlignRight />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => {
+                const previousUrl = editor?.getAttributes('link').href;
+                setLinkUrl(previousUrl || '');
+                setShowLinkModal(true);
+              }}
+              title="Insert Link"
+              isActive={editorState?.isLink ?? false}
+            >
+              <FaLink />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-            title="Align Justify (Ctrl + Shift + J)"
-            isActive={editorState?.isAlignJustify ?? false}
-          >
-            <FaAlignJustify />
-          </ToolbarButton>
+            {editor?.isActive('link') && (
+              <ToolbarButton
+                onClick={() => editor?.chain().focus().unsetLink().run()}
+                title="Remove Link"
+                isActive={false}
+              >
+                <FaUnlink />
+              </ToolbarButton>
+            )}
 
-          <Separator />
+            <Separator />
 
-          {/* Lists */}
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleBulletList().run()}
-            title="Bullet List (Ctrl + Shift + 8)"
-            isActive={editorState?.isBulletList ?? false}
-          >
-            <FaListUl />
-          </ToolbarButton>
+            {/* Text Alignment */}
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+              title="Align Left (Ctrl + Shift + L)"
+              isActive={editorState?.isAlignLeft ?? false}
+            >
+              <FaAlignLeft />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-            title="Numbered List (Ctrl + Shift + 7)"
-            isActive={editorState?.isOrderedList ?? false}
-          >
-            <FaListOl />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+              title="Align Center (Ctrl + Shift + E)"
+              isActive={editorState?.isAlignCenter ?? false}
+            >
+              <FaAlignCenter />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-            title="Blockquote (Ctrl + Shift + B)"
-            isActive={editorState?.isBlockquote ?? false}
-          >
-            <FaQuoteLeft />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+              title="Align Right (Ctrl + Shift + R)"
+              isActive={editorState?.isAlignRight ?? false}
+            >
+              <FaAlignRight />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-            title="Code Block (Ctrl + Alt + C)"
-            isActive={editorState?.isCodeBlock ?? false}
-          >
-            <FaCode />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+              title="Align Justify (Ctrl + Shift + J)"
+              isActive={editorState?.isAlignJustify ?? false}
+            >
+              <FaAlignJustify />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().setHorizontalRule().run()}
-            title="Horizontal Rule"
-            isActive={false}
-          >
-            <FaMinus />
-          </ToolbarButton>
+            <Separator />
 
-          <Separator />
+            {/* Lists */}
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleBulletList().run()}
+              title="Bullet List (Ctrl + Shift + 8)"
+              isActive={editorState?.isBulletList ?? false}
+            >
+              <FaListUl />
+            </ToolbarButton>
 
-          {/* History */}
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().undo().run()}
-            title="Undo (Ctrl + Z)"
-            isActive={false}
-          >
-            <FaUndo />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+              title="Numbered List (Ctrl + Shift + 7)"
+              isActive={editorState?.isOrderedList ?? false}
+            >
+              <FaListOl />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().redo().run()}
-            title="Redo (Ctrl + Shift + Z)"
-            isActive={false}
-          >
-            <FaRedo />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+              title="Blockquote (Ctrl + Shift + B)"
+              isActive={editorState?.isBlockquote ?? false}
+            >
+              <FaQuoteLeft />
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+              title="Code Block (Ctrl + Alt + C)"
+              isActive={editorState?.isCodeBlock ?? false}
+            >
+              <FaCode />
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+              title="Horizontal Rule"
+              isActive={false}
+            >
+              <FaMinus />
+            </ToolbarButton>
+
+            <Separator />
+
+            {/* History */}
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().undo().run()}
+              title="Undo (Ctrl + Z)"
+              isActive={false}
+            >
+              <FaUndo />
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().redo().run()}
+              title="Redo (Ctrl + Shift + Z)"
+              isActive={false}
+            >
+              <FaRedo />
+            </ToolbarButton>
+          </div>
+        </div>
+
+        {/* Editor Area */}
+        <div className="flex-1 p-6 overflow-auto bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-4xl mx-auto">
+            <EditorContent editor={editor} />
+          </div>
         </div>
       </div>
-
-      {/* Editor Area */}
-      <div className="flex-1 p-6 overflow-auto bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto">
-          <EditorContent editor={editor} />
-        </div>
-      </div>
-
-    </div>
+          {/* Link Modal */}
+          {showLinkModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
+                <input
+                  type="url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowLinkModal(false)}
+                    className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (linkUrl) {
+                        editor?.chain().focus().setLink({ href: linkUrl }).run();
+                      }
+                      setShowLinkModal(false);
+                      setLinkUrl('');
+                    }}
+                    className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    Insert
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+    </>
   );
 };
 

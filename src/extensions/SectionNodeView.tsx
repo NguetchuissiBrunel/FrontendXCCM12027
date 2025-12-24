@@ -7,7 +7,7 @@
  * Features:
  * - Hover state management
  * - 3px solid purple border on hover
- * - "Section" label badge at top-left
+ * - EDITABLE "Partie" label badge at top-left
  * - Smooth 150ms border transition
  * - Editable content area
  * 
@@ -16,9 +16,9 @@
  */
 
 import React, { useState } from 'react';
-import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
+import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
-export default function SectionNodeView() {
+export default function SectionNodeView({ node, updateAttributes }: NodeViewProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -35,8 +35,12 @@ export default function SectionNodeView() {
         borderRadius: '4px',
       }}
     >
-      {/* Label Badge */}
-      <div
+      {/* Editable Label Badge */}
+      <input
+        type="text"
+        value={node.attrs.title}
+        onChange={(e) => updateAttributes({ title: e.target.value })}
+        /*placeholder="Partie"*/
         style={{
           position: 'absolute',
           top: '-12px',
@@ -48,10 +52,14 @@ export default function SectionNodeView() {
           fontSize: '12px',
           fontWeight: '600',
           zIndex: 10,
+          border: 'none',
+          outline: 'none',
+          minWidth: '60px',
+          width: 'auto',
         }}
-      >
-        Section
-      </div>
+        onFocus={(e) => e.target.style.outline = '2px solid rgba(139, 92, 246, 0.5)'}
+        onBlur={(e) => e.target.style.outline = 'none'}
+      />
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

@@ -1,9 +1,10 @@
 /**
- * EDITOR LAYOUT COMPONENT - WITH DARK MODE
+ * EDITOR LAYOUT COMPONENT - WITH DARK MODE & REAL-TIME TOC
  * 
  * Main layout container for the XCCM editor.
  * Implements three-column layout: TOC (left) | Main Editor (center) | IconBar + Panels (right)
  * 
+ * Now with real-time Table of Contents extraction from TipTap editor!
  * Dark mode support added matching rest of site (Navbar colors)
  * 
  * @author JOHAN
@@ -13,6 +14,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Editor } from '@tiptap/react';
 import { 
   FaCloudUploadAlt, 
   FaInfo, 
@@ -27,7 +29,7 @@ import {
 import TableOfContents from './TableOfContents';
 import MainEditor from './MainEditor';
 import StructureDeCours from './StructureDeCours';
-import { mockTOCItems } from '@/data/mockEditorData';
+import { useTOC } from '@/hooks/useTOC';
 
 interface EditorLayoutProps {
   children?: React.ReactNode;
@@ -44,13 +46,33 @@ type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet'
  * Layout structure:
  * - Header: Fixed top toolbar (64px height)
  * - Content: Three columns below header
- *   - Left: Table of Contents (288px fixed)
+ *   - Left: Table of Contents (288px fixed) - Now with real-time extraction!
  *   - Center: Main editor (flexible width)
  *   - Right: IconBar (64px fixed) + Panel (288px when open)
  */
 export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // State for active right panel
   const [activePanel, setActivePanel] = useState<RightPanelType>('structure');
+  
+  // State to store editor instance
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  
+  // Extract TOC from editor in real-time
+  const tocItems = useTOC(editorInstance, 300);
+  
+  // Handle TOC item click - scroll to node
+  const handleTOCItemClick = (itemId: string) => {
+    if (!editorInstance) return;
+    
+    // Find the node by data-id attribute
+    const editorDom = editorInstance.view.dom;
+    const element = editorDom.querySelector(`[data-id="${itemId}"]`);
+    
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Optional: Flash highlight or focus
+    }
+  };
 
   /**
    * Toggle panel - close if same icon clicked, switch if different
@@ -119,8 +141,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         {/* LEFT SIDEBAR - Table of Contents */}
         <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
           <TableOfContents 
-            items={mockTOCItems}
-            onItemClick={(itemId) => console.log('TOC item clicked:', itemId)}
+            items={tocItems}
+            onItemClick={handleTOCItemClick}
           />
         </aside>
 
@@ -129,6 +151,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           <MainEditor 
             initialContent="<p>Commencez à écrire votre contenu ici...</p>"
             onContentChange={(content) => console.log('Content changed:', content)}
+            onEditorReady={(editor) => setEditorInstance(editor)}
           />
         </main>
 

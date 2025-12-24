@@ -39,7 +39,8 @@ import {
 
 interface MainEditorProps {
   initialContent?: string;
-  onContentChange?: (content: string) => void;  
+  onContentChange?: (content: string) => void;
+  onEditorReady?: (editor: any) => void; // Callback when editor is ready
 }
 
 const headingOptions = [
@@ -54,7 +55,8 @@ const headingOptions = [
 
 export const MainEditor: React.FC<MainEditorProps> = ({ 
   initialContent, 
-  onContentChange 
+  onContentChange,
+  onEditorReady 
 }) => {
   
   const TextAlignWithShortcuts = TextAlign.extend({
@@ -98,6 +100,10 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       attributes: {
         class: 'prose dark:prose-invert max-w-none min-h-[500px] p-4 focus:outline-none editor-focusable',
       },
+    },
+    onCreate: ({ editor }) => {
+      // Notify parent component that editor is ready
+      onEditorReady?.(editor);
     },
     onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });

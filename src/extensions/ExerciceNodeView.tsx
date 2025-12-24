@@ -1,24 +1,24 @@
 /**
  * EXERCICE NODE VIEW - React Component
  * 
- * Visual rendering component for Exercice (Exercise) nodes.
+ * Visual rendering component for Exercice nodes.
  * Displays indigo border (#6366F1) on hover with smooth transition.
  * 
  * Features:
  * - Hover state management
  * - 3px solid indigo border on hover
- * - "Exercice" label badge at top-left
+ * - EDITABLE "Exercice" label badge at top-left
  * - Smooth 150ms border transition
  * - Editable content area
  * 
  * @author JOHAN
- * @date December 2024
+ * @date December 2025
  */
 
 import React, { useState } from 'react';
-import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
+import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
-export default function ExerciceNodeView() {
+export default function ExerciceNodeView({ node, updateAttributes }: NodeViewProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -35,8 +35,12 @@ export default function ExerciceNodeView() {
         borderRadius: '4px',
       }}
     >
-      {/* Label Badge */}
-      <div
+      {/* Editable Label Badge */}
+      <input
+        type="text"
+        value={node.attrs.title}
+        onChange={(e) => updateAttributes({ title: e.target.value })}
+        /*placeholder="Exercice"*/
         style={{
           position: 'absolute',
           top: '-12px',
@@ -48,10 +52,14 @@ export default function ExerciceNodeView() {
           fontSize: '12px',
           fontWeight: '600',
           zIndex: 10,
+          border: 'none',
+          outline: 'none',
+          minWidth: '70px',
+          width: 'auto',
         }}
-      >
-        Exercice
-      </div>
+        onFocus={(e) => e.target.style.outline = '2px solid rgba(99, 102, 241, 0.5)'}
+        onBlur={(e) => e.target.style.outline = 'none'}
+      />
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

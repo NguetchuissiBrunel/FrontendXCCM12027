@@ -287,7 +287,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {/* Spacer to push actions to bottom */}
             <div className="flex-1"></div>
 
-            {/* Bottom action buttons */}
+            {/* Bottom action buttons
             <button 
               className="flex h-12 w-12 items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Sauvegarder"
@@ -299,7 +299,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               title="Publier"
             >
               <FaPaperPlane className="text-xl" />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

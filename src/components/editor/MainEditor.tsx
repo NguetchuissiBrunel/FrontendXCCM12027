@@ -100,6 +100,23 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       attributes: {
         class: 'prose dark:prose-invert max-w-none min-h-[500px] p-4 focus:outline-none editor-focusable',
       },
+      handleDrop: (view, event, slice, moved) => {
+        if (moved) return false; // Ignore internal moves
+
+        event.preventDefault();
+
+        const data = event.dataTransfer?.getData('application/xccm-knowledge');
+        if (!data) return false;
+
+        try {
+          const draggedItem = JSON.parse(data);
+          console.log('Dropped item:', draggedItem); // Test: Check console for payload
+          return true; // Handled
+        } catch (error) {
+          console.error('Drop parse error:', error);
+          return false;
+        }
+      },
     },
     onCreate: ({ editor }) => {
       // Notify parent component that editor is ready

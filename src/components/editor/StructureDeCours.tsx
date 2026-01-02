@@ -9,6 +9,7 @@
  * - Single-select content type filters using exact color codes
  * - Shows selected type with full child hierarchy
  * - Search functionality
+ * - Drag & drop support (full hierarchy preserved)
  * 
  * @author JOHAN
  * @date November 2025
@@ -18,12 +19,32 @@
 
 import React, { useState } from 'react';
 import { FaTimes, FaBook, FaChevronRight, FaChevronDown } from 'react-icons/fa';
-import { mockCourseData } from '@/data/mockEditorData';
+import { mockCourseData, flattenCourseStructure } from '@/data/mockEditorData';
 import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS } from '@/types/editor.types';
 
 interface StructureDeCoursProps {
   onClose: () => void;
 }
+
+// Pre-flatten data once for performance
+const flattenedItems = flattenCourseStructure(mockCourseData);
+
+// Helper: Get full item with all nested children by ID
+const getItemWithHierarchy = (itemId: string): any => {
+  const root = flattenedItems.find(item => item.id === itemId);
+  if (!root) return null;
+
+  const buildTree = (current: any): any => {
+    return {
+      ...current,
+      children: flattenedItems
+        .filter(child => child.parentId === current.id)
+        .map(buildTree)
+    };
+  };
+
+  return buildTree(root);
+};
 
 // Helper to get background color class for items
 const getItemBgClass = (type: ItemType) => {
@@ -105,6 +126,13 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       <div
         key={itemId}
         className={`ml-8 flex cursor-pointer items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('notion')}`}
+        draggable
+        onDragStart={(e) => {
+          const fullItem = getItemWithHierarchy(itemId);
+          if (fullItem) {
+            e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+          }
+        }}
       >
         <div 
           className="h-2 w-2 shrink-0 rounded-full" 
@@ -119,56 +147,59 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
   // Render paragraph as child (no search filtering)
   const renderParagraphChild = (paragraph: Paragraph, parentId: string, index: number) => {
-    const itemId = `${parentId}-para-${index}`;
+    const itemId = `${parentId}-paragraph-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
-    if (!shouldShowType('paragraph')) return null;
-
     const hasNotions = paragraph.notions && paragraph.notions.length > 0;
     const hasExercise = !!paragraph.exercise;
-    const hasVisibleChildren = (hasNotions && shouldShowType('notion')) || (hasExercise && shouldShowType('exercise'));
+
+    if (!shouldShowType('paragraph')) return null;
 
     return (
-      <div key={itemId} className="ml-6">
+      <div key={itemId}>
         <div
-          className={`flex cursor-pointer items-center justify-between rounded-md border p-2.5 transition-all hover:shadow-sm ${getItemBgClass('paragraph')}`}
-          onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
+          className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md ${getItemBgClass('paragraph')}`}
+          onClick={() => (hasNotions || hasExercise) ? toggleExpansion(itemId) : null}
+          draggable
+          onDragStart={(e) => {
+            const fullItem = getItemWithHierarchy(itemId);
+            if (fullItem) {
+              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            }
+          }}
         >
-          <div className="flex items-center gap-2">
-            {hasVisibleChildren && (
-              <button className="shrink-0">
-                {isExpanded ? (
-                  <FaChevronDown className="h-3 w-3" style={{ color: ITEM_COLORS.paragraph }} />
-                ) : (
-                  <FaChevronRight className="h-3 w-3" style={{ color: ITEM_COLORS.paragraph }} />
-                )}
-              </button>
-            )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
-              style={{ backgroundColor: ITEM_COLORS.paragraph }}
-            />
-            <span className="text-xs font-medium" style={{ color: ITEM_COLORS.paragraph }}>
+          <div className="flex items-center gap-2.5">
+            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ITEM_COLORS.paragraph }} />
+            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.paragraph }}>
               {paragraph.title}
             </span>
           </div>
+          {(hasNotions || hasExercise) && (
+            <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.paragraph }}>
+              {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
+            </button>
+          )}
         </div>
 
-        {isExpanded && hasVisibleChildren && (
-          <div className="ml-4 mt-1 space-y-1">
-            {hasNotions && shouldShowType('notion') && paragraph.notions.map((notion, idx) => 
-              renderNotion(notion, itemId, idx)
-            )}
-            
-            {hasExercise && shouldShowType('exercise') && (
-              <div className={`ml-8 flex items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('exercise')}`}>
-                <div 
-                  className="h-2 w-2 shrink-0 rounded-full" 
-                  style={{ backgroundColor: ITEM_COLORS.exercise }}
-                />
-                <span className="text-xs font-medium" style={{ color: ITEM_COLORS.exercise }}>
-                  Exercice ({paragraph.exercise!.questions.length} questions)
-                </span>
+        {isExpanded && (hasNotions || hasExercise) && (
+          <div className="mt-2 space-y-1.5 pl-4">
+            {paragraph.notions?.map((notion, idx) => renderNotion(notion, itemId, idx))}
+            {paragraph.exercise && (
+              <div
+                className={`rounded-lg border p-3 ${getItemBgClass('exercise')}`}
+                draggable
+                onDragStart={(e) => {
+                  const exerciseId = `${itemId}-exercise`;
+                  const fullItem = getItemWithHierarchy(exerciseId) || {
+                    id: exerciseId,
+                    title: `Exercice: ${paragraph.exercise?.questions.length ?? 0} question(s)`,
+                    type: 'exercise',
+                    parentId: itemId,
+                    data: paragraph.exercise
+                  };
+                  e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+                }}
+              >
+                Exercice: {paragraph.exercise.questions.length} question(s)
               </div>
             )}
           </div>
@@ -177,417 +208,113 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     );
   };
 
-  // Render chapter as child (no search filtering)
+  // Render chapter as child
   const renderChapterChild = (chapter: Chapter, parentId: string, index: number) => {
-    const itemId = `${parentId}-chap-${index}`;
+    const itemId = `${parentId}-chapter-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+    const hasParagraphs = chapter.paragraphs && chapter.paragraphs.length > 0;
+
     if (!shouldShowType('chapter')) return null;
 
-    const hasParagraphs = chapter.paragraphs && chapter.paragraphs.length > 0;
-    const hasVisibleChildren = hasParagraphs && shouldShowType('paragraph');
-
     return (
-      <div key={itemId} className="ml-4">
+      <div key={itemId}>
         <div
-          className={`flex cursor-pointer items-center justify-between rounded-md border p-2.5 transition-all hover:shadow-sm ${getItemBgClass('chapter')}`}
-          onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
+          className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md ${getItemBgClass('chapter')}`}
+          onClick={() => hasParagraphs ? toggleExpansion(itemId) : null}
+          draggable
+          onDragStart={(e) => {
+            const fullItem = getItemWithHierarchy(itemId);
+            if (fullItem) {
+              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            }
+          }}
         >
-          <div className="flex items-center gap-2">
-            {hasVisibleChildren && (
-              <button className="shrink-0">
-                {isExpanded ? (
-                  <FaChevronDown className="h-3 w-3" style={{ color: ITEM_COLORS.chapter }} />
-                ) : (
-                  <FaChevronRight className="h-3 w-3" style={{ color: ITEM_COLORS.chapter }} />
-                )}
-              </button>
-            )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
-              style={{ backgroundColor: ITEM_COLORS.chapter }}
-            />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.chapter }}>
+          <div className="flex items-center gap-2.5">
+            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ITEM_COLORS.chapter }} />
+            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.chapter }}>
               {chapter.title}
             </span>
           </div>
+          {hasParagraphs && (
+            <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.chapter }}>
+              {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
+            </button>
+          )}
         </div>
 
-        {isExpanded && hasVisibleChildren && hasParagraphs && (
-          <div className="mt-1 space-y-1">
-            {chapter.paragraphs.map((para, idx) => 
-              renderParagraphChild(para, itemId, idx)
-            )}
+        {isExpanded && hasParagraphs && (
+          <div className="mt-2 space-y-1.5 pl-4">
+            {chapter.paragraphs.map((para, idx) => renderParagraphChild(para, itemId, idx))}
           </div>
         )}
       </div>
     );
   };
 
-  // Render section as child (no search filtering)
+  // Render section as child
   const renderSectionChild = (section: Section, parentId: string, index: number) => {
-    const itemId = `${parentId}-sec-${index}`;
+    const itemId = `${parentId}-section-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+    const hasChapters = section.chapters && section.chapters.length > 0;
+
     if (!shouldShowType('section')) return null;
 
-    const hasChapters = section.chapters && section.chapters.length > 0;
-    const hasVisibleChildren = hasChapters && shouldShowType('chapter');
-
     return (
-      <div key={itemId} className="ml-2">
+      <div key={itemId}>
         <div
-          className={`flex cursor-pointer items-center justify-between rounded-md border p-3 transition-all hover:shadow-sm ${getItemBgClass('section')}`}
-          onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
+          className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md ${getItemBgClass('section')}`}
+          onClick={() => hasChapters ? toggleExpansion(itemId) : null}
+          draggable
+          onDragStart={(e) => {
+            const fullItem = getItemWithHierarchy(itemId);
+            if (fullItem) {
+              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            }
+          }}
         >
-          <div className="flex items-center gap-2">
-            {hasVisibleChildren && (
-              <button className="shrink-0">
-                {isExpanded ? (
-                  <FaChevronDown className="h-3 w-3" style={{ color: ITEM_COLORS.section }} />
-                ) : (
-                  <FaChevronRight className="h-3 w-3" style={{ color: ITEM_COLORS.section }} />
-                )}
-              </button>
-            )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
-              style={{ backgroundColor: ITEM_COLORS.section }}
-            />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.section }}>
+          <div className="flex items-center gap-2.5">
+            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ITEM_COLORS.section }} />
+            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.section }}>
               {section.title}
             </span>
           </div>
+          {hasChapters && (
+            <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.section }}>
+              {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
+            </button>
+          )}
         </div>
 
-        {isExpanded && hasVisibleChildren && hasChapters && (
-          <div className="mt-1 space-y-1">
-            {section.chapters.map((chap, idx) => 
-              renderChapterChild(chap, itemId, idx)
-            )}
+        {isExpanded && hasChapters && (
+          <div className="mt-2 space-y-1.5 pl-4">
+            {section.chapters.map((chap, idx) => renderChapterChild(chap, itemId, idx))}
           </div>
         )}
       </div>
     );
   };
 
-  // Render paragraph
-  // Render section (top-level, applies search)
-  const renderSection = (section: Section, parentId: string, index: number) => {
-    const itemId = `${parentId}-sec-${index}`;
-    const isExpanded = expandedItems.has(itemId);
-    
-    // Check if we should show sections
-    if (!shouldShowType('section')) return null;
-    // Only check section title when searching
-    if (!matchesSearch(section.title)) return null;
-
-    const hasChapters = section.chapters && section.chapters.length > 0;
-    const hasVisibleChildren = hasChapters && shouldShowType('chapter');
-
-    return (
-      <div key={itemId} className="ml-2">
-        <div
-          className={`flex cursor-pointer items-center justify-between rounded-md border p-3 transition-all hover:shadow-sm ${getItemBgClass('section')}`}
-          onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
-        >
-          <div className="flex items-center gap-2">
-            {hasVisibleChildren && (
-              <button className="shrink-0">
-                {isExpanded ? (
-                  <FaChevronDown className="h-3 w-3" style={{ color: ITEM_COLORS.section }} />
-                ) : (
-                  <FaChevronRight className="h-3 w-3" style={{ color: ITEM_COLORS.section }} />
-                )}
-              </button>
-            )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
-              style={{ backgroundColor: ITEM_COLORS.section }}
-            />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.section }}>
-              {section.title}
-            </span>
-          </div>
-        </div>
-
-        {isExpanded && hasVisibleChildren && hasChapters && (
-          <div className="mt-1 space-y-1">
-            {/* Render ALL chapters (no search filter on children) */}
-            {section.chapters.map((chap, idx) => 
-              renderChapterChild(chap, itemId, idx)
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Render chapter (top-level, applies search)
-  const renderChapter = (chapter: Chapter, parentId: string, index: number) => {
-    const itemId = `${parentId}-chap-${index}`;
-    const isExpanded = expandedItems.has(itemId);
-    
-    // Check if we should show chapters
-    if (!shouldShowType('chapter')) return null;
-    // Only check chapter title when searching
-    if (!matchesSearch(chapter.title)) return null;
-
-    const hasParagraphs = chapter.paragraphs && chapter.paragraphs.length > 0;
-    const hasVisibleChildren = hasParagraphs && shouldShowType('paragraph');
-
-    return (
-      <div key={itemId} className="ml-4">
-        <div
-          className={`flex cursor-pointer items-center justify-between rounded-md border p-2.5 transition-all hover:shadow-sm ${getItemBgClass('chapter')}`}
-          onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
-        >
-          <div className="flex items-center gap-2">
-            {hasVisibleChildren && (
-              <button className="shrink-0">
-                {isExpanded ? (
-                  <FaChevronDown className="h-3 w-3" style={{ color: ITEM_COLORS.chapter }} />
-                ) : (
-                  <FaChevronRight className="h-3 w-3" style={{ color: ITEM_COLORS.chapter }} />
-                )}
-              </button>
-            )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
-              style={{ backgroundColor: ITEM_COLORS.chapter }}
-            />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.chapter }}>
-              {chapter.title}
-            </span>
-          </div>
-        </div>
-
-        {isExpanded && hasVisibleChildren && hasParagraphs && (
-          <div className="mt-1 space-y-1">
-            {/* Render ALL paragraphs (no search filter on children) */}
-            {chapter.paragraphs.map((para, idx) => 
-              renderParagraphChild(para, itemId, idx)
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Render paragraph (top-level, applies search)
-  const renderParagraph = (paragraph: Paragraph, parentId: string, index: number) => {
-    const itemId = `${parentId}-para-${index}`;
-    const isExpanded = expandedItems.has(itemId);
-    
-    // Check if we should show paragraphs
-    if (!shouldShowType('paragraph')) return null;
-    // Only check paragraph title when searching
-    if (!matchesSearch(paragraph.title)) return null;
-
-    const hasNotions = paragraph.notions && paragraph.notions.length > 0;
-    const hasExercise = !!paragraph.exercise;
-    const hasVisibleChildren = (hasNotions && shouldShowType('notion')) || (hasExercise && shouldShowType('exercise'));
-
-    return (
-      <div key={itemId} className="ml-6">
-        <div
-          className={`flex cursor-pointer items-center justify-between rounded-md border p-2.5 transition-all hover:shadow-sm ${getItemBgClass('paragraph')}`}
-          onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
-        >
-          <div className="flex items-center gap-2">
-            {hasVisibleChildren && (
-              <button className="shrink-0">
-                {isExpanded ? (
-                  <FaChevronDown className="h-3 w-3" style={{ color: ITEM_COLORS.paragraph }} />
-                ) : (
-                  <FaChevronRight className="h-3 w-3" style={{ color: ITEM_COLORS.paragraph }} />
-                )}
-              </button>
-            )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
-              style={{ backgroundColor: ITEM_COLORS.paragraph }}
-            />
-            <span className="text-xs font-medium" style={{ color: ITEM_COLORS.paragraph }}>
-              {paragraph.title}
-            </span>
-          </div>
-        </div>
-
-        {isExpanded && hasVisibleChildren && (
-          <div className="ml-4 mt-1 space-y-1">
-            {/* Render ALL notions and exercises (no search filter on children) */}
-            {hasNotions && shouldShowType('notion') && paragraph.notions.map((notion, idx) => 
-              renderNotion(notion, itemId, idx)
-            )}
-            
-            {hasExercise && shouldShowType('exercise') && (
-              <div className={`ml-8 flex items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('exercise')}`}>
-                <div 
-                  className="h-2 w-2 shrink-0 rounded-full" 
-                  style={{ backgroundColor: ITEM_COLORS.exercise }}
-                />
-                <span className="text-xs font-medium" style={{ color: ITEM_COLORS.exercise }}>
-                  Exercice ({paragraph.exercise!.questions.length} questions)
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Render all sections (when Section filter is active)
-  const renderAllSections = () => {
-    const allSections: { section: Section; courseId: string; sectionIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
-      course.sections?.forEach((section, secIdx) => {
-        // Only check section title (not children)
-        if (matchesSearch(section.title)) {
-          allSections.push({
-            section,
-            courseId: `course-${courseIdx}`,
-            sectionIndex: secIdx
-          });
-        }
-      });
-    });
-
-    return allSections.map(({ section, courseId, sectionIndex }) => 
-      renderSection(section, courseId, sectionIndex)
-    );
-  };
-
-  // Render all chapters (when Chapter filter is active)
-  const renderAllChapters = () => {
-    const allChapters: { chapter: Chapter; parentId: string; chapterIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
-      course.sections?.forEach((section, secIdx) => {
-        section.chapters?.forEach((chapter, chapIdx) => {
-          // Only check chapter title (not children)
-          if (matchesSearch(chapter.title)) {
-            allChapters.push({
-              chapter,
-              parentId: `course-${courseIdx}-sec-${secIdx}`,
-              chapterIndex: chapIdx
-            });
-          }
-        });
-      });
-    });
-
-    return allChapters.map(({ chapter, parentId, chapterIndex }) => 
-      renderChapter(chapter, parentId, chapterIndex)
-    );
-  };
-
-  // Render all paragraphs (when Paragraph filter is active)
-  const renderAllParagraphs = () => {
-    const allParagraphs: { paragraph: Paragraph; parentId: string; paragraphIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
-      course.sections?.forEach((section, secIdx) => {
-        section.chapters?.forEach((chapter, chapIdx) => {
-          chapter.paragraphs?.forEach((paragraph, paraIdx) => {
-            // Only check paragraph title (not children)
-            if (matchesSearch(paragraph.title)) {
-              allParagraphs.push({
-                paragraph,
-                parentId: `course-${courseIdx}-sec-${secIdx}-chap-${chapIdx}`,
-                paragraphIndex: paraIdx
-              });
-            }
-          });
-        });
-      });
-    });
-
-    return allParagraphs.map(({ paragraph, parentId, paragraphIndex }) => 
-      renderParagraph(paragraph, parentId, paragraphIndex)
-    );
-  };
-
-  // Render all notions (when Notion filter is active)
-  const renderAllNotions = () => {
-    const allNotions: { notion: string; parentId: string; notionIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
-      course.sections?.forEach((section, secIdx) => {
-        section.chapters?.forEach((chapter, chapIdx) => {
-          chapter.paragraphs?.forEach((paragraph, paraIdx) => {
-            paragraph.notions?.forEach((notion, notionIdx) => {
-              // Only check notion text
-              if (matchesSearch(notion)) {
-                allNotions.push({
-                  notion,
-                  parentId: `course-${courseIdx}-sec-${secIdx}-chap-${chapIdx}-para-${paraIdx}`,
-                  notionIndex: notionIdx
-                });
-              }
-            });
-          });
-        });
-      });
-    });
-
-    return allNotions.map(({ notion, parentId, notionIndex }) => 
-      renderNotion(notion, parentId, notionIndex)
-    );
-  };
-
-  // Render all exercises (when Exercise filter is active)
-  const renderAllExercises = () => {
-    const allExercises: { paragraph: Paragraph; parentId: string }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
-      course.sections?.forEach((section, secIdx) => {
-        section.chapters?.forEach((chapter, chapIdx) => {
-          chapter.paragraphs?.forEach((paragraph, paraIdx) => {
-            if (paragraph.exercise) {
-              allExercises.push({
-                paragraph,
-                parentId: `course-${courseIdx}-sec-${secIdx}-chap-${chapIdx}-para-${paraIdx}`
-              });
-            }
-          });
-        });
-      });
-    });
-
-    return allExercises.map(({ paragraph, parentId }) => (
-      <div key={parentId} className={`flex items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('exercise')}`}>
-        <div 
-          className="h-2 w-2 shrink-0 rounded-full" 
-          style={{ backgroundColor: ITEM_COLORS.exercise }}
-        />
-        <span className="text-xs font-medium" style={{ color: ITEM_COLORS.exercise }}>
-          Exercice - {paragraph.title} ({paragraph.exercise!.questions.length} questions)
-        </span>
-      </div>
-    ));
-  };
-
-  // Render course
+  // Render course (top level)
   const renderCourse = (course: Course, index: number) => {
     const itemId = `course-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
-    // Check if we should show courses
-    if (!shouldShowType('course')) return null;
-    // Only check course title (not children)
-    if (!matchesSearch(course.title)) return null;
-
     const hasSections = course.sections && course.sections.length > 0;
     const hasVisibleChildren = hasSections && shouldShowType('section');
+
+    if (!matchesSearch(course.title)) return null;
 
     return (
       <div key={itemId}>
         <div
           className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md ${getItemBgClass('course')}`}
           onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
+          draggable
+          onDragStart={(e) => {
+            const fullItem = getItemWithHierarchy(itemId);
+            if (fullItem) {
+              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            }
+          }}
         >
           <div className="flex items-center gap-2.5">
             <FaBook className="h-5 w-5 shrink-0" style={{ color: ITEM_COLORS.course }} />
@@ -597,21 +324,14 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           </div>
           {hasVisibleChildren && (
             <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.course }}>
-              {isExpanded ? (
-                <FaChevronDown className="h-4 w-4" />
-              ) : (
-                <FaChevronRight className="h-4 w-4" />
-              )}
+              {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
             </button>
           )}
         </div>
 
         {isExpanded && hasVisibleChildren && hasSections && (
           <div className="mt-2 space-y-1.5">
-            {/* Render ALL sections (no search filter on children) */}
-            {course.sections.map((sec, idx) => 
-              renderSectionChild(sec, itemId, idx)
-            )}
+            {course.sections.map((sec, idx) => renderSectionChild(sec, itemId, idx))}
           </div>
         )}
       </div>
@@ -630,15 +350,37 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       case 'course':
         return mockCourseData.map((course, idx) => renderCourse(course, idx));
       case 'section':
-        return renderAllSections();
+        return mockCourseData.flatMap(course => 
+          course.sections.map((sec, idx) => renderSectionChild(sec, `course-${mockCourseData.indexOf(course)}`, idx))
+        );
       case 'chapter':
-        return renderAllChapters();
+        return mockCourseData.flatMap(course => 
+          course.sections.flatMap(sec => 
+            sec.chapters.map((chap, idx) => renderChapterChild(chap, `course-${mockCourseData.indexOf(course)}-section-${course.sections.indexOf(sec)}`, idx))
+          )
+        );
       case 'paragraph':
-        return renderAllParagraphs();
+        return mockCourseData.flatMap(course => 
+          course.sections.flatMap(sec => 
+            sec.chapters.flatMap(chap => 
+              chap.paragraphs.map((para, idx) => renderParagraphChild(para, `course-${mockCourseData.indexOf(course)}-section-${course.sections.indexOf(sec)}-chapter-${sec.chapters.indexOf(chap)}`, idx))
+            )
+          )
+        );
       case 'notion':
-        return renderAllNotions();
+        return mockCourseData.flatMap((course, courseIdx) =>
+          course.sections.flatMap((sec, secIdx) =>
+            sec.chapters.flatMap((chap, chapIdx) =>
+              chap.paragraphs.flatMap((para, paraIdx) =>
+                para.notions.map((notion, notionIdx) =>
+                  renderNotion(notion, `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIdx}`, notionIdx)
+                )
+              )
+            )
+          )
+        );
       case 'exercise':
-        return renderAllExercises();
+        return []; // Exercises are rendered as children
       default:
         return mockCourseData.map((course, idx) => renderCourse(course, idx));
     }

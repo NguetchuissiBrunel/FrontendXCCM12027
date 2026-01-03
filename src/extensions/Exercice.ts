@@ -104,7 +104,9 @@ export default Node.create<ExerciceOptions>({
       setExercice:
         () =>
         ({ commands }) => {
-          return commands.setNode(this.name);
+          // Generate unique ID for this exercice
+          const id = `exercice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          return commands.setNode(this.name, { id });
         },
     };
   },

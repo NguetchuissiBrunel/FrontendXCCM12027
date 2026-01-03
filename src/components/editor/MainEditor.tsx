@@ -10,6 +10,7 @@ import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+import Dropcursor from '@tiptap/extension-dropcursor';
 
 // Custom XCCM Hierarchy Nodes
 import Section from '../../extensions/Section';
@@ -39,7 +40,8 @@ import {
 
 interface MainEditorProps {
   initialContent?: string;
-  onContentChange?: (content: string) => void;  
+  onContentChange?: (content: string) => void;
+  onEditorReady?: (editor: any) => void; // Callback when editor is ready
 }
 
 const headingOptions = [
@@ -54,7 +56,8 @@ const headingOptions = [
 
 export const MainEditor: React.FC<MainEditorProps> = ({ 
   initialContent, 
-  onContentChange 
+  onContentChange,
+  onEditorReady 
 }) => {
   
   const TextAlignWithShortcuts = TextAlign.extend({
@@ -72,6 +75,10 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     immediatelyRender: false,
     extensions: [
       StarterKit,
+      Dropcursor.configure({
+        color: '#a78bfa', // Purple to match your theme
+        width: 3,
+      }),
       TextAlignWithShortcuts.configure({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right', 'justify'],
@@ -98,6 +105,106 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       attributes: {
         class: 'prose dark:prose-invert max-w-none min-h-[500px] p-4 focus:outline-none editor-focusable',
       },
+      handleDrop: (view, event, slice, moved) => {
+        event.preventDefault();
+
+        const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
+        if (!jsonData) return false;
+
+        try {
+          const draggedItem = JSON.parse(jsonData);
+
+          const typeMap: Record<string, string> = {
+            course: 'heading',
+            section: 'section',
+            chapter: 'chapitre',
+            paragraph: 'paragraphe',
+            notion: 'notion',
+            exercise: 'exercice'
+          };
+
+          const buildNode = (item: any): any => {
+            const nodeType = typeMap[item.type] || 'paragraph';
+
+            const children = (item.children || []).map(buildNode);
+
+            const attrs: any = {
+              id: item.id,
+              title: item.title || item.data?.title || 'Sans titre',
+            };
+
+            if (item.type === 'course') {
+              attrs.level = 1;
+            }
+
+            // Default: empty for structural nodes
+            let content: any[] = [];
+
+            // Special handling for notion: title text + full content
+            if (item.type === 'notion') {
+              // Title as first text
+              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
+
+              // Add actual content if present
+              if (item.content) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = item.content.trim();
+
+                const parsed: any[] = [];
+                tempDiv.childNodes.forEach((node) => {
+                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+                    parsed.push({ type: 'text', text: node.textContent });
+                  } else if (node.nodeName === 'P') {
+                    const pContent: any[] = [];
+                    node.childNodes.forEach((child) => {
+                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+                        pContent.push({ type: 'text', text: child.textContent });
+                      }
+                    });
+                    if (pContent.length > 0) {
+                      parsed.push({ type: 'paragraph', content: pContent });
+                    }
+                  }
+                });
+
+                content = [...content, ...parsed];
+              }
+            }
+
+            // Exercise: simple question list
+            if (item.type === 'exercise' && item.data?.questions) {
+              const questionsText = item.data.questions
+                .map((q: any, i: number) => `${i + 1}. ${q.question}`)
+                .join('\n\n');
+              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+            }
+
+            return {
+              type: nodeType,
+              attrs,
+              content: [...content, ...children]
+            };
+          };
+
+          const contentToInsert = buildNode(draggedItem);
+
+          const coords = { left: event.clientX, top: event.clientY };
+          const posResult = view.posAtCoords(coords);
+          if (!posResult) return false;
+
+          const node = view.state.schema.nodeFromJSON(contentToInsert);
+          view.dispatch(view.state.tr.insert(posResult.pos, node));
+
+          return true;
+        } catch (error) {
+          console.error('Drop error:', error);
+          return false;
+        }
+      },
+    },
+    onCreate: ({ editor }) => {
+      // Notify parent component that editor is ready
+      onEditorReady?.(editor);
     },
     onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });

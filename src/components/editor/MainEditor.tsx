@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
+import React, { useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { useEditor, EditorContent, useEditorState, Editor } from '@tiptap/react';
 import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import Highlight from '@tiptap/extension-highlight';
@@ -10,6 +10,9 @@ import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { toast } from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 
 // Custom XCCM Hierarchy Nodes
 import Section from '../../extensions/Section';
@@ -17,10 +20,10 @@ import Chapitre from '../../extensions/Chapitre';
 import Paragraphe from '../../extensions/Paragraphe';
 import Notion from '../../extensions/Notion';
 import Exercice from '../../extensions/Exercice';
-import { 
-  FaAlignLeft, 
-  FaAlignCenter, 
-  FaAlignRight, 
+import {
+  FaAlignLeft,
+  FaAlignCenter,
+  FaAlignRight,
   FaAlignJustify,
   FaListUl,
   FaListOl,
@@ -39,7 +42,12 @@ import {
 
 interface MainEditorProps {
   initialContent?: string;
-  onContentChange?: (content: string) => void;  
+  onContentChange?: (content: string) => void;
+  courseId?: number | null;
+}
+
+export interface MainEditorRef {
+  editor: Editor | null;
 }
 
 const headingOptions = [
@@ -52,11 +60,12 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
-export const MainEditor: React.FC<MainEditorProps> = ({ 
-  initialContent, 
-  onContentChange 
-}) => {
-  
+export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
+  initialContent,
+  onContentChange,
+  courseId
+}, ref) => {
+
   const TextAlignWithShortcuts = TextAlign.extend({
     addKeyboardShortcuts() {
       return {
@@ -102,11 +111,16 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });
 
+  // Expose editor instance to parent
+  useImperativeHandle(ref, () => ({
+    editor
+  }));
+
   const editorState = useEditorState({
     editor,
     selector: (ctx) => {
-      if (!ctx.editor) return { 
-        isBold: false, 
+      if (!ctx.editor) return {
+        isBold: false,
         isItalic: false,
         isUnderline: false,
         isStrike: false,
@@ -121,7 +135,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       };
 
       let currentHeading: string | number = 'paragraph';
-      
+
       // Check for custom XCCM nodes first
       if (ctx.editor.isActive('section')) {
         currentHeading = 'section';
@@ -156,7 +170,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isOrderedList: ctx.editor.isActive('orderedList'),
         isBlockquote: ctx.editor.isActive('blockquote'),
         isCodeBlock: ctx.editor.isActive('codeBlock'),
-        isLink: ctx.editor.isActive('link'),  
+        isLink: ctx.editor.isActive('link'),
         currentHeading,
       };
     },
@@ -164,9 +178,40 @@ export const MainEditor: React.FC<MainEditorProps> = ({
 
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    if (courseId) {
+      setIsUploading(true);
+      try {
+        // Create FormData for multipart/form-data
+        const formData = new FormData();
+        formData.append('file', file); // Use 'file' as key, check backend expectation
+
+        const imageUrl = await CourseControllerService.uploadImage(courseId, formData as any);
+        editor?.chain().focus().setImage({ src: imageUrl }).run();
+        toast.success("Image ajoutée");
+      } catch (error) {
+        console.error("Image upload error:", error);
+        toast.error("Erreur lors de l'upload de l'image");
+
+        // Fallback for demo if API fails
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const url = e.target?.result as string;
+          editor?.chain().focus().setImage({ src: url }).run();
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      // Fallback for unsaved courses
+      toast.error("Veuillez sauvegarder le cours une première fois avant d'ajouter des images");
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const url = e.target?.result as string;
@@ -179,12 +224,12 @@ export const MainEditor: React.FC<MainEditorProps> = ({
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
 
-  const ToolbarButton = ({ 
+  const ToolbarButton = ({
     onClick,
     children,
     title,
     isActive = false
-  }: { 
+  }: {
     onClick: () => void;
     children: React.ReactNode;
     title: string;
@@ -193,11 +238,10 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 rounded transition-colors ${
-        isActive 
-          ? 'bg-purple-600 text-white hover:bg-purple-700'
-          : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-      }`}
+      className={`px-3 py-2 rounded transition-colors ${isActive
+        ? 'bg-purple-600 text-white hover:bg-purple-700'
+        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+        }`}
       title={title}
     >
       {children}
@@ -245,8 +289,8 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         style={{ color: currentOption.color }}
       >
         {headingOptions.map(option => (
-          <option 
-            key={option.value} 
+          <option
+            key={option.value}
             value={option.value}
             style={{ color: option.color }}
           >
@@ -260,13 +304,13 @@ export const MainEditor: React.FC<MainEditorProps> = ({
   return (
     <>
       <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
-        
+
         {/* Toolbar */}
         <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
           <div className="flex gap-2 items-center">
-            <HeadingDropdown/>
-            
-            < Separator/>
+            <HeadingDropdown />
+
+            < Separator />
 
             {/* Text Formatting */}
             <ToolbarButton
@@ -343,7 +387,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
               title="Insert Image"
               isActive={false}
             >
-              <FaImage />
+              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FaImage />}
             </ToolbarButton>
 
             <ToolbarButton
@@ -474,44 +518,44 @@ export const MainEditor: React.FC<MainEditorProps> = ({
           </div>
         </div>
       </div>
-          {/* Link Modal */}
-          {showLinkModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
-                <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
-                <input
-                  type="url"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://example.com"
-                  className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
-                  autoFocus
-                />
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowLinkModal(false)}
-                    className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (linkUrl) {
-                        editor?.chain().focus().setLink({ href: linkUrl }).run();
-                      }
-                      setShowLinkModal(false);
-                      setLinkUrl('');
-                    }}
-                    className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
-                  >
-                    Insert
-                  </button>
-                </div>
-              </div>
+      {/* Link Modal */}
+      {showLinkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
+            <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowLinkModal(false)}
+                className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (linkUrl) {
+                    editor?.chain().focus().setLink({ href: linkUrl }).run();
+                  }
+                  setShowLinkModal(false);
+                  setLinkUrl('');
+                }}
+                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+              >
+                Insert
+              </button>
             </div>
-          )}
+          </div>
+        </div>
+      )}
     </>
   );
-};
+});
 
 export default MainEditor;

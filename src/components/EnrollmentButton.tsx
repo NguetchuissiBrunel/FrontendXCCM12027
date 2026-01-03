@@ -16,9 +16,9 @@ interface EnrollmentButtonProps {
   onUnenroll?: () => void;
 }
 
-export default function EnrollmentButton({ 
-  courseId, 
-  size = 'md', 
+export default function EnrollmentButton({
+  courseId,
+  size = 'md',
   variant = 'primary',
   fullWidth = false,
   showProgress = false,
@@ -34,21 +34,21 @@ export default function EnrollmentButton({
 
   const handleClick = async () => {
     if (loading || isLoading) return;
-    
+
     // Empêcher l'inscription si non autorisé
     if (!canEnroll) {
       console.log('❌ Enrollement non autorisé pour le rôle:', user?.role);
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       if (isEnrolled) {
-        unenroll();
+        await unenroll();
         onUnenroll?.();
       } else {
-        const result = enroll();
+        const result = await enroll();
         if (result) onEnroll?.();
       }
     } catch (error) {
@@ -74,10 +74,10 @@ export default function EnrollmentButton({
 
   // Variantes selon l'état
   const variantClasses = {
-    primary: !canEnroll 
-      ? 'bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed' 
-      : isEnrolled 
-        ? 'bg-green-600 hover:bg-green-700 text-white' 
+    primary: !canEnroll
+      ? 'bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed'
+      : isEnrolled
+        ? 'bg-green-600 hover:bg-green-700 text-white'
         : 'bg-purple-600 hover:bg-purple-700 text-white',
     secondary: !canEnroll
       ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
@@ -138,11 +138,11 @@ export default function EnrollmentButton({
           </>
         )}
       </button>
-      
+
       {showProgress && isEnrolled && progress > 0 && (
         <div className="mt-2">
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-            <div 
+            <div
               className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
             ></div>

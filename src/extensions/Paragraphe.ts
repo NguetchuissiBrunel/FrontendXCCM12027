@@ -20,7 +20,7 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import ParagrapheNodeView from './ParagrapheNodeView';
 
 export interface ParagrapheOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module '@tiptap/core' {
@@ -103,9 +103,9 @@ export default Node.create<ParagrapheOptions>({
     return {
       setParagraphe:
         () =>
-        ({ commands }) => {
-          return commands.wrapIn(this.name);
-        },
+          ({ commands }) => {
+            return commands.wrapIn(this.name);
+          },
     };
   },
 

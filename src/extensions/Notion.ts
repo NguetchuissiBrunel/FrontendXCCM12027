@@ -20,7 +20,7 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import NotionNodeView from './NotionNodeView';
 
 export interface NotionOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module '@tiptap/core' {
@@ -103,9 +103,9 @@ export default Node.create<NotionOptions>({
     return {
       setNotion:
         () =>
-        ({ commands }) => {
-          return commands.setNode(this.name);
-        },
+          ({ commands }) => {
+            return commands.setNode(this.name);
+          },
     };
   },
 

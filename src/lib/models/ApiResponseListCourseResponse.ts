@@ -2,11 +2,11 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AuthenticationResponse } from './AuthenticationResponse';
+import type { CourseResponse } from './CourseResponse';
 /**
  * Réponse API standardisée
  */
-export type ApiResponseAuthenticationResponse = {
+export type ApiResponseListCourseResponse = {
     /**
      * Code de statut HTTP
      */
@@ -19,7 +19,10 @@ export type ApiResponseAuthenticationResponse = {
      * Message décrivant le résultat de l'opération
      */
     message?: string;
-    data?: AuthenticationResponse;
+    /**
+     * Données de la réponse
+     */
+    data?: Array<CourseResponse>;
     /**
      * Erreurs de validation (si applicable)
      */

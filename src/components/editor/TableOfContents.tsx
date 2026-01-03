@@ -20,13 +20,11 @@ interface TableOfContentsProps {
   onItemClick?: (itemId: string) => void;
 }
 
-export const TableOfContents: React.FC<TableOfContentsProps> = ({ 
-  items, 
-  onItemClick 
+export const TableOfContents: React.FC<TableOfContentsProps> = ({
+  items,
+  onItemClick
 }) => {
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(
-    new Set(['section-1', 'chapter-1-1'])
-  );
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
 
   const toggleExpand = (itemId: string) => {
@@ -58,18 +56,17 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     return (
       <div key={item.id}>
         <div
-          className={`group relative flex cursor-pointer items-center py-1 pr-2 transition-colors ${
-            isActive 
-              ? 'bg-purple-50 dark:bg-purple-900/30' 
+          className={`group relative flex cursor-pointer items-center py-1 pr-2 transition-colors ${isActive
+              ? 'bg-purple-50 dark:bg-purple-900/30'
               : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-          }`}
+            }`}
           style={{ paddingLeft: `${indentation + 12}px` }}
           onClick={() => handleItemClick(item.id)}
         >
           {/* Colored vertical bar */}
-          <div 
+          <div
             className="absolute top-0 bottom-0 w-1"
-            style={{ 
+            style={{
               backgroundColor: color,
               left: `${indentation}px`
             }}
@@ -99,7 +96,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
           {/* Number */}
           {item.number && (
-            <span 
+            <span
               className="mr-2 shrink-0 text-sm font-medium"
               style={{ color }}
             >
@@ -109,9 +106,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
           {/* Title */}
           <span
-            className={`flex-1 truncate text-sm ${
-              isActive ? 'font-semibold' : 'font-normal'
-            }`}
+            className={`flex-1 truncate text-sm ${isActive ? 'font-semibold' : 'font-normal'
+              }`}
             style={{ color: isActive ? '#a78bfa' : color }}
           >
             {item.title}

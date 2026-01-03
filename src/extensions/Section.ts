@@ -20,7 +20,7 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import SectionNodeView from './SectionNodeView';
 
 export interface SectionOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module '@tiptap/core' {
@@ -103,9 +103,9 @@ export default Node.create<SectionOptions>({
     return {
       setSection:
         () =>
-        ({ commands }) => {
-          return commands.wrapIn(this.name);
-        },
+          ({ commands }) => {
+            return commands.wrapIn(this.name);
+          },
     };
   },
 

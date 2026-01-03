@@ -16,13 +16,16 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTimes, FaBook, FaChevronRight, FaChevronDown } from 'react-icons/fa';
-import { mockCourseData } from '@/data/mockEditorData';
 import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS } from '@/types/editor.types';
+import { useAuth } from '@/contexts/AuthContext';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface StructureDeCoursProps {
   onClose: () => void;
+  onImport?: (item: any, type: ItemType) => void;
 }
 
 // Helper to get background color class for items
@@ -38,10 +41,36 @@ const getItemBgClass = (type: ItemType) => {
   return bgColors[type];
 };
 
-export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) => {
+export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose, onImport }) => {
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<ItemType | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (!user) return;
+
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await CourseControllerService.getAuthorCourses(user.id);
+        // Map API response to editor Course type if needed
+        // Assuming the API returns a similar structure or we need to normalize it
+        setCourses((response as any).courses || response || []);
+      } catch (err: any) {
+        console.error("Error fetching author courses:", err);
+        setError("Impossible de charger vos cours");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [user]);
 
   // Filter types with exact color codes from ITEM_COLORS
   const filterTypes: { type: ItemType; label: string; color: string }[] = [
@@ -80,7 +109,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const shouldShowType = (type: ItemType): boolean => {
     // No filter = show all
     if (!activeFilter) return true;
-    
+
     // Show the filtered type and all its children
     const hierarchy: Record<ItemType, ItemType[]> = {
       'course': ['course', 'section', 'chapter', 'paragraph', 'notion', 'exercise'],
@@ -90,14 +119,14 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       'notion': ['notion'],
       'exercise': ['exercise'],
     };
-    
+
     return hierarchy[activeFilter].includes(type);
   };
 
   // Render notion (no search filtering)
   const renderNotion = (notion: string, parentId: string, index: number) => {
     const itemId = `${parentId}-notion-${index}`;
-    
+
     // Check filter only (no search when rendering as child)
     if (!shouldShowType('notion')) return null;
 
@@ -106,11 +135,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         key={itemId}
         className={`ml-8 flex cursor-pointer items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('notion')}`}
       >
-        <div 
-          className="h-2 w-2 shrink-0 rounded-full" 
+        <div
+          className="h-2 w-2 shrink-0 rounded-full"
           style={{ backgroundColor: ITEM_COLORS.notion }}
         />
-        <span className="flex-1 text-xs font-medium" style={{ color: ITEM_COLORS.notion }}>
+        <span
+          className="flex-1 text-xs hover:underline"
+          style={{ color: ITEM_COLORS.notion }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onImport?.(notion, 'notion');
+          }}
+        >
           {notion}
         </span>
       </div>
@@ -121,7 +157,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderParagraphChild = (paragraph: Paragraph, parentId: string, index: number) => {
     const itemId = `${parentId}-para-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+
     if (!shouldShowType('paragraph')) return null;
 
     const hasNotions = paragraph.notions && paragraph.notions.length > 0;
@@ -144,11 +180,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
                 )}
               </button>
             )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
+            <div
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: ITEM_COLORS.paragraph }}
             />
-            <span className="text-xs font-medium" style={{ color: ITEM_COLORS.paragraph }}>
+            <span 
+              className="text-xs font-medium hover:underline" 
+              style={{ color: ITEM_COLORS.paragraph }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport?.(paragraph, 'paragraph');
+              }}
+            >
               {paragraph.title}
             </span>
           </div>
@@ -156,14 +199,14 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
         {isExpanded && hasVisibleChildren && (
           <div className="ml-4 mt-1 space-y-1">
-            {hasNotions && shouldShowType('notion') && paragraph.notions.map((notion, idx) => 
+            {hasNotions && shouldShowType('notion') && paragraph.notions.map((notion, idx) =>
               renderNotion(notion, itemId, idx)
             )}
-            
+
             {hasExercise && shouldShowType('exercise') && (
               <div className={`ml-8 flex items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('exercise')}`}>
-                <div 
-                  className="h-2 w-2 shrink-0 rounded-full" 
+                <div
+                  className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: ITEM_COLORS.exercise }}
                 />
                 <span className="text-xs font-medium" style={{ color: ITEM_COLORS.exercise }}>
@@ -181,7 +224,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderChapterChild = (chapter: Chapter, parentId: string, index: number) => {
     const itemId = `${parentId}-chap-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+
     if (!shouldShowType('chapter')) return null;
 
     const hasParagraphs = chapter.paragraphs && chapter.paragraphs.length > 0;
@@ -203,11 +246,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
                 )}
               </button>
             )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
+            <div
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: ITEM_COLORS.chapter }}
             />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.chapter }}>
+            <span
+              className="text-sm font-medium hover:underline"
+              style={{ color: ITEM_COLORS.chapter }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport?.(chapter, 'chapter');
+              }}
+            >
               {chapter.title}
             </span>
           </div>
@@ -215,7 +265,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
         {isExpanded && hasVisibleChildren && hasParagraphs && (
           <div className="mt-1 space-y-1">
-            {chapter.paragraphs.map((para, idx) => 
+            {chapter.paragraphs.map((para, idx) =>
               renderParagraphChild(para, itemId, idx)
             )}
           </div>
@@ -228,7 +278,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderSectionChild = (section: Section, parentId: string, index: number) => {
     const itemId = `${parentId}-sec-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+
     if (!shouldShowType('section')) return null;
 
     const hasChapters = section.chapters && section.chapters.length > 0;
@@ -250,11 +300,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
                 )}
               </button>
             )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
+            <div
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: ITEM_COLORS.section }}
             />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.section }}>
+            <span
+              className="text-sm font-medium hover:underline"
+              style={{ color: ITEM_COLORS.section }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport?.(section, 'section');
+              }}
+            >
               {section.title}
             </span>
           </div>
@@ -262,7 +319,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
         {isExpanded && hasVisibleChildren && hasChapters && (
           <div className="mt-1 space-y-1">
-            {section.chapters.map((chap, idx) => 
+            {section.chapters.map((chap, idx) =>
               renderChapterChild(chap, itemId, idx)
             )}
           </div>
@@ -276,7 +333,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderSection = (section: Section, parentId: string, index: number) => {
     const itemId = `${parentId}-sec-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+
     // Check if we should show sections
     if (!shouldShowType('section')) return null;
     // Only check section title when searching
@@ -301,11 +358,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
                 )}
               </button>
             )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
+            <div
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: ITEM_COLORS.section }}
             />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.section }}>
+            <span
+              className="text-sm font-medium hover:underline"
+              style={{ color: ITEM_COLORS.section }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport?.(section, 'section');
+              }}
+            >
               {section.title}
             </span>
           </div>
@@ -314,7 +378,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         {isExpanded && hasVisibleChildren && hasChapters && (
           <div className="mt-1 space-y-1">
             {/* Render ALL chapters (no search filter on children) */}
-            {section.chapters.map((chap, idx) => 
+            {section.chapters.map((chap, idx) =>
               renderChapterChild(chap, itemId, idx)
             )}
           </div>
@@ -327,7 +391,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderChapter = (chapter: Chapter, parentId: string, index: number) => {
     const itemId = `${parentId}-chap-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+
     // Check if we should show chapters
     if (!shouldShowType('chapter')) return null;
     // Only check chapter title when searching
@@ -352,11 +416,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
                 )}
               </button>
             )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
+            <div
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: ITEM_COLORS.chapter }}
             />
-            <span className="text-sm font-medium" style={{ color: ITEM_COLORS.chapter }}>
+            <span
+              className="text-sm font-medium hover:underline"
+              style={{ color: ITEM_COLORS.chapter }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport?.(chapter, 'chapter');
+              }}
+            >
               {chapter.title}
             </span>
           </div>
@@ -365,7 +436,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         {isExpanded && hasVisibleChildren && hasParagraphs && (
           <div className="mt-1 space-y-1">
             {/* Render ALL paragraphs (no search filter on children) */}
-            {chapter.paragraphs.map((para, idx) => 
+            {chapter.paragraphs.map((para, idx) =>
               renderParagraphChild(para, itemId, idx)
             )}
           </div>
@@ -378,7 +449,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderParagraph = (paragraph: Paragraph, parentId: string, index: number) => {
     const itemId = `${parentId}-para-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+
     // Check if we should show paragraphs
     if (!shouldShowType('paragraph')) return null;
     // Only check paragraph title when searching
@@ -404,11 +475,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
                 )}
               </button>
             )}
-            <div 
-              className="h-2 w-2 shrink-0 rounded-full" 
+            <div
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: ITEM_COLORS.paragraph }}
             />
-            <span className="text-xs font-medium" style={{ color: ITEM_COLORS.paragraph }}>
+            <span
+              className="text-xs font-medium hover:underline"
+              style={{ color: ITEM_COLORS.paragraph }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport?.(paragraph, 'paragraph');
+              }}
+            >
               {paragraph.title}
             </span>
           </div>
@@ -417,14 +495,14 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         {isExpanded && hasVisibleChildren && (
           <div className="ml-4 mt-1 space-y-1">
             {/* Render ALL notions and exercises (no search filter on children) */}
-            {hasNotions && shouldShowType('notion') && paragraph.notions.map((notion, idx) => 
+            {hasNotions && shouldShowType('notion') && paragraph.notions.map((notion, idx) =>
               renderNotion(notion, itemId, idx)
             )}
-            
+
             {hasExercise && shouldShowType('exercise') && (
               <div className={`ml-8 flex items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('exercise')}`}>
-                <div 
-                  className="h-2 w-2 shrink-0 rounded-full" 
+                <div
+                  className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: ITEM_COLORS.exercise }}
                 />
                 <span className="text-xs font-medium" style={{ color: ITEM_COLORS.exercise }}>
@@ -441,8 +519,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   // Render all sections (when Section filter is active)
   const renderAllSections = () => {
     const allSections: { section: Section; courseId: string; sectionIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
+
+    courses.forEach((course, courseIdx) => {
       course.sections?.forEach((section, secIdx) => {
         // Only check section title (not children)
         if (matchesSearch(section.title)) {
@@ -455,7 +533,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       });
     });
 
-    return allSections.map(({ section, courseId, sectionIndex }) => 
+    return allSections.map(({ section, courseId, sectionIndex }) =>
       renderSection(section, courseId, sectionIndex)
     );
   };
@@ -463,8 +541,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   // Render all chapters (when Chapter filter is active)
   const renderAllChapters = () => {
     const allChapters: { chapter: Chapter; parentId: string; chapterIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
+
+    courses.forEach((course, courseIdx) => {
       course.sections?.forEach((section, secIdx) => {
         section.chapters?.forEach((chapter, chapIdx) => {
           // Only check chapter title (not children)
@@ -479,7 +557,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       });
     });
 
-    return allChapters.map(({ chapter, parentId, chapterIndex }) => 
+    return allChapters.map(({ chapter, parentId, chapterIndex }) =>
       renderChapter(chapter, parentId, chapterIndex)
     );
   };
@@ -487,8 +565,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   // Render all paragraphs (when Paragraph filter is active)
   const renderAllParagraphs = () => {
     const allParagraphs: { paragraph: Paragraph; parentId: string; paragraphIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
+
+    courses.forEach((course, courseIdx) => {
       course.sections?.forEach((section, secIdx) => {
         section.chapters?.forEach((chapter, chapIdx) => {
           chapter.paragraphs?.forEach((paragraph, paraIdx) => {
@@ -505,7 +583,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       });
     });
 
-    return allParagraphs.map(({ paragraph, parentId, paragraphIndex }) => 
+    return allParagraphs.map(({ paragraph, parentId, paragraphIndex }) =>
       renderParagraph(paragraph, parentId, paragraphIndex)
     );
   };
@@ -513,8 +591,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   // Render all notions (when Notion filter is active)
   const renderAllNotions = () => {
     const allNotions: { notion: string; parentId: string; notionIndex: number }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
+
+    courses.forEach((course, courseIdx) => {
       course.sections?.forEach((section, secIdx) => {
         section.chapters?.forEach((chapter, chapIdx) => {
           chapter.paragraphs?.forEach((paragraph, paraIdx) => {
@@ -533,7 +611,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       });
     });
 
-    return allNotions.map(({ notion, parentId, notionIndex }) => 
+    return allNotions.map(({ notion, parentId, notionIndex }) =>
       renderNotion(notion, parentId, notionIndex)
     );
   };
@@ -541,8 +619,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   // Render all exercises (when Exercise filter is active)
   const renderAllExercises = () => {
     const allExercises: { paragraph: Paragraph; parentId: string }[] = [];
-    
-    mockCourseData.forEach((course, courseIdx) => {
+
+    courses.forEach((course, courseIdx) => {
       course.sections?.forEach((section, secIdx) => {
         section.chapters?.forEach((chapter, chapIdx) => {
           chapter.paragraphs?.forEach((paragraph, paraIdx) => {
@@ -559,11 +637,18 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
     return allExercises.map(({ paragraph, parentId }) => (
       <div key={parentId} className={`flex items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('exercise')}`}>
-        <div 
-          className="h-2 w-2 shrink-0 rounded-full" 
+        <div
+          className="h-2 w-2 shrink-0 rounded-full"
           style={{ backgroundColor: ITEM_COLORS.exercise }}
         />
-        <span className="text-xs font-medium" style={{ color: ITEM_COLORS.exercise }}>
+        <span
+          className="text-xs font-medium hover:underline"
+          style={{ color: ITEM_COLORS.exercise }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onImport?.(paragraph, 'exercise');
+          }}
+        >
           Exercice - {paragraph.title} ({paragraph.exercise!.questions.length} questions)
         </span>
       </div>
@@ -574,7 +659,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderCourse = (course: Course, index: number) => {
     const itemId = `course-${index}`;
     const isExpanded = expandedItems.has(itemId);
-    
+
     // Check if we should show courses
     if (!shouldShowType('course')) return null;
     // Only check course title (not children)
@@ -591,7 +676,14 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         >
           <div className="flex items-center gap-2.5">
             <FaBook className="h-5 w-5 shrink-0" style={{ color: ITEM_COLORS.course }} />
-            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.course }}>
+            <span
+              className="text-sm font-medium line-clamp-2 hover:underline"
+              style={{ color: ITEM_COLORS.course }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport?.(course, 'course');
+              }}
+            >
               {course.title}
             </span>
           </div>
@@ -609,7 +701,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         {isExpanded && hasVisibleChildren && hasSections && (
           <div className="mt-2 space-y-1.5">
             {/* Render ALL sections (no search filter on children) */}
-            {course.sections.map((sec, idx) => 
+            {course.sections.map((sec, idx) =>
               renderSectionChild(sec, itemId, idx)
             )}
           </div>
@@ -622,13 +714,13 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const renderFilteredContent = () => {
     if (!activeFilter) {
       // No filter - show all courses
-      return mockCourseData.map((course, idx) => renderCourse(course, idx));
+      return courses.map((course, idx) => renderCourse(course, idx));
     }
 
     // Render based on active filter type
     switch (activeFilter) {
       case 'course':
-        return mockCourseData.map((course, idx) => renderCourse(course, idx));
+        return courses.map((course, idx) => renderCourse(course, idx));
       case 'section':
         return renderAllSections();
       case 'chapter':
@@ -640,7 +732,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       case 'exercise':
         return renderAllExercises();
       default:
-        return mockCourseData.map((course, idx) => renderCourse(course, idx));
+        return courses.map((course, idx) => renderCourse(course, idx));
     }
   };
 
@@ -702,9 +794,25 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
       {/* Course List */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        <div className="space-y-2">
-          {renderFilteredContent()}
-        </div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <Loader2 className="h-8 w-8 animate-spin mb-2" />
+            <p className="text-sm">Chargement de vos cours...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center text-red-500">
+            <AlertCircle className="h-8 w-8 mb-2" />
+            <p className="text-sm px-4">{error}</p>
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="text-center py-12 text-gray-500 italic">
+            <p className="text-sm">Aucun cours trouvé</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {renderFilteredContent()}
+          </div>
+        )}
       </div>
     </div>
   );

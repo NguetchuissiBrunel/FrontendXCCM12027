@@ -2,11 +2,11 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AuthenticationResponse } from './AuthenticationResponse';
+import type { EnrichedCourseResponse } from './EnrichedCourseResponse';
 /**
  * Réponse API standardisée
  */
-export type ApiResponseAuthenticationResponse = {
+export type ApiResponseEnrichedCourseResponse = {
     /**
      * Code de statut HTTP
      */
@@ -19,7 +19,7 @@ export type ApiResponseAuthenticationResponse = {
      * Message décrivant le résultat de l'opération
      */
     message?: string;
-    data?: AuthenticationResponse;
+    data?: EnrichedCourseResponse;
     /**
      * Erreurs de validation (si applicable)
      */

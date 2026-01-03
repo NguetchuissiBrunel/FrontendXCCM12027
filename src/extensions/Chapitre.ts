@@ -20,7 +20,7 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import ChapitreNodeView from './ChapitreNodeView';
 
 export interface ChapitreOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module '@tiptap/core' {
@@ -103,9 +103,9 @@ export default Node.create<ChapitreOptions>({
     return {
       setChapitre:
         () =>
-        ({ commands }) => {
-          return commands.wrapIn(this.name);
-        },
+          ({ commands }) => {
+            return commands.wrapIn(this.name);
+          },
     };
   },
 

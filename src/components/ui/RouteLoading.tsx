@@ -12,16 +12,16 @@ export default function RouteLoading() {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      
+
       const link = target.closest('a');
-      
-      if (link && 
-          link.getAttribute('href') && 
-          !link.getAttribute('href')?.startsWith('#') &&
-          link.getAttribute('target') !== '_blank' &&
-          !link.getAttribute('download') &&
-          !link.classList.contains('no-loading') &&
-          link.getAttribute('href')?.startsWith('/')
+
+      if (link &&
+        link.getAttribute('href') &&
+        !link.getAttribute('href')?.startsWith('#') &&
+        link.getAttribute('target') !== '_blank' &&
+        !link.getAttribute('download') &&
+        !link.classList.contains('no-loading') &&
+        link.getAttribute('href')?.startsWith('/')
       ) {
         setIsLoading(true);
         setProgress(0);
@@ -29,7 +29,7 @@ export default function RouteLoading() {
     };
 
     document.addEventListener('click', handleClick);
-    
+
     return () => {
       document.removeEventListener('click', handleClick);
     };
@@ -54,15 +54,14 @@ export default function RouteLoading() {
 
   useEffect(() => {
     if (isLoading) {
-      setProgress(100);
       const timer = setTimeout(() => {
         setIsLoading(false);
         setProgress(0);
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, isLoading]);
 
   if (!isLoading) return null;
 
@@ -75,7 +74,7 @@ export default function RouteLoading() {
     <div className="fixed inset-0 z-50">
       {/* Overlay flouté */}
       <div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
-      
+
       {/* Contenu au centre */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen">
         {/* Cercle de progression principal */}
@@ -91,7 +90,7 @@ export default function RouteLoading() {
               fill="transparent"
               className="text-gray-200 dark:text-gray-700"
             />
-            
+
             {/* Cercle de progression */}
             <circle
               cx="50"
@@ -105,7 +104,7 @@ export default function RouteLoading() {
               strokeLinecap="round"
               className="text-purple-600 transition-all duration-300 ease-out"
             />
-            
+
             {/* Effet de brillance */}
             <circle
               cx="50"
@@ -137,12 +136,12 @@ export default function RouteLoading() {
                 <stop offset="50%" stopColor="#EC4899" />
                 <stop offset="100%" stopColor="#3B82F6" />
               </linearGradient>
-              
+
               <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                <feMerge> 
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
+                <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
             </defs>
@@ -154,7 +153,7 @@ export default function RouteLoading() {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white animate-pulse">
             Chargement en cours
           </h3>
-          
+
           {/* Points animés */}
           <div className="flex justify-center space-x-1">
             <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -164,7 +163,7 @@ export default function RouteLoading() {
 
           {/* Message subtil */}
           <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-            La patience est une vertu de l'esprit...
+            La patience est une vertu de l&apos;esprit...
           </p>
         </div>
 

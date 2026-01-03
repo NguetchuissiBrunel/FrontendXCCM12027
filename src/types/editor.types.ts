@@ -164,7 +164,7 @@ export interface CourseStructureItem {
   type: ItemType;
   parentId: string | null;
   content?: string;
-  data?: any;  // Original data (Course | Section | Chapter | Paragraph | etc.)
+  data?: Course | Section | Chapter | Paragraph | Notion | Exercise;
 }
 
 /**
@@ -195,7 +195,7 @@ export interface PageData {
  * Editor content props
  */
 export interface EditorContentProps {
-  course: any;
+  course: Course;
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProfileCard from '@/components/professor/ProfileCard';
-import CompositionsCard from '@/components/professor/CompositionsCard';
+import CompositionsCard, { Composition } from '@/components/professor/CompositionsCard';
 import TeachersCard from '@/components/professor/TeachersCard';
 import axios from 'axios';
 
@@ -40,7 +40,7 @@ export default function ProfessorDashboard() {
   useEffect(() => {
     const loadData = async () => {
       const currentUser = localStorage.getItem('currentUser');
-      
+
       if (!currentUser) {
         router.push('/login');
         return;
@@ -48,12 +48,12 @@ export default function ProfessorDashboard() {
 
       try {
         const userData = JSON.parse(currentUser);
-        
+
         if (userData.role !== 'teacher') {
           router.push('/etudashboard');
           return;
         }
-        
+
         setUser(userData);
 
         try {
@@ -108,7 +108,7 @@ export default function ProfessorDashboard() {
     ]
   };
 
-  const compositions = [];
+  const compositions: Composition[] = [];
 
   const teachersList = teachers.map(t => ({
     id: t.id,

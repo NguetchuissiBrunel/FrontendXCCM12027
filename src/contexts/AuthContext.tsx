@@ -30,6 +30,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
 // Configuration des cookies (sécurisé)
 const COOKIE_OPTIONS = {
   expires: 7, // 7 jours
@@ -48,24 +56,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncAuth = () => {
     try {
       const userStorage = localStorage.getItem('currentUser');
-      
+
       console.log('🔄 Synchronisation auth...');
       console.log('  - localStorage:', userStorage ? 'EXISTE' : 'VIDE');
-      
+
       if (userStorage && userStorage !== 'null' && userStorage !== 'undefined') {
         // ✅ localStorage contient un user → Créer/Mettre à jour le cookie
         const userData = JSON.parse(userStorage);
-        
+
         if (userData && userData.id && userData.role) {
           console.log('  ✅ User trouvé dans localStorage - Rôle:', userData.role);
-          
+
           // Mettre à jour le cookie
           Cookies.set('currentUser', userStorage, COOKIE_OPTIONS);
           Cookies.set('userRole', userData.role, COOKIE_OPTIONS);
-          
+
           // Mettre à jour l'état
           setUser(userData);
-          
+
           console.log('  ✅ Cookie créé/mis à jour');
         } else {
           console.warn('  ⚠️ Données invalides dans localStorage');
@@ -77,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         // ❌ localStorage vide → Supprimer le cookie
         console.log('  ❌ localStorage vide - Suppression cookie');
-        
+
         Cookies.remove('currentUser', { path: '/' });
         Cookies.remove('userRole', { path: '/' });
         setUser(null);
@@ -107,18 +115,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         syncAuth();
       }
     };
-    
+
     // 🔥 CRÉER UN INTERVALLE pour vérifier localStorage périodiquement
     const intervalId = setInterval(() => {
-		console.log('Contrôle du LocalStorage');
-		const currentUser = localStorage.getItem('currentUser');
-		const lastUser = user ? JSON.stringify(user) : null;
-		  
-		// Vérifier si localStorage a changé
-		if (currentUser !== lastUser) {
-		  console.log('🔄 Changement détecté dans localStorage (même onglet)');
-		  syncAuth();
-		}
+      console.log('Contrôle du LocalStorage');
+      const currentUser = localStorage.getItem('currentUser');
+      const lastUser = user ? JSON.stringify(user) : null;
+
+      // Vérifier si localStorage a changé
+      if (currentUser !== lastUser) {
+        console.log('🔄 Changement détecté dans localStorage (même onglet)');
+        syncAuth();
+      }
     }, 500); // Vérifie toutes les 500ms
 
     window.addEventListener('storage', handleStorageChange);
@@ -133,8 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 🔥 NOUVEAU : Synchronisation à chaque changement de route
   // ==========================================
   //useEffect(() => {
-    //console.log('📍 Changement de route détecté:', pathname);
-    //syncAuth();
+  //console.log('📍 Changement de route détecté:', pathname);
+  //syncAuth();
   //}, [pathname]); 🔥 S'exécute à chaque changement de route
 
   const value = {

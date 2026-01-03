@@ -13,7 +13,7 @@
       "university": "ENSPY",
       "specialization": "Informatique",
       "registrationDate": "2025-11-11T19:00:51.687Z",
-      "lastLogin": "2025-12-11T13:54:40.182Z"
+      "lastLogin": "2026-01-03T08:45:40.872Z"
     },
     {
       "id": "ENS2025wull2xdvf",
@@ -31,7 +31,7 @@
         "SVT23"
       ],
       "registrationDate": "2025-11-12T12:05:44.766Z",
-      "lastLogin": "2025-12-11T15:42:45.971Z",
+      "lastLogin": "2026-01-03T08:47:42.713Z",
       "certification": "Non spécifiée"
     },
     {
@@ -47,7 +47,7 @@
       "university": "ENSPY",
       "specialization": "Informatique",
       "registrationDate": "2025-12-09T15:41:11.586Z",
-      "lastLogin": "2025-12-16T11:52:47.498Z"
+      "lastLogin": "2026-01-03T08:50:27.916Z"
     },
     {
       "id": "ENS2025d37cnb7y5",
@@ -82,7 +82,8 @@
       "subjects": [
         "SVT24"
       ],
-      "registrationDate": "2025-12-11T12:46:26.218Z"
+      "registrationDate": "2025-12-11T12:46:26.218Z",
+      "lastLogin": "2026-01-03T08:49:27.609Z"
     },
     {
       "id": "ETU2025he43akvj1",

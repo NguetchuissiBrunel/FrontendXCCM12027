@@ -10,6 +10,7 @@ import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+import Dropcursor from '@tiptap/extension-dropcursor';
 
 // Custom XCCM Hierarchy Nodes
 import Section from '../../extensions/Section';
@@ -74,6 +75,10 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     immediatelyRender: false,
     extensions: [
       StarterKit,
+      Dropcursor.configure({
+        color: '#a78bfa', // Purple to match your theme
+        width: 3,
+      }),
       TextAlignWithShortcuts.configure({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right', 'justify'],

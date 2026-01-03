@@ -380,7 +380,37 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           )
         );
       case 'exercise':
-        return []; // Exercises are rendered as children
+        return mockCourseData.flatMap((course, courseIdx) =>
+          course.sections.flatMap((sec, secIdx) =>
+            sec.chapters.flatMap((chap, chapIdx) =>
+              chap.paragraphs
+                .filter(para => !!para.exercise)
+                .map((para, paraIdx) => {
+                  const paraIndex = chap.paragraphs.indexOf(para);
+                  const exerciseId = `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIndex}-exercise`;
+                  return (
+                    <div
+                      key={exerciseId}
+                      className={`rounded-lg border p-3 ${getItemBgClass('exercise')}`}
+                      draggable
+                      onDragStart={(e) => {
+                        const fullItem = getItemWithHierarchy(exerciseId) || {
+                          id: exerciseId,
+                          title: `Exercice: ${para.exercise!.questions.length} question(s)`,
+                          type: 'exercise',
+                          parentId: `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIndex}`,
+                          data: para.exercise
+                        };
+                        e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+                      }}
+                    >
+                      Exercice: {para.exercise!.questions.length} question(s)
+                    </div>
+                  );
+                })
+            )
+          )
+        );
       default:
         return mockCourseData.map((course, idx) => renderCourse(course, idx));
     }

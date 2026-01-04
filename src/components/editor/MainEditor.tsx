@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useRef, useState, useImperativeHandle, forwardRef } from 'react';
-import { useEditor, EditorContent, useEditorState, Editor } from '@tiptap/react';
+import React, { useRef, useState } from 'react';
+import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import Highlight from '@tiptap/extension-highlight';
@@ -10,9 +10,7 @@ import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
-import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { toast } from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
+import Dropcursor from '@tiptap/extension-dropcursor';
 
 // Custom XCCM Hierarchy Nodes
 import Section from '../../extensions/Section';
@@ -20,10 +18,10 @@ import Chapitre from '../../extensions/Chapitre';
 import Paragraphe from '../../extensions/Paragraphe';
 import Notion from '../../extensions/Notion';
 import Exercice from '../../extensions/Exercice';
-import {
-  FaAlignLeft,
-  FaAlignCenter,
-  FaAlignRight,
+import { 
+  FaAlignLeft, 
+  FaAlignCenter, 
+  FaAlignRight, 
   FaAlignJustify,
   FaListUl,
   FaListOl,
@@ -43,11 +41,7 @@ import {
 interface MainEditorProps {
   initialContent?: string;
   onContentChange?: (content: string) => void;
-  courseId?: number | null;
-}
-
-export interface MainEditorRef {
-  editor: Editor | null;
+  onEditorReady?: (editor: any) => void; // Callback when editor is ready
 }
 
 const headingOptions = [
@@ -60,12 +54,12 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
-export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
-  initialContent,
+export const MainEditor: React.FC<MainEditorProps> = ({ 
+  initialContent, 
   onContentChange,
-  courseId
-}, ref) => {
-
+  onEditorReady 
+}) => {
+  
   const TextAlignWithShortcuts = TextAlign.extend({
     addKeyboardShortcuts() {
       return {
@@ -81,6 +75,10 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
     immediatelyRender: false,
     extensions: [
       StarterKit,
+      Dropcursor.configure({
+        color: '#a78bfa', // Purple to match your theme
+        width: 3,
+      }),
       TextAlignWithShortcuts.configure({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right', 'justify'],
@@ -107,20 +105,115 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
       attributes: {
         class: 'prose dark:prose-invert max-w-none min-h-[500px] p-4 focus:outline-none editor-focusable',
       },
+      handleDrop: (view, event, slice, moved) => {
+        event.preventDefault();
+
+        const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
+        if (!jsonData) return false;
+
+        try {
+          const draggedItem = JSON.parse(jsonData);
+
+          const typeMap: Record<string, string> = {
+            course: 'heading',
+            section: 'section',
+            chapter: 'chapitre',
+            paragraph: 'paragraphe',
+            notion: 'notion',
+            exercise: 'exercice'
+          };
+
+          const buildNode = (item: any): any => {
+            const nodeType = typeMap[item.type] || 'paragraph';
+
+            const children = (item.children || []).map(buildNode);
+
+            const attrs: any = {
+              id: item.id,
+              title: item.title || item.data?.title || 'Sans titre',
+            };
+
+            if (item.type === 'course') {
+              attrs.level = 1;
+            }
+
+            // Default: empty for structural nodes
+            let content: any[] = [];
+
+            // Special handling for notion: title text + full content
+            if (item.type === 'notion') {
+              // Title as first text
+              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
+
+              // Add actual content if present
+              if (item.content) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = item.content.trim();
+
+                const parsed: any[] = [];
+                tempDiv.childNodes.forEach((node) => {
+                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+                    parsed.push({ type: 'text', text: node.textContent });
+                  } else if (node.nodeName === 'P') {
+                    const pContent: any[] = [];
+                    node.childNodes.forEach((child) => {
+                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+                        pContent.push({ type: 'text', text: child.textContent });
+                      }
+                    });
+                    if (pContent.length > 0) {
+                      parsed.push({ type: 'paragraph', content: pContent });
+                    }
+                  }
+                });
+
+                content = [...content, ...parsed];
+              }
+            }
+
+            // Exercise: simple question list
+            if (item.type === 'exercise' && item.data?.questions) {
+              const questionsText = item.data.questions
+                .map((q: any, i: number) => `${i + 1}. ${q.question}`)
+                .join('\n\n');
+              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+            }
+
+            return {
+              type: nodeType,
+              attrs,
+              content: [...content, ...children]
+            };
+          };
+
+          const contentToInsert = buildNode(draggedItem);
+
+          const coords = { left: event.clientX, top: event.clientY };
+          const posResult = view.posAtCoords(coords);
+          if (!posResult) return false;
+
+          const node = view.state.schema.nodeFromJSON(contentToInsert);
+          view.dispatch(view.state.tr.insert(posResult.pos, node));
+
+          return true;
+        } catch (error) {
+          console.error('Drop error:', error);
+          return false;
+        }
+      },
+    },
+    onCreate: ({ editor }) => {
+      // Notify parent component that editor is ready
+      onEditorReady?.(editor);
     },
     onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });
 
-  // Expose editor instance to parent
-  useImperativeHandle(ref, () => ({
-    editor
-  }));
-
   const editorState = useEditorState({
     editor,
     selector: (ctx) => {
-      if (!ctx.editor) return {
-        isBold: false,
+      if (!ctx.editor) return { 
+        isBold: false, 
         isItalic: false,
         isUnderline: false,
         isStrike: false,
@@ -135,7 +228,7 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
       };
 
       let currentHeading: string | number = 'paragraph';
-
+      
       // Check for custom XCCM nodes first
       if (ctx.editor.isActive('section')) {
         currentHeading = 'section';
@@ -170,7 +263,7 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
         isOrderedList: ctx.editor.isActive('orderedList'),
         isBlockquote: ctx.editor.isActive('blockquote'),
         isCodeBlock: ctx.editor.isActive('codeBlock'),
-        isLink: ctx.editor.isActive('link'),
+        isLink: ctx.editor.isActive('link'),  
         currentHeading,
       };
     },
@@ -178,40 +271,9 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
 
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const [isUploading, setIsUploading] = useState(false);
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (courseId) {
-      setIsUploading(true);
-      try {
-        // Create FormData for multipart/form-data
-        const formData = new FormData();
-        formData.append('file', file); // Use 'file' as key, check backend expectation
-
-        const imageUrl = await CourseControllerService.uploadImage(courseId, formData as any);
-        editor?.chain().focus().setImage({ src: imageUrl }).run();
-        toast.success("Image ajoutée");
-      } catch (error) {
-        console.error("Image upload error:", error);
-        toast.error("Erreur lors de l'upload de l'image");
-
-        // Fallback for demo if API fails
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const url = e.target?.result as string;
-          editor?.chain().focus().setImage({ src: url }).run();
-        };
-        reader.readAsDataURL(file);
-      } finally {
-        setIsUploading(false);
-      }
-    } else {
-      // Fallback for unsaved courses
-      toast.error("Veuillez sauvegarder le cours une première fois avant d'ajouter des images");
-
+    if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const url = e.target?.result as string;
@@ -224,12 +286,12 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
 
-  const ToolbarButton = ({
+  const ToolbarButton = ({ 
     onClick,
     children,
     title,
     isActive = false
-  }: {
+  }: { 
     onClick: () => void;
     children: React.ReactNode;
     title: string;
@@ -238,10 +300,11 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 rounded transition-colors ${isActive
-        ? 'bg-purple-600 text-white hover:bg-purple-700'
-        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-        }`}
+      className={`px-3 py-2 rounded transition-colors ${
+        isActive 
+          ? 'bg-purple-600 text-white hover:bg-purple-700'
+          : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+      }`}
       title={title}
     >
       {children}
@@ -289,8 +352,8 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
         style={{ color: currentOption.color }}
       >
         {headingOptions.map(option => (
-          <option
-            key={option.value}
+          <option 
+            key={option.value} 
             value={option.value}
             style={{ color: option.color }}
           >
@@ -304,13 +367,13 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
   return (
     <>
       <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
-
+        
         {/* Toolbar */}
         <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
           <div className="flex gap-2 items-center">
-            <HeadingDropdown />
-
-            < Separator />
+            <HeadingDropdown/>
+            
+            < Separator/>
 
             {/* Text Formatting */}
             <ToolbarButton
@@ -387,7 +450,7 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
               title="Insert Image"
               isActive={false}
             >
-              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FaImage />}
+              <FaImage />
             </ToolbarButton>
 
             <ToolbarButton
@@ -518,44 +581,44 @@ export const MainEditor = forwardRef<MainEditorRef, MainEditorProps>(({
           </div>
         </div>
       </div>
-      {/* Link Modal */}
-      {showLinkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
-            <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
-            <input
-              type="url"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://example.com"
-              className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
-              autoFocus
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowLinkModal(false)}
-                className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (linkUrl) {
-                    editor?.chain().focus().setLink({ href: linkUrl }).run();
-                  }
-                  setShowLinkModal(false);
-                  setLinkUrl('');
-                }}
-                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
-              >
-                Insert
-              </button>
+          {/* Link Modal */}
+          {showLinkModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
+                <input
+                  type="url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowLinkModal(false)}
+                    className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (linkUrl) {
+                        editor?.chain().focus().setLink({ href: linkUrl }).run();
+                      }
+                      setShowLinkModal(false);
+                      setLinkUrl('');
+                    }}
+                    className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    Insert
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
     </>
   );
-});
+};
 
 export default MainEditor;

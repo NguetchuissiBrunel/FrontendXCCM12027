@@ -18,10 +18,10 @@ import Chapitre from '../../extensions/Chapitre';
 import Paragraphe from '../../extensions/Paragraphe';
 import Notion from '../../extensions/Notion';
 import Exercice from '../../extensions/Exercice';
-import { 
-  FaAlignLeft, 
-  FaAlignCenter, 
-  FaAlignRight, 
+import {
+  FaAlignLeft,
+  FaAlignCenter,
+  FaAlignRight,
   FaAlignJustify,
   FaListUl,
   FaListOl,
@@ -54,12 +54,12 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
-export const MainEditor: React.FC<MainEditorProps> = ({ 
-  initialContent, 
+export const MainEditor: React.FC<MainEditorProps> = ({
+  initialContent,
   onContentChange,
-  onEditorReady 
+  onEditorReady
 }) => {
-  
+
   const TextAlignWithShortcuts = TextAlign.extend({
     addKeyboardShortcuts() {
       return {
@@ -125,11 +125,10 @@ export const MainEditor: React.FC<MainEditorProps> = ({
 
           const buildNode = (item: any): any => {
             const nodeType = typeMap[item.type] || 'paragraph';
-
-            const children = (item.children || []).map(buildNode);
+            let children = (item.children || []).map(buildNode);
 
             const attrs: any = {
-              id: item.id,
+              id: item.id || `node-${Math.random().toString(36).substr(2, 9)}`,
               title: item.title || item.data?.title || 'Sans titre',
             };
 
@@ -137,46 +136,35 @@ export const MainEditor: React.FC<MainEditorProps> = ({
               attrs.level = 1;
             }
 
-            // Default: empty for structural nodes
             let content: any[] = [];
 
-            // Special handling for notion: title text + full content
+            // Special handling for notion: ONLY inline content
             if (item.type === 'notion') {
-              // Title as first text
-              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
+              // For notion, we just put the title and content as plain text/inline
+              // If the schema says inline*, we cannot have paragraphs
+              content.push({ type: 'text', text: `${attrs.title}: ` });
 
-              // Add actual content if present
               if (item.content) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = item.content.trim();
-
-                const parsed: any[] = [];
-                tempDiv.childNodes.forEach((node) => {
-                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-                    parsed.push({ type: 'text', text: node.textContent });
-                  } else if (node.nodeName === 'P') {
-                    const pContent: any[] = [];
-                    node.childNodes.forEach((child) => {
-                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
-                        pContent.push({ type: 'text', text: child.textContent });
-                      }
-                    });
-                    if (pContent.length > 0) {
-                      parsed.push({ type: 'paragraph', content: pContent });
-                    }
-                  }
-                });
-
-                content = [...content, ...parsed];
+                const plainText = item.content.replace(/<[^>]*>/g, '');
+                content.push({ type: 'text', text: plainText });
               }
-            }
 
-            // Exercise: simple question list
-            if (item.type === 'exercise' && item.data?.questions) {
+              // notions don't usually have children in this specific XCCM structure
+              children = [];
+            }
+            // Exercise: simple question list as inline text
+            else if (item.type === 'exercise' && item.data?.questions) {
               const questionsText = item.data.questions
                 .map((q: any, i: number) => `${i + 1}. ${q.question}`)
-                .join('\n\n');
-              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+                .join(' | ');
+              content = [{ type: 'text', text: `Exercices: ${questionsText}` }];
+              children = [];
+            }
+            else {
+              // For block+ nodes (section, chapitre, paragraphe), if no content and no children, add empty paragraph
+              if (content.length === 0 && children.length === 0) {
+                content.push({ type: 'paragraph' });
+              }
             }
 
             return {
@@ -208,40 +196,25 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     },
     onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });
-
   const editorState = useEditorState({
     editor,
     selector: (ctx) => {
-      if (!ctx.editor) return { 
-        isBold: false, 
+      if (!ctx.editor) return {
+        isBold: false,
         isItalic: false,
         isUnderline: false,
         isStrike: false,
-        isAlignLeft: false,
-        isAlignCenter: false,
-        isAlignRight: false,
-        isAlignJustify: false,
-        isBulletList: false,
-        isOrderedList: false,
-        isBlockquote: false,
+        isLink: false,
         currentHeading: 'paragraph',
       };
 
       let currentHeading: string | number = 'paragraph';
-      
-      // Check for custom XCCM nodes first
-      if (ctx.editor.isActive('section')) {
-        currentHeading = 'section';
-      } else if (ctx.editor.isActive('chapitre')) {
-        currentHeading = 'chapitre';
-      } else if (ctx.editor.isActive('paragraphe')) {
-        currentHeading = 'paragraphe';
-      } else if (ctx.editor.isActive('notion')) {
-        currentHeading = 'notion';
-      } else if (ctx.editor.isActive('exercice')) {
-        currentHeading = 'exercice';
-      } else {
-        // Check for standard headings (H1-H6)
+      if (ctx.editor.isActive('section')) currentHeading = 'section';
+      else if (ctx.editor.isActive('chapitre')) currentHeading = 'chapitre';
+      else if (ctx.editor.isActive('paragraphe')) currentHeading = 'paragraphe';
+      else if (ctx.editor.isActive('notion')) currentHeading = 'notion';
+      else if (ctx.editor.isActive('exercice')) currentHeading = 'exercice';
+      else {
         for (let level = 1; level <= 6; level++) {
           if (ctx.editor.isActive('heading', { level })) {
             currentHeading = level;
@@ -255,6 +228,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isItalic: ctx.editor.isActive('italic'),
         isUnderline: ctx.editor.isActive('underline'),
         isStrike: ctx.editor.isActive('strike'),
+        isLink: ctx.editor.isActive('link'),
         isAlignLeft: ctx.editor.isActive({ textAlign: 'left' }),
         isAlignCenter: ctx.editor.isActive({ textAlign: 'center' }),
         isAlignRight: ctx.editor.isActive({ textAlign: 'right' }),
@@ -263,7 +237,6 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         isOrderedList: ctx.editor.isActive('orderedList'),
         isBlockquote: ctx.editor.isActive('blockquote'),
         isCodeBlock: ctx.editor.isActive('codeBlock'),
-        isLink: ctx.editor.isActive('link'),  
         currentHeading,
       };
     },
@@ -286,12 +259,12 @@ export const MainEditor: React.FC<MainEditorProps> = ({
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
 
-  const ToolbarButton = ({ 
+  const ToolbarButton = ({
     onClick,
     children,
     title,
     isActive = false
-  }: { 
+  }: {
     onClick: () => void;
     children: React.ReactNode;
     title: string;
@@ -300,11 +273,10 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 rounded transition-colors ${
-        isActive 
-          ? 'bg-purple-600 text-white hover:bg-purple-700'
-          : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-      }`}
+      className={`px-3 py-2 rounded transition-colors ${isActive
+        ? 'bg-purple-600 text-white hover:bg-purple-700'
+        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+        }`}
       title={title}
     >
       {children}
@@ -317,7 +289,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
 
   const HeadingDropdown = () => {
     const currentOption = headingOptions.find(
-      opt => opt.value === editorState?.currentHeading
+      opt => opt.value === editorState.currentHeading
     ) || headingOptions[0];
 
     const handleChange = (value: string | number) => {
@@ -334,7 +306,6 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       } else if (value === 'exercice') {
         editor?.chain().focus().setExercice().run();
       } else if (typeof value === 'number') {
-        // Standard heading (H1 for Cours)
         editor?.chain().focus().toggleHeading({ level: value as 1 | 2 | 3 | 4 | 5 | 6 }).run();
       }
     };
@@ -344,7 +315,6 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         value={currentOption.value}
         onChange={(e) => {
           const val = e.target.value;
-          // Parse as number if it's numeric, otherwise keep as string
           const parsedVal = !isNaN(Number(val)) ? parseInt(val) : val;
           handleChange(parsedVal);
         }}
@@ -352,8 +322,8 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         style={{ color: currentOption.color }}
       >
         {headingOptions.map(option => (
-          <option 
-            key={option.value} 
+          <option
+            key={option.value}
             value={option.value}
             style={{ color: option.color }}
           >
@@ -367,19 +337,19 @@ export const MainEditor: React.FC<MainEditorProps> = ({
   return (
     <>
       <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
-        
+
         {/* Toolbar */}
         <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
           <div className="flex gap-2 items-center">
-            <HeadingDropdown/>
-            
-            < Separator/>
+            <HeadingDropdown />
+
+            < Separator />
 
             {/* Text Formatting */}
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBold().run()}
               title="Bold (Ctrl + B)"
-              isActive={editorState?.isBold ?? false}
+              isActive={editorState.isBold}
             >
               <strong>B</strong>
             </ToolbarButton>
@@ -387,7 +357,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleItalic().run()}
               title="Italic (Ctrl + I)"
-              isActive={editorState?.isItalic ?? false}
+              isActive={editorState.isItalic}
             >
               <em>I</em>
             </ToolbarButton>
@@ -395,7 +365,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleUnderline().run()}
               title="Underline (Ctrl + U)"
-              isActive={editorState?.isUnderline ?? false}
+              isActive={editorState.isUnderline}
             >
               <FaUnderline />
             </ToolbarButton>
@@ -403,7 +373,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleStrike().run()}
               title="Strikethrough (Ctrl + Shift + X)"
-              isActive={editorState?.isStrike ?? false}
+              isActive={editorState.isStrike}
             >
               <FaStrikethrough />
             </ToolbarButton>
@@ -460,7 +430,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
                 setShowLinkModal(true);
               }}
               title="Insert Link"
-              isActive={editorState?.isLink ?? false}
+              isActive={editorState.isLink}
             >
               <FaLink />
             </ToolbarButton>
@@ -480,32 +450,32 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             {/* Text Alignment */}
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-              title="Align Left (Ctrl + Shift + L)"
-              isActive={editorState?.isAlignLeft ?? false}
+              title="Align Left"
+              isActive={editorState.isAlignLeft}
             >
               <FaAlignLeft />
             </ToolbarButton>
 
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-              title="Align Center (Ctrl + Shift + E)"
-              isActive={editorState?.isAlignCenter ?? false}
+              title="Align Center"
+              isActive={editorState.isAlignCenter}
             >
               <FaAlignCenter />
             </ToolbarButton>
 
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-              title="Align Right (Ctrl + Shift + R)"
-              isActive={editorState?.isAlignRight ?? false}
+              title="Align Right"
+              isActive={editorState.isAlignRight}
             >
               <FaAlignRight />
             </ToolbarButton>
 
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-              title="Align Justify (Ctrl + Shift + J)"
-              isActive={editorState?.isAlignJustify ?? false}
+              title="Align Justify"
+              isActive={editorState.isAlignJustify}
             >
               <FaAlignJustify />
             </ToolbarButton>
@@ -515,32 +485,32 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             {/* Lists */}
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBulletList().run()}
-              title="Bullet List (Ctrl + Shift + 8)"
-              isActive={editorState?.isBulletList ?? false}
+              title="Bullet List"
+              isActive={editorState.isBulletList}
             >
               <FaListUl />
             </ToolbarButton>
 
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-              title="Numbered List (Ctrl + Shift + 7)"
-              isActive={editorState?.isOrderedList ?? false}
+              title="Numbered List"
+              isActive={editorState.isOrderedList}
             >
               <FaListOl />
             </ToolbarButton>
 
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-              title="Blockquote (Ctrl + Shift + B)"
-              isActive={editorState?.isBlockquote ?? false}
+              title="Blockquote"
+              isActive={editorState.isBlockquote}
             >
               <FaQuoteLeft />
             </ToolbarButton>
 
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-              title="Code Block (Ctrl + Alt + C)"
-              isActive={editorState?.isCodeBlock ?? false}
+              title="Code Block"
+              isActive={editorState.isCodeBlock}
             >
               <FaCode />
             </ToolbarButton>
@@ -581,42 +551,42 @@ export const MainEditor: React.FC<MainEditorProps> = ({
           </div>
         </div>
       </div>
-          {/* Link Modal */}
-          {showLinkModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
-                <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
-                <input
-                  type="url"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://example.com"
-                  className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
-                  autoFocus
-                />
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowLinkModal(false)}
-                    className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (linkUrl) {
-                        editor?.chain().focus().setLink({ href: linkUrl }).run();
-                      }
-                      setShowLinkModal(false);
-                      setLinkUrl('');
-                    }}
-                    className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
-                  >
-                    Insert
-                  </button>
-                </div>
-              </div>
+      {/* Link Modal */}
+      {showLinkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
+            <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowLinkModal(false)}
+                className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (linkUrl) {
+                    editor?.chain().focus().setLink({ href: linkUrl }).run();
+                  }
+                  setShowLinkModal(false);
+                  setLinkUrl('');
+                }}
+                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+              >
+                Insert
+              </button>
             </div>
-          )}
+          </div>
+        </div>
+      )}
     </>
   );
 };

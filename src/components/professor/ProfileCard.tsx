@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { Users, Award, Clock } from 'lucide-react';
+import { OpenAPI } from '@/lib/core/OpenAPI';
 
 interface Professor {
   id: string;
@@ -59,7 +60,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           photoUrl: editedProfessor.photoUrl,
         };
 
-        await fetch(`http://localhost:4000/users/${editedProfessor.id}`, {
+        await fetch(`${OpenAPI.BASE}/users/${editedProfessor.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

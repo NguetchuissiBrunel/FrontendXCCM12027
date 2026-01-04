@@ -1,6 +1,19 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket } from 'react-icons/fa';
+import { 
+  FaUser, 
+  FaEnvelope, 
+  FaLock, 
+  FaGraduationCap, 
+  FaChalkboardTeacher, 
+  FaCamera, 
+  FaUniversity, 
+  FaMapMarkerAlt, 
+  FaBook, 
+  FaRocket,
+  FaEye,
+  FaEyeSlash
+} from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -49,6 +62,8 @@ const SignupPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const validateStep1 = useCallback(() => {
@@ -185,24 +200,40 @@ const SignupPage = () => {
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
           {errors.password && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.password}</p>}
         </div>
 
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirmez votre mot de passe"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label={showConfirmPassword ? "Masquer la confirmation" : "Afficher la confirmation"}
+          >
+            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
           {errors.confirmPassword && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
         </div>
 
@@ -245,7 +276,7 @@ const SignupPage = () => {
         </Link>
       </div>
     </motion.div>
-  ), [formData, errors, handleNext]);
+  ), [formData, errors, handleNext, showPassword, showConfirmPassword]);
 
   const renderStep2 = useMemo(() => (
     <motion.div

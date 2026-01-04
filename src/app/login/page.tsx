@@ -4,7 +4,14 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast, { Toaster } from 'react-hot-toast';
-import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock } from "react-icons/fa";
+import { 
+  FaChalkboardTeacher, 
+  FaEnvelope, 
+  FaGraduationCap, 
+  FaLock,
+  FaEye,
+  FaEyeSlash
+} from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
 
 type FormData = {
@@ -44,6 +51,7 @@ const SigninPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   // Charger les utilisateurs depuis JSON Server avec axios
@@ -180,13 +188,21 @@ const SigninPage = () => {
         >
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
           {errors.password && (
             <motion.p
               initial={{ opacity: 0 }}
@@ -288,7 +304,7 @@ const SigninPage = () => {
       {/* Toaster */}
       <Toaster position="top-right" reverseOrder={false} />
     </motion.div>
-  ), [formData, errors, handleSubmit, isSubmitting, users.length]);
+  ), [formData, errors, handleSubmit, isSubmitting, users.length, showPassword]);
 
   return (
     <div 

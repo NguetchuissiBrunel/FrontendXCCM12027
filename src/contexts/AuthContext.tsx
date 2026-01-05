@@ -89,15 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (decoded) {
               const rawRole = String(decoded.role || '').toLowerCase();
               const isTeacher = rawRole.includes('teacher') || rawRole.includes('professor');
+             
               const restoredUser: User = {
                 id: decoded.sub || decoded.id || '',
                 email: decoded.email || '',
                 role: isTeacher ? 'teacher' : 'student',
-                firstName: decoded.firstName,
-                lastName: decoded.lastName,
-                photoUrl: decoded.photoUrl,
-                city: decoded.city,
-                university: decoded.university,
+                firstName: decoded.firstName|| '',
+                lastName: decoded.lastName|| '',
+                photoUrl: decoded.photoUrl|| '',
+                city: decoded.city|| '',
+                university: decoded.university|| '',
                 specialization: decoded.specialization,
                 grade: decoded.grade,
                 subjects: decoded.subjects,

@@ -145,7 +145,7 @@ export default function StudentProfile() {
 
   const displayName = `${editedUser.firstName} ${editedUser.lastName}`;
   const userLevel = editedUser.specialization || editedUser.level || 'Étudiant';
-  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
+  const defaultAvatar = '/images/pp.jpeg';
 
   const grades = [
     { subject: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },

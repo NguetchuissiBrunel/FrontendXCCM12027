@@ -364,10 +364,10 @@ export const mockTOCItems: TableOfContentsItem[] = [
 export const flattenCourseStructure = (courses: Course[]): CourseStructureItem[] => {
   const items: CourseStructureItem[] = [];
   
-  courses.forEach(course => {
+  courses.forEach((course, courseIndex) => {
     // Add course
     items.push({
-      id: `course-${course.id}`,
+      id: `course-${courseIndex}`,
       title: course.title,
       type: 'course',
       parentId: null,
@@ -376,12 +376,12 @@ export const flattenCourseStructure = (courses: Course[]): CourseStructureItem[]
     
     course.sections.forEach((section, sectionIndex) => {
       // Add section
-      const sectionId = `course-${course.id}-section-${sectionIndex}`;
+      const sectionId = `course-${courseIndex}-section-${sectionIndex}`;
       items.push({
         id: sectionId,
         title: section.title,
         type: 'section',
-        parentId: `course-${course.id}`,
+        parentId: `course-${courseIndex}`,
         data: section
       });
       

@@ -98,6 +98,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
           <FaFile className="mr-2 shrink-0 text-xs text-gray-400 dark:text-gray-500" />
 
           {/* Number */}
+          {/* 
           {item.number && (
             <span 
               className="mr-2 shrink-0 text-sm font-medium"
@@ -105,7 +106,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             >
               {item.number}:
             </span>
-          )}
+          )} 
+          */}
 
           {/* Title */}
           <span

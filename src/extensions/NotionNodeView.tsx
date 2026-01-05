@@ -7,18 +7,18 @@
  * Features:
  * - Hover state management
  * - 3px solid red border on hover
- * - "Notion" label badge at top-left
+ * - EDITABLE "Notion" label badge at top-left
  * - Smooth 150ms border transition
  * - Editable content area
  * 
  * @author JOHAN
- * @date December 2024
+ * @date December 2025
  */
 
 import React, { useState } from 'react';
-import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
+import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
-export default function NotionNodeView() {
+export default function NotionNodeView({ node, updateAttributes }: NodeViewProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -35,8 +35,12 @@ export default function NotionNodeView() {
         borderRadius: '4px',
       }}
     >
-      {/* Label Badge */}
-      <div
+      {/* Editable Label Badge */}
+      <input
+        type="text"
+        value={node.attrs.title}
+        onChange={(e) => updateAttributes({ title: e.target.value })}
+        /*placeholder="Notion"*/
         style={{
           position: 'absolute',
           top: '-12px',
@@ -48,10 +52,14 @@ export default function NotionNodeView() {
           fontSize: '12px',
           fontWeight: '600',
           zIndex: 10,
+          border: 'none',
+          outline: 'none',
+          minWidth: '60px',
+          width: 'auto',
         }}
-      >
-        Notion
-      </div>
+        onFocus={(e) => e.target.style.outline = '2px solid rgba(239, 68, 68, 0.5)'}
+        onBlur={(e) => e.target.style.outline = 'none'}
+      />
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

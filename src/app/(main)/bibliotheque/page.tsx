@@ -85,7 +85,8 @@ const Bibliotheque = () => {
     return pages;
   };
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number | undefined | null) => {
+    if (num === undefined || num === null) return '0';
     return num > 999 ? (num / 1000).toFixed(1) + 'k' : num.toString();
   };
 
@@ -144,6 +145,7 @@ const Bibliotheque = () => {
                   placeholder="Rechercher un cours, une catégorie, un auteur..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  suppressHydrationWarning
                   className="w-full pl-12 pr-6 py-4 border border-purple-200 dark:border-purple-900/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-lg"
                 />
               </div>

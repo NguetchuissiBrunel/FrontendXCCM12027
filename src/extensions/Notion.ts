@@ -103,9 +103,11 @@ export default Node.create<NotionOptions>({
     return {
       setNotion:
         () =>
-          ({ commands }) => {
-            return commands.setNode(this.name);
-          },
+        ({ commands }) => {
+          // Generate unique ID for this notion
+          const id = `notion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          return commands.setNode(this.name, { id });
+        },
     };
   },
 

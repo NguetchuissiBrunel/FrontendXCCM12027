@@ -103,9 +103,11 @@ export default Node.create<ChapitreOptions>({
     return {
       setChapitre:
         () =>
-          ({ commands }) => {
-            return commands.wrapIn(this.name);
-          },
+        ({ commands }) => {
+          // Generate unique ID for this chapitre
+          const id = `chapitre-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          return commands.wrapIn(this.name, { id });
+        },
     };
   },
 

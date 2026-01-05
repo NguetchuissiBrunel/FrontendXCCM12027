@@ -64,7 +64,7 @@ export default Node.create<SectionOptions>({
         },
       },
       title: {
-        default: 'Section',
+        default: 'Partie',
         parseHTML: element => element.getAttribute('data-title'),
         renderHTML: attributes => {
           return {
@@ -103,9 +103,11 @@ export default Node.create<SectionOptions>({
     return {
       setSection:
         () =>
-          ({ commands }) => {
-            return commands.wrapIn(this.name);
-          },
+        ({ commands }) => {
+          // Generate unique ID for this section
+          const id = `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          return commands.wrapIn(this.name, { id });
+        },
     };
   },
 

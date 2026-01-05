@@ -103,9 +103,11 @@ export default Node.create<ParagrapheOptions>({
     return {
       setParagraphe:
         () =>
-          ({ commands }) => {
-            return commands.wrapIn(this.name);
-          },
+        ({ commands }) => {
+          // Generate unique ID for this paragraphe
+          const id = `paragraphe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          return commands.wrapIn(this.name, { id });
+        },
     };
   },
 

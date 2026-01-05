@@ -15,12 +15,12 @@
 
 import React, { useState } from 'react';
 import { Editor } from '@tiptap/react';
-import {
-  FaCloudUploadAlt,
-  FaInfo,
-  FaComments,
-  FaFolderOpen,
-  FaChalkboardTeacher,
+import { 
+  FaCloudUploadAlt, 
+  FaInfo, 
+  FaComments, 
+  FaFolderOpen, 
+  FaChalkboardTeacher, 
   FaCog,
   FaSave,
   FaPaperPlane,
@@ -31,9 +31,6 @@ import MainEditor from './MainEditor';
 import StructureDeCours from './StructureDeCours';
 import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
-import { useAuth } from '@/contexts/AuthContext';
-import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { ApiError } from '@/lib/core/ApiError';
 
 interface EditorLayoutProps {
   children?: React.ReactNode;
@@ -57,28 +54,25 @@ type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet'
 export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // State for active right panel
   const [activePanel, setActivePanel] = useState<RightPanelType>('structure');
-
+  
   // State for course title and current course ID
   const [courseTitle, setCourseTitle] = useState<string>("Nouveau cours");
-  const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
-  const [coursesLastUpdated, setCoursesLastUpdated] = useState<number>(Date.now());
-
-  const { user } = useAuth();
+  const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-
+  
   // Extract TOC from editor in real-time
   const tocItems = useTOC(editorInstance, 300);
-
+  
   // Handle TOC item click - scroll to node
   const handleTOCItemClick = (itemId: string) => {
     if (!editorInstance) return;
-
+    
     // Find the node by data-id attribute
     const editorDom = editorInstance.view.dom;
     const element = editorDom.querySelector(`[data-id="${itemId}"]`);
-
+    
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       // Optional: Flash highlight or focus
@@ -126,69 +120,59 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     );
   };
 
-  const handleSave = async (publish: boolean = false) => {
-    if (!editorInstance) {
-      alert("L'éditeur n'est pas encore chargé.");
-      return;
-    }
+const handleSave = async (publish: boolean = false) => {
+  if (!editorInstance) {
+    alert("L'éditeur n'est pas encore chargé.");
+    return;
+  }
 
-    if (!user || !user.id) {
-      alert("Vous devez être connecté pour sauvegarder un cours.");
-      return;
-    }
+  const jsonContent = editorInstance.getJSON();
 
-    const jsonContent = editorInstance.getJSON();
-    const serializedContent = JSON.stringify(jsonContent);
-
-    try {
-      if (currentCourseId) {
-        // Update existing
-        await CourseControllerService.updateCourse(currentCourseId, {
-          title: courseTitle.trim() || "Cours sans titre",
-          content: serializedContent,
-          // category and description could be added here if available in the UI
-        });
-
-        if (publish) {
-          await CourseControllerService.updateCourseStatus(currentCourseId, 'PUBLISHED');
-        }
-
-        setCoursesLastUpdated(Date.now());
-        alert(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
-      } else {
-        // Create new
-        const response = await CourseControllerService.createCourse(user.id, {
-          title: courseTitle.trim() || "Cours sans titre",
-          content: serializedContent,
-        });
-
-        if (response.data?.id) {
-          setCurrentCourseId(response.data.id);
-
-          if (publish) {
-            await CourseControllerService.updateCourseStatus(response.data.id, 'PUBLISHED');
-          }
-
-          setCoursesLastUpdated(Date.now());
-          alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
-        }
-      }
-    } catch (error) {
-      console.error("Erreur sauvegarde :", error);
-      if (error instanceof ApiError) {
-        alert(`Erreur lors de la sauvegarde : ${error.message}`);
-      } else {
-        alert("Erreur lors de la sauvegarde.");
-      }
-    }
+  const now = new Date();
+  const savedCourse = {
+    id: currentCourseId || Date.now().toString(),
+    title: courseTitle.trim() || "Cours sans titre",
+    content: jsonContent,
+    html: editorInstance.getHTML(),
+    published: publish,
+    savedAt: now.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }), // e.g., "03/01/2026 14:35"
   };
+
+  try {
+    const existingCourses = JSON.parse(localStorage.getItem('xccm_saved_courses') || '[]');
+
+    if (currentCourseId) {
+      // Update existing
+      const updated = existingCourses.map((c: any) =>
+        c.id === currentCourseId ? savedCourse : c
+      );
+      localStorage.setItem('xccm_saved_courses', JSON.stringify(updated));
+      alert(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
+    } else {
+      // Create new
+      existingCourses.push(savedCourse);
+      localStorage.setItem('xccm_saved_courses', JSON.stringify(existingCourses));
+      setCurrentCourseId(savedCourse.id);
+      alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
+    }
+  } catch (error) {
+    console.error("Erreur sauvegarde :", error);
+    alert("Erreur lors de la sauvegarde.");
+  }
+};
 
   return (
     <div className="mt-16 flex h-screen w-screen flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* HEADER - Editor toolbar */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-700 dark:to-purple-800 px-6 shadow-md">
-        {/* Left: Editable Title & New Button */}
-        <div className="flex items-center gap-4">
+        {/* Left: Editable Title */}
+        <div className="flex items-center gap-3">
           <input
             type="text"
             value={courseTitle}
@@ -196,28 +180,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             className="bg-transparent text-lg font-bold text-white outline-none border-b-2 border-transparent focus:border-white/50 transition-colors min-w-48"
             placeholder="Titre du cours..."
           />
-          <button
-            onClick={() => {
-              if (confirm("Voulez-vous créer un nouveau cours ? Les modifications non sauvegardées seront perdues.")) {
-                setCourseTitle("Nouveau cours");
-                setCurrentCourseId(null);
-                editorInstance?.commands.setContent("<p>Commencez à écrire votre contenu ici...</p>");
-              }
-            }}
-            className="flex items-center gap-2 rounded bg-white dark:bg-gray-200 bg-opacity-20 dark:bg-opacity-30 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/30 dark:hover:bg-gray-300 transition-all shadow-sm"
-          >
-            <span>+</span> Nouveau
-          </button>
         </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          <button
+          <button 
             onClick={() => handleSave(false)}
-            className="rounded bg-white dark:bg-gray-200 bg-opacity-20 dark:bg-opacity-30 px-4 py-1.5 text-sm font-medium text-white hover:bg-white/30 dark:hover:bg-gray-300 transition-all">
+            className="rounded bg-white dark:bg-gray-200 bg-opacity-20 dark:bg-opacity-30 px-4 py-1.5 text-sm font-medium text-black hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">
             Sauvegarder
           </button>
-          <button
+          <button 
             onClick={() => handleSave(true)}
             className="rounded bg-white dark:bg-gray-200 px-4 py-1.5 text-sm font-medium text-purple-700 dark:text-purple-800 hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">
             Publier
@@ -229,7 +201,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       <div className="flex flex-1 overflow-hidden">
         {/* LEFT SIDEBAR - Table of Contents */}
         <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
-          <TableOfContents
+          <TableOfContents 
             items={tocItems}
             onItemClick={handleTOCItemClick}
           />
@@ -289,12 +261,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {/* PANEL 4: Mes Cours */}
             {activePanel === 'author' && (
               <MyCoursesPanel
-                key={coursesLastUpdated}
                 onClose={() => setActivePanel(null)}
                 onLoadCourse={(content, courseId, title) => {
                   if (editorInstance) {
                     editorInstance.commands.setContent(content);
-                    setCurrentCourseId(Number(courseId));
+                    setCurrentCourseId(courseId);
                     setCourseTitle(title);
                   }
                 }}

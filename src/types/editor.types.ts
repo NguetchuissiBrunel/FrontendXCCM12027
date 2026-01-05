@@ -245,3 +245,15 @@ export const getItemColorClasses = (type: ItemType): string => {
   };
   return colorMap[type];
 };
+
+
+export const XCCM_KNOWLEDGE_MIME = "application/x-xccm-knowledge";
+
+export type KnowledgeDragPayload = {
+  id: string;
+  type: "cours" | "partie" | "chapitre" | "paragraphe" | "notion";
+  title: string;
+  content?: string;
+  children?: KnowledgeDragPayload[];
+};
+

@@ -54,10 +54,10 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
-export const MainEditor: React.FC<MainEditorProps> = ({
-  initialContent,
+export const MainEditor: React.FC<MainEditorProps> = ({ 
+  initialContent, 
   onContentChange,
-  onEditorReady
+  onEditorReady 
 }) => {
 
   const TextAlignWithShortcuts = TextAlign.extend({
@@ -125,10 +125,11 @@ export const MainEditor: React.FC<MainEditorProps> = ({
 
           const buildNode = (item: any): any => {
             const nodeType = typeMap[item.type] || 'paragraph';
-            let children = (item.children || []).map(buildNode);
+
+            const children = (item.children || []).map(buildNode);
 
             const attrs: any = {
-              id: item.id || `node-${Math.random().toString(36).substr(2, 9)}`,
+              id: item.id,
               title: item.title || item.data?.title || 'Sans titre',
             };
 
@@ -136,35 +137,46 @@ export const MainEditor: React.FC<MainEditorProps> = ({
               attrs.level = 1;
             }
 
+            // Default: empty for structural nodes
             let content: any[] = [];
 
-            // Special handling for notion: ONLY inline content
+            // Special handling for notion: title text + full content
             if (item.type === 'notion') {
-              // For notion, we just put the title and content as plain text/inline
-              // If the schema says inline*, we cannot have paragraphs
-              content.push({ type: 'text', text: `${attrs.title}: ` });
+              // Title as first text
+              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
 
+              // Add actual content if present
               if (item.content) {
-                const plainText = item.content.replace(/<[^>]*>/g, '');
-                content.push({ type: 'text', text: plainText });
-              }
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = item.content.trim();
 
-              // notions don't usually have children in this specific XCCM structure
-              children = [];
+                const parsed: any[] = [];
+                tempDiv.childNodes.forEach((node) => {
+                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+                    parsed.push({ type: 'text', text: node.textContent });
+                  } else if (node.nodeName === 'P') {
+                    const pContent: any[] = [];
+                    node.childNodes.forEach((child) => {
+                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+                        pContent.push({ type: 'text', text: child.textContent });
+                      }
+                    });
+                    if (pContent.length > 0) {
+                      parsed.push({ type: 'paragraph', content: pContent });
+                    }
+                  }
+                });
+
+                content = [...content, ...parsed];
+              }
             }
-            // Exercise: simple question list as inline text
-            else if (item.type === 'exercise' && item.data?.questions) {
+
+            // Exercise: simple question list
+            if (item.type === 'exercise' && item.data?.questions) {
               const questionsText = item.data.questions
                 .map((q: any, i: number) => `${i + 1}. ${q.question}`)
-                .join(' | ');
-              content = [{ type: 'text', text: `Exercices: ${questionsText}` }];
-              children = [];
-            }
-            else {
-              // For block+ nodes (section, chapitre, paragraphe), if no content and no children, add empty paragraph
-              if (content.length === 0 && children.length === 0) {
-                content.push({ type: 'paragraph' });
-              }
+                .join('\n\n');
+              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
             }
 
             return {

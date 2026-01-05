@@ -41,7 +41,7 @@ const Bibliotheque = () => {
     return courses.filter(course =>
       course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (course.category && course.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (course.author?.name && course.author.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (course.author?.firstName && course.author.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [courses, searchTerm]);
@@ -184,7 +184,7 @@ const Bibliotheque = () => {
                 {/* Image du cours */}
                 <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg">
                   <Image
-                    src={course.image}
+                   src={course.image ? course.image : '/images/Capture2.png'}
                     alt={course.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -215,17 +215,17 @@ const Bibliotheque = () => {
                   <div className="flex items-center mb-3">
                     <div className="relative w-8 h-8 mr-3">
                       <Image
-                        src={course.author.image}
-                        alt={course.author.name}
+                        src={course.author.image ? course.author.image : '/images/prof.jpeg'}
+                        alt={course.author?.firstName}
                         fill
                         className="rounded-full object-cover"
                       />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {course.author.name}
+                        {course.author?.lastName}
                       </p>
-                      {course.author.designation && (
+                      {course.author?.designation && (
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {course.author.designation}
                         </p>

@@ -138,9 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
       });
+      console.log('🔐 Réponse de l\'API:', response);
+   
 
       if (!response.data) {
-        throw new Error('Aucune donnée retournée par l\'API');
+        throw new Error(response.message);
       }
 
       const authData: AuthenticationResponse = response.data;
@@ -220,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await AuthControllerService.registerStudent(data);
 
       if (!response.data) {
-        throw new Error('Aucune donnée retournée par l\'API');
+        throw new Error(response.message);
       }
 
       const authData: AuthenticationResponse = response.data;
@@ -267,7 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await AuthControllerService.registerTeacher(data);
 
       if (!response.data) {
-        throw new Error('Aucune donnée retournée par l\'API');
+        throw new Error(response.message);
       }
 
       const authData: AuthenticationResponse = response.data;

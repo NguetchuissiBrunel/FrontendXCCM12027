@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
+import { clearAuthToken } from '@/utils/authHelpers';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -67,6 +68,7 @@ const Navbar = () => {
     localStorage.removeItem('teacherInfo');
     setCurrentUser(null);
     setUserRole(null);
+    clearAuthToken();
     router.push('/login');
   };
 

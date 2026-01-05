@@ -85,6 +85,7 @@ export default function ProfessorDashboard() {
 
     if (user) {
       loadDashboardData();
+      
     }
   }, [user, authLoading, isAuthenticated, router]);
 

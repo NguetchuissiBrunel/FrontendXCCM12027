@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
-import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock } from "react-icons/fa";
+import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock, FaEye , FaEyeSlash } from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -23,6 +23,7 @@ const SigninPage = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login, user } = useAuth();
 
@@ -146,13 +147,35 @@ const SigninPage = () => {
         >
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-12 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all" // Ajout de pr-12
           />
+
+          {/* Bouton œil - CORRECTION */}
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setShowPassword(!showPassword);
+              }
+            }}
+          >
+            {showPassword ? (
+              <FaEyeSlash size={20} className="text-gray-500 dark:text-gray-400" />
+            ) : (
+              <FaEye size={20} className="text-gray-500 dark:text-gray-400" />
+            )}
+          </button>
+          
           {errors.password && (
             <motion.p
               initial={{ opacity: 0 }}
@@ -243,7 +266,7 @@ const SigninPage = () => {
       {/* Toaster */}
       <Toaster position="top-right" reverseOrder={false} />
     </motion.div>
-  ), [formData, errors, handleSubmit, isSubmitting]);
+  ), [formData, errors, handleSubmit, isSubmitting, showPassword]);
 
   return (
     <div

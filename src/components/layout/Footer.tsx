@@ -53,10 +53,10 @@ const Footer = () => {
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Services</h3>
               <ul className="mt-4 space-y-3">
-                <li><Link href="/courses" className="text-sm text-gray-400 hover:text-white transition-colors">Création de Cours</Link></li>
-                <li><Link href="/collaboration" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
-                <li><Link href="/library" className="text-sm text-gray-400 hover:text-white transition-colors">Bibliothèque de Contenu</Link></li>
-                <li><Link href="/pricing" className="text-sm text-gray-400 hover:text-white transition-colors">Tarification</Link></li>
+                <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Création de Cours</Link></li>
+                <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
+                <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Bibliothèque de Contenu</Link></li>
+                <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Tarification</Link></li>
               </ul>
             </div>
             
@@ -64,18 +64,18 @@ const Footer = () => {
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Entreprise</h3>
               <ul className="mt-4 space-y-3">
                 <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">À Propos</Link></li>
-                <li><Link href="/jobs" className="text-sm text-gray-400 hover:text-white transition-colors">Carrières (Jobs)</Link></li>
-                <li><Link href="/press" className="text-sm text-gray-400 hover:text-white transition-colors">Presse</Link></li>
-                <li><Link href="/partners" className="text-sm text-gray-400 hover:text-white transition-colors">Partenaires</Link></li>
+                <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Carrières (Jobs)</Link></li>
+                <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Presse</Link></li>
+                <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Partenaires</Link></li>
               </ul>
             </div>
              
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Ressources</h3>
               <ul className="mt-4 space-y-3">
-                <li><Link href="/help" className="text-sm text-gray-400 hover:text-white transition-colors">Centre d'Aide</Link></li>
-                <li><Link href="/faq" className="text-sm text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
-                <li><Link href="/blog" className="text-sm text-gray-400 hover:text-white transition-colors">Blog & Guides</Link></li>
+                <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">Centre d'Aide</Link></li>
+                <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
+                <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">Blog & Guides</Link></li>
                 <li><Link href="/support" className="text-sm text-gray-400 hover:text-white transition-colors">Support Technique</Link></li>
               </ul>
             </div>

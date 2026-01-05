@@ -1,5 +1,6 @@
 // src/components/layout/Footer.tsx
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Icônes
 const PhoneIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -21,8 +22,14 @@ const Footer = () => {
           {/* Section 1: Brand & Contact Info */}
           <div className="space-y-6 md:col-span-2 lg:col-span-1 lg:border-r lg:border-gray-700 lg:pr-6 xl:pr-8">
             <Link href="/" className="flex items-center">
-              <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-lg">
-                <span className="text-white font-extrabold text-lg">XC</span>
+            <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
+                <Image 
+                  src="/images/Capture.png" 
+                  alt="Logo XCCM" 
+                  width={80} 
+                  height={80} 
+                  className="rounded-full object-cover" 
+                />
               </div>
               <span className="text-2xl font-bold tracking-tight">XCCM1</span>
             </Link>

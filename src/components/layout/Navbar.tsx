@@ -142,9 +142,7 @@ const Navbar = () => {
                 />
               </div>
               
-              <div className="w-7 h-7 lg:w-8 lg:h-8 bg-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-extrabold text-xs">XC</span>
-              </div>
+              
               <span className="text-lg lg:text-xl font-bold text-gray-800 dark:text-white hidden sm:block">XCCM1</span>
             </Link>
           </div>

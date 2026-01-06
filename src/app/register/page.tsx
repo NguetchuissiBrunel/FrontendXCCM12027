@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket, FaEyeSlash, FaEye } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -49,6 +49,9 @@ const SignupPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const router = useRouter();
   const { registerStudent, registerTeacher, user } = useAuth();
 
@@ -63,13 +66,43 @@ const SignupPage = () => {
     }
   }, [user, router]);
 
+  // Validation en temps réel des mots de passe
+  useEffect(() => {
+    if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: "Les mots de passe ne correspondent pas"
+      }));
+    } else if (formData.confirmPassword && formData.password === formData.confirmPassword) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.confirmPassword;
+        return newErrors;
+      });
+    }
+  }, [formData.password, formData.confirmPassword]);
+
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    if (!formData.email) newErrors.email = "L'email est requis";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "L'email n'est pas valide";
-    if (!formData.password) newErrors.password = "Le mot de passe est requis";
-    else if (formData.password.length < 8) newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+    
+    if (!formData.email.trim()) {
+      newErrors.email = "L'email est requis";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "L'email n'est pas valide";
+    }
+    
+    if (!formData.password) {
+      newErrors.password = "Le mot de passe est requis";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
+    }
+    
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Veuillez confirmer votre mot de passe";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
@@ -108,7 +141,6 @@ const SignupPage = () => {
     setIsSubmitting(true);
     try {
       if (formData.role === 'student') {
-        // Inscription étudiant via API
         await registerStudent({
           email: formData.email,
           password: formData.password,
@@ -119,7 +151,6 @@ const SignupPage = () => {
           specialization: formData.specialization,
         });
 
-        // Sauvegarder les infos supplémentaires en local si nécessaire
         if (formData.promotion || formData.level || formData.interests) {
           localStorage.setItem('studentExtraInfo', JSON.stringify({
             promotion: formData.promotion || '',
@@ -133,7 +164,6 @@ const SignupPage = () => {
           }));
         }
       } else {
-        // Inscription enseignant via API
         await registerTeacher({
           email: formData.email,
           password: formData.password,
@@ -144,7 +174,6 @@ const SignupPage = () => {
           certification: formData.certification,
         });
 
-        // Sauvegarder les infos supplémentaires en local si nécessaire
         if (formData.teachingGrades || formData.teachingGoal) {
           localStorage.setItem('teacherExtraInfo', JSON.stringify({
             teachingGrades: formData.teachingGrades || [],
@@ -154,11 +183,9 @@ const SignupPage = () => {
       }
 
       toast.success("Inscription réussie !");
-      // La redirection est gérée par le useEffect qui surveille 'user'
     } catch (error: any) {
       console.error("Erreur lors de l'enregistrement :", error);
 
-      // Gérer les erreurs API
       let errorMessage = "Une erreur est survenue lors de l'inscription.";
 
       if (error?.body?.message) {
@@ -208,25 +235,45 @@ const SignupPage = () => {
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
-          {errors.password && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.password}</p>}
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+          </button>
+          {errors.password && (
+            <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.password}</p>
+          )}
         </div>
 
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirmez votre mot de passe"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
-          {errors.confirmPassword && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+          </button>
+          {errors.confirmPassword && (
+            <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.confirmPassword}</p>
+          )}
         </div>
 
         <div className="flex space-x-4">
@@ -266,7 +313,7 @@ const SignupPage = () => {
         </Link>
       </div>
     </motion.div>
-  ), [formData, errors, handleNext]);
+  ), [formData, errors, handleNext, showPassword, showConfirmPassword]);
 
   const renderStep2 = useMemo(() => (
     <motion.div
@@ -419,7 +466,6 @@ const SignupPage = () => {
       </div>
 
       {errors.submit && <p className="text-red-500 dark:text-red-400 text-sm text-center">{errors.submit}</p>}
-      {/* Toaster */}
       <Toaster position="top-right" reverseOrder={false} />
     </motion.div>
   ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);

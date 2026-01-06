@@ -57,7 +57,7 @@ export default function StudentCourses() {
               completed: enrollment.completed || false,
               status: enrollment.status
             }
-          } as EnrichedCourse;
+          } as unknown as EnrichedCourse;
         }).filter(Boolean);
 
         setEnrolledCourses(enriched);
@@ -86,17 +86,6 @@ export default function StudentCourses() {
       return 'Date inconnue';
     }
   };
-
-  if (loading || authLoading || coursesLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement de vos cours...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (

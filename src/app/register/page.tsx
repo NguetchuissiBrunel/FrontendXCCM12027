@@ -144,6 +144,7 @@ const SignupPage = () => {
         await registerStudent({
           email: formData.email,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
           firstName: formData.firstName,
           lastName: formData.lastName,
           city: formData.city,

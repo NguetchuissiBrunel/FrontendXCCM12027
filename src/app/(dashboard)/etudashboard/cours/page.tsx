@@ -53,7 +53,7 @@ export default function StudentCourses() {
                 ...enrollment,
                 status: enrollment.status // Ensure status is passed
               }
-            } as EnrichedCourse;
+            } as unknown as EnrichedCourse;
           }
 
           // Sinon (si useCourses n'a pas encore chargé ou cours non trouvé dans la liste globale), 
@@ -168,7 +168,7 @@ export default function StudentCourses() {
                 <div className="flex items-center mb-4">
                   <div className="relative w-8 h-8 mr-3">
                     <img
-                      src={course.author.image}
+                      src={course.author.image?course.author.image:'/images/prof.jpeg'}
                       alt={course.author.name}
                       className="rounded-full object-cover w-full h-full"
                     />

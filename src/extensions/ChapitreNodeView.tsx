@@ -35,27 +35,32 @@ export default function ChapitreNodeView({ node, updateAttributes }: NodeViewPro
       }}
     >
       {/* Editable Label Badge */}
-      <input
-        type="text"
-        value={node.attrs.title}
-        onChange={(e) => updateAttributes({ title: e.target.value })}
-        style={{
-          display: 'block',
-          width: '100%',
-          border: 'none',
-          outline: 'none',
-          backgroundColor: 'transparent',
+      {/* Editable Label Badge */}
+      <div contentEditable={false}>
+        <input
+          type="text"
+          value={node.attrs.title}
+          onChange={(e) => updateAttributes({ title: e.target.value })}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'block',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            backgroundColor: 'transparent',
 
-          // Old project style for 'node-chapter'
-          fontSize: '30px',
-          fontWeight: 'bold',
-          lineHeight: '1.3',
-          marginTop: '1.25rem',
-          marginBottom: '0.75rem',
-          color: '#059669', // green-700
-        }}
-        className="node-chapter-input placeholder-gray-400"
-      />
+            // Old project style for 'node-chapter'
+            fontSize: '30px',
+            fontWeight: 'bold',
+            lineHeight: '1.3',
+            marginTop: '1.25rem',
+            marginBottom: '0.75rem',
+            color: '#059669', // green-700
+          }}
+          className="node-chapter-input placeholder-gray-400"
+        />
+      </div>
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

@@ -35,27 +35,32 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
       }}
     >
       {/* Editable Label Badge */}
-      <input
-        type="text"
-        value={node.attrs.title}
-        onChange={(e) => updateAttributes({ title: e.target.value })}
-        style={{
-          display: 'block',
-          width: '100%',
-          border: 'none',
-          outline: 'none',
-          backgroundColor: 'transparent',
+      {/* Editable Label Badge */}
+      <div contentEditable={false}>
+        <input
+          type="text"
+          value={node.attrs.title}
+          onChange={(e) => updateAttributes({ title: e.target.value })}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'block',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            backgroundColor: 'transparent',
 
-          // Old project style for 'node-paragraph'
-          fontSize: '25px',
-          fontWeight: 'bold',
-          lineHeight: '1.4',
-          marginTop: '1rem',
-          marginBottom: '0.5rem',
-          color: '#D97706', // orange-700
-        }}
-        className="node-paragraph-input placeholder-gray-400"
-      />
+            // Old project style for 'node-paragraph'
+            fontSize: '25px',
+            fontWeight: 'bold',
+            lineHeight: '1.4',
+            marginTop: '1rem',
+            marginBottom: '0.5rem',
+            color: '#D97706', // orange-700
+          }}
+          className="node-paragraph-input placeholder-gray-400"
+        />
+      </div>
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

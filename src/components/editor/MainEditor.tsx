@@ -84,11 +84,15 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
-export const MainEditor: React.FC<MainEditorProps> = ({
+export interface MainEditorRef {
+  handleTOCAction: (action: 'rename' | 'delete', itemId: string, newTitle?: string) => void;
+}
+
+export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   initialContent,
   onContentChange,
   onEditorReady
-}) => {
+}, ref) => {
 
   const TextAlignWithShortcuts = TextAlign.extend({
     addKeyboardShortcuts() {
@@ -100,6 +104,34 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       }
     },
   })
+
+  React.useImperativeHandle(ref, () => ({
+    handleTOCAction: (action, itemId, newTitle) => {
+      if (!editor) return;
+
+      if (action === 'rename' && newTitle) {
+        // Find node with data-id or id attribute matching itemId
+        // TipTap doesn't have a direct "find node by attribute" index, so we traverse.
+        editor.state.doc.descendants((node, pos) => {
+          if (node.attrs.id === itemId) {
+            // Found it. Update title.
+            // Check if it's a heading or custom node that stores title in attrs
+            if (node.attrs.title !== undefined) {
+              editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'title', newTitle));
+              return false; // Stop traversal
+            }
+          }
+        });
+      } else if (action === 'delete') {
+        editor.state.doc.descendants((node, pos) => {
+          if (node.attrs.id === itemId) {
+            editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+            return false; // Stop traversal
+          }
+        });
+      }
+    }
+  }));
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -136,7 +168,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     content: initialContent,
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-none min-h-[500px] p-4 focus:outline-none editor-focusable',
+        class: 'prose dark:prose-invert max-w-none focus:outline-none editor-focusable',
       },
       handleDrop: (view, event, slice, moved) => {
         event.preventDefault();
@@ -655,9 +687,17 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         </div>
 
         {/* Editor Area */}
-        <div className="flex-1 p-6 overflow-auto bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-4xl mx-auto">
-            <EditorContent editor={editor} />
+        <div className="flex-1 p-8 overflow-auto bg-gray-100 dark:bg-gray-900 flex justify-center">
+          <div
+            className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 mx-auto transition-all duration-200"
+            style={{
+              width: '21cm',
+              minHeight: '29.7cm',
+              fontFamily: 'Arial, sans-serif'
+            }}
+            onClick={() => editor?.chain().focus().run()}
+          >
+            <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
           </div>
         </div>
       </div>
@@ -699,6 +739,6 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       )}
     </>
   );
-};
+});
 
 export default MainEditor;

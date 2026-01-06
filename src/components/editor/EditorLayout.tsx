@@ -134,6 +134,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       title: courseTitle.trim() || "Cours sans titre",
       content: jsonContent,
       html: editorInstance.getHTML(),
+      category: "Uncategorized",
       published: publish,
       savedAt: now.toLocaleString('fr-FR', {
         day: '2-digit',
@@ -158,6 +159,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         // Create new
         existingCourses.push(savedCourse);
         localStorage.setItem('xccm_saved_courses', JSON.stringify(existingCourses));
+
+        
         setCurrentCourseId(savedCourse.id);
         alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
       }

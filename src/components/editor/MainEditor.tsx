@@ -54,10 +54,10 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
-export const MainEditor: React.FC<MainEditorProps> = ({ 
-  initialContent, 
+export const MainEditor: React.FC<MainEditorProps> = ({
+  initialContent,
   onContentChange,
-  onEditorReady 
+  onEditorReady
 }) => {
 
   const TextAlignWithShortcuts = TextAlign.extend({
@@ -301,7 +301,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
 
   const HeadingDropdown = () => {
     const currentOption = headingOptions.find(
-      opt => opt.value === editorState.currentHeading
+      opt => opt.value === editorState?.currentHeading
     ) || headingOptions[0];
 
     const handleChange = (value: string | number) => {
@@ -361,7 +361,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBold().run()}
               title="Bold (Ctrl + B)"
-              isActive={editorState.isBold}
+              isActive={editorState?.isBold}
             >
               <strong>B</strong>
             </ToolbarButton>
@@ -369,7 +369,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleItalic().run()}
               title="Italic (Ctrl + I)"
-              isActive={editorState.isItalic}
+              isActive={editorState?.isItalic}
             >
               <em>I</em>
             </ToolbarButton>
@@ -377,7 +377,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleUnderline().run()}
               title="Underline (Ctrl + U)"
-              isActive={editorState.isUnderline}
+              isActive={editorState?.isUnderline}
             >
               <FaUnderline />
             </ToolbarButton>
@@ -385,7 +385,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleStrike().run()}
               title="Strikethrough (Ctrl + Shift + X)"
-              isActive={editorState.isStrike}
+              isActive={editorState?.isStrike}
             >
               <FaStrikethrough />
             </ToolbarButton>
@@ -442,7 +442,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
                 setShowLinkModal(true);
               }}
               title="Insert Link"
-              isActive={editorState.isLink}
+              isActive={editorState?.isLink}
             >
               <FaLink />
             </ToolbarButton>
@@ -463,7 +463,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('left').run()}
               title="Align Left"
-              isActive={editorState.isAlignLeft}
+              isActive={editorState?.isAlignLeft}
             >
               <FaAlignLeft />
             </ToolbarButton>
@@ -471,7 +471,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('center').run()}
               title="Align Center"
-              isActive={editorState.isAlignCenter}
+              isActive={editorState?.isAlignCenter}
             >
               <FaAlignCenter />
             </ToolbarButton>
@@ -479,7 +479,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('right').run()}
               title="Align Right"
-              isActive={editorState.isAlignRight}
+              isActive={editorState?.isAlignRight}
             >
               <FaAlignRight />
             </ToolbarButton>
@@ -487,7 +487,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
               title="Align Justify"
-              isActive={editorState.isAlignJustify}
+              isActive={editorState?.isAlignJustify}
             >
               <FaAlignJustify />
             </ToolbarButton>
@@ -498,7 +498,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBulletList().run()}
               title="Bullet List"
-              isActive={editorState.isBulletList}
+              isActive={editorState?.isBulletList}
             >
               <FaListUl />
             </ToolbarButton>
@@ -506,7 +506,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleOrderedList().run()}
               title="Numbered List"
-              isActive={editorState.isOrderedList}
+              isActive={editorState?.isOrderedList}
             >
               <FaListOl />
             </ToolbarButton>
@@ -514,7 +514,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBlockquote().run()}
               title="Blockquote"
-              isActive={editorState.isBlockquote}
+              isActive={editorState?.isBlockquote}
             >
               <FaQuoteLeft />
             </ToolbarButton>
@@ -522,7 +522,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
               title="Code Block"
-              isActive={editorState.isCodeBlock}
+              isActive={editorState?.isCodeBlock}
             >
               <FaCode />
             </ToolbarButton>

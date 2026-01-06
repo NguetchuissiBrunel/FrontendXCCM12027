@@ -147,6 +147,7 @@ export interface TableOfContentsItem {
   level: number;
   number: string;  // Hierarchical numbering (e.g., "1.1.1")
   children: TableOfContentsItem[];
+  collapsed?: boolean;
   content?: string;  // HTML content for this item
 }
 
@@ -164,7 +165,7 @@ export interface CourseStructureItem {
   type: ItemType;
   parentId: string | null;
   content?: string;
-  data?: any;  // Original data (Course | Section | Chapter | Paragraph | etc.)
+  data?: Course | Section | Chapter | Paragraph | Notion | Exercise;
 }
 
 /**
@@ -195,7 +196,7 @@ export interface PageData {
  * Editor content props
  */
 export interface EditorContentProps {
-  course: any;
+  course: Course;
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
 }

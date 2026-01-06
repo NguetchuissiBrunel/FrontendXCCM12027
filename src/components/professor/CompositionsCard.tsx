@@ -1,7 +1,7 @@
 // components/professor/CompositionsCard.tsx
 import { Heart, Download, MoreVertical } from 'lucide-react';
 
-interface Composition {
+export interface Composition {
   id: string;
   title: string;
   class: string;
@@ -18,10 +18,10 @@ export default function CompositionsCard({ compositions }: CompositionsCardProps
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-6">Mes Compositions</h2>
-      
+
       <div className="space-y-4">
         {compositions.map((composition) => (
-          <div 
+          <div
             key={composition.id}
             className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors border border-purple-200 dark:border-purple-900/30"
           >
@@ -45,7 +45,7 @@ export default function CompositionsCard({ compositions }: CompositionsCardProps
                   <Heart size={20} fill="currentColor" />
                   <span className="font-semibold">{composition.likes} j'aime</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                   <Download size={20} />
                   <span className="font-semibold">{composition.downloads} téléchargements</span>

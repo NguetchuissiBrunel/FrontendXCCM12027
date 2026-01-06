@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
+import { clearAuthToken } from '@/utils/authHelpers';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -67,6 +68,7 @@ const Navbar = () => {
     localStorage.removeItem('teacherInfo');
     setCurrentUser(null);
     setUserRole(null);
+    clearAuthToken();
     router.push('/login');
   };
 
@@ -142,9 +144,7 @@ const Navbar = () => {
                 />
               </div>
               
-              <div className="w-7 h-7 lg:w-8 lg:h-8 bg-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-extrabold text-xs">XC</span>
-              </div>
+              
               <span className="text-lg lg:text-xl font-bold text-gray-800 dark:text-white hidden sm:block">XCCM1</span>
             </Link>
           </div>

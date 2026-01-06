@@ -19,7 +19,7 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
 export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  // const [isHovered, setIsHovered] = useState(false);
 
   const titleRef = useRef<HTMLInputElement>(null);
     const measureRef = useRef<HTMLSpanElement>(null);
@@ -42,62 +42,43 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
   return (
     <NodeViewWrapper
       className="paragraphe-node"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       style={{
         position: 'relative',
-        border: isHovered ? '3px solid #F97316' : '3px solid transparent',
-        transition: 'border-color 150ms ease',
+        border: '1px solid transparent',
+        borderLeft: '4px solid #F97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.05)',
         padding: '16px',
-        margin: '8px 0',
-        borderRadius: '4px',
+        margin: '16px 0',
+        borderRadius: '0 4px 4px 0',
       }}
     >
-      <>
-        {/* Hidden span used for measurement */}
-        <span
-          ref={measureRef}
-          style={{
-            position: 'absolute',
-            visibility: 'hidden',
-            whiteSpace: 'pre',
-            fontSize: '12px',
-            fontWeight: '600',
-            fontFamily: 'inherit',
-            padding: '2px 8px',
-          }}
-        >
-          {node.attrs.title || ' '}
-        </span>
-
-        {/* Title bar */}
+      {/* Editable Label Badge */}
+      {/* Editable Label Badge */}
+      <div contentEditable={false}>
         <input
-          ref={titleRef}
           type="text"
           value={node.attrs.title}
           onChange={(e) => updateAttributes({ title: e.target.value })}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           style={{
-            position: 'absolute',
-            top: '-12px',
-            left: '12px',
-            backgroundColor: '#F97316',
-            color: 'white',
-            padding: '2px 8px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            fontWeight: '600',
-            zIndex: 10,
+            display: 'block',
+            width: '100%',
             border: 'none',
             outline: 'none',
-            minWidth: '70px',
-            whiteSpace: 'nowrap',
+            backgroundColor: 'transparent',
+
+            // Old project style for 'node-paragraph'
+            fontSize: '25px',
+            fontWeight: 'bold',
+            lineHeight: '1.4',
+            marginTop: '1rem',
+            marginBottom: '0.5rem',
+            color: '#D97706', // orange-700
           }}
-          onFocus={(e) =>
-            (e.target.style.outline = '2px solid rgba(99, 102, 241, 0.5)')
-          }
-          onBlur={(e) => (e.target.style.outline = 'none')}
+          className="node-paragraph-input placeholder-gray-400"
         />
-      </>
+      </div>
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

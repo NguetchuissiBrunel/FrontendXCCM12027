@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { AuthProvider } from "@/contexts/AuthContext"; 
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,11 +21,13 @@ export default function RootLayout({
    
       <div className={inter.className}>
         <div className="min-h-screen flex flex-col">
+        <AuthProvider>
           <Navbar />
           <div className="grow">
             {children}
           </div>
           <Footer />
+        </AuthProvider>
         </div>
       </div>
  

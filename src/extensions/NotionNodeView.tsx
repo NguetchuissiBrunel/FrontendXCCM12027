@@ -19,47 +19,23 @@ import React, { useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
 export default function NotionNodeView({ node, updateAttributes }: NodeViewProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  // const [isHovered, setIsHovered] = useState(false);
 
   return (
     <NodeViewWrapper
       className="notion-node"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       style={{
         position: 'relative',
-        border: isHovered ? '3px solid #EF4444' : '3px solid transparent',
-        transition: 'border-color 150ms ease',
+        border: '1px solid transparent',
+        borderLeft: '4px solid #EF4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.05)',
         padding: '16px',
-        margin: '8px 0',
-        borderRadius: '4px',
+        margin: '16px 0',
+        borderRadius: '0 4px 4px 0',
       }}
     >
       {/* Editable Label Badge */}
-      <input
-        type="text"
-        value={node.attrs.title}
-        onChange={(e) => updateAttributes({ title: e.target.value })}
-        /*placeholder="Notion"*/
-        style={{
-          position: 'absolute',
-          top: '-12px',
-          left: '12px',
-          backgroundColor: '#EF4444',
-          color: 'white',
-          padding: '2px 8px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontWeight: '600',
-          zIndex: 10,
-          border: 'none',
-          outline: 'none',
-          minWidth: '60px',
-          width: 'auto',
-        }}
-        onFocus={(e) => e.target.style.outline = '2px solid rgba(239, 68, 68, 0.5)'}
-        onBlur={(e) => e.target.style.outline = 'none'}
-      />
+      {/* Title removed for Notion as requested */}
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

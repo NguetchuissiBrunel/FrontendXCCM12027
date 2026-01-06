@@ -1,11 +1,11 @@
 'use client';
-import { useState, useCallback, useMemo } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket } from 'react-icons/fa';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket, FaEyeSlash, FaEye } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from "axios";
 import toast, { Toaster } from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 type FormData = {
   email: string;
@@ -49,15 +49,60 @@ const SignupPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const router = useRouter();
+  const { registerStudent, registerTeacher, user } = useAuth();
+
+  // Rediriger si déjà connecté
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'student') {
+        router.push('/etudashboard');
+      } else if (user.role === 'teacher') {
+        router.push('/profdashboard');
+      }
+    }
+  }, [user, router]);
+
+  // Validation en temps réel des mots de passe
+  useEffect(() => {
+    if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: "Les mots de passe ne correspondent pas"
+      }));
+    } else if (formData.confirmPassword && formData.password === formData.confirmPassword) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.confirmPassword;
+        return newErrors;
+      });
+    }
+  }, [formData.password, formData.confirmPassword]);
 
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    if (!formData.email) newErrors.email = "L'email est requis";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "L'email n'est pas valide";
-    if (!formData.password) newErrors.password = "Le mot de passe est requis";
-    else if (formData.password.length < 8) newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+    
+    if (!formData.email.trim()) {
+      newErrors.email = "L'email est requis";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "L'email n'est pas valide";
+    }
+    
+    if (!formData.password) {
+      newErrors.password = "Le mot de passe est requis";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
+    }
+    
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Veuillez confirmer votre mot de passe";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
@@ -75,7 +120,7 @@ const SignupPage = () => {
         setErrors({ ...errors, photo: 'Veuillez sélectionner une image valide' });
         return;
       }
-      
+
       if (file.size > 5 * 1024 * 1024) {
         setErrors({ ...errors, photo: 'L\'image ne doit pas dépasser 5MB' });
         return;
@@ -93,69 +138,76 @@ const SignupPage = () => {
   }, [formData, errors]);
 
   const handleSubmit = useCallback(async () => {
-  setIsSubmitting(true);
-  try {
-    const userId = `${
-      formData.role === 'student' ? 'ETU' : 'ENS'
-    }${new Date().getFullYear()}${Math.random().toString(36).substr(2, 9)}`;
+    setIsSubmitting(true);
+    try {
+      if (formData.role === 'student') {
+        await registerStudent({
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          city: formData.city,
+          university: formData.university,
+          specialization: formData.specialization,
+        });
 
-    const newUser = {
-      id: userId,
-      ...formData,
-      registrationDate: new Date().toISOString(),
-    };
+        if (formData.promotion || formData.level || formData.interests) {
+          localStorage.setItem('studentExtraInfo', JSON.stringify({
+            promotion: formData.promotion || '',
+            level: formData.level || '',
+            averageGrade: formData.averageGrade || '',
+            currentSemester: formData.currentSemester || '',
+            major: formData.major || '',
+            minor: formData.minor || '',
+            interests: formData.interests || [],
+            activities: formData.activities || []
+          }));
+        }
+      } else {
+        await registerTeacher({
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          grade: formData.grade,
+          subjects: formData.subjects || [],
+          certification: formData.certification,
+        });
 
-    // ✅ Envoi vers json-server (port 4000)
-    await axios.post("http://localhost:4000/users", newUser);
+        if (formData.teachingGrades || formData.teachingGoal) {
+          localStorage.setItem('teacherExtraInfo', JSON.stringify({
+            teachingGrades: formData.teachingGrades || [],
+            teachingGoal: formData.teachingGoal || ''
+          }));
+        }
+      }
 
-    // ✅ (Optionnel) Sauvegarde locale pour accès rapide
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    localStorage.setItem('userRole', formData.role);
+      toast.success("Inscription réussie !");
+    } catch (error: any) {
+      console.error("Erreur lors de l'enregistrement :", error);
 
-    if (formData.role === 'student') {
-      localStorage.setItem('studentInfo', JSON.stringify({
-        id: userId,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
-        promotion: formData.promotion || '',
-        specialization: formData.specialization || '',
-        level: formData.level || '',
-        university: formData.university || '',
-        city: formData.city || '',
-        averageGrade: formData.averageGrade || '',
-        currentSemester: formData.currentSemester || '',
-        major: formData.major || '',
-        minor: formData.minor || '',
-        interests: formData.interests || [],
-        activities: formData.activities || []
-      }));
-    } else {
-      localStorage.setItem('teacherInfo', JSON.stringify({
-        id: userId,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        photoUrl: formData.photoUrl || '/images/Applying Lean to Education -.jpeg',
-        university: formData.university || '',
-        city: formData.city || '',
-        grade: formData.grade || '',
-        certification: formData.certification || '',
-        subjects: formData.subjects || [],
-        teachingGrades: formData.teachingGrades || [],
-        teachingGoal: formData.teachingGoal || ''
-      }));
+      let errorMessage = "Une erreur est survenue lors de l'inscription.";
+
+      if (error?.body?.message) {
+        errorMessage = error.body.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.status === 400) {
+        errorMessage = "Données invalides. Veuillez vérifier vos informations.";
+      } else if (error?.status === 409) {
+        errorMessage = "Cet email est déjà utilisé.";
+      } else if (error?.status === 500) {
+        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
+      }
+
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    toast.success("Inscription réussie !");
-    // ✅ Redirection selon le rôle
-    router.push(formData.role === 'student' ? '/etudashboard' : '/profdashboard');
-  } catch (error) {
-    console.error("Erreur lors de l'enregistrement :", error);
-    setErrors({ submit: "Une erreur est survenue lors de l'inscription." });
-  } finally {
-    setIsSubmitting(false);
-  }
-}, [formData, router]);
+  }, [formData, registerStudent, registerTeacher]);
 
   const renderStep1 = useMemo(() => (
     <motion.div
@@ -185,47 +237,65 @@ const SignupPage = () => {
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
-          {errors.password && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.password}</p>}
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+          </button>
+          {errors.password && (
+            <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.password}</p>
+          )}
         </div>
 
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirmez votre mot de passe"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
           />
-          {errors.confirmPassword && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+          </button>
+          {errors.confirmPassword && (
+            <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.confirmPassword}</p>
+          )}
         </div>
 
         <div className="flex space-x-4">
           <button
             type="button"
             onClick={() => setFormData({ ...formData, role: 'student' })}
-            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
-              formData.role === 'student' 
+            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${formData.role === 'student'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-            }`}
+              }`}
           >
             <FaGraduationCap className="mr-2" /> Étudiant
           </button>
           <button
             type="button"
             onClick={() => setFormData({ ...formData, role: 'teacher' })}
-            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
-              formData.role === 'teacher'
+            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${formData.role === 'teacher'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-            }`}
+              }`}
           >
             <FaChalkboardTeacher className="mr-2" /> Enseignant
           </button>
@@ -245,7 +315,7 @@ const SignupPage = () => {
         </Link>
       </div>
     </motion.div>
-  ), [formData, errors, handleNext]);
+  ), [formData, errors, handleNext, showPassword, showConfirmPassword]);
 
   const renderStep2 = useMemo(() => (
     <motion.div
@@ -286,16 +356,16 @@ const SignupPage = () => {
         <div className="space-y-3">
           <div className="flex items-center space-x-4">
             <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 dark:border-purple-900/30 shadow-lg">
-              <img 
-                src={photoPreview} 
-                alt="Prévisualisation" 
+              <img
+                src={photoPreview}
+                alt="Prévisualisation"
                 className="w-full h-full object-cover"
               />
             </div>
-            
+
             <div className="flex-1">
-              <label 
-                htmlFor="photo-upload" 
+              <label
+                htmlFor="photo-upload"
                 className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg cursor-pointer hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg"
               >
                 <FaCamera className="mr-2" />
@@ -389,16 +459,15 @@ const SignupPage = () => {
           {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
         </button>
       </div>
-      
+
       <div className="text-center">
         <span className="text-gray-600 dark:text-gray-400">Vous avez déjà un compte ? </span>
         <Link href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
           Connectez-vous
         </Link>
       </div>
-      
+
       {errors.submit && <p className="text-red-500 dark:text-red-400 text-sm text-center">{errors.submit}</p>}
-      {/* Toaster */}
       <Toaster position="top-right" reverseOrder={false} />
     </motion.div>
   ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);

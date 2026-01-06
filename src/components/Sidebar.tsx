@@ -12,7 +12,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ userRole, userName, userLevel, activeTab }: SidebarProps) {
-  const [photoUrl, setPhotoUrl] = useState<string>('/images/Applying Lean to Education -.jpeg');
+  const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
 
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');

@@ -1,9 +1,9 @@
 // src/app/page.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { courses } from '@/data/CourseData';
+import { useCourses } from '@/hooks/useCourses';
 
 // Composant pour simuler les étoiles de notation
 const StarRating = ({ rating = 5 }: { rating: number }) => (
@@ -12,26 +12,48 @@ const StarRating = ({ rating = 5 }: { rating: number }) => (
   </div>
 );
 
-const specialOffers = courses.slice(0, 3).map((course) => ({
-  id: course.id,
-  title: course.title,
-  description: course.sections[0]?.chapters[0]?.paragraphs[0]?.content || course.category, // Utilise une description plus détaillée si disponible, sinon category
-  image: course.image,
-  views: course.views,
-  likes: course.likes,
-  downloads: course.downloads,
-  author: course.author,
-  rating: 5, // Rating fixe pour l'exemple, peut être dynamisé si nécessaire
-  link: `/courses/${course.id}`,
-}));
+// Skeleton loader pour une offre spéciale
+const SpecialOfferSkeleton = () => (
+  <div className="bg-purple-100 dark:bg-purple-900/20 rounded-xl p-4 flex items-start space-x-4 animate-pulse">
+    <div className="w-24 h-24 bg-gray-300 dark:bg-gray-700 rounded-lg flex-shrink-0"></div>
+    <div className="flex-grow space-y-3">
+      <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4"></div>
+      <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-full"></div>
+      <div className="flex items-center space-x-2">
+        <div className="w-6 h-6 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
+        <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
+      </div>
+    </div>
+  </div>
+);
 
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const { courses, loading } = useCourses();
+
+  const specialOffers = useMemo(() => {
+    return courses.slice(0, 3).map((course) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description || course.category || "Cours de qualité",
+      image: course.image ? course.image : "/images/Capture.png",
+      views: course?.views || 0,
+      likes: course?.likes || 0,
+      downloads: course?.downloads || 0,
+      author: {
+        name: course.author?.name || "Auteur inconnu",
+        image: course.author?.image ? course.author.image : "/images/prof.jpeg",
+        designation: course.author?.designation || "Enseignant"
+      },
+      rating: 5,
+      link: `/courses/${course.id}`,
+    }));
+  }, [courses]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setIsDarkMode(true);
     }
@@ -57,7 +79,7 @@ export default function HomePage() {
                   href="/demo"
                   className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 md:py-4 md:text-lg md:px-10 transition-colors shadow-md"
                 >
-                  Demander une démo
+                  Voir démo
                 </Link>
                 <Link
                   href="/register"
@@ -69,28 +91,28 @@ export default function HomePage() {
             </div>
 
             <div className="mt-12 lg:mt-0 w-full  rounded-xl shadow-lg dark:shadow-gray-900/50 relative">
-            {/* Image mode clair */}
-            <div className="dark:hidden">
-              <Image 
-                src="/images/image1.png" 
-                alt="acceuil" 
-                width={1000}
-                height={1000}
-                className="w-full rounded-xl"
-              />
+              {/* Image mode clair */}
+              <div className="dark:hidden">
+                <Image
+                  src="/images/image1.png"
+                  alt="acceuil"
+                  width={1000}
+                  height={1000}
+                  className="w-full rounded-xl"
+                />
+              </div>
+
+              {/* Image mode sombre */}
+              <div className="hidden dark:block">
+                <Image
+                  src="/images/image3.png"
+                  alt="acceuil mode sombre"
+                  width={1000}
+                  height={1000}
+                  className="w-full  rounded-xl"
+                />
+              </div>
             </div>
-            
-            {/* Image mode sombre */}
-            <div className="hidden dark:block">
-              <Image 
-                src="/images/image3.png" 
-                alt="acceuil mode sombre" 
-                width={1000}
-                height={1000}
-                className="w-full  rounded-xl"
-              />
-            </div>
-          </div>
           </div>
         </div>
       </section>
@@ -145,79 +167,89 @@ export default function HomePage() {
 
           <div className="lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start">
             <div className="lg:col-span-1 mb-10 lg:mb-0">
-              <Image 
-                src="/images/image7.jpg" 
-                alt="acceuil2" 
-                width={1000} 
-                height={1000} 
-                className="w-full h-auto rounded-xl shadow-lg dark:shadow-gray-900/50" 
+              <Image
+                src="/images/image7.jpg"
+                alt="acceuil2"
+                width={1000}
+                height={1000}
+                className="w-full h-auto rounded-xl shadow-lg dark:shadow-gray-900/50"
               />
             </div>
 
             <div className="lg:col-span-1 space-y-4">
-              {specialOffers.map((course) => (
-                <div key={course.id} className="bg-purple-100 dark:bg-purple-900/20 rounded-xl p-4 hover:shadow-md transition-all duration-300 flex items-start space-x-4">
-                  {/* Image du cours */}
-                  <Image
-                    src={course.image}
-                    alt={course.title}
-                    width={96}
-                    height={96}
-                    className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
-                  />
-
-                  <div className="flex-grow">
-                    {/* Titre avec lien */}
-                    <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
-                      <Link href={course.link} className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
-                        {course.title}
-                      </Link>
-                    </h3>
-
-                    {/* Contenu / Description */}
-                    <p className="text-xs text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
-                      {course.description}
-                    </p>
-
-                    {/* Auteur avec avatar et institution */}
-                    <div className="flex items-center mb-2">
+              {loading ? (
+                <>
+                  <SpecialOfferSkeleton />
+                  <SpecialOfferSkeleton />
+                  <SpecialOfferSkeleton />
+                </>
+              ) : (
+                specialOffers.map((course) => (
+                  <div key={course.id} className="bg-purple-100 dark:bg-purple-900/20 rounded-xl p-4 hover:shadow-md transition-all duration-300 flex items-start space-x-4">
+                    {/* Image du cours */}
+                    <div className="w-24 h-24 flex-shrink-0 relative overflow-hidden rounded-lg">
                       <Image
-                        src={course.author.image}
-                        alt={course.author.name}
-                        width={24}
-                        height={24}
-                        className="w-6 h-6 rounded-full mr-2"
+                        src={course.image ? course.image : '/images/Capture.png'}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
                       />
-                      <div>
-                        <p className="text-xs font-semibold text-gray-900 dark:text-white">{course.author.name}</p>
-                        {course.author.designation && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{course.author.designation}</p>
-                        )}
+                    </div>
+
+                    <div className="flex-grow">
+                      {/* Titre avec lien */}
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+                        <Link href={course.link} className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
+                          {course.title}
+                        </Link>
+                      </h3>
+
+                      {/* Contenu / Description */}
+                      <p className="text-xs text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
+                        {course.description}
+                      </p>
+
+                      {/* Auteur avec avatar et institution */}
+                      <div className="flex items-center mb-2">
+                        <div className="w-6 h-6 relative rounded-full overflow-hidden mr-2">
+                          <Image
+                            src={course.author.image ? course.author.image : '/images/prof.jpeg'}
+                            alt={course.author.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-900 dark:text-white">{course.author.name}</p>
+                          {course.author.designation && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{course.author.designation}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Étoiles de notation */}
+                      <StarRating rating={course.rating} />
+
+                      {/* Stats: Views, Likes, Downloads */}
+                      <div className="flex space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        <span>{course.views} vues</span>
+                        <button className="flex items-center space-x-1 hover:text-purple-600 dark:hover:text-purple-400">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                          <span>{course.likes}</span>
+                        </button>
+                        <button className="flex items-center space-x-1 hover:text-purple-600 dark:hover:text-purple-400">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          <span>{course.downloads}</span>
+                        </button>
                       </div>
                     </div>
-
-                    {/* Étoiles de notation */}
-                    <StarRating rating={course.rating} />
-
-                    {/* Stats: Views, Likes, Downloads */}
-                    <div className="flex space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      <span>{course.views} vues</span>
-                      <button className="flex items-center space-x-1 hover:text-purple-600 dark:hover:text-purple-400">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                        <span>{course.likes}</span>
-                      </button>
-                      <button className="flex items-center space-x-1 hover:text-purple-600 dark:hover:text-purple-400">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        <span>{course.downloads}</span>
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
 
               <div className="text-right mt-4">
                 <Link href="/bibliotheque" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex items-center justify-end space-x-1 text-sm">
@@ -299,7 +331,7 @@ export default function HomePage() {
           <div className="mt-16 text-center">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Partagez votre expérience</h3>
             <div className="bg-white dark:bg-gray-900 rounded-xl p-8 border border-gray-200 dark:border-gray-800 shadow-lg dark:shadow-gray-900/50 max-w-2xl mx-auto">
-              <textarea 
+              <textarea
                 placeholder="Écrivez votre commentaire ici..."
                 className="w-full h-24 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800 transition-colors"
               />

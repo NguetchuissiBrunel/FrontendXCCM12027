@@ -77,7 +77,7 @@ const Footer = () => {
               <ul className="mt-4 space-y-3">
                 <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">À Propos</Link></li>
                 <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Carrières (Jobs)</Link></li>
-                <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Presse</Link></li>
+                <li><Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">Presse</Link></li>
                 <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Partenaires</Link></li>
               </ul>
             </div>
@@ -87,7 +87,7 @@ const Footer = () => {
               <ul className="mt-4 space-y-3">
                 <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">Centre d'Aide</Link></li>
                 <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
-                <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">Blog & Guides</Link></li>
+                <li><Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">Blog & Guides</Link></li>
                 <li><Link href="/support" className="text-sm text-gray-400 hover:text-white transition-colors">Support Technique</Link></li>
               </ul>
             </div>

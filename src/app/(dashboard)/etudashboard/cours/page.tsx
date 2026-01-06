@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { BookOpen, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
+import { EnrollmentService } from '@/utils/enrollmentService';
 import { useCourses } from '@/hooks/useCourses';
 import { EnrichedCourse } from '@/types/enrollment';
 
@@ -19,14 +19,14 @@ export default function StudentCourses() {
   const router = useRouter();
 
   useEffect(() => {
-    if (authLoading || coursesLoading) return;
+    if (authLoading) return;
 
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
 
-    if (user?.role !== 'student') {
+    if (user && user.role !== 'student') {
       router.push('/profdashboard');
       return;
     }
@@ -34,27 +34,41 @@ export default function StudentCourses() {
     const fetchMyEnrollments = async () => {
       try {
         setLoading(true);
-        const response = await EnrollmentControllerService.getMyEnrollments();
-        const enrollments = Array.isArray(response) ? response : (response as any).content || [];
+        // Utiliser le service centralisé qui gère correctement la structure de réponse API
+        const enrollments = await EnrollmentService.getMyEnrollments();
 
         // Joindre les informations des cours
-        const enriched = enrollments.map((enrollment: any) => {
+        const enriched = enrollments.map((enrollment) => {
           const courseDetail = allCourses.find(c => c.id === enrollment.courseId);
-          if (!courseDetail) return null;
 
+          // Si on trouve les détails du cours, on les utilise
+          if (courseDetail) {
+            return {
+              id: courseDetail.id,
+              title: courseDetail.title,
+              category: courseDetail.category || 'Formation',
+              image: courseDetail.image,
+              author: courseDetail.author,
+              enrollment: {
+                ...enrollment,
+                status: enrollment.status // Ensure status is passed
+              }
+            } as unknown as EnrichedCourse;
+          }
+
+          // Sinon (si useCourses n'a pas encore chargé ou cours non trouvé dans la liste globale), 
+          // on retourne un objet partiel pour afficher au moins l'inscription
           return {
-            id: courseDetail.id,
-            title: courseDetail.title,
-            category: courseDetail.category || 'Formation',
-            image: courseDetail.image,
-            author: courseDetail.author,
+            id: enrollment.courseId,
+            title: `Cours #${enrollment.courseId}`,
+            category: 'Cours',
+            image: '', // Placeholder handled in UI
+            author: {
+              name: 'Inconnu',
+              image: ''
+            },
             enrollment: {
-              id: enrollment.id,
-              courseId: enrollment.courseId,
-              studentId: enrollment.studentId,
-              enrolledAt: enrollment.enrolledAt,
-              progress: enrollment.progress || 0,
-              completed: enrollment.completed || false,
+              ...enrollment,
               status: enrollment.status
             }
           } as unknown as EnrichedCourse;
@@ -143,7 +157,7 @@ export default function StudentCourses() {
                 <div className="flex items-center mb-4">
                   <div className="relative w-8 h-8 mr-3">
                     <img
-                      src={course.author.image}
+                      src={course.author.image?course.author.image:'/images/prof.jpeg'}
                       alt={course.author.name}
                       className="rounded-full object-cover w-full h-full"
                     />

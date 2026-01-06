@@ -18,6 +18,8 @@ interface TableOfContentsProps {
   onItemClick?: (itemId: string) => void;
   // Props for compatibility with new feature set if we want to support editing from TOC (optional)
   onAddItem?: (type: ItemType, title?: string, parentId?: string) => void;
+  onItemRename?: (itemId: string, newTitle: string) => void;
+  onItemDelete?: (itemId: string) => void;
   selectedText?: string;
 }
 
@@ -27,6 +29,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   items: initialItems = [],
   onItemClick,
   onAddItem,
+  onItemRename,
+  onItemDelete,
   selectedText = ''
 }) => {
   const [tocItems, setTocItems] = useState<TableOfContentsItem[]>(initialItems || []);
@@ -135,8 +139,9 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     setTocItems(renumberedItems);
 
     if (onSave) onSave(renumberedItems);
+    if (onItemDelete) onItemDelete(itemId);
     closeContextMenu();
-  }, [tocItems, onSave]);
+  }, [tocItems, onSave, onItemDelete]);
 
   const handleAddItem = useCallback((type: ItemType, parentId?: string) => {
     if (onAddItem) onAddItem(type, selectedText || undefined, parentId);
@@ -370,8 +375,9 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       return updatedItems;
     });
 
+    if (onItemRename) onItemRename(itemId, newItemTitle || '');
     setRenamingItemId(null);
-  }, [newItemTitle, onSave]);
+  }, [newItemTitle, onSave, onItemRename]);
 
   const cancelRename = useCallback(() => {
     setRenamingItemId(null);

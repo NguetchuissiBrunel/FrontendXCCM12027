@@ -7,7 +7,7 @@
  * Now with real-time Table of Contents extraction from TipTap editor!
  * Dark mode support added matching rest of site (Navbar colors)
  * 
- * @author JOHAN
+ * @author ALD
  * @date November 2025
  */
 
@@ -31,6 +31,9 @@ import MainEditor from './MainEditor';
 import StructureDeCours from './StructureDeCours';
 import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
+import Navbar from '../layout/Navbar';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 
 interface EditorLayoutProps {
   children?: React.ReactNode;
@@ -54,6 +57,7 @@ type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet'
 export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // State for active right panel
   const [activePanel, setActivePanel] = useState<RightPanelType>('structure');
+  const [showSidebar, setShowSidebar] = useState(true);
 
   // State for course title and current course ID
   const [courseTitle, setCourseTitle] = useState<string>("Nouveau cours");
@@ -76,6 +80,24 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       // Optional: Flash highlight or focus
+    }
+  };
+
+  // Ref for MainEditor to handle imperative updates from TOC
+  const editorRef = React.useRef<{ handleTOCAction: (action: 'rename' | 'delete', itemId: string, newTitle?: string) => void }>(null);
+
+  // Ref for auto-save timer
+  const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleTOCItemRename = (itemId: string, newTitle: string) => {
+    if (editorRef.current) {
+      editorRef.current.handleTOCAction('rename', itemId, newTitle);
+    }
+  };
+
+  const handleTOCItemDelete = (itemId: string) => {
+    if (editorRef.current) {
+      editorRef.current.handleTOCAction('delete', itemId);
     }
   };
 
@@ -120,9 +142,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     );
   };
 
-  const handleSave = async (publish: boolean = false) => {
+  const handleSave = async (publish: boolean = false, silent: boolean = false) => {
     if (!editorInstance) {
-      alert("L'éditeur n'est pas encore chargé.");
+      if (!silent) alert("L'éditeur n'est pas encore chargé.");
       return;
     }
 
@@ -153,69 +175,80 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           c.id === currentCourseId ? savedCourse : c
         );
         localStorage.setItem('xccm_saved_courses', JSON.stringify(updated));
-        alert(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
+        if (!silent) alert(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
       } else {
         // Create new
         existingCourses.push(savedCourse);
         localStorage.setItem('xccm_saved_courses', JSON.stringify(existingCourses));
         setCurrentCourseId(savedCourse.id);
-        alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
+        if (!silent) alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
       }
     } catch (error) {
       console.error("Erreur sauvegarde :", error);
-      alert("Erreur lors de la sauvegarde.");
+      if (!silent) alert("Erreur lors de la sauvegarde.");
     }
   };
 
+  /**
+   * Handle editor content change
+   */
+  const handleEditorChange = (content: string) => {
+    // Determine title from content if needed? No, title is separate.
+
+    // Debounced auto-save
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave(false, true); // Auto-save, silent
+    }, 2000); // 2 seconds debounce
+  };
+
   return (
-    <div className="mt-16 flex h-screen w-screen flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {/* HEADER - Editor toolbar */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-700 dark:to-purple-800 px-6 shadow-md">
-        {/* Left: Editable Title */}
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={courseTitle}
-            onChange={(e) => setCourseTitle(e.target.value)}
-            className="bg-transparent text-lg font-bold text-white outline-none border-b-2 border-transparent focus:border-white/50 transition-colors min-w-48"
-            placeholder="Titre du cours..."
-          />
-        </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleSave(false)}
-            className="rounded bg-white dark:bg-gray-200 bg-opacity-20 dark:bg-opacity-30 px-4 py-1.5 text-sm font-medium text-black hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">
-            Sauvegarder
-          </button>
-          <button
-            onClick={() => handleSave(true)}
-            className="rounded bg-white dark:bg-gray-200 px-4 py-1.5 text-sm font-medium text-purple-700 dark:text-purple-800 hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">
-            Publier
-          </button>
-        </div>
-      </header>
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+      {/* Navbar at the top */}
+      <nav className="h-16 flex-none z-10">
+        <Navbar />
+      </nav>
 
-      {/* MAIN CONTENT - Three columns */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* LEFT SIDEBAR - Table of Contents */}
-        <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Sidebar for TOC */}
+        <aside
+          className={`${showSidebar ? 'w-80' : 'w-0'
+            } flex-none bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out relative z-0 print:hidden`}
+        >
           <TableOfContents
             items={tocItems}
             onItemClick={handleTOCItemClick}
+            onItemRename={handleTOCItemRename}
+            onItemDelete={handleTOCItemDelete}
           />
         </aside>
 
-        {/* CENTER - Main Editor */}
-        <main className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+        {/* Toggle Sidebar Button */}
+        <button
+          onClick={() => setShowSidebar(!showSidebar)}
+          className={`absolute top-4 z-20 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'
+            }`}
+          title={showSidebar ? 'Masquer la table des matières' : 'Afficher la table des matières'}
+        >
+          {showSidebar ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+        </button>
+
+        {/* Main Editor Area */}
+        <main className="flex-1 flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900 relative z-0 overflow-hidden">
           <MainEditor
-            initialContent="<p>Commencez à écrire votre contenu ici...</p>"
-            onContentChange={(content) => console.log('Content changed:', content)}
-            onEditorReady={(editor) => setEditorInstance(editor)}
+            initialContent=""
+            onContentChange={handleEditorChange}
+            onEditorReady={(editor) => {
+              setEditorInstance(editor);
+            }}
+            ref={editorRef}
           />
         </main>
-
         {/* RIGHT SECTION - IconBar + Panel */}
         <div className="flex">
           {/* Panel Area - Slides based on activePanel */}
@@ -342,8 +375,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               panelType="properties"
               colorClass="text-gray-600 dark:text-gray-400"
             />
-
-            {/* Spacer to push actions to bottom */}
             <div className="flex-1"></div>
 
             {/* Bottom action buttons
@@ -363,6 +394,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         </div>
       </div>
     </div>
+
   );
 };
 

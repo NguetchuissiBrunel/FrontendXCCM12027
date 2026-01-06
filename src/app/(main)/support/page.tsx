@@ -230,7 +230,7 @@ export default function SupportTechniquePage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Suivi des demandes</p>
           </Link>
 
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-700 dark:to-indigo-700 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 text-center">
+          <div className="bg-gradient-to-r from-purple-700 to-purple-600 dark:from-purple-800 dark:to-purple-700 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 text-center">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -564,7 +564,7 @@ export default function SupportTechniquePage() {
 
             {/* Contact Information */}
             <section>
-              <div className="bg-gradient-to-br from-purple-600 to-indigo-600 dark:from-purple-700 dark:to-indigo-700 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6">
+              <div className="bg-gradient-to-br from-purple-700 to-purple-600 dark:from-purple-800 dark:to-purple-700 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6">
                 <h3 className="text-lg font-bold text-white mb-6">Informations de contact</h3>
                 
                 <div className="space-y-4">
@@ -706,7 +706,7 @@ export default function SupportTechniquePage() {
         </div>
 
         {/* Stats Section */}
-        <div className="mt-12 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-700 dark:to-indigo-700 rounded-xl shadow-lg dark:shadow-gray-900/50 p-8">
+        <div className="mt-12 bg-gradient-to-r from-purple-700 to-purple-600 dark:from-purple-700 dark:to-purple-600 rounded-xl shadow-lg dark:shadow-gray-900/50 p-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl font-bold text-white mb-2">24/7</div>

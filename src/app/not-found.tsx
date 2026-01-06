@@ -24,7 +24,7 @@ export default function NotFound() {
                 >
                     <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center p-6 border border-gray-100 dark:border-gray-700">
                         <Image
-                            src="/images/capture.png"
+                            src="/images/Capture.png"
                             alt="Logo"
                             width={120}
                             height={120}

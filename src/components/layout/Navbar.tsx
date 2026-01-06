@@ -105,7 +105,16 @@ const Navbar = () => {
   const helpNavLink = {
     href: '/aide', 
     label: 'Aide', 
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9.247a3.75 3.75 0 100-7.494 3.75 3.75 0 000 7.494zM16.5 13.5v6M13.5 16.5h6M3 21v-2c0-1.03.39-2.028 1.097-2.768A7 7 0 0112 15a7 7 0 017.903 3.232c.707.74 1.097 1.738 1.097 2.768v2H3z" /></svg>
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9.09 9a3 3 0 015.82 1c0 2-3 2-3 4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
   };
 
   // Construire les liens de navigation selon le rôle

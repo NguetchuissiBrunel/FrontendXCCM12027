@@ -1,25 +1,33 @@
-// src/app/about/page.tsx
 'use client';
 
-import Footer from '@/components/layout/Footer';
-import Navbar from '@/components/layout/Navbar';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Download, ExternalLink, Mail, Copy, Check,
-  Users, Code, BookOpen, Globe, Award, Sparkles,
-  ChevronRight, ArrowDown, FileText, Github
+  ArrowRight,
+  Award,
+  BookOpen,
+  Check,
+  ChevronRight,
+  Code,
+  FileText,
+  Github,
+  Globe,
+  Sparkles,
+  Users,
 } from 'lucide-react';
+import Link from 'next/link';
+
+const sections = [
+  { id: 'intro', label: 'Introduction', icon: BookOpen },
+  { id: 'problematique', label: 'Problematique', icon: FileText },
+  { id: 'solution', label: 'Solution', icon: Sparkles },
+  { id: 'equipe', label: 'Equipe', icon: Users },
+  { id: 'tech', label: 'Technologies', icon: Code },
+  { id: 'avenir', label: 'Avenir', icon: Globe },
+];
 
 export default function AboutPage() {
-  const [copied, setCopied] = useState(false);
-  const [activeSection, setActiveSection] = useState('');
-
-  const copyEmail = async (email: string) => {
-    await navigator.clipboard.writeText(email);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const [activeSection, setActiveSection] = useState('intro');
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -27,287 +35,315 @@ export default function AboutPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['intro', 'problematique', 'solution', 'equipe', 'tech', 'avenir'];
-      const scrollPos = window.scrollY + 100;
-
+      const scrollPos = window.scrollY + 140;
       for (const section of sections) {
-        const el = document.getElementById(section);
-        if (el && el.offsetTop <= scrollPos && el.offsetTop + el.offsetHeight > scrollPos) {
-          setActiveSection(section);
+        const element = document.getElementById(section.id);
+        if (element && element.offsetTop <= scrollPos && element.offsetTop + element.offsetHeight > scrollPos) {
+          setActiveSection(section.id);
           break;
         }
       }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <>
-
-      <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
-
-        {/* HERO SECTION */}
-        <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="inline-flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-7 h-7 text-white" />
-                </div>
-                <span className="text-sm font-semibold text-purple-700">Prototype Académique ENSPY</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-purple-700 via-purple-700 to-purple-700 bg-clip-text text-transparent mb-6">
-                À Propos de XCCM1
-              </h1>
-              <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-8">
-                Une plateforme innovante pour la <strong>création modulaire</strong> et <strong>collaborative</strong> de contenu pédagogique.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button
-                  onClick={() => scrollTo('problematique')}
-                  className="group inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
-                >
-                  Découvrir le projet
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition" />
-                </button>
-                <a
-                  href="https://github.com/enspy-xccm/xccm1"
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-purple-600 text-purple-600 rounded-xl font-medium hover:bg-purple-50 transition"
-                >
-                  <Github className="w-5 h-5" />
-                  Voir sur GitHub
-                </a>
-              </div>
-            </motion.div>
+    <main className="min-h-screen bg-slate-50 pt-16 dark:bg-slate-950">
+      <div className="mx-auto max-w-6xl px-4 pb-16">
+        <header className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-purple-700 shadow-sm dark:border-purple-500/40 dark:bg-slate-900 dark:text-purple-300">
+            <Sparkles className="h-4 w-4" />
+            Projet academique ENSPY
           </div>
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-            <ArrowDown className="w-8 h-8 text-purple-400 animate-bounce" />
+          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-white">
+            A propos de XCCM1
+          </h1>
+          <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">
+            Une plateforme modulaire pour creer, structurer et partager des contenus pedagogiques.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => scrollTo('solution')}
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-700"
+            >
+              Decouvrir le projet
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <Link
+              href="https://github.com/Prrojet-XCCM1/FrontendXCCM12027.git"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-2 rounded-xl border border-purple-600 px-5 py-2.5 text-sm font-semibold text-purple-700 transition hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-500/10"
+            >
+              <Github className="h-4 w-4" />
+              Voir sur GitHub
+            </Link>
+          </div>
+        </header>
+
+        <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
+            A retenir
+          </h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: 'Prototype open-source',
+                desc: 'Developpe par les etudiants ENSPY pour le cours GIF4087-1.',
+              },
+              {
+                title: 'Granules pedagogiques',
+                desc: 'Unites modulaires pour structurer et reutiliser les contenus.',
+              },
+              {
+                title: 'Collaboration',
+                desc: 'Travail d equipe, versionnage et export multi-format.',
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+              >
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* TABLE OF CONTENTS - STICKY SIDEBAR */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-4 gap-8">
-            <aside className="hidden lg:block">
-              <div className="sticky top-24 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                <h3 className="font-bold text-lg text-purple-700 mb-4">Sommaire</h3>
-                <nav className="space-y-2">
-                  {[
-                    { id: 'intro', label: 'Introduction', icon: BookOpen },
-                    { id: 'problematique', label: 'Problématique', icon: FileText },
-                    { id: 'solution', label: 'Notre Solution', icon: Sparkles },
-                    { id: 'equipe', label: 'Équipe', icon: Users },
-                    { id: 'tech', label: 'Technologies', icon: Code },
-                    { id: 'avenir', label: 'Avenir', icon: Globe },
-                  ].map((item) => (
+        <div className="mt-10 grid gap-8 lg:grid-cols-3">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 space-y-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
+                  Sommaire
+                </h3>
+                <nav className="mt-4 space-y-2 text-sm">
+                  {sections.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => scrollTo(item.id)}
-                      className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${activeSection === item.id
-                          ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 font-semibold shadow-sm'
-                          : 'hover:bg-gray-50 text-gray-600'
-                        }`}
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition ${
+                        activeSection === item.id
+                          ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-200'
+                          : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                      }`}
                     >
-                      <item.icon className="w-5 h-5" />
-                      <span>{item.label}</span>
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
                     </button>
                   ))}
                 </nav>
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => window.print()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition"
-                  >
-                    <Download className="w-4 h-4" />
-                    Exporter en PDF
-                  </button>
-                </div>
               </div>
-            </aside>
+            </div>
+          </aside>
 
-            {/* MAIN CONTENT */}
-            <div className="lg:col-span-3 space-y-16">
+          <div className="space-y-12 lg:col-span-2">
+            <section id="intro" className="scroll-mt-24">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                  Introduction
+                </h2>
+                <div className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-6 text-slate-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-slate-200">
+                  <p>
+                    <strong>XCCM1</strong> est un prototype academique realise dans le cadre du
+                    cours <strong>Interface Homme-Machine (GIF4087-1)</strong> a l&apos;ENSPY Yaounde.
+                  </p>
+                  <p className="mt-3">
+                    Il introduit le concept de <strong>granules</strong> pour structurer les cours
+                    en modules reutilisables, versionnes et partageables.
+                  </p>
+                </div>
+              </motion.div>
+            </section>
 
-              {/* 1. INTRODUCTION */}
-              <section id="intro" className="scroll-mt-24">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6 }}
-                >
-                  <h2 className="text-3xl font-bold text-purple-700 mb-6">Introduction</h2>
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-50 p-8 rounded-2xl border-l-4 border-purple-600">
-                    <p className="text-lg leading-relaxed">
-                      <strong>XCCM1</strong> est un <strong>prototype académique</strong> développé dans le cadre du cours
-                      <em> Interface Homme-Machine (GIF4087-1)</em> à l'<strong>ENSPY Yaoundé</strong>.
-                    </p>
-                    <p className="mt-4 text-lg">
-                      Supervisé par <strong>Dr. Bernabe BATCHAKUI</strong>, ce projet vise à <strong>révolutionner la création de contenu pédagogique</strong>
-                      grâce au concept innovant de <strong>"granules"</strong> — des unités modulaires, réutilisables et collaboratives.
-                    </p>
-                  </div>
-                </motion.div>
-              </section>
+            <section id="problematique" className="scroll-mt-24">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                  Problematique
+                </h2>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {[
+                    { title: 'Formats rigides', desc: 'PDF/Word difficiles a modifier.' },
+                    { title: 'Peu de modularite', desc: 'Reutiliser un chapitre est complexe.' },
+                    { title: 'Collaboration limitee', desc: 'Peu d outils de co-edition.' },
+                    { title: 'Qualite inegale', desc: 'Absence de standardisation.' },
+                  ].map((item) => (
+                    <div
+                      key={item.title}
+                      className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                    >
+                      <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                      <p className="mt-2 text-slate-600 dark:text-slate-300">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </section>
 
-              {/* 2. PROBLÉMATIQUE */}
-              <section id="problematique" className="scroll-mt-24">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-3xl font-bold text-purple-700 mb-6">Problématique</h2>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {[
-                      { title: "Rigidité des formats", desc: "PDF, Word → difficile à modifier" },
-                      { title: "Manque de modularité", desc: "Impossible de réutiliser un chapitre" },
-                      { title: "Collaboration limitée", desc: "Pas de co-édition en temps réel" },
-                      { title: "Qualité inégale", desc: "Contenus non standardisés" },
-                    ].map((prob, i) => (
-                      <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-red-100 hover:shadow-md transition">
-                        <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                          <span className="text-red-600 text-2xl">X</span>
+            <section id="solution" className="scroll-mt-24">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                  Notre solution
+                </h2>
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                  <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+                    Le concept de granules
+                  </h3>
+                  <p className="mt-3 text-sm text-emerald-900 dark:text-emerald-100">
+                    Un granule est une unite atomique (definition, exemple, exercice, ressource)
+                    enrichie par des metadonnees, versionnage et droits d auteur.
+                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    {['Modulaire', 'Collaboratif', 'Exportable'].map((feature) => (
+                      <div
+                        key={feature}
+                        className="rounded-xl border border-emerald-100 bg-white p-3 text-center text-sm font-semibold text-emerald-800 shadow-sm dark:border-emerald-500/30 dark:bg-slate-900 dark:text-emerald-200"
+                      >
+                        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-200">
+                          <Check className="h-5 w-5" />
                         </div>
-                        <h3 className="font-semibold text-gray-800">{prob.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{prob.desc}</p>
+                        {feature}
                       </div>
                     ))}
                   </div>
-                </motion.div>
-              </section>
+                </div>
+              </motion.div>
+            </section>
 
-              {/* 3. NOTRE SOLUTION */}
-              <section id="solution" className="scroll-mt-24">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-3xl font-bold text-purple-700 mb-6">Notre Solution : XCCM1</h2>
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-8 rounded-2xl border-l-4 border-green-600">
-                    <h3 className="text-xl font-bold text-green-800 mb-4">Le concept de "Granules"</h3>
-                    <p className="text-lg mb-6">
-                      Un <strong>granule</strong> = une unité atomique de contenu (définition, exercice, vidéo, image)
-                      avec métadonnées, versionnage et droits d'auteur.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                      {['Modulaire', 'Collaboratif', 'Exportable'].map((feature) => (
-                        <div key={feature} className="bg-white p-4 rounded-lg shadow">
-                          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <Check className="w-6 h-6 text-green-600" />
-                          </div>
-                          <span className="font-semibold">{feature}</span>
-                        </div>
-                      ))}
+            <section id="equipe" className="scroll-mt-24">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                  Equipe de developpement
+                </h2>
+                <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                  12 etudiants de 4e annee Genie Informatique (2025-2026)
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {[
+                    'AZANGUE LEONEL DELMAT',
+                    'BALA ANDEGUE FRANCOIS LIONNEL',
+                    'NKOLO ANTAGANA STACY',
+                    'NANA NDOUNDAM GABRIELLE',
+                    'NANKENG TSAMO PIERRE MARCELLE',
+                    'NCHANG ROY FRU',
+                    'NGUETCHUISSI TCHUGOUA BRUNEL LANDRY',
+                    'SOUNTSA DJIELE PIO VIANNEY',
+                    'OSSOMBE PIERRE RENE RAOUL',
+                    'NKAMLA CHEDJOU JOHAN',
+                    'NTIH TCHIO TAMOGOU DARYL',
+                    'TAGASTING FOSTING SAMUEL SEAN',
+                  ].map((name) => (
+                    <div
+                      key={name}
+                      className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                    >
+                      <p className="font-semibold text-slate-900 dark:text-white">
+                        {name.split(' ')[0]}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300">
+                        {name.split(' ').slice(1).join(' ')}
+                      </p>
                     </div>
-                  </div>
-                </motion.div>
-              </section>
+                  ))}
+                </div>
+              </motion.div>
+            </section>
 
-              {/* 4. ÉQUIPE */}
-              <section id="equipe" className="scroll-mt-24">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-3xl font-bold text-purple-700 mb-6">Équipe de Développement</h2>
-                  <p className="text-lg text-gray-700 mb-8">
-                    12 étudiants de <strong>4ᵉ année Génie Informatique</strong> (2025–2026)
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <section id="tech" className="scroll-mt-24">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                  Stack technique
+                </h2>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {[
+                    {
+                      title: 'Frontend',
+                      items: ['Next.js 16 + App Router', 'React + TypeScript', 'Tailwind CSS'],
+                    },
+                    {
+                      title: 'Backend & donnees',
+                      items: ['API REST + WebSockets', 'PostgreSQL + JSONB', 'Export PDF/Word'],
+                    },
+                  ].map((block) => (
+                    <div
+                      key={block.title}
+                      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                    >
+                      <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                        {block.title}
+                      </p>
+                      <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                        {block.items.map((item) => (
+                          <li key={item} className="flex items-center gap-2">
+                            <ChevronRight className="h-4 w-4 text-purple-600 dark:text-purple-300" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </section>
+
+            <section id="avenir" className="scroll-mt-24">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                  Perspectives d avenir
+                </h2>
+                <div className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-6 dark:border-purple-500/30 dark:bg-purple-500/10">
+                  <ul className="space-y-3 text-sm text-slate-700 dark:text-slate-200">
                     {[
-                      "AZANGUE LEONEL DELMAT", "BALA ANDEGUE FRANCOIS LIONNEL", "NKOLO ANTAGANA STACY",
-                      "NANA NDOUNDAM GABRIELLE", "NANKENG TSAMO PIERRE MARCELLE", "NCHANG ROY FRU",
-                      "NGUETCHUISSI TCHUGOUA BRUNEL LANDRY", "SOUNTSA DJIELE PIO VIANNEY",
-                      "OSSOMBE PIERRE RENE RAOUL", "NKAMLA CHEDJOU JOHAN", "NTIH TCHIO TAMOGOU DARYL",
-                      "TAGASTING FOSTING SAMUEL SEAN"
-                    ].map((name, i) => (
-                      <motion.div
-                        key={i}
-                        whileHover={{ scale: 1.05 }}
-                        className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center cursor-default"
-                      >
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-400 rounded-full mx-auto mb-2" />
-                        <p className="text-sm font-medium text-gray-800">{name.split(' ')[0]}</p>
-                        <p className="text-xs text-gray-600">{name.split(' ').slice(1).join(' ')}</p>
-                      </motion.div>
+                      "Integration d'IA pour la generation de granules",
+                      'Support multilingue (FR, EN, ES)',
+                      'Application mobile (React Native)',
+                      'Gamification et badges',
+                      'Integration Moodle / Google Classroom',
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-3">
+                        <Award className="mt-0.5 h-4 w-4 text-purple-600 dark:text-purple-300" />
+                        {item}
+                      </li>
                     ))}
-                  </div>
-                </motion.div>
-              </section>
-
-              {/* 5. TECHNOLOGIES */}
-              <section id="tech" className="scroll-mt-24">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-3xl font-bold text-purple-700 mb-6">Stack Technique</h2>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100">
-                      <h3 className="font-bold text-purple-700 mb-3">Frontend</h3>
-                      <ul className="space-y-2 text-gray-700">
-                        <li className="flex items-center gap-2"><Code className="w-4 h-4 text-purple-600" /> Next.js 16 + App Router</li>
-                        <li className="flex items-center gap-2"><Code className="w-4 h-4 text-purple-600" /> React + TypeScript</li>
-                        <li className="flex items-center gap-2"><Code className="w-4 h-4 text-purple-600" /> Tailwind CSS + Framer Motion</li>
-                      </ul>
-                    </div>
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100">
-                      <h3 className="font-bold text-purple-700 mb-3">Backend & Données</h3>
-                      <ul className="space-y-2 text-gray-700">
-                        <li className="flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> API REST + WebSockets</li>
-                        <li className="flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> PostgreSQL + JSONB</li>
-                        <li className="flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Export PDF/Word</li>
-                      </ul>
-                    </div>
-                  </div>
-                </motion.div>
-              </section>
-
-              {/* 6. AVENIR */}
-              <section id="avenir" className="scroll-mt-24 pb-16">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-3xl font-bold text-purple-700 mb-6">Perspectives d'Avenir</h2>
-                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-8 rounded-2xl">
-                    <h3 className="text-xl font-bold mb-4">Évolutions prévues :</h3>
-                    <ul className="space-y-3">
-                      {[
-                        "Intégration d'IA pour la génération automatique de granules",
-                        "Support multilingue (FR, EN, ES)",
-                        "Application mobile native (React Native)",
-                        "Système de gamification et badges",
-                        "Intégration avec Moodle / Google Classroom"
-                      ].map((item, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <Award className="w-5 h-5 text-indigo-600 mt-0.5" />
-                          <span className="text-gray-700">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-              
-                </motion.div>
-              </section>
-
-            </div>
+                  </ul>
+                </div>
+              </motion.div>
+            </section>
           </div>
         </div>
-      </main>
-
-    </>
+      </div>
+    </main>
   );
 }

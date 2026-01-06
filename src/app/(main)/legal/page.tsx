@@ -33,12 +33,12 @@ export default function LegalMentions() {
         <div className="max-w-5xl mx-auto">
           {/* Header Hero */}
           <div className="text-center mb-12 animate-fade-in">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full mb-4 shadow-lg">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-purple-600 rounded-full mb-4 shadow-lg">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-700 to-blue-700 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-700 to-purple-700 bg-clip-text text-transparent">
               Mentions Légales
             </h1>
             <p className="mt-3 text-gray-600">Plateforme XCCM1 – ENSPY Yaoundé</p>
@@ -58,7 +58,7 @@ export default function LegalMentions() {
               href="https://github.com/enspy-xccm/xccm1"
               target="_blank"
               rel="noopener"
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-sm font-medium"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-purple-600 text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-sm font-medium"
             >
               <ExternalLink className="w-4 h-4" />
               Voir sur GitHub
@@ -78,7 +78,7 @@ export default function LegalMentions() {
                 </h2>
                 <div className="space-y-3 text-gray-700">
                   <p>Projet académique réalisé sous la direction de :</p>
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-xl border-l-4 border-purple-500">
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-50 p-4 rounded-xl border-l-4 border-purple-500">
                     <strong className="block text-purple-800">École Nationale Supérieure Polytechnique</strong>
                     <span className="text-sm">BP 8390 Yaoundé, Cameroun</span><br />
                     <span className="text-sm flex items-center gap-1"><Phone className="w-3 h-3" /> (+237) 222 23 61 00</span><br />
@@ -126,7 +126,7 @@ export default function LegalMentions() {
                   ].map((dev) => (
                     <div
                       key={dev.mat}
-                      className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg hover:from-purple-100 hover:to-blue-100 transition-all duration-200 cursor-default"
+                      className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-purple-50 rounded-lg hover:from-purple-100 hover:to-purple-100 transition-all duration-200 cursor-default"
                     >
                       <span className="text-sm font-medium text-gray-800">{dev.name}</span>
                       <span className="font-mono text-xs text-purple-700 bg-white px-2 py-1 rounded-full">{dev.mat}</span>
@@ -187,16 +187,16 @@ export default function LegalMentions() {
                 </h2>
                 <p className="text-sm text-gray-600 mb-3">Conforme à la <strong>Loi n° 2010/012</strong> (Cameroun)</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="bg-purple-50 p-3 rounded-lg">
                     <strong>Collectées</strong>: email, rôle, compositions
                   </div>
-                  <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="bg-purple-50 p-3 rounded-lg">
                     <strong>Finalité</strong>: authentification, création de cours
                   </div>
-                  <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="bg-purple-50 p-3 rounded-lg">
                     <strong>Conservation</strong>: jusqu’à suppression
                   </div>
-                  <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="bg-purple-50 p-3 rounded-lg">
                     <strong>Droits</strong>: accès, suppression sur demande
                   </div>
                 </div>
@@ -264,7 +264,7 @@ export default function LegalMentions() {
             {/* Sidebar - Navigation Rapide */}
             <aside className="lg:col-span-1">
               <div className="sticky top-24 space-y-6">
-                <div className="bg-gradient-to-br from-purple-600 to-blue-600 text-white p-6 rounded-2xl shadow-lg">
+                <div className="bg-gradient-to-br from-purple-600 to-purple-600 text-white p-6 rounded-2xl shadow-lg">
                   <h3 className="font-bold text-lg mb-2">Prototype Académique</h3>
                   <p className="text-sm opacity-90">Projet GIF4087-1 – ENSPY 2025</p>
                 </div>

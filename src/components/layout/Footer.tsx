@@ -63,8 +63,13 @@ const Footer = () => {
                 <li><Link href="/editor" className="text-sm text-gray-400 hover:text-white transition-colors">Création de Cours</Link></li>
                 <li><Link href="/space_coll" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
                 <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Bibliothèque de Contenu</Link></li>
-                <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Tarification</Link></li>
-              </ul>
+                <li>
+                   <Link href="/pricing" className="text-gray-600 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400">
+                    Tarification
+                   </Link>
+                   
+                </li>              
+               </ul>
             </div>
             
             <div>

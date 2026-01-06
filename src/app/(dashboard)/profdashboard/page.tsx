@@ -102,9 +102,9 @@ export default function ProfessorDashboard() {
 
   if (!user) return null;
 
-  const displayName = (user.firstName || user.lastName) 
-  ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() 
-  : user.email.split('@')[0];
+  const displayName = (user.firstName || user.lastName)
+    ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+    : user.email.split('@')[0];
 
   const professor = {
     id: user.id,
@@ -116,7 +116,7 @@ export default function ProfessorDashboard() {
     totalStudents: compositions.reduce((acc, c) => acc + c.participants, 0),
     participationRate: 92,
     publications: compositions.length,
-    photoUrl: user.photoUrl,
+    photoUrl: '/images/prof.jpeg',
     performanceDistribution: [
       { range: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
       { range: 'Bien', value: 30, color: 'bg-purple-400' },

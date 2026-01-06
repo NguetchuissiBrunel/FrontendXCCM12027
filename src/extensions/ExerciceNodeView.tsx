@@ -35,26 +35,31 @@ export default function ExerciceNodeView({ node, updateAttributes }: NodeViewPro
       }}
     >
       {/* Editable Label Badge */}
-      <input
-        type="text"
-        value={node.attrs.title}
-        onChange={(e) => updateAttributes({ title: e.target.value })}
-        style={{
-          display: 'block',
-          width: '100%',
-          border: 'none',
-          outline: 'none',
-          backgroundColor: 'transparent',
+      {/* Editable Label Badge */}
+      <div contentEditable={false}>
+        <input
+          type="text"
+          value={node.attrs.title}
+          onChange={(e) => updateAttributes({ title: e.target.value })}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'block',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            backgroundColor: 'transparent',
 
-          // Style for 'node-exercise' (inferred)
-          fontSize: '20px',
-          fontWeight: 'bold',
-          lineHeight: '1.5',
-          marginBottom: '0.5rem',
-          color: '#6366F1', // indigo-500
-        }}
-        className="node-exercise-input placeholder-gray-400"
-      />
+            // Style for 'node-exercise' (inferred)
+            fontSize: '20px',
+            fontWeight: 'bold',
+            lineHeight: '1.5',
+            marginBottom: '0.5rem',
+            color: '#6366F1', // indigo-500
+          }}
+          className="node-exercise-input placeholder-gray-400"
+        />
+      </div>
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

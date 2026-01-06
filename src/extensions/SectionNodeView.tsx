@@ -36,30 +36,32 @@ export default function SectionNodeView({ node, updateAttributes }: NodeViewProp
       }}
     >
       {/* Editable Label Badge */}
-      <input
-        type="text"
-        value={node.attrs.title}
-        onChange={(e) => updateAttributes({ title: e.target.value })}
-        style={{
-          display: 'block',
-          width: '100%',
-          border: 'none',
-          outline: 'none',
-          backgroundColor: 'transparent',
+      {/* Editable Label Badge */}
+      <div contentEditable={false}>
+        <input
+          type="text"
+          value={node.attrs.title}
+          onChange={(e) => updateAttributes({ title: e.target.value })}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'block',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            backgroundColor: 'transparent',
 
-          // Old project style for 'node-part'
-          fontSize: '40px',
-          fontWeight: 'bold',
-          lineHeight: '1.2',
-          marginTop: '1.5rem',
-          marginBottom: '1rem',
-          color: '#7C3AED', // purple-700 (dark mode needs check but hardcoded for now like old proj likely did)
-        }}
-        // Prevent editor from taking over focus/events when interacting with the title input
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-        className="node-part-input placeholder-gray-400"
-      />
+            // Old project style for 'node-part'
+            fontSize: '40px',
+            fontWeight: 'bold',
+            lineHeight: '1.2',
+            marginTop: '1.5rem',
+            marginBottom: '1rem',
+            color: '#7C3AED', // purple-700
+          }}
+          className="node-part-input placeholder-gray-400"
+        />
+      </div>
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

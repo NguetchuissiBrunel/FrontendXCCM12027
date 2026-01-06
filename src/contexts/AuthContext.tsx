@@ -139,10 +139,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
       console.log('🔐 Réponse de l\'API:', response);
-   
-
-      if (!response.data) {
+      if (!response.data && response.message) {
         throw new Error(response.message);
+      }
+
+      if (!response.data){
+        throw new Error('Erreur de connexion. veuillez réessayer.');
       }
 
       const authData: AuthenticationResponse = response.data;

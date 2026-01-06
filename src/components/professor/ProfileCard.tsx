@@ -31,7 +31,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedProfessor, setEditedProfessor] = useState<Professor>(professor);
-  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
+  const defaultAvatar = '/images/prof.jpeg';
 
   const handleEdit = () => {
     setIsEditing(true);

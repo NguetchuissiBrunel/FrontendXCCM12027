@@ -1,12 +1,12 @@
 // src/app/about/page.tsx
 'use client';
 
-import  Footer  from '@/components/layout/Footer';
-import  Navbar  from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Download, ExternalLink, Mail, Copy, Check, 
+import {
+  Download, ExternalLink, Mail, Copy, Check,
   Users, Code, BookOpen, Globe, Award, Sparkles,
   ChevronRight, ArrowDown, FileText, Github
 } from 'lucide-react';
@@ -44,9 +44,9 @@ export default function AboutPage() {
 
   return (
     <>
-      
+
       <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
-        
+
         {/* HERO SECTION */}
         <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto text-center">
@@ -110,11 +110,10 @@ export default function AboutPage() {
                     <button
                       key={item.id}
                       onClick={() => scrollTo(item.id)}
-                      className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${
-                        activeSection === item.id
+                      className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${activeSection === item.id
                           ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 font-semibold shadow-sm'
                           : 'hover:bg-gray-50 text-gray-600'
-                      }`}
+                        }`}
                     >
                       <item.icon className="w-5 h-5" />
                       <span>{item.label}</span>
@@ -147,11 +146,11 @@ export default function AboutPage() {
                   <h2 className="text-3xl font-bold text-purple-700 mb-6">Introduction</h2>
                   <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-8 rounded-2xl border-l-4 border-purple-600">
                     <p className="text-lg leading-relaxed">
-                      <strong>XCCM1</strong> est un <strong>prototype académique</strong> développé dans le cadre du cours 
+                      <strong>XCCM1</strong> est un <strong>prototype académique</strong> développé dans le cadre du cours
                       <em> Interface Homme-Machine (GIF4087-1)</em> à l'<strong>ENSPY Yaoundé</strong>.
                     </p>
                     <p className="mt-4 text-lg">
-                      Supervisé par <strong>Dr. Bernabe BATCHAKUI</strong>, ce projet vise à <strong>révolutionner la création de contenu pédagogique</strong> 
+                      Supervisé par <strong>Dr. Bernabe BATCHAKUI</strong>, ce projet vise à <strong>révolutionner la création de contenu pédagogique</strong>
                       grâce au concept innovant de <strong>"granules"</strong> — des unités modulaires, réutilisables et collaboratives.
                     </p>
                   </div>
@@ -196,7 +195,7 @@ export default function AboutPage() {
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-8 rounded-2xl border-l-4 border-green-600">
                     <h3 className="text-xl font-bold text-green-800 mb-4">Le concept de "Granules"</h3>
                     <p className="text-lg mb-6">
-                      Un <strong>granule</strong> = une unité atomique de contenu (définition, exercice, vidéo, image) 
+                      Un <strong>granule</strong> = une unité atomique de contenu (définition, exercice, vidéo, image)
                       avec métadonnées, versionnage et droits d'auteur.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
@@ -258,7 +257,7 @@ export default function AboutPage() {
                     <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100">
                       <h3 className="font-bold text-purple-700 mb-3">Frontend</h3>
                       <ul className="space-y-2 text-gray-700">
-                        <li className="flex items-center gap-2"><Code className="w-4 h-4 text-purple-600" /> Next.js 14 + App Router</li>
+                        <li className="flex items-center gap-2"><Code className="w-4 h-4 text-purple-600" /> Next.js 16 + App Router</li>
                         <li className="flex items-center gap-2"><Code className="w-4 h-4 text-purple-600" /> React + TypeScript</li>
                         <li className="flex items-center gap-2"><Code className="w-4 h-4 text-purple-600" /> Tailwind CSS + Framer Motion</li>
                       </ul>
@@ -316,7 +315,7 @@ export default function AboutPage() {
           </div>
         </div>
       </main>
-      
+
     </>
   );
 }

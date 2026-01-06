@@ -11,6 +11,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Dropcursor from '@tiptap/extension-dropcursor';
+import FontFamily from '@tiptap/extension-font-family';
+import { Extension } from '@tiptap/core';
 
 // Custom XCCM Hierarchy Nodes
 import Section from '../../extensions/Section';
@@ -35,7 +37,11 @@ import {
   FaRemoveFormat,
   FaImage,
   FaLink,
-  FaUnlink
+  FaUnlink,
+  FaIndent,
+  FaOutdent,
+  FaFont,
+  FaHighlighter
 } from 'react-icons/fa';
 
 interface MainEditorProps {
@@ -43,6 +49,30 @@ interface MainEditorProps {
   onContentChange?: (content: string) => void;
   onEditorReady?: (editor: any) => void; // Callback when editor is ready
 }
+
+// Define the Indent extension since it's not in starter-kit by default in the way we might want, 
+// or simpler, just use a keyboard shortcut or command wrapper if Tiptap has native support.
+// Actually Tiptap has no native "Indent" extension in the core free set that works on paragraphs universally without list.
+// But we can implement a simple one or check if we want it for lists only.
+// For now, let's assume we want it for lists and potentially paragraphs (via margin/padding).
+// A simple way is to use a custom extension for indentation.
+
+// Let's stick to what's available or simple. StarterKit includes ListItem which supports indentation in lists.
+// For paragraphs, we might need a custom extension. 
+// For now, I'll add the UI and wire it to valid commands.
+
+const fontOptions = [
+  { value: 'Inter', label: 'Inter' },
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Helvetica', label: 'Helvetica' },
+  { value: 'Times New Roman', label: 'Times New Roman' },
+  { value: 'Garamond', label: 'Garamond' },
+  { value: 'Courier New', label: 'Courier New' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Verdana', label: 'Verdana' },
+  { value: 'Trebuchet MS', label: 'Trebuchet MS' },
+  { value: 'Comic Sans MS', label: 'Comic Sans MS' },
+];
 
 const headingOptions = [
   { value: 'paragraph', label: 'Normal Text', color: '#000000' },
@@ -54,10 +84,10 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
-export const MainEditor: React.FC<MainEditorProps> = ({ 
-  initialContent, 
+export const MainEditor: React.FC<MainEditorProps> = ({
+  initialContent,
   onContentChange,
-  onEditorReady 
+  onEditorReady
 }) => {
 
   const TextAlignWithShortcuts = TextAlign.extend({
@@ -78,6 +108,9 @@ export const MainEditor: React.FC<MainEditorProps> = ({
       Dropcursor.configure({
         color: '#a78bfa', // Purple to match your theme
         width: 3,
+      }),
+      FontFamily.configure({
+        types: ['textStyle'],
       }),
       TextAlignWithShortcuts.configure({
         types: ['heading', 'paragraph'],
@@ -301,7 +334,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
 
   const HeadingDropdown = () => {
     const currentOption = headingOptions.find(
-      opt => opt.value === editorState.currentHeading
+      opt => opt.value === editorState?.currentHeading
     ) || headingOptions[0];
 
     const handleChange = (value: string | number) => {
@@ -346,14 +379,40 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     );
   };
 
+  const FontDropdown = () => {
+    return (
+      <select
+        value={editor?.getAttributes('textStyle').fontFamily || ''}
+        onChange={(e) => {
+          const value = e.target.value;
+          if (value === '') {
+            editor?.chain().focus().unsetFontFamily().run();
+          } else {
+            editor?.chain().focus().setFontFamily(value).run();
+          }
+        }}
+        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm w-32"
+        title="Font Family"
+      >
+        <option value="">Default Font</option>
+        {fontOptions.map(option => (
+          <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  };
+
   return (
     <>
       <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
 
         {/* Toolbar */}
         <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             <HeadingDropdown />
+            <FontDropdown />
 
             < Separator />
 
@@ -361,7 +420,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBold().run()}
               title="Bold (Ctrl + B)"
-              isActive={editorState.isBold}
+              isActive={editorState?.isBold}
             >
               <strong>B</strong>
             </ToolbarButton>
@@ -369,7 +428,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleItalic().run()}
               title="Italic (Ctrl + I)"
-              isActive={editorState.isItalic}
+              isActive={editorState?.isItalic}
             >
               <em>I</em>
             </ToolbarButton>
@@ -377,7 +436,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleUnderline().run()}
               title="Underline (Ctrl + U)"
-              isActive={editorState.isUnderline}
+              isActive={editorState?.isUnderline}
             >
               <FaUnderline />
             </ToolbarButton>
@@ -385,7 +444,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleStrike().run()}
               title="Strikethrough (Ctrl + Shift + X)"
-              isActive={editorState.isStrike}
+              isActive={editorState?.isStrike}
             >
               <FaStrikethrough />
             </ToolbarButton>
@@ -401,20 +460,30 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <Separator />
 
             {/* Text Color */}
-            <input
-              type="color"
-              onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
-              title="Text Color"
-              className="w-10 h-9 rounded cursor-pointer"
-            />
+            <div className="flex items-center">
+              <label className="cursor-pointer p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex items-center justify-center text-gray-700 dark:text-gray-300" title="Text Color">
+                <FaFont className="mr-1" />
+                <input
+                  type="color"
+                  onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
+                  className="w-0 h-0 opacity-0 absolute"
+                />
+                <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('textStyle').color || '#000000' }}></div>
+              </label>
+            </div>
 
             {/* Highlight Color */}
-            <input
-              type="color"
-              onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
-              title="Highlight Color"
-              className="w-10 h-9 rounded cursor-pointer"
-            />
+            <div className="flex items-center">
+              <label className="cursor-pointer p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex items-center justify-center text-gray-700 dark:text-gray-300" title="Highlight Color">
+                <FaHighlighter className="mr-1" />
+                <input
+                  type="color"
+                  onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
+                  className="w-0 h-0 opacity-0 absolute"
+                />
+                <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('highlight').color || 'transparent' }}></div>
+              </label>
+            </div>
 
             <Separator />
 
@@ -442,7 +511,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
                 setShowLinkModal(true);
               }}
               title="Insert Link"
-              isActive={editorState.isLink}
+              isActive={editorState?.isLink}
             >
               <FaLink />
             </ToolbarButton>
@@ -463,7 +532,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('left').run()}
               title="Align Left"
-              isActive={editorState.isAlignLeft}
+              isActive={editorState?.isAlignLeft}
             >
               <FaAlignLeft />
             </ToolbarButton>
@@ -471,7 +540,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('center').run()}
               title="Align Center"
-              isActive={editorState.isAlignCenter}
+              isActive={editorState?.isAlignCenter}
             >
               <FaAlignCenter />
             </ToolbarButton>
@@ -479,7 +548,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('right').run()}
               title="Align Right"
-              isActive={editorState.isAlignRight}
+              isActive={editorState?.isAlignRight}
             >
               <FaAlignRight />
             </ToolbarButton>
@@ -487,7 +556,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
               title="Align Justify"
-              isActive={editorState.isAlignJustify}
+              isActive={editorState?.isAlignJustify}
             >
               <FaAlignJustify />
             </ToolbarButton>
@@ -498,7 +567,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBulletList().run()}
               title="Bullet List"
-              isActive={editorState.isBulletList}
+              isActive={editorState?.isBulletList}
             >
               <FaListUl />
             </ToolbarButton>
@@ -506,7 +575,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleOrderedList().run()}
               title="Numbered List"
-              isActive={editorState.isOrderedList}
+              isActive={editorState?.isOrderedList}
             >
               <FaListOl />
             </ToolbarButton>
@@ -514,7 +583,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleBlockquote().run()}
               title="Blockquote"
-              isActive={editorState.isBlockquote}
+              isActive={editorState?.isBlockquote}
             >
               <FaQuoteLeft />
             </ToolbarButton>
@@ -522,7 +591,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             <ToolbarButton
               onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
               title="Code Block"
-              isActive={editorState.isCodeBlock}
+              isActive={editorState?.isCodeBlock}
             >
               <FaCode />
             </ToolbarButton>
@@ -533,6 +602,35 @@ export const MainEditor: React.FC<MainEditorProps> = ({
               isActive={false}
             >
               <FaMinus />
+            </ToolbarButton>
+
+            <Separator />
+
+            {/* Indentation */}
+            <ToolbarButton
+              onClick={() => {
+                // Check if in list
+                if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+                  editor?.chain().focus().sinkListItem('listItem').run();
+                }
+              }}
+              title="Indent (Tab)"
+              isActive={false}
+            >
+              <FaIndent />
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => {
+                // Check if in list
+                if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+                  editor?.chain().focus().liftListItem('listItem').run();
+                }
+              }}
+              title="Outdent (Shift + Tab)"
+              isActive={false}
+            >
+              <FaOutdent />
             </ToolbarButton>
 
             <Separator />

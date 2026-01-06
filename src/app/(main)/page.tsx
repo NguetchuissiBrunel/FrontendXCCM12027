@@ -79,7 +79,7 @@ export default function HomePage() {
                   href="/demo"
                   className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 md:py-4 md:text-lg md:px-10 transition-colors shadow-md"
                 >
-                  Demander une démo
+                  Voir démo
                 </Link>
                 <Link
                   href="/register"

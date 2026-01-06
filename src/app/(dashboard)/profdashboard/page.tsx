@@ -102,9 +102,13 @@ export default function ProfessorDashboard() {
 
   if (!user) return null;
 
+  const displayName = (user.firstName || user.lastName) 
+  ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() 
+  : user.email.split('@')[0];
+
   const professor = {
     id: user.id,
-    name: `${user.firstName} ${user.lastName}`,
+    name: displayName,
     city: user.city || 'Non spécifiée',
     university: user.university || 'Non spécifiée',
     grade: user.grade || 'Enseignant',

@@ -225,6 +225,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             onItemClick={handleTOCItemClick}
             onItemRename={handleTOCItemRename}
             onItemDelete={handleTOCItemDelete}
+            onItemMove={(itemId, targetId, position) => {
+              if (editorRef.current) {
+                editorRef.current.handleTOCAction('move', itemId, { targetId, position });
+              }
+            }}
           />
         </aside>
 

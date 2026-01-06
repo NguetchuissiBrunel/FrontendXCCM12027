@@ -100,7 +100,7 @@ export default function SupportTechnique() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${
                     selectedCategory === cat
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-purple-600 to-purple-600 text-white shadow-lg'
                       : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm border dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:border-gray-700'
                   }`}
                 >
@@ -149,7 +149,7 @@ export default function SupportTechnique() {
           </div>
         </section>
         {/* Contact Rapide */}
-        <section className="py-16 bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-700 dark:to-blue-700">
+        <section className="py-16 bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-700 dark:to-purple-700">
           <div className="max-w-4xl mx-auto text-center px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
               Besoin d’aide immédiate ?

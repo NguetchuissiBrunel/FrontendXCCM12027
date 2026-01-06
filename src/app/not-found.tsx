@@ -39,7 +39,7 @@ export default function NotFound() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                    <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4 tracking-tight">
+                    <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-700 mb-4 tracking-tight">
                         404
                     </h1>
 
@@ -54,7 +54,7 @@ export default function NotFound() {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link
                             href="/"
-                            className="group inline-flex items-center px-8 py-3.5 text-base font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            className="group inline-flex items-center px-8 py-3.5 text-base font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-full shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
                             Go Back Home

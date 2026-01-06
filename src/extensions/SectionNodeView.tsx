@@ -15,12 +15,30 @@
  * @date December 2025
  */
 
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
 export default function SectionNodeView({ node, updateAttributes }: NodeViewProps) {
   const [isHovered, setIsHovered] = useState(false);
 
+  const titleRef = useRef<HTMLInputElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  
+  useLayoutEffect(() => {
+    const resize = () => {
+      if (titleRef.current && measureRef.current) {
+        const width = measureRef.current.offsetWidth + 16;
+        titleRef.current.style.width = `${Math.max(width, 70)}px`;
+      }
+    };
+  
+    // Run immediately
+    resize();
+  
+    // Run again after paint (important for initial drop)
+    requestAnimationFrame(resize);
+  }, [node.attrs.title]);
+  
   return (
     <NodeViewWrapper
       className="section-node"
@@ -35,31 +53,51 @@ export default function SectionNodeView({ node, updateAttributes }: NodeViewProp
         borderRadius: '4px',
       }}
     >
-      {/* Editable Label Badge */}
-      <input
-        type="text"
-        value={node.attrs.title}
-        onChange={(e) => updateAttributes({ title: e.target.value })}
-        /*placeholder="Partie"*/
-        style={{
-          position: 'absolute',
-          top: '-12px',
-          left: '12px',
-          backgroundColor: '#8B5CF6',
-          color: 'white',
-          padding: '2px 8px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontWeight: '600',
-          zIndex: 10,
-          border: 'none',
-          outline: 'none',
-          minWidth: '60px',
-          width: 'auto',
-        }}
-        onFocus={(e) => e.target.style.outline = '2px solid rgba(139, 92, 246, 0.5)'}
-        onBlur={(e) => e.target.style.outline = 'none'}
-      />
+      <>
+        {/* Hidden span used for measurement */}
+        <span
+          ref={measureRef}
+          style={{
+            position: 'absolute',
+            visibility: 'hidden',
+            whiteSpace: 'pre',
+            fontSize: '12px',
+            fontWeight: '600',
+            fontFamily: 'inherit',
+            padding: '2px 8px',
+          }}
+        >
+          {node.attrs.title || ' '}
+        </span>
+
+        {/* Title bar */}
+        <input
+          ref={titleRef}
+          type="text"
+          value={node.attrs.title}
+          onChange={(e) => updateAttributes({ title: e.target.value })}
+          style={{
+            position: 'absolute',
+            top: '-12px',
+            left: '12px',
+            backgroundColor: '#8B5CF6',
+            color: 'white',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: '600',
+            zIndex: 10,
+            border: 'none',
+            outline: 'none',
+            minWidth: '70px',
+            whiteSpace: 'nowrap',
+          }}
+          onFocus={(e) =>
+            (e.target.style.outline = '2px solid rgba(99, 102, 241, 0.5)')
+          }
+          onBlur={(e) => (e.target.style.outline = 'none')}
+        />
+      </>
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

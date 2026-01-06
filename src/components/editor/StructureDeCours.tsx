@@ -433,6 +433,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             type="text"
             placeholder="Rechercher..."
             value={searchTerm}
+            suppressHydrationWarning
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 py-2 pl-9 pr-3 text-sm focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-500 dark:focus:ring-purple-400 transition-colors"
           />

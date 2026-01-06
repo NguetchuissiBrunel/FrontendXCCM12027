@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { CourseControllerService } from '@/lib';
 
 export interface Course {
+    views: number;
+    likes: number;
+    downloads: number;
     image: any;
     id: number;
     title: string;

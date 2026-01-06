@@ -36,13 +36,13 @@ export default function HomePage() {
       id: course.id,
       title: course.title,
       description: course.description || course.category || "Cours de qualité",
-      image: course.image || "/images/placeholder.png",
+      image: course.image ? course.image : "/images/Capture.png",
       views: course?.views || 0,
       likes: course?.likes || 0,
       downloads: course?.downloads || 0,
       author: {
         name: course.author?.name || "Auteur inconnu",
-        image: course.author?.image || "/images/avatars/default.png",
+        image: course.author?.image ? course.author.image : "/images/prof.jpeg",
         designation: course.author?.designation || "Enseignant"
       },
       rating: 5,
@@ -189,7 +189,7 @@ export default function HomePage() {
                     {/* Image du cours */}
                     <div className="w-24 h-24 flex-shrink-0 relative overflow-hidden rounded-lg">
                       <Image
-                        src={course.image}
+                        src={course.image ? course.image : '/images/Capture.png'}
                         alt={course.title}
                         fill
                         className="object-cover"
@@ -213,7 +213,7 @@ export default function HomePage() {
                       <div className="flex items-center mb-2">
                         <div className="w-6 h-6 relative rounded-full overflow-hidden mr-2">
                           <Image
-                            src={course.author.image}
+                            src={course.author.image ? course.author.image : '/images/prof.jpeg'}
                             alt={course.author.name}
                             fill
                             className="object-cover"

@@ -64,9 +64,12 @@ const Footer = () => {
                 <li><Link href="/space_coll" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
                 <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Bibliothèque de Contenu</Link></li>
                 <li>
-                   <Link href="/pricing" className="text-gray-600 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400">
+                   <Link 
+                    href="/pricing" 
+                    className="text-sm text-gray-400 hover:text-purple-300 transition-colors"
+                  >
                     Tarification
-                   </Link>
+                  </Link>
                    
                 </li>              
                </ul>

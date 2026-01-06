@@ -37,9 +37,9 @@ export default function HomePage() {
       title: course.title,
       description: course.description || course.category || "Cours de qualité",
       image: course.image || "/images/placeholder.png",
-      views: course.views || 0,
-      likes: course.likes || 0,
-      downloads: course.downloads || 0,
+      views: course?.views || 0,
+      likes: course?.likes || 0,
+      downloads: course?.downloads || 0,
       author: {
         name: course.author?.name || "Auteur inconnu",
         image: course.author?.image || "/images/avatars/default.png",

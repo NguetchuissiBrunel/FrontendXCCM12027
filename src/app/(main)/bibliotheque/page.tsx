@@ -215,7 +215,7 @@ const Bibliotheque = () => {
                   <div className="flex items-center mb-3">
                     <div className="relative w-8 h-8 mr-3">
                       <Image
-                        src={course.author.image ? course.author.image : '/images/prof.jpeg'}
+                        src={course.author?.image ? course.author?.image : '/images/prof.jpeg'}
                         alt={course.author?.firstName}
                         fill
                         className="rounded-full object-cover"

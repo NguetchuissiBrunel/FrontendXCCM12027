@@ -39,7 +39,7 @@ export default Node.create<ParagrapheOptions>({
 
   group: 'block',
 
-  content: 'block+',
+  content: '(notion|exercice|paragraph)+',
 
   defining: true,
 
@@ -99,17 +99,29 @@ export default Node.create<ParagrapheOptions>({
     return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'paragraphe' }), 0];
   },
 
-  addCommands() {
-    return {
-      setParagraphe:
-        () =>
-        ({ commands }) => {
-          // Generate unique ID for this paragraphe
-          const id = `paragraphe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.wrapIn(this.name, { id });
-        },
-    };
-  },
+ addCommands() {
+  return {
+    setParagraphe:
+      (attrs = {}) =>
+      ({ commands }) => {
+        return commands.insertContent({
+          type: this.name,
+          attrs: {
+            // Uses the same unique ID logic as your Section
+            id: typeof crypto !== 'undefined' ? crypto.randomUUID() : `paragraphe-${Date.now()}`,
+            title: 'Paragraphe',
+            ...attrs,
+          },
+          content: [
+            {
+              type: 'paragraph',
+              content: [], // Ensures the node starts with a valid child to satisfy the schema
+            },
+          ],
+        })
+      },
+  }
+},
 
   addNodeView() {
     return ReactNodeViewRenderer(ParagrapheNodeView);

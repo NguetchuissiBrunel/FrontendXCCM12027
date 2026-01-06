@@ -69,7 +69,12 @@ const SignupPage = () => {
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "L'email n'est pas valide";
     if (!formData.password) newErrors.password = "Le mot de passe est requis";
     else if (formData.password.length < 8) newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+    if (formData.password !== formData.confirmPassword) {
+       console.log(formData.password)
+      console.log(formData.confirmPassword)
+      newErrors.confirmPassword = "Les mots de passe ne correspondent pas"
+     
+    };
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);

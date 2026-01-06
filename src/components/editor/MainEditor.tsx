@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
@@ -43,6 +43,8 @@ interface MainEditorProps {
   onContentChange?: (content: string) => void;
   onEditorReady?: (editor: any) => void; // Callback when editor is ready
 }
+
+
 
 const headingOptions = [
   { value: 'paragraph', label: 'Normal Text', color: '#000000' },
@@ -124,7 +126,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
           };
 
           const buildNode = (item: any): any => {
-            const nodeType = typeMap[item.type] || 'paragraph';
+            const nodeType = typeMap[item.type] || 'paragraphe';
 
             const children = (item.children || []).map(buildNode);
 
@@ -143,7 +145,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
             // Special handling for notion: title text + full content
             if (item.type === 'notion') {
               // Title as first text
-              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
+              content.push({ type: 'paragraphe', content: [{ type: 'text', text: attrs.title }] });
 
               // Add actual content if present
               if (item.content) {
@@ -162,7 +164,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
                       }
                     });
                     if (pContent.length > 0) {
-                      parsed.push({ type: 'paragraph', content: pContent });
+                      parsed.push({ type: 'paragraphe', content: pContent });
                     }
                   }
                 });
@@ -176,14 +178,18 @@ export const MainEditor: React.FC<MainEditorProps> = ({
               const questionsText = item.data.questions
                 .map((q: any, i: number) => `${i + 1}. ${q.question}`)
                 .join('\n\n');
-              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+              content = [{ type: 'paragraphe', content: [{ type: 'text', text: questionsText }] }];
             }
 
             return {
-              type: nodeType,
-              attrs,
-              content: [...content, ...children]
-            };
+            type: nodeType,
+            attrs,
+            // Ensure we only provide content if it actually exists 
+            // and match it against the schema rules
+            content: content.length > 0 || children.length > 0 
+              ? [...content, ...children] 
+              : [{ type: 'paragraphe' }] // Fallback to an empty paragraph to keep the node valid
+          };
           };
 
           const contentToInsert = buildNode(draggedItem);
@@ -346,6 +352,30 @@ export const MainEditor: React.FC<MainEditorProps> = ({
     );
   };
 
+
+
+   const editorRef = useRef<HTMLDivElement>(null);
+
+
+   useEffect(() => {
+    const editorEl = editorRef.current;
+    if (!editorEl) return;
+
+    const handleClick = (e: MouseEvent) => {
+      // Find the closest element with .section-node
+      const section = (e.target as HTMLElement).closest('.section-node');
+      if (section) {
+        console.log(section)
+        const id = section.getAttribute('data-id');
+        console.log('Clicked Section:', id);
+      }
+    };
+
+    editorEl.addEventListener('click', handleClick);
+  }
+  );
+  
+  
   return (
     <>
       <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
@@ -559,7 +589,7 @@ export const MainEditor: React.FC<MainEditorProps> = ({
         {/* Editor Area */}
         <div className="flex-1 p-6 overflow-auto bg-gray-50 dark:bg-gray-900">
           <div className="max-w-4xl mx-auto">
-            <EditorContent editor={editor} />
+            <EditorContent editor={editor} id='editor'  ref={editorRef}/>
           </div>
         </div>
       </div>

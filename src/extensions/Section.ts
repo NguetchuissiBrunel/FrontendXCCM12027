@@ -39,7 +39,11 @@ export default Node.create<SectionOptions>({
 
   group: 'block',
 
-  content: 'block+',
+  content: '(section|paragraphe|notion|exercice|paragraph|chapitre|block)+',
+
+  draggable: true,
+
+  isolating: true,
 
   defining: true,
 
@@ -99,17 +103,29 @@ export default Node.create<SectionOptions>({
     return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'section' }), 0];
   },
 
-  addCommands() {
-    return {
-      setSection:
-        () =>
-        ({ commands }) => {
-          // Generate unique ID for this section
-          const id = `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.wrapIn(this.name, { id });
-        },
-    };
-  },
+ addCommands() {
+  return {
+    setSection:
+      (attrs = {}) =>
+      ({ commands }) => {
+        return commands.insertContent({
+          type: this.name,
+          attrs: {
+            id: crypto.randomUUID(),
+            title: 'Partie',
+            ...attrs,
+          },
+          content: [
+            {
+              type: 'paragraph',
+                content: [], 
+            },
+          ],
+        })
+      },
+  }
+},
+
 
   addNodeView() {
     return ReactNodeViewRenderer(SectionNodeView);

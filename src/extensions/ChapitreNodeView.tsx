@@ -1,29 +1,19 @@
 /**
  * CHAPITRE NODE VIEW - React Component
- * 
- * Visual rendering component for Chapitre nodes.
- * Displays green border (#10B981) on hover with smooth transition.
- * 
- * Features:
- * - Hover state management
- * - 3px solid green border on hover
- * - EDITABLE "Chapitre" label badge at top-left
- * - Smooth 150ms border transition
- * - Editable content area
- * 
- * @author JOHAN
- * @date December 2025
  */
-
 import React, { useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
-export default function ChapitreNodeView({ node, updateAttributes }: NodeViewProps) {
+export default function ChapitreNodeView({ node, updateAttributes, editor }: NodeViewProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <NodeViewWrapper
       className="chapitre-node"
+      data-id={node.attrs.id}
+      draggable
+      
+
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -37,10 +27,67 @@ export default function ChapitreNodeView({ node, updateAttributes }: NodeViewPro
     >
       {/* Editable Label Badge */}
       <input
+      draggable
+      onDragStart={(e:any) => {
+        // Identify this node during drag
+        console.log("dragging chapitre ",node.attrs.id)
+        e.dataTransfer.setData('nodeId', node.attrs.id);
+      }}
+      onDragOver={(e:any) => {
+        e.preventDefault(); // Required to allow dropping
+      }}
+      onDrop={(e:any) => {
+  e.preventDefault();
+  const draggedId = e.dataTransfer.getData('nodeId');
+  const targetId = node.attrs.id;
+
+  if (!editor || !draggedId || draggedId === targetId) return;
+
+  const { state } = editor;
+  let draggedPos: number | undefined;
+  let draggedNode: any;
+
+  // 1. Find the source node
+  state.doc.descendants((n, pos) => {
+    if (n.attrs?.id === draggedId) {
+      draggedPos = pos;
+      draggedNode = n;
+      return false;
+    }
+  });
+
+  if (draggedPos !== undefined && draggedNode) {
+    let insideTargetPos: number | undefined;
+
+    // 2. Find the target node
+    state.doc.descendants((n, pos) => {
+      if (n.attrs?.id === targetId) {
+        // pos + 1 moves the cursor INSIDE the start of the target node
+        insideTargetPos = pos + 1; 
+        return false;
+      }
+    });
+
+    if (insideTargetPos !== undefined) {
+      // 3. Execution logic
+      // Note: When moving a node into a target that appears AFTER it in the doc, 
+      // the document positions shift. We handle that here.
+      const isMovingDown = insideTargetPos > draggedPos;
+      const finalInsertPos = isMovingDown 
+        ? insideTargetPos - draggedNode.nodeSize 
+        : insideTargetPos;
+
+      editor.chain()
+        .deleteRange({ from: draggedPos, to: draggedPos + draggedNode.nodeSize })
+        .insertContentAt(finalInsertPos, draggedNode.toJSON())
+        .focus()
+        .run();
+    }
+  }
+}}
         type="text"
         value={node.attrs.title}
         onChange={(e) => updateAttributes({ title: e.target.value })}
-        /*placeholder="Chapitre"*/
         style={{
           position: 'absolute',
           top: '-12px',
@@ -56,12 +103,13 @@ export default function ChapitreNodeView({ node, updateAttributes }: NodeViewPro
           outline: 'none',
           minWidth: '70px',
           width: 'auto',
+          cursor: "pointer"
         }}
         onFocus={(e) => e.target.style.outline = '2px solid rgba(16, 185, 129, 0.5)'}
         onBlur={(e) => e.target.style.outline = 'none'}
       />
 
-      {/* Editable Content */}
+      {/* Editable Content Area */}
       <NodeViewContent className="content" />
     </NodeViewWrapper>
   );

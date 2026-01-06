@@ -39,7 +39,8 @@ export default Node.create<NotionOptions>({
 
   group: 'block',
 
-  content: 'inline*',
+  content: '(paragraph)+',
+  isolating:true,
 
   defining: true,
 
@@ -99,17 +100,29 @@ export default Node.create<NotionOptions>({
     return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'notion' }), 0];
   },
 
-  addCommands() {
-    return {
-      setNotion:
-        () =>
-        ({ commands }) => {
-          // Generate unique ID for this notion
-          const id = `notion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.setNode(this.name, { id });
-        },
-    };
-  },
+addCommands() {
+  return {
+    setNotion:
+      (attrs = {}) =>
+      ({ commands }) => {
+        return commands.insertContent({
+          type: this.name,
+          attrs: {
+            // Consistent unique ID generation matching Section/Chapitre
+            id: typeof crypto !== 'undefined' ? crypto.randomUUID() : `notion-${Date.now()}`,
+            title: 'Notion',
+            ...attrs,
+          },
+          content: [
+            {
+              type: 'paragraph',
+              content: [], // Satisfies the (paragraph+) or (block+) schema requirement
+            },
+          ],
+        });
+      },
+  };
+},
 
   addNodeView() {
     return ReactNodeViewRenderer(NotionNodeView);

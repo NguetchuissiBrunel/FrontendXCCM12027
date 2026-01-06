@@ -1,151 +1,682 @@
-/**
- * TABLE OF CONTENTS COMPONENT - WITH DARK MODE
- * 
- * Hierarchical navigation tree for the editor's left sidebar.
- * Matches original XCCM implementation styling.
- * Dark mode support added.
- * 
- * @author JOHAN
- * @date November 2025
- */
-
-'use client';
-
-import React, { useState } from 'react';
-import { FaChevronRight, FaChevronDown, FaFile } from 'react-icons/fa';
-import { TableOfContentsItem, ITEM_COLORS } from '@/types/editor.types';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import {
+  GripVertical, Trash2, Edit2, Eye,
+  ChevronDown, ChevronRight, ArrowLeftCircle, ArrowRightCircle,
+  FileText
+} from 'lucide-react';
+import {
+  TableOfContentsItem, ItemType, ContextMenuPosition,
+  getItemIcon, getItemColor, getIndentation,
+  recomputeAllNumbers, getAllowedChildTypes
+} from './TableOfContentsUtils';
+import ActionMenu from './ActionMenu';
 
 interface TableOfContentsProps {
+  className?: string;
+  onSave?: (items: TableOfContentsItem[]) => void;
   items: TableOfContentsItem[];
   onItemClick?: (itemId: string) => void;
+  // Props for compatibility with new feature set if we want to support editing from TOC (optional)
+  onAddItem?: (type: ItemType, title?: string, parentId?: string) => void;
+  onItemRename?: (itemId: string, newTitle: string) => void;
+  onItemDelete?: (itemId: string) => void;
+  selectedText?: string;
 }
 
-export const TableOfContents: React.FC<TableOfContentsProps> = ({ 
-  items, 
-  onItemClick 
+export const TableOfContents: React.FC<TableOfContentsProps> = ({
+  className = '',
+  onSave,
+  items: initialItems = [],
+  onItemClick,
+  onAddItem,
+  onItemRename,
+  onItemDelete,
+  selectedText = ''
 }) => {
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(
-    new Set(['section-1', 'chapter-1-1'])
-  );
-  const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [tocItems, setTocItems] = useState<TableOfContentsItem[]>(initialItems || []);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [expandedTitles, setExpandedTitles] = useState<string[]>([]);
+  const resizableRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState<number>(300); // reduced default width
+  const [isResizing, setIsResizing] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startWidth, setStartWidth] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const toggleExpand = (itemId: string) => {
-    setExpandedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
+  // État pour l'élément en cours de glissement
+  const [draggedItem, setDraggedItem] = useState<TableOfContentsItem | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+
+  // États pour le menu contextuel
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    position: ContextMenuPosition;
+    item: TableOfContentsItem | null;
+  }>({
+    visible: false,
+    position: { x: 0, y: 0 },
+    item: null
+  });
+
+  // État pour l'élément en cours de renommage
+  const [renamingItemId, setRenamingItemId] = useState<string | null>(null);
+  const [newItemTitle, setNewItemTitle] = useState<string>('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // État pour le presse-papier
+  const [clipboard, setClipboard] = useState<TableOfContentsItem | null>(null);
+
+  // Mettre à jour les items quand initialItems change
+  useEffect(() => {
+    if (initialItems) {
+      setTocItems(initialItems);
+    }
+  }, [initialItems]);
+
+  // Initialiser la largeur et gérer les événements globaux
+  useEffect(() => {
+    // Fermer le menu contextuel lors d'un clic en dehors
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenu.visible && !(e.target as HTMLElement).closest('.context-menu')) {
+        setContextMenu(prev => ({ ...prev, visible: false }));
       }
-      return newSet;
-    });
+    };
+
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [contextMenu.visible]);
+
+  // Focus sur l'input de renommage quand il devient visible
+  useEffect(() => {
+    if (renamingItemId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingItemId]);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
   };
 
-  const handleItemClick = (itemId: string) => {
-    setActiveItemId(itemId);
-    if (onItemClick) {
-      onItemClick(itemId);
+  const handleDragLeave = () => {
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+
+    try {
+      // Trying to handle drop from external source or internal reorder
+      // If it's internal reorder, it's specific item drop, handled by handleItemDrop usually
+      // But if dropped on the container generally?
+      const data = e.dataTransfer.getData('application/json');
+      if (data) {
+        // Implementation dependent on what we drag
+      }
+    } catch (error) {
+      console.error('Error parsing dropped data:', error);
     }
   };
 
-  const renderItem = (item: TableOfContentsItem, depth: number = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.has(item.id);
-    const isActive = activeItemId === item.id;
-    const color = ITEM_COLORS[item.type];
-    const indentation = depth * 20;
+  const removeItem = useCallback((itemId: string) => {
+    const removeItemRecursively = (items: TableOfContentsItem[]): TableOfContentsItem[] => {
+      return items.filter(item => item.id !== itemId).map(item => ({
+        ...item,
+        children: removeItemRecursively(item.children)
+      }));
+    };
 
-    return (
-      <div key={item.id}>
-        <div
-          className={`group relative flex cursor-pointer items-center py-1 pr-2 transition-colors ${
-            isActive 
-              ? 'bg-purple-50 dark:bg-purple-900/30' 
-              : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-          }`}
-          style={{ paddingLeft: `${indentation + 12}px` }}
-          onClick={() => handleItemClick(item.id)}
-        >
-          {/* Colored vertical bar */}
-          <div 
-            className="absolute top-0 bottom-0 w-1"
-            style={{ 
-              backgroundColor: color,
-              left: `${indentation}px`
-            }}
-          />
+    const updatedItems = removeItemRecursively(tocItems);
+    const renumberedItems = recomputeAllNumbers(updatedItems);
+    setTocItems(renumberedItems);
 
-          {/* Expand/collapse chevron */}
-          {hasChildren ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleExpand(item.id);
-              }}
-              className="mr-1.5 flex h-5 w-5 shrink-0 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              {isExpanded ? (
-                <FaChevronDown className="text-xs" />
-              ) : (
-                <FaChevronRight className="text-xs" />
-              )}
-            </button>
-          ) : (
-            <span className="mr-1.5 w-5 shrink-0" />
-          )}
+    if (onSave) onSave(renumberedItems);
+    if (onItemDelete) onItemDelete(itemId);
+    closeContextMenu();
+  }, [tocItems, onSave, onItemDelete]);
 
-          {/* File icon */}
-          <FaFile className="mr-2 shrink-0 text-xs text-gray-400 dark:text-gray-500" />
+  const handleAddItem = useCallback((type: ItemType, parentId?: string) => {
+    if (onAddItem) onAddItem(type, selectedText || undefined, parentId);
+    closeContextMenu();
+  }, [onAddItem, selectedText]);
 
-          {/* Number */}
-          {/* 
-          {item.number && (
-            <span 
-              className="mr-2 shrink-0 text-sm font-medium"
-              style={{ color }}
-            >
-              {item.number}:
-            </span>
-          )} 
-          */}
+  const toggleCollapse = useCallback((itemId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
 
-          {/* Title */}
-          <span
-            className={`flex-1 truncate text-sm ${
-              isActive ? 'font-semibold' : 'font-normal'
-            }`}
-            style={{ color: isActive ? '#a78bfa' : color }}
-          >
-            {item.title}
-          </span>
-        </div>
+    setTocItems(prevItems => {
+      const toggleCollapseRecursively = (items: TableOfContentsItem[]): TableOfContentsItem[] => {
+        return items.map(item => {
+          if (item.id === itemId) return { ...item, collapsed: !item.collapsed };
+          return { ...item, children: toggleCollapseRecursively(item.children) };
+        });
+      };
 
-        {/* Children */}
-        {hasChildren && isExpanded && (
-          <div>
-            {item.children.map(child => renderItem(child, depth + 1))}
-          </div>
-        )}
-      </div>
+      const updatedItems = toggleCollapseRecursively(prevItems);
+
+      if (onSave) onSave(updatedItems);
+      return updatedItems;
+    });
+  }, [onSave]);
+
+  const toggleTitleExpansion = useCallback((itemId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedTitles(prev =>
+      prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
     );
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsResizing(true);
+    setStartX(e.clientX);
+    setStartWidth(width);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [width]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    setWidth(Math.max(250, Math.min(newWidth, 600)));
+  }, [isResizing, startWidth, startX]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, item: TableOfContentsItem) => {
+    e.preventDefault();
+
+    // Calculer la position optimale pour le menu contextuel
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Estimer la taille du menu (ajuster selon vos besoins)
+    const menuWidth = 220;
+    const menuHeight = 300;
+
+    // Calculer la position optimale
+    let x = e.clientX;
+    let y = e.clientY;
+
+    // Ajustement horizontal si le menu dépasse à droite
+    if (x + menuWidth > viewportWidth) {
+      x = Math.max(0, viewportWidth - menuWidth - 10);
+    }
+
+    // Ajustement vertical si le menu dépasse en bas
+    if (y + menuHeight > viewportHeight) {
+      y = Math.max(0, viewportHeight - menuHeight - 10);
+    }
+
+    setContextMenu({
+      visible: true,
+      position: { x, y },
+      item
+    });
+  }, []);
+
+  const copyItem = useCallback((itemId: string) => {
+    const findItem = (items: TableOfContentsItem[]): TableOfContentsItem | null => {
+      for (const item of items) {
+        if (item.id === itemId) return { ...item };
+        const found = findItem(item.children);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const itemToCopy = findItem(tocItems);
+    if (itemToCopy) setClipboard(itemToCopy);
+    closeContextMenu();
+  }, [tocItems, closeContextMenu]);
+
+  const pasteItem = useCallback((targetId: string) => {
+    if (!clipboard) return;
+
+    const deepCloneItem = (item: TableOfContentsItem): TableOfContentsItem => {
+      return {
+        ...item,
+        id: `${item.id}-copy-${Date.now()}`,
+        children: item.children.map(child => deepCloneItem(child))
+      };
+    };
+
+    const clonedItem = deepCloneItem(clipboard);
+
+    setTocItems(prevItems => {
+      const pasteRecursively = (items: TableOfContentsItem[], targetId: string): TableOfContentsItem[] => {
+        return items.map(item => {
+          if (item.id === targetId) {
+            const isAllowedChild = getAllowedChildTypes(item.type).includes(clonedItem.type);
+
+            if (isAllowedChild) {
+              const adjustLevel = (item: TableOfContentsItem, newLevel: number): TableOfContentsItem => {
+                return {
+                  ...item,
+                  level: newLevel,
+                  children: item.children.map(child => adjustLevel(child, newLevel + 1))
+                };
+              };
+
+              const adjustedItem = adjustLevel(clonedItem, item.level + 1);
+              return { ...item, children: [...item.children, adjustedItem] };
+            }
+            return item;
+          }
+          return { ...item, children: pasteRecursively(item.children, targetId) };
+        });
+      };
+
+      const updatedItems = pasteRecursively(prevItems, targetId);
+      const renumberedItems = recomputeAllNumbers(updatedItems);
+
+      if (onSave) onSave(renumberedItems);
+      return renumberedItems;
+    });
+
+    closeContextMenu();
+  }, [clipboard, onSave, closeContextMenu]);
+
+  const duplicateItem = useCallback((itemId: string) => {
+    setTocItems(prevItems => {
+      const findAndDuplicate = (items: TableOfContentsItem[]): { items: TableOfContentsItem[], duplicated: boolean } => {
+        const result: TableOfContentsItem[] = [];
+        let duplicated = false;
+
+        for (const item of items) {
+          result.push({ ...item });
+
+          if (item.id === itemId) {
+            const duplicate = {
+              ...item,
+              id: `${item.id}-duplicate-${Date.now()}`,
+              title: `${item.title} (copie)`,
+              children: [...item.children]
+            };
+            result.push(duplicate);
+            duplicated = true;
+          } else {
+            const childResult = findAndDuplicate(item.children);
+            result[result.length - 1].children = childResult.items;
+            duplicated = duplicated || childResult.duplicated;
+          }
+        }
+
+        return { items: result, duplicated };
+      };
+
+      const { items: updatedItems } = findAndDuplicate(prevItems);
+      const renumberedItems = recomputeAllNumbers(updatedItems);
+
+      if (onSave) onSave(renumberedItems);
+      return renumberedItems;
+    });
+
+    closeContextMenu();
+  }, [onSave, closeContextMenu]);
+
+  const viewItem = useCallback((itemId: string) => {
+    if (onItemClick) {
+      onItemClick(itemId);
+    }
+    closeContextMenu();
+  }, [closeContextMenu, onItemClick]);
+
+  const renameItem = useCallback((itemId: string) => {
+    // Trouver l'élément à renommer
+    const findItem = (items: TableOfContentsItem[]): TableOfContentsItem | null => {
+      for (const item of items) {
+        if (item.id === itemId) return item;
+        const found = findItem(item.children);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const itemToRename = findItem(tocItems);
+    if (itemToRename) {
+      setRenamingItemId(itemId);
+      setNewItemTitle(itemToRename.title);
+    }
+
+    closeContextMenu();
+  }, [tocItems, closeContextMenu]);
+
+  const saveRename = useCallback((itemId: string) => {
+    setTocItems(prevItems => {
+      const updateItemTitle = (items: TableOfContentsItem[]): TableOfContentsItem[] => {
+        return items.map(item => {
+          if (item.id === itemId) {
+            return { ...item, title: newItemTitle || item.title };
+          }
+          return { ...item, children: updateItemTitle(item.children) };
+        });
+      };
+
+      const updatedItems = updateItemTitle(prevItems);
+
+      if (onSave) onSave(updatedItems);
+      return updatedItems;
+    });
+
+    if (onItemRename) onItemRename(itemId, newItemTitle || '');
+    setRenamingItemId(null);
+  }, [newItemTitle, onSave, onItemRename]);
+
+  const cancelRename = useCallback(() => {
+    setRenamingItemId(null);
+  }, []);
+
+  // Fonctions pour le glisser-déposer
+  const handleDragStart = useCallback((e: React.DragEvent, item: TableOfContentsItem) => {
+    e.stopPropagation();
+    setDraggedItem(item);
+    e.dataTransfer.setData('text/plain', item.id);
+    e.dataTransfer.effectAllowed = 'move';
+
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.classList.add('dragging');
+    }
+
+    closeContextMenu();
+  }, [closeContextMenu]);
+
+  const handleItemDragOver = useCallback((e: React.DragEvent, item: TableOfContentsItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedItem || draggedItem.id === item.id) return;
+
+    // Vérifier si l'élément peut être déposé à cet endroit
+    const canDrop = canDropItem(draggedItem, item);
+
+    if (canDrop) {
+      setDragOverItemId(item.id);
+      e.dataTransfer.dropEffect = 'move';
+    } else {
+      e.dataTransfer.dropEffect = 'none';
+    }
+  }, [draggedItem]);
+
+  const handleItemDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverItemId(null);
+  }, []);
+
+  const handleItemDrop = useCallback((e: React.DragEvent, targetItem: TableOfContentsItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedItem || draggedItem.id === targetItem.id) return;
+
+    // Vérifier si l'élément peut être déposé à cet endroit
+    const canDrop = canDropItem(draggedItem, targetItem);
+
+    if (canDrop) {
+      setTocItems(prevItems => {
+        // Supprimer l'élément de sa position actuelle
+        const removeSource = (items: TableOfContentsItem[]): TableOfContentsItem[] => {
+          return items.filter(item => item.id !== draggedItem.id).map(item => ({
+            ...item,
+            children: removeSource(item.children)
+          }));
+        };
+
+        // Ajouter l'élément à sa nouvelle position
+        const addToTarget = (items: TableOfContentsItem[], targetId: string): TableOfContentsItem[] => {
+          return items.map(item => {
+            if (item.id === targetId) {
+              const isDroppableAsChild = getAllowedChildTypes(item.type).includes(draggedItem.type);
+
+              // Si l'élément peut être un enfant de la cible, l'ajouter comme enfant
+              if (isDroppableAsChild) {
+                const adjustLevel = (item: TableOfContentsItem, newLevel: number): TableOfContentsItem => {
+                  return {
+                    ...item,
+                    level: newLevel,
+                    children: item.children.map(child => adjustLevel(child, newLevel + 1))
+                  };
+                };
+
+                const adjustedItem = adjustLevel(draggedItem, item.level + 1);
+                return { ...item, children: [...item.children, adjustedItem], collapsed: false };
+              }
+              return item;
+            }
+            return { ...item, children: addToTarget(item.children, targetId) };
+          });
+        };
+
+        let updatedItems = removeSource(prevItems);
+        updatedItems = addToTarget(updatedItems, targetItem.id);
+        const renumberedItems = recomputeAllNumbers(updatedItems);
+
+        if (onSave) onSave(renumberedItems);
+        return renumberedItems;
+      });
+    }
+
+    setDraggedItem(null);
+    setDragOverItemId(null);
+
+    // Nettoyer les effets visuels
+    document.querySelectorAll('.dragging').forEach(el => {
+      el.classList.remove('dragging');
+    });
+  }, [draggedItem, onSave]);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDraggedItem(null);
+    setDragOverItemId(null);
+
+    // Nettoyer les effets visuels
+    document.querySelectorAll('.dragging').forEach(el => {
+      el.classList.remove('dragging');
+    });
+  }, []);
+
+  const canDropItem = useCallback((sourceItem: TableOfContentsItem, targetItem: TableOfContentsItem): boolean => {
+    // Vérifier si l'élément source peut être un enfant de l'élément cible
+    const allowedChildTypes = getAllowedChildTypes(targetItem.type);
+    return allowedChildTypes.includes(sourceItem.type);
+  }, []);
+
+  const renderItemIcon = (itemType: ItemType) => {
+    const IconComponent = getItemIcon(itemType);
+    return <IconComponent size={14} />;
   };
 
-  return (
-    <div className="h-full overflow-y-auto bg-white dark:bg-gray-800">
-      <div className="py-3">
-        <h2 className="mb-3 px-3 text-sm font-semibold text-gray-900 dark:text-white">
-          Table des Matières
-        </h2>
-        {items.length > 0 ? (
-          <div>{items.map(item => renderItem(item, 0))}</div>
-        ) : (
-          <div className="px-3 text-sm text-gray-500 dark:text-gray-400">
-            Glissez et déposez des éléments...
+  // Rendre les items de la table des matières (extrait du rendu principal)
+  const memoizedTocItems = useMemo(() => {
+    if (!tocItems || tocItems.length === 0) return null;
+
+    const renderItems = (items: TableOfContentsItem[]) => items.map((item) => (
+      <div key={item.id} className="mb-1">
+        <div
+          className={`group flex items-center p-2 border-l-4 ${getItemColor(item.type)} rounded-r shadow-sm transition-all duration-200 hover:shadow-md ${getIndentation(item.level)} ${dragOverItemId === item.id ? 'bg-purple-50 border-purple-300' : ''} ${item.id === dragOverItemId ? 'bg-purple-50' : 'bg-white dark:bg-gray-800'}`}
+          onContextMenu={(e) => handleContextMenu(e, item)}
+          onClick={() => onItemClick && onItemClick(item.id)}
+          draggable
+          onDragStart={(e) => handleDragStart(e, item)}
+          onDragOver={(e) => handleItemDragOver(e, item)}
+          onDragLeave={handleItemDragLeave}
+          onDrop={(e) => handleItemDrop(e, item)}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="mr-1.5 text-gray-400 cursor-move opacity-50 group-hover:opacity-100 dark:text-gray-500">
+            <GripVertical size={14} />
+          </div>
+
+          {item.children && item.children.length > 0 ? (
+            <button
+              className="mr-1.5 text-gray-600 hover:text-gray-800 transition-colors duration-150 dark:text-gray-400 dark:hover:text-gray-200"
+              onClick={(e) => toggleCollapse(item.id, e)}
+            >
+              {item.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            </button>
+          ) : (
+            <div className="mr-1.5 w-4"></div>
+          )}
+
+          <div className="mr-2 text-gray-600 dark:text-gray-400">
+            {renderItemIcon(item.type)}
+          </div>
+
+          <div className="whitespace-nowrap text-sm mr-2 font-medium text-gray-700 dark:text-gray-300">
+            {item.number}:
+          </div>
+
+          {renamingItemId === item.id ? (
+            <div className="flex-grow flex">
+              <input
+                ref={renameInputRef}
+                type="text"
+                className="w-full text-sm py-0.5 px-1 border border-purple-300 focus:border-purple-500 rounded outline-none dark:bg-gray-700 dark:text-white"
+                value={newItemTitle}
+                onChange={(e) => setNewItemTitle(e.target.value)}
+                onBlur={() => saveRename(item.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveRename(item.id);
+                  if (e.key === 'Escape') cancelRename();
+                }}
+              />
+            </div>
+          ) : (
+            <div className="flex-grow font-medium overflow-hidden">
+              {expandedTitles.includes(item.id) ? (
+                <p className="text-sm dark:text-white" onClick={(e) => toggleTitleExpansion(item.id, e)}>{item.title}</p>
+              ) : (
+                <div className="flex items-center">
+                  <p className="text-sm truncate dark:text-white">{item.title.length > 30 ? item.title.substring(0, 30) : item.title}</p>
+                  {item.title.length > 30 && (
+                    <button
+                      className="ml-1 text-purple-500 hover:text-purple-700 text-xs"
+                      onClick={(e) => toggleTitleExpansion(item.id, e)}
+                    >
+                      ...
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex space-x-1 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              className="text-gray-400 hover:text-purple-600 transition-colors duration-200"
+              onClick={(e) => { e.stopPropagation(); renameItem(item.id); }}
+              title="Renommer"
+            >
+              <Edit2 size={14} />
+            </button>
+            <button
+              className="text-gray-400 hover:text-red-600 transition-colors duration-200"
+              onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+              title="Supprimer"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+
+        {!item.collapsed && item.children && item.children.length > 0 && (
+          <div className="mt-1">
+            {renderItems(item.children)}
           </div>
         )}
       </div>
+    ));
+
+    return renderItems(tocItems);
+  }, [
+    tocItems,
+    dragOverItemId,
+    renamingItemId,
+    expandedTitles,
+    handleContextMenu,
+    handleDragStart,
+    handleItemDragOver,
+    handleItemDragLeave,
+    handleItemDrop,
+    handleDragEnd,
+    toggleCollapse,
+    toggleTitleExpansion,
+    saveRename,
+    cancelRename,
+    newItemTitle,
+    renameItem,
+    removeItem,
+    onItemClick
+  ]);
+
+  return (
+    <div
+      className={`relative h-full z-50 flex transition-all duration-300 ease-in-out`}
+      style={{ width: '100%' }}
+    >
+      <div
+        ref={resizableRef}
+        className={`h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 w-full flex flex-col`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
+          <h3 className="font-bold text-sm text-gray-800 dark:text-white">Table des Matières</h3>
+        </div>
+
+        <div className="p-2 flex-grow overflow-y-auto">
+          {tocItems && tocItems.length > 0 ? (
+            <div>{memoizedTocItems}</div>
+          ) : (
+            <div className="text-center py-6 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+              <p className="font-medium text-sm">Glissez et déposez des éléments de la structure ici</p>
+              <FileText className="mx-auto mt-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {contextMenu.visible && contextMenu.item && (
+        <ActionMenu
+          visible={contextMenu.visible}
+          position={contextMenu.position}
+          item={contextMenu.item}
+          onClose={closeContextMenu}
+          onAddItem={handleAddItem}
+          onCopyItem={copyItem}
+          onPasteItem={pasteItem}
+          onDuplicateItem={duplicateItem}
+          onDeleteItem={removeItem}
+          onViewItem={viewItem}
+          onRenameItem={renameItem}
+          canPaste={!!clipboard}
+          onDragStart={(itemId) => {
+            // Logique pour démarrer le drag via menu si nécessaire
+            closeContextMenu();
+          }}
+        />
+      )}
     </div>
   );
 };
 
-export default TableOfContents;
+export default React.memo(TableOfContents);

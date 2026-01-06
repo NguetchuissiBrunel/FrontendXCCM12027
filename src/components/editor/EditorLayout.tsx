@@ -15,12 +15,12 @@
 
 import React, { useState } from 'react';
 import { Editor } from '@tiptap/react';
-import { 
-  FaCloudUploadAlt, 
-  FaInfo, 
-  FaComments, 
-  FaFolderOpen, 
-  FaChalkboardTeacher, 
+import {
+  FaCloudUploadAlt,
+  FaInfo,
+  FaComments,
+  FaFolderOpen,
+  FaChalkboardTeacher,
   FaCog,
   FaSave,
   FaPaperPlane,
@@ -54,25 +54,25 @@ type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet'
 export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // State for active right panel
   const [activePanel, setActivePanel] = useState<RightPanelType>('structure');
-  
+
   // State for course title and current course ID
   const [courseTitle, setCourseTitle] = useState<string>("Nouveau cours");
   const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-  
+
   // Extract TOC from editor in real-time
   const tocItems = useTOC(editorInstance, 300);
-  
+
   // Handle TOC item click - scroll to node
   const handleTOCItemClick = (itemId: string) => {
     if (!editorInstance) return;
-    
+
     // Find the node by data-id attribute
     const editorDom = editorInstance.view.dom;
     const element = editorDom.querySelector(`[data-id="${itemId}"]`);
-    
+
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       // Optional: Flash highlight or focus
@@ -120,52 +120,52 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     );
   };
 
-const handleSave = async (publish: boolean = false) => {
-  if (!editorInstance) {
-    alert("L'éditeur n'est pas encore chargé.");
-    return;
-  }
-
-  const jsonContent = editorInstance.getJSON();
-
-  const now = new Date();
-  const savedCourse = {
-    id: currentCourseId || Date.now().toString(),
-    title: courseTitle.trim() || "Cours sans titre",
-    content: jsonContent,
-    html: editorInstance.getHTML(),
-    published: publish,
-    savedAt: now.toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }), // e.g., "03/01/2026 14:35"
-  };
-
-  try {
-    const existingCourses = JSON.parse(localStorage.getItem('xccm_saved_courses') || '[]');
-
-    if (currentCourseId) {
-      // Update existing
-      const updated = existingCourses.map((c: any) =>
-        c.id === currentCourseId ? savedCourse : c
-      );
-      localStorage.setItem('xccm_saved_courses', JSON.stringify(updated));
-      alert(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
-    } else {
-      // Create new
-      existingCourses.push(savedCourse);
-      localStorage.setItem('xccm_saved_courses', JSON.stringify(existingCourses));
-      setCurrentCourseId(savedCourse.id);
-      alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
+  const handleSave = async (publish: boolean = false) => {
+    if (!editorInstance) {
+      alert("L'éditeur n'est pas encore chargé.");
+      return;
     }
-  } catch (error) {
-    console.error("Erreur sauvegarde :", error);
-    alert("Erreur lors de la sauvegarde.");
-  }
-};
+
+    const jsonContent = editorInstance.getJSON();
+
+    const now = new Date();
+    const savedCourse = {
+      id: currentCourseId || Date.now().toString(),
+      title: courseTitle.trim() || "Cours sans titre",
+      content: jsonContent,
+      html: editorInstance.getHTML(),
+      published: publish,
+      savedAt: now.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }), // e.g., "03/01/2026 14:35"
+    };
+
+    try {
+      const existingCourses = JSON.parse(localStorage.getItem('xccm_saved_courses') || '[]');
+
+      if (currentCourseId) {
+        // Update existing
+        const updated = existingCourses.map((c: any) =>
+          c.id === currentCourseId ? savedCourse : c
+        );
+        localStorage.setItem('xccm_saved_courses', JSON.stringify(updated));
+        alert(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
+      } else {
+        // Create new
+        existingCourses.push(savedCourse);
+        localStorage.setItem('xccm_saved_courses', JSON.stringify(existingCourses));
+        setCurrentCourseId(savedCourse.id);
+        alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
+      }
+    } catch (error) {
+      console.error("Erreur sauvegarde :", error);
+      alert("Erreur lors de la sauvegarde.");
+    }
+  };
 
   return (
     <div className="mt-16 flex h-screen w-screen flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -184,12 +184,12 @@ const handleSave = async (publish: boolean = false) => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={() => handleSave(false)}
             className="rounded bg-white dark:bg-gray-200 bg-opacity-20 dark:bg-opacity-30 px-4 py-1.5 text-sm font-medium text-black hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">
             Sauvegarder
           </button>
-          <button 
+          <button
             onClick={() => handleSave(true)}
             className="rounded bg-white dark:bg-gray-200 px-4 py-1.5 text-sm font-medium text-purple-700 dark:text-purple-800 hover:bg-gray-100 dark:hover:bg-gray-300 transition-all">
             Publier
@@ -200,8 +200,8 @@ const handleSave = async (publish: boolean = false) => {
       {/* MAIN CONTENT - Three columns */}
       <div className="flex flex-1 overflow-hidden">
         {/* LEFT SIDEBAR - Table of Contents */}
-        <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
-          <TableOfContents 
+        <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <TableOfContents
             items={tocItems}
             onItemClick={handleTOCItemClick}
           />

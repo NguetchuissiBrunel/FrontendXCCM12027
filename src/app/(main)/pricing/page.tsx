@@ -7,6 +7,23 @@ import Link from 'next/link';
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [currency, setCurrency] = useState<'EUR' | 'FCFA'>('FCFA'); // Nouvel état pour la devise
+  const EUR_TO_FCFA = 655; // Taux de conversion fixe
+
+  const convertToFCFA = (euroPrice: number) => {
+    return Math.round(euroPrice * EUR_TO_FCFA);
+  };
+
+  const formatPrice = (price: number) => {
+    if (currency === 'FCFA') {
+      return new Intl.NumberFormat('fr-FR').format(price);
+    }
+    return price.toFixed(2);
+  };
+
+  const getCurrencySymbol = () => {
+    return currency === 'FCFA' ? 'FCFA' : '€';
+  };
 
   const plans = [
     {
@@ -82,7 +99,7 @@ export default function PricingPage() {
     },
     {
       question: 'Quels moyens de paiement acceptez-vous ?',
-      answer: 'Nous acceptons les cartes de crédit/débit (Visa, MasterCard, American Express), PayPal, et les virements bancaires pour les plans Établissement.',
+      answer: `Nous acceptons les cartes de crédit/débit (Visa, MasterCard, American Express), PayPal, Orange Money, MTN Mobile Money, et les virements bancaires pour les plans Établissement.`,
     },
     {
       question: 'Puis-je annuler mon abonnement ?',
@@ -94,7 +111,7 @@ export default function PricingPage() {
     },
     {
       question: 'Mes données sont-elles sécurisées ?',
-      answer: 'Absolument. Nous utilisons un chiffrement de bout en bout et suivons les meilleures pratiques de sécurité. Vos données pédagogiques sont stockées de manière sécurisée en Europe.',
+      answer: 'Absolument. Nous utilisons un chiffrement de bout en bout et suivons les meilleures pratiques de sécurité. Vos données pédagogiques sont stockées de manière sécurisée.',
     },
   ];
 
@@ -125,11 +142,39 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Pricing Toggle */}
+      {/* Currency Toggle & Billing Toggle */}
       <section className="py-8 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center">
-            <div className="flex items-center space-x-4 mb-8">
+          <div className="flex flex-col items-center space-y-6">
+            {/* Currency Toggle */}
+            <div className="flex items-center space-x-4">
+              <span className={`text-sm font-medium ${currency === 'EUR' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                EUR (€)
+              </span>
+              <button
+                onClick={() => setCurrency(currency === 'EUR' ? 'FCFA' : 'EUR')}
+                className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 dark:bg-blue-700 transition-colors"
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    currency === 'FCFA' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <div className="flex items-center">
+                <span className={`text-sm font-medium ${currency === 'FCFA' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                  FCFA
+                </span>
+                {currency === 'FCFA' && (
+                  <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                    Taux: 1€ = 655 FCFA
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Billing Toggle */}
+            <div className="flex items-center space-x-4">
               <span className={`text-sm font-medium ${!isAnnual ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                 Facturation mensuelle
               </span>
@@ -160,82 +205,92 @@ export default function PricingPage() {
       <section className="py-16 bg-white dark:bg-gray-900 sm:py-20 lg:py-24 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-6 lg:gap-8">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative rounded-2xl shadow-lg dark:shadow-gray-900/50 transition-all duration-300 hover:scale-[1.02] ${
-                  plan.popular
-                    ? 'ring-2 ring-purple-600 dark:ring-purple-500 border-purple-200 dark:border-purple-900'
-                    : 'border border-gray-200 dark:border-gray-800'
-                } bg-white dark:bg-gray-900`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <div className="px-4 py-1 rounded-full bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold">
-                      Le plus populaire
+            {plans.map((plan) => {
+              const monthlyPrice = currency === 'FCFA' ? convertToFCFA(plan.price.monthly) : plan.price.monthly;
+              const annualPrice = currency === 'FCFA' ? convertToFCFA(plan.price.annual) : plan.price.annual;
+              
+              return (
+                <div
+                  key={plan.id}
+                  className={`relative rounded-2xl shadow-lg dark:shadow-gray-900/50 transition-all duration-300 hover:scale-[1.02] ${
+                    plan.popular
+                      ? 'ring-2 ring-purple-600 dark:ring-purple-500 border-purple-200 dark:border-purple-900'
+                      : 'border border-gray-200 dark:border-gray-800'
+                  } bg-white dark:bg-gray-900`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <div className="px-4 py-1 rounded-full bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold">
+                        Le plus populaire
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="p-8">
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h3>
-                    <p className="mt-2 text-gray-500 dark:text-gray-400">{plan.description}</p>
-                  </div>
-
-                  <div className="mb-8">
-                    <div className="flex items-baseline">
-                      <span className="text-4xl font-extrabold text-gray-900 dark:text-white">
-                        {isAnnual ? plan.price.annual : plan.price.monthly}€
-                      </span>
-                      <span className="ml-1 text-gray-500 dark:text-gray-400">
-                        /{isAnnual ? 'an' : 'mois'}
-                      </span>
+                  <div className="p-8">
+                    <div className="mb-6">
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h3>
+                      <p className="mt-2 text-gray-500 dark:text-gray-400">{plan.description}</p>
                     </div>
-                    {plan.price.monthly > 0 && isAnnual && (
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Soit {(plan.price.annual / 12).toFixed(2)}€/mois
-                      </p>
-                    )}
-                  </div>
 
-                  <Link
-                    href={plan.id === 'free' ? '/register' : plan.id === 'enterprise' ? '/contact' : '/register'}
-                    className={`w-full inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-lg transition-colors shadow-md ${
-                      plan.buttonVariant === 'primary'
-                        ? 'border-transparent text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
-                        : 'border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {plan.buttonText}
-                  </Link>
+                    <div className="mb-8">
+                      <div className="flex items-baseline">
+                        <span className="text-4xl font-extrabold text-gray-900 dark:text-white">
+                          {formatPrice(isAnnual ? annualPrice : monthlyPrice)}
+                        </span>
+                        <span className="ml-1 text-gray-500 dark:text-gray-400">
+                          {getCurrencySymbol()}/{isAnnual ? 'an' : 'mois'}
+                        </span>
+                      </div>
+                      {plan.price.monthly > 0 && isAnnual && currency === 'EUR' && (
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          Soit {(plan.price.annual / 12).toFixed(2)}€/mois
+                        </p>
+                      )}
+                      {plan.price.monthly > 0 && isAnnual && currency === 'FCFA' && (
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          Soit {formatPrice(Math.round(annualPrice / 12))} FCFA/mois
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="mt-8 space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                      Ce qui est inclus :
-                    </h4>
-                    <ul className="space-y-3">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-start">
-                          {feature.included ? (
-                            <svg className="h-5 w-5 text-green-500 dark:text-green-400 flex-shrink-0 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <svg className="h-5 w-5 text-gray-300 dark:text-gray-600 flex-shrink-0 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          )}
-                          <span className={`text-sm ${feature.included ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
-                            {feature.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    <Link
+                      href={plan.id === 'free' ? '/register' : plan.id === 'enterprise' ? '/contact' : '/register'}
+                      className={`w-full inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-lg transition-colors shadow-md ${
+                        plan.buttonVariant === 'primary'
+                          ? 'border-transparent text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
+                          : 'border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {plan.buttonText}
+                    </Link>
+
+                    <div className="mt-8 space-y-4">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Ce qui est inclus :
+                      </h4>
+                      <ul className="space-y-3">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-start">
+                            {feature.included ? (
+                              <svg className="h-5 w-5 text-green-500 dark:text-green-400 flex-shrink-0 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-5 w-5 text-gray-300 dark:text-gray-600 flex-shrink-0 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            )}
+                            <span className={`text-sm ${feature.included ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                              {feature.text}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Enterprise Contact */}

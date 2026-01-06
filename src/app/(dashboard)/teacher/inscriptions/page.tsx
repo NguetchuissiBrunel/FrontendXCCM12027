@@ -29,7 +29,7 @@ export default function TeacherEnrollmentsPage() {
     return (
         <div className="p-6 max-w-7xl mx-auto">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestion des Inscriptions</h1>
+                <h1 className="text-3xl pt-20 font-bold text-gray-900 dark:text-white">Gestion des Inscriptions</h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-2">
                     Validez les demandes d'accès à vos cours.
                 </p>

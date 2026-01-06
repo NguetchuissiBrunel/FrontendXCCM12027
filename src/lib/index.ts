@@ -36,3 +36,4 @@ export { AuthControllerService } from './services/AuthControllerService';
 export { CourseControllerService } from './services/CourseControllerService';
 export { EnrollmentControllerService } from './services/EnrollmentControllerService';
 export { RootControllerService } from './services/RootControllerService';
+export { AdminService } from './services/AdminService';

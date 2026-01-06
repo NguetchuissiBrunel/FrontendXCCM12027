@@ -26,10 +26,11 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('authToken')?.value;
 
   // Route categories
-  const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/admin/login' || pathname === '/admin/register';
   const isDashboardStudent = pathname.startsWith('/etudashboard');
+  const isDashboardAdmin = pathname.startsWith('/admindashboard');
   const isDashboardTeacher = pathname.startsWith('/profdashboard') || pathname.startsWith('/editor');
-  const isProtected = isDashboardStudent || isDashboardTeacher;
+  const isProtected = isDashboardStudent || isDashboardTeacher || isDashboardAdmin;
 
   // 1. No token case
   if (!token) {
@@ -56,9 +57,13 @@ export function middleware(request: NextRequest) {
 
   // Role identification
   const role = String(payload.role || '').toUpperCase();
+  const isAdmin = role.includes('ADMIN');
   const isTeacher = role.includes('TEACHER') || role.includes('PROFESSOR');
   const isStudent = role.includes('STUDENT');
-  const dashboard = isTeacher ? '/profdashboard' : '/etudashboard';
+
+  let dashboard = '/etudashboard';
+  if (isAdmin) dashboard = '/admindashboard';
+  else if (isTeacher) dashboard = '/profdashboard';
 
   // Redirected authenticated users away from Login/Register
   if (isAuthPage) {
@@ -70,8 +75,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/profdashboard', request.url));
   }
 
-  if (isDashboardTeacher && !isTeacher) {
+  if (isDashboardTeacher && !isTeacher && !isAdmin) {
     return NextResponse.redirect(new URL('/etudashboard', request.url));
+  }
+
+  if (isDashboardAdmin && !isAdmin) {
+    return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
   return NextResponse.next();

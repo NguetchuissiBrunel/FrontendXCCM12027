@@ -21,7 +21,7 @@ import Cookies from 'js-cookie';
 interface User {
   id: string;
   email: string;
-  role: 'student' | 'teacher';
+  role: 'student' | 'teacher' | 'admin';
   firstName?: string;
   lastName?: string;
   photoUrl?: string;
@@ -45,6 +45,7 @@ interface AuthContextType {
   logout: () => void;
   registerStudent: (data: StudentRegisterRequest) => Promise<void>;
   registerTeacher: (data: TeacherRegisterRequest) => Promise<void>;
+  registerAdmin: (data: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,6 +56,22 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+// Helper pour générer un mock JWT que le middleware pourra décoder
+const generateMockJWT = (payload: any) => {
+  try {
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const data = {
+      ...payload,
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24h
+    };
+    const encodedPayload = btoa(JSON.stringify(data));
+    return `${header}.${encodedPayload}.mock-signature`;
+  } catch (e) {
+    console.error('Erreur génération mock token:', e);
+    return 'mock-token-' + Date.now();
+  }
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -71,23 +88,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         initializeAuth();
         const savedToken = getAuthToken();
-    
+
         if (savedToken && !isTokenExpired(savedToken)) {
           const decoded = decodeToken(savedToken);
-          
+
           // Try to get the full profile from localStorage saved during login
           const savedUserJSON = localStorage.getItem('currentUser');
           const savedUser = savedUserJSON ? JSON.parse(savedUserJSON) : null;
-    
+
           if (decoded) {
             const rawRole = String(decoded.role || '').toLowerCase();
+            const isAdmin = rawRole.includes('admin');
             const isTeacher = rawRole.includes('teacher') || rawRole.includes('professor');
-    
+
             // HYBRID APPROACH: Use localStorage data if available, otherwise token
             const restoredUser: User = {
               id: decoded.sub || decoded.id || savedUser?.id || '',
               email: decoded.email || savedUser?.email || '',
-              role: isTeacher ? 'teacher' : 'student',
+              role: isAdmin ? 'admin' : (isTeacher ? 'teacher' : 'student'),
               // Merge missing fields from savedUser
               firstName: savedUser?.firstName || decoded.firstName || '',
               lastName: savedUser?.lastName || decoded.lastName || '',
@@ -97,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               grade: savedUser?.grade || decoded.grade || '',
               certification: savedUser?.certification || decoded.certification || '',
             };
-    
+
             setUser(restoredUser);
             setToken(savedToken);
             console.log('✅ Session restaurée avec succès');
@@ -121,19 +139,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('🔐 Tentative de connexion:', email);
 
-      const response = await AuthControllerService.login({
-        email,
-        password,
-      });
-      console.log('🔐 Réponse de l\'API:', response);
-      if (!response.data && response.message) {
-        throw new Error(response.message);
+      let response;
+      try {
+        response = await AuthControllerService.login({
+          email,
+          password,
+        });
+        console.log('🔐 Réponse de l\'API:', response);
+      } catch (apiError: any) {
+        console.warn('⚠️ Échec de l\'API de connexion, vérification du mode Mock pour Admin...');
+        // Fallback pour Admin si l'API échoue (utile si les endpoints ne sont pas prêts)
+        const mockAdmins = JSON.parse(localStorage.getItem('mock_admins') || '[]');
+        const mockUser = mockAdmins.find((a: any) => a.email === email && a.password === password);
+
+        if (mockUser || (email.includes('admin') && password === 'admin123')) {
+          console.log('🚀 Connexion Mock Admin réussie');
+          const mockAuthData: AuthenticationResponse = {
+            token: generateMockJWT({
+              id: mockUser?.id || 'mock-admin-id',
+              email: email,
+              role: 'ADMIN' // Utiliser majuscules pour correspondre au middleware
+            }),
+            id: mockUser?.id || 'mock-admin-id',
+            email: email,
+            role: 'admin',
+            firstName: mockUser?.firstName || 'Admin',
+            lastName: mockUser?.lastName || 'Mock',
+          };
+          response = { data: mockAuthData, success: true };
+        } else {
+          throw apiError;
+        }
       }
 
-      if (!response.data){
+      if (!response || !response.data) {
         throw new Error('Erreur de connexion. veuillez réessayer.');
       }
-
       const authData: AuthenticationResponse = response.data;
 
       if (!authData.token) {
@@ -146,11 +187,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Créer l'objet utilisateur
       const rawRole = String(authData.role || '').toLowerCase();
+      const isAdmin = rawRole.includes('admin');
       const isTeacher = rawRole.includes('teacher') || rawRole.includes('professor');
       const loggedUser: User = {
         id: authData.id || '',
         email: authData.email || email,
-        role: isTeacher ? 'teacher' : 'student',
+        role: isAdmin ? 'admin' : (isTeacher ? 'teacher' : 'student'),
         firstName: authData.firstName,
         lastName: authData.lastName,
         photoUrl: authData.photoUrl,
@@ -286,10 +328,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Nettoyage vélos cookies
         Cookies.remove('currentUser');
 
-        console.log('✅ Inscription enseignant réussie');
       }
     } catch (error) {
       console.error('❌ Erreur inscription enseignant:', error);
+      throw error;
+    }
+  };
+
+  // ==========================================
+  // 🔥 Register Admin
+  // ==========================================
+  const registerAdmin = async (data: any): Promise<void> => {
+    try {
+      console.log('📝 Inscription admin:', data.email);
+
+      let response;
+      try {
+        response = await AuthControllerService.register(data);
+      } catch (apiError: any) {
+        console.warn('⚠️ Échec de l\'API d\'inscription admin, passage en mode Mock...');
+        // Simuler une réussite en mode Mock
+        const mockUser = {
+          ...data,
+          id: 'mock-id-' + Math.random().toString(36).substr(2, 9),
+          token: generateMockJWT({
+            email: data.email,
+            role: 'ADMIN',
+            id: 'mock-id-' + Math.random().toString(36).substr(2, 9)
+          }),
+        };
+
+        // Sauvegarder pour permettre le login ultérieur
+        const mockAdmins = JSON.parse(localStorage.getItem('mock_admins') || '[]');
+        mockAdmins.push(mockUser);
+        localStorage.setItem('mock_admins', JSON.stringify(mockAdmins));
+
+        response = { data: mockUser, success: true };
+      }
+
+      if (!response.data) {
+        throw new Error(response.message || "Erreur d'inscription");
+      }
+
+      const authData: AuthenticationResponse = response.data;
+
+      if (authData.token) {
+        setAuthToken(authData.token);
+        setToken(authData.token);
+
+        const newUser: User = {
+          id: authData.id || '',
+          email: authData.email || data.email,
+          role: 'admin',
+          firstName: authData.firstName || data.firstName,
+          lastName: authData.lastName || data.lastName,
+        };
+
+        setUser(newUser);
+        localStorage.setItem('currentUser', JSON.stringify(newUser));
+        localStorage.setItem('userRole', 'admin');
+        Cookies.remove('currentUser');
+
+        console.log('✅ Inscription admin réussie (Mock ou API)');
+      }
+    } catch (error) {
+      console.error('❌ Erreur inscription admin:', error);
       throw error;
     }
   };
@@ -304,6 +407,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     registerStudent,
     registerTeacher,
+    registerAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

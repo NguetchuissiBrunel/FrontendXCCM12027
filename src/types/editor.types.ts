@@ -147,6 +147,7 @@ export interface TableOfContentsItem {
   level: number;
   number: string;  // Hierarchical numbering (e.g., "1.1.1")
   children: TableOfContentsItem[];
+  collapsed?: boolean;
   content?: string;  // HTML content for this item
 }
 

@@ -68,57 +68,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ==========================================
   useEffect(() => {
     const restoreSession = async () => {
-      console.log('🔧 Initialisation AuthContext (API)');
-
       try {
-        // Initialiser le token depuis les cookies
         initializeAuth();
         const savedToken = getAuthToken();
-
-        if (savedToken) {
-          // Vérifier si le token est expiré
-          if (isTokenExpired(savedToken)) {
-            console.log('⚠️ Token expiré - Déconnexion');
-            clearAuthToken();
-            setUser(null);
-            setToken(null);
-          } else {
-            // Décoder le token pour récupérer les infos utilisateur
-            const decoded = decodeToken(savedToken);
-
-            if (decoded) {
-              const rawRole = String(decoded.role || '').toLowerCase();
-              const isTeacher = rawRole.includes('teacher') || rawRole.includes('professor');
-              const restoredUser: User = {
-                id: decoded.sub || decoded.id || '',
-                email: decoded.email || '',
-                role: isTeacher ? 'teacher' : 'student',
-                firstName: decoded.firstName,
-                lastName: decoded.lastName,
-                photoUrl: decoded.photoUrl,
-                city: decoded.city,
-                university: decoded.university,
-                specialization: decoded.specialization,
-                grade: decoded.grade,
-                subjects: decoded.subjects,
-                certification: decoded.certification,
-              };
-
-              setUser(restoredUser);
-              setToken(savedToken);
-
-              // Nettoyer l'ancien cookie currentUser si présent pour éviter les conflits
-              Cookies.remove('currentUser');
-
-              console.log('✅ Session restaurée depuis le Token - Rôle:', restoredUser.role);
-            }
+    
+        if (savedToken && !isTokenExpired(savedToken)) {
+          const decoded = decodeToken(savedToken);
+          
+          // Try to get the full profile from localStorage saved during login
+          const savedUserJSON = localStorage.getItem('currentUser');
+          const savedUser = savedUserJSON ? JSON.parse(savedUserJSON) : null;
+    
+          if (decoded) {
+            const rawRole = String(decoded.role || '').toLowerCase();
+            const isTeacher = rawRole.includes('teacher') || rawRole.includes('professor');
+    
+            // HYBRID APPROACH: Use localStorage data if available, otherwise token
+            const restoredUser: User = {
+              id: decoded.sub || decoded.id || savedUser?.id || '',
+              email: decoded.email || savedUser?.email || '',
+              role: isTeacher ? 'teacher' : 'student',
+              // Merge missing fields from savedUser
+              firstName: savedUser?.firstName || decoded.firstName || '',
+              lastName: savedUser?.lastName || decoded.lastName || '',
+              photoUrl: savedUser?.photoUrl || decoded.photoUrl || '',
+              city: savedUser?.city || decoded.city || '',
+              university: savedUser?.university || decoded.university || '',
+              grade: savedUser?.grade || decoded.grade || '',
+              certification: savedUser?.certification || decoded.certification || '',
+            };
+    
+            setUser(restoredUser);
+            setToken(savedToken);
+            console.log('✅ Session restaurée avec succès');
           }
         }
       } catch (error) {
         console.error('❌ Erreur restoration session:', error);
-        clearAuthToken();
-        setUser(null);
-        setToken(null);
+        logout();
       } finally {
         setLoading(false);
       }

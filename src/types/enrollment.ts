@@ -1,7 +1,9 @@
 // types/enrollment.ts
 export interface Enrollment {
+  id: number;
   courseId: number;
   userId: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
   enrolledAt: string; // ISO string pour la sérialisation
   progress: number;
   lastAccessed?: string;

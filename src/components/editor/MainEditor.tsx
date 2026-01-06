@@ -499,6 +499,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
                   type="color"
                   onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
                   className="w-0 h-0 opacity-0 absolute"
+                  suppressHydrationWarning
                 />
                 <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('textStyle').color || '#000000' }}></div>
               </label>
@@ -512,6 +513,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
                   type="color"
                   onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
                   className="w-0 h-0 opacity-0 absolute"
+                  suppressHydrationWarning
                 />
                 <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('highlight').color || 'transparent' }}></div>
               </label>
@@ -526,6 +528,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               accept="image/*"
               onChange={handleImageUpload}
               className="hidden"
+              suppressHydrationWarning
             />
 
             <ToolbarButton

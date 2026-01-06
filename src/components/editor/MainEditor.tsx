@@ -85,7 +85,7 @@ const headingOptions = [
 ];
 
 export interface MainEditorRef {
-  handleTOCAction: (action: 'rename' | 'delete', itemId: string, newTitle?: string) => void;
+  handleTOCAction: (action: 'rename' | 'delete' | 'move', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' }) => void;
 }
 
 export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
@@ -106,10 +106,11 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   })
 
   React.useImperativeHandle(ref, () => ({
-    handleTOCAction: (action, itemId, newTitle) => {
+    handleTOCAction: (action, itemId, payload) => {
       if (!editor) return;
 
-      if (action === 'rename' && newTitle) {
+      if (action === 'rename' && typeof payload === 'string') {
+        const newTitle = payload;
         // Find node with data-id or id attribute matching itemId
         // TipTap doesn't have a direct "find node by attribute" index, so we traverse.
         editor.state.doc.descendants((node, pos) => {
@@ -129,619 +130,696 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             return false; // Stop traversal
           }
         });
+      } else if (action === 'move' && typeof payload === 'object') {
+        const { targetId, position } = payload as { targetId: string, position: 'before' | 'after' | 'inside' };
+        
+        let sourcePos: number | null = null;
+        let sourceNode: any = null;
+        let targetPos: number | null = null;
+        let targetNode: any = null;
+
+        // Pass 1: Find items
+        editor.state.doc.descendants((node, pos) => {
+          if (node.attrs.id === itemId) {
+            sourcePos = pos;
+            sourceNode = node;
+          }
+          if (node.attrs.id === targetId) {
+            targetPos = pos;
+            targetNode = node;
+          }
+        });
+
+        if (sourcePos !== null && targetPos !== null && sourceNode && targetNode) {
+            const tr = editor.state.tr;
+            
+            // If moving to same position, do nothing
+            if (sourcePos === targetPos) return;
+
+            // Delete source first? 
+            // Better to clone, insert, then delete original.
+            // But if we insert first, positions change.
+            // If we delete first, positions change.
+            // Deleting first is easier if we adjust targetPos.
+            
+            tr.delete(sourcePos, sourcePos + sourceNode.nodeSize);
+            
+            // Adjust targetPos if source was before target
+            let adjustedTargetPos = targetPos;
+            if (sourcePos < targetPos) {
+              adjustedTargetPos -= sourceNode.nodeSize;
+            }
+
+            // Calculate insert position relative to adjusted target
+            let insertPos = adjustedTargetPos;
+            if (position === 'after') {
+                insertPos = adjustedTargetPos + targetNode.nodeSize;
+            } else if (position === 'inside') {
+                // Insert at end of content
+                insertPos = adjustedTargetPos + targetNode.nodeSize - 1; 
+            } else {
+                // before
+                insertPos = adjustedTargetPos;
+            }
+
+            tr.insert(insertPos, sourceNode);
+            editor.view.dispatch(tr);
+        }
       }
     }
   }));
-
   const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
-      StarterKit,
-      Dropcursor.configure({
-        color: '#a78bfa', // Purple to match your theme
-        width: 3,
-      }),
-      FontFamily.configure({
-        types: ['textStyle'],
-      }),
-      TextAlignWithShortcuts.configure({
-        types: ['heading', 'paragraph'],
-        alignments: ['left', 'center', 'right', 'justify'],
-        defaultAlignment: 'left',
-      }),
-      Underline,
-      TextStyle,
-      Color,
-      Highlight.configure({
-        multicolor: true,
-      }),
-      Image,
-      Link.configure({
-        openOnClick: false,
-      }),
-      Section,
-      Chapitre,
-      Paragraphe,
-      Notion,
-      Exercice,
-    ],
-    content: initialContent,
-    editorProps: {
-      attributes: {
-        class: 'prose dark:prose-invert max-w-none focus:outline-none editor-focusable',
-      },
-      handleDrop: (view, event, slice, moved) => {
-        event.preventDefault();
+        immediatelyRender: false,
+        extensions: [
+          StarterKit,
+          Dropcursor.configure({
+            color: '#a78bfa', // Purple to match your theme
+            width: 3,
+          }),
+          FontFamily.configure({
+            types: ['textStyle'],
+          }),
+          TextAlignWithShortcuts.configure({
+            types: ['heading', 'paragraph'],
+            alignments: ['left', 'center', 'right', 'justify'],
+            defaultAlignment: 'left',
+          }),
+          Underline,
+          TextStyle,
+          Color,
+          Highlight.configure({
+            multicolor: true,
+          }),
+          Image,
+          Link.configure({
+            openOnClick: false,
+          }),
+          Section,
+          Chapitre,
+          Paragraphe,
+          Notion,
+          Exercice,
+        ],
+        content: initialContent,
+        editorProps: {
+          attributes: {
+            class: 'prose dark:prose-invert max-w-none focus:outline-none editor-focusable',
+          },
+          handleDrop: (view, event, slice, moved) => {
+            event.preventDefault();
 
-        const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
-        if (!jsonData) return false;
+            const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
+            if (!jsonData) return false;
 
-        try {
-          const draggedItem = JSON.parse(jsonData);
+            try {
+              const draggedItem = JSON.parse(jsonData);
 
-          const typeMap: Record<string, string> = {
-            course: 'heading',
-            section: 'section',
-            chapter: 'chapitre',
-            paragraph: 'paragraphe',
-            notion: 'notion',
-            exercise: 'exercice'
-          };
+              const typeMap: Record<string, string> = {
+                course: 'heading',
+                section: 'section',
+                chapter: 'chapitre',
+                paragraph: 'paragraphe',
+                notion: 'notion',
+                exercise: 'exercice'
+              };
 
-          const buildNode = (item: any): any => {
-            const nodeType = typeMap[item.type] || 'paragraph';
+              const buildNode = (item: any): any => {
+                const nodeType = typeMap[item.type] || 'paragraph';
+                const attrs: any = {
+                  id: item.id,
+                  title: item.title || item.data?.title || 'Sans titre',
+                };
 
-            const children = (item.children || []).map(buildNode);
+                if (item.type === 'course') {
+                  attrs.level = 1;
+                  // For course, we return the heading node itself, children handled separately
+                  return {
+                    type: 'heading',
+                    attrs,
+                    content: [{ type: 'text', text: attrs.title }]
+                  };
+                }
 
-            const attrs: any = {
-              id: item.id,
-              title: item.title || item.data?.title || 'Sans titre',
-            };
+                const children = (item.children || []).map(buildNode);
 
-            if (item.type === 'course') {
-              attrs.level = 1;
-            }
+                // Default: empty for structural nodes
+                let content: any[] = [];
 
-            // Default: empty for structural nodes
-            let content: any[] = [];
+                // Special handling for notion: title text + full content
+                if (item.type === 'notion') {
+                  // Title as first text
+                  content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
 
-            // Special handling for notion: title text + full content
-            if (item.type === 'notion') {
-              // Title as first text
-              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
+                  // Add actual content if present
+                  if (item.content) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = item.content.trim();
 
-              // Add actual content if present
-              if (item.content) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = item.content.trim();
-
-                const parsed: any[] = [];
-                tempDiv.childNodes.forEach((node) => {
-                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-                    parsed.push({ type: 'text', text: node.textContent });
-                  } else if (node.nodeName === 'P') {
-                    const pContent: any[] = [];
-                    node.childNodes.forEach((child) => {
-                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
-                        pContent.push({ type: 'text', text: child.textContent });
+                    const parsed: any[] = [];
+                    tempDiv.childNodes.forEach((node) => {
+                      if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+                        parsed.push({ type: 'text', text: node.textContent });
+                      } else if (node.nodeName === 'P') {
+                        const pContent: any[] = [];
+                        node.childNodes.forEach((child) => {
+                          if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+                            pContent.push({ type: 'text', text: child.textContent });
+                          }
+                        });
+                        if (pContent.length > 0) {
+                          parsed.push({ type: 'paragraph', content: pContent });
+                        }
                       }
                     });
-                    if (pContent.length > 0) {
-                      parsed.push({ type: 'paragraph', content: pContent });
-                    }
+
+                    content = [...content, ...parsed];
                   }
+                }
+
+                // Exercise: simple question list
+                if (item.type === 'exercise' && item.data?.questions) {
+                  const questionsText = item.data.questions
+                    .map((q: any, i: number) => `${i + 1}. ${q.question}`)
+                    .join('\n\n');
+                  content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+                }
+
+                return {
+                  type: nodeType,
+                  attrs,
+                  content: [...content, ...children]
+                };
+              };
+
+              // Main handling logic
+              const coords = { left: event.clientX, top: event.clientY };
+              const posResult = view.posAtCoords(coords);
+              if (!posResult) return false;
+
+              if (draggedItem.type === 'course') {
+                // Flatten logic for Course: Heading -> Siblings
+                const courseHeading = buildNode(draggedItem);
+                const childrenNodes = (draggedItem.children || []).map((child: any) => buildNode(child));
+
+                const nodesToInsert = [courseHeading, ...childrenNodes].map(n => view.state.schema.nodeFromJSON(n));
+
+                // Insert all nodes sequentially
+                let currentPos = posResult.pos;
+                const tr = view.state.tr;
+                nodesToInsert.forEach(node => {
+                  tr.insert(currentPos, node);
+                  currentPos += node.nodeSize;
                 });
-
-                content = [...content, ...parsed];
+                view.dispatch(tr);
+              } else {
+                // Standard nested insertion for other types
+                const contentToInsert = buildNode(draggedItem);
+                const node = view.state.schema.nodeFromJSON(contentToInsert);
+                view.dispatch(view.state.tr.insert(posResult.pos, node));
               }
-            }
 
-            // Exercise: simple question list
-            if (item.type === 'exercise' && item.data?.questions) {
-              const questionsText = item.data.questions
-                .map((q: any, i: number) => `${i + 1}. ${q.question}`)
-                .join('\n\n');
-              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+              return true;
+            } catch (error) {
+              console.error('Drop error:', error);
+              return false;
             }
-
-            return {
-              type: nodeType,
-              attrs,
-              content: [...content, ...children]
-            };
+          },
+        },
+        onCreate: ({ editor }) => {
+          // Notify parent component that editor is ready
+          onEditorReady?.(editor);
+        },
+        onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
+      });
+      const editorState = useEditorState({
+        editor,
+        selector: (ctx) => {
+          if (!ctx.editor) return {
+            isBold: false,
+            isItalic: false,
+            isUnderline: false,
+            isStrike: false,
+            isLink: false,
+            currentHeading: 'paragraph',
           };
 
-          const contentToInsert = buildNode(draggedItem);
-
-          const coords = { left: event.clientX, top: event.clientY };
-          const posResult = view.posAtCoords(coords);
-          if (!posResult) return false;
-
-          const node = view.state.schema.nodeFromJSON(contentToInsert);
-          view.dispatch(view.state.tr.insert(posResult.pos, node));
-
-          return true;
-        } catch (error) {
-          console.error('Drop error:', error);
-          return false;
-        }
-      },
-    },
-    onCreate: ({ editor }) => {
-      // Notify parent component that editor is ready
-      onEditorReady?.(editor);
-    },
-    onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
-  });
-  const editorState = useEditorState({
-    editor,
-    selector: (ctx) => {
-      if (!ctx.editor) return {
-        isBold: false,
-        isItalic: false,
-        isUnderline: false,
-        isStrike: false,
-        isLink: false,
-        currentHeading: 'paragraph',
-      };
-
-      let currentHeading: string | number = 'paragraph';
-      if (ctx.editor.isActive('section')) currentHeading = 'section';
-      else if (ctx.editor.isActive('chapitre')) currentHeading = 'chapitre';
-      else if (ctx.editor.isActive('paragraphe')) currentHeading = 'paragraphe';
-      else if (ctx.editor.isActive('notion')) currentHeading = 'notion';
-      else if (ctx.editor.isActive('exercice')) currentHeading = 'exercice';
-      else {
-        for (let level = 1; level <= 6; level++) {
-          if (ctx.editor.isActive('heading', { level })) {
-            currentHeading = level;
-            break;
+          let currentHeading: string | number = 'paragraph';
+          if (ctx.editor.isActive('section')) currentHeading = 'section';
+          else if (ctx.editor.isActive('chapitre')) currentHeading = 'chapitre';
+          else if (ctx.editor.isActive('paragraphe')) currentHeading = 'paragraphe';
+          else if (ctx.editor.isActive('notion')) currentHeading = 'notion';
+          else if (ctx.editor.isActive('exercice')) currentHeading = 'exercice';
+          else {
+            for (let level = 1; level <= 6; level++) {
+              if (ctx.editor.isActive('heading', { level })) {
+                currentHeading = level;
+                break;
+              }
+            }
           }
+
+          return {
+            isBold: ctx.editor.isActive('bold'),
+            isItalic: ctx.editor.isActive('italic'),
+            isUnderline: ctx.editor.isActive('underline'),
+            isStrike: ctx.editor.isActive('strike'),
+            isLink: ctx.editor.isActive('link'),
+            isAlignLeft: ctx.editor.isActive({ textAlign: 'left' }),
+            isAlignCenter: ctx.editor.isActive({ textAlign: 'center' }),
+            isAlignRight: ctx.editor.isActive({ textAlign: 'right' }),
+            isAlignJustify: ctx.editor.isActive({ textAlign: 'justify' }),
+            isBulletList: ctx.editor.isActive('bulletList'),
+            isOrderedList: ctx.editor.isActive('orderedList'),
+            isBlockquote: ctx.editor.isActive('blockquote'),
+            isCodeBlock: ctx.editor.isActive('codeBlock'),
+            currentHeading,
+          };
+        },
+      });
+
+      const imageInputRef = useRef<HTMLInputElement>(null);
+
+      const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const url = e.target?.result as string;
+            editor?.chain().focus().setImage({ src: url }).run();
+          };
+          reader.readAsDataURL(file);
         }
-      }
-
-      return {
-        isBold: ctx.editor.isActive('bold'),
-        isItalic: ctx.editor.isActive('italic'),
-        isUnderline: ctx.editor.isActive('underline'),
-        isStrike: ctx.editor.isActive('strike'),
-        isLink: ctx.editor.isActive('link'),
-        isAlignLeft: ctx.editor.isActive({ textAlign: 'left' }),
-        isAlignCenter: ctx.editor.isActive({ textAlign: 'center' }),
-        isAlignRight: ctx.editor.isActive({ textAlign: 'right' }),
-        isAlignJustify: ctx.editor.isActive({ textAlign: 'justify' }),
-        isBulletList: ctx.editor.isActive('bulletList'),
-        isOrderedList: ctx.editor.isActive('orderedList'),
-        isBlockquote: ctx.editor.isActive('blockquote'),
-        isCodeBlock: ctx.editor.isActive('codeBlock'),
-        currentHeading,
       };
-    },
-  });
 
-  const imageInputRef = useRef<HTMLInputElement>(null);
+      const [showLinkModal, setShowLinkModal] = useState(false);
+      const [linkUrl, setLinkUrl] = useState('');
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const url = e.target?.result as string;
-        editor?.chain().focus().setImage({ src: url }).run();
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+      const ToolbarButton = ({
+        onClick,
+        children,
+        title,
+        isActive = false
+      }: {
+        onClick: () => void;
+        children: React.ReactNode;
+        title: string;
+        isActive?: boolean;
+      }) => (
+        <button
+          type="button"
+          onClick={onClick}
+          className={`px-3 py-2 rounded transition-colors ${isActive
+            ? 'bg-purple-600 text-white hover:bg-purple-700'
+            : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          title={title}
+        >
+          {children}
+        </button>
+      );
 
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [linkUrl, setLinkUrl] = useState('');
+      const Separator = () => (
+        <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2" />
+      );
 
-  const ToolbarButton = ({
-    onClick,
-    children,
-    title,
-    isActive = false
-  }: {
-    onClick: () => void;
-    children: React.ReactNode;
-    title: string;
-    isActive?: boolean;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-2 rounded transition-colors ${isActive
-        ? 'bg-purple-600 text-white hover:bg-purple-700'
-        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-        }`}
-      title={title}
-    >
-      {children}
-    </button>
-  );
+      const HeadingDropdown = () => {
+        const currentOption = headingOptions.find(
+          opt => opt.value === editorState?.currentHeading
+        ) || headingOptions[0];
 
-  const Separator = () => (
-    <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2" />
-  );
-
-  const HeadingDropdown = () => {
-    const currentOption = headingOptions.find(
-      opt => opt.value === editorState?.currentHeading
-    ) || headingOptions[0];
-
-    const handleChange = (value: string | number) => {
-      if (value === 'paragraph') {
-        editor?.chain().focus().setParagraph().run();
-      } else if (value === 'section') {
-        editor?.chain().focus().setSection().run();
-      } else if (value === 'chapitre') {
-        editor?.chain().focus().setChapitre().run();
-      } else if (value === 'paragraphe') {
-        editor?.chain().focus().setParagraphe().run();
-      } else if (value === 'notion') {
-        editor?.chain().focus().setNotion().run();
-      } else if (value === 'exercice') {
-        editor?.chain().focus().setExercice().run();
-      } else if (typeof value === 'number') {
-        editor?.chain().focus().toggleHeading({ level: value as 1 | 2 | 3 | 4 | 5 | 6 }).run();
-      }
-    };
-
-    return (
-      <select
-        value={currentOption.value}
-        onChange={(e) => {
-          const val = e.target.value;
-          const parsedVal = !isNaN(Number(val)) ? parseInt(val) : val;
-          handleChange(parsedVal);
-        }}
-        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
-        style={{ color: currentOption.color }}
-      >
-        {headingOptions.map(option => (
-          <option
-            key={option.value}
-            value={option.value}
-            style={{ color: option.color }}
-          >
-            {option.label}
-          </option>
-        ))}
-      </select>
-    );
-  };
-
-  const FontDropdown = () => {
-    return (
-      <select
-        value={editor?.getAttributes('textStyle').fontFamily || ''}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (value === '') {
-            editor?.chain().focus().unsetFontFamily().run();
-          } else {
-            editor?.chain().focus().setFontFamily(value).run();
+        const handleChange = (value: string | number) => {
+          if (value === 'paragraph') {
+            editor?.chain().focus().setParagraph().run();
+          } else if (value === 'section') {
+            editor?.chain().focus().setSection().run();
+          } else if (value === 'chapitre') {
+            editor?.chain().focus().setChapitre().run();
+          } else if (value === 'paragraphe') {
+            editor?.chain().focus().setParagraphe().run();
+          } else if (value === 'notion') {
+            editor?.chain().focus().setNotion().run();
+          } else if (value === 'exercice') {
+            editor?.chain().focus().setExercice().run();
+          } else if (typeof value === 'number') {
+            editor?.chain().focus().toggleHeading({ level: value as 1 | 2 | 3 | 4 | 5 | 6 }).run();
           }
-        }}
-        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm w-32"
-        title="Font Family"
-      >
-        <option value="">Default Font</option>
-        {fontOptions.map(option => (
-          <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    );
-  };
+        };
 
-  return (
-    <>
-      <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
-
-        {/* Toolbar */}
-        <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
-          <div className="flex gap-2 items-center flex-wrap">
-            <HeadingDropdown />
-            <FontDropdown />
-
-            < Separator />
-
-            {/* Text Formatting */}
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleBold().run()}
-              title="Bold (Ctrl + B)"
-              isActive={editorState?.isBold}
-            >
-              <strong>B</strong>
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleItalic().run()}
-              title="Italic (Ctrl + I)"
-              isActive={editorState?.isItalic}
-            >
-              <em>I</em>
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleUnderline().run()}
-              title="Underline (Ctrl + U)"
-              isActive={editorState?.isUnderline}
-            >
-              <FaUnderline />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleStrike().run()}
-              title="Strikethrough (Ctrl + Shift + X)"
-              isActive={editorState?.isStrike}
-            >
-              <FaStrikethrough />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
-              title="Clear Formatting"
-              isActive={false}
-            >
-              <FaRemoveFormat />
-            </ToolbarButton>
-
-            <Separator />
-
-            {/* Text Color */}
-            <div className="flex items-center">
-              <label className="cursor-pointer p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex items-center justify-center text-gray-700 dark:text-gray-300" title="Text Color">
-                <FaFont className="mr-1" />
-                <input
-                  type="color"
-                  onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
-                  className="w-0 h-0 opacity-0 absolute"
-                  suppressHydrationWarning
-                />
-                <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('textStyle').color || '#000000' }}></div>
-              </label>
-            </div>
-
-            {/* Highlight Color */}
-            <div className="flex items-center">
-              <label className="cursor-pointer p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex items-center justify-center text-gray-700 dark:text-gray-300" title="Highlight Color">
-                <FaHighlighter className="mr-1" />
-                <input
-                  type="color"
-                  onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
-                  className="w-0 h-0 opacity-0 absolute"
-                  suppressHydrationWarning
-                />
-                <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('highlight').color || 'transparent' }}></div>
-              </label>
-            </div>
-
-            <Separator />
-
-            {/* Image Upload */}
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-              suppressHydrationWarning
-            />
-
-            <ToolbarButton
-              onClick={() => imageInputRef.current?.click()}
-              title="Insert Image"
-              isActive={false}
-            >
-              <FaImage />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => {
-                const previousUrl = editor?.getAttributes('link').href;
-                setLinkUrl(previousUrl || '');
-                setShowLinkModal(true);
-              }}
-              title="Insert Link"
-              isActive={editorState?.isLink}
-            >
-              <FaLink />
-            </ToolbarButton>
-
-            {editor?.isActive('link') && (
-              <ToolbarButton
-                onClick={() => editor?.chain().focus().unsetLink().run()}
-                title="Remove Link"
-                isActive={false}
-              >
-                <FaUnlink />
-              </ToolbarButton>
-            )}
-
-            <Separator />
-
-            {/* Text Alignment */}
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-              title="Align Left"
-              isActive={editorState?.isAlignLeft}
-            >
-              <FaAlignLeft />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-              title="Align Center"
-              isActive={editorState?.isAlignCenter}
-            >
-              <FaAlignCenter />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-              title="Align Right"
-              isActive={editorState?.isAlignRight}
-            >
-              <FaAlignRight />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-              title="Align Justify"
-              isActive={editorState?.isAlignJustify}
-            >
-              <FaAlignJustify />
-            </ToolbarButton>
-
-            <Separator />
-
-            {/* Lists */}
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleBulletList().run()}
-              title="Bullet List"
-              isActive={editorState?.isBulletList}
-            >
-              <FaListUl />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-              title="Numbered List"
-              isActive={editorState?.isOrderedList}
-            >
-              <FaListOl />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-              title="Blockquote"
-              isActive={editorState?.isBlockquote}
-            >
-              <FaQuoteLeft />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-              title="Code Block"
-              isActive={editorState?.isCodeBlock}
-            >
-              <FaCode />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().setHorizontalRule().run()}
-              title="Horizontal Rule"
-              isActive={false}
-            >
-              <FaMinus />
-            </ToolbarButton>
-
-            <Separator />
-
-            {/* Indentation */}
-            <ToolbarButton
-              onClick={() => {
-                // Check if in list
-                if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
-                  editor?.chain().focus().sinkListItem('listItem').run();
-                }
-              }}
-              title="Indent (Tab)"
-              isActive={false}
-            >
-              <FaIndent />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => {
-                // Check if in list
-                if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
-                  editor?.chain().focus().liftListItem('listItem').run();
-                }
-              }}
-              title="Outdent (Shift + Tab)"
-              isActive={false}
-            >
-              <FaOutdent />
-            </ToolbarButton>
-
-            <Separator />
-
-            {/* History */}
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().undo().run()}
-              title="Undo (Ctrl + Z)"
-              isActive={false}
-            >
-              <FaUndo />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor?.chain().focus().redo().run()}
-              title="Redo (Ctrl + Shift + Z)"
-              isActive={false}
-            >
-              <FaRedo />
-            </ToolbarButton>
-          </div>
-        </div>
-
-        {/* Editor Area */}
-        <div className="flex-1 p-8 overflow-auto bg-gray-100 dark:bg-gray-900 flex justify-center">
-          <div
-            className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 mx-auto transition-all duration-200"
-            style={{
-              width: '21cm',
-              minHeight: '29.7cm',
-              fontFamily: 'Arial, sans-serif'
+        return (
+          <select
+            value={currentOption.value}
+            onChange={(e) => {
+              const val = e.target.value;
+              const parsedVal = !isNaN(Number(val)) ? parseInt(val) : val;
+              handleChange(parsedVal);
             }}
-            onClick={() => editor?.chain().focus().run()}
+            className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+            style={{ color: currentOption.color }}
           >
-            <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
-          </div>
-        </div>
-      </div>
-      {/* Link Modal */}
-      {showLinkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
-            <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
-            <input
-              type="url"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://example.com"
-              className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
-              autoFocus
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowLinkModal(false)}
-                className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
+            {headingOptions.map(option => (
+              <option
+                key={option.value}
+                value={option.value}
+                style={{ color: option.color }}
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (linkUrl) {
-                    editor?.chain().focus().setLink({ href: linkUrl }).run();
-                  }
-                  setShowLinkModal(false);
-                  setLinkUrl('');
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+      };
+
+      const FontDropdown = () => {
+        return (
+          <select
+            value={editor?.getAttributes('textStyle').fontFamily || ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === '') {
+                editor?.chain().focus().unsetFontFamily().run();
+              } else {
+                editor?.chain().focus().setFontFamily(value).run();
+              }
+            }}
+            className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm w-32"
+            title="Font Family"
+          >
+            <option value="">Default Font</option>
+            {fontOptions.map(option => (
+              <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+      };
+
+      return (
+        <>
+          <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
+
+            {/* Toolbar */}
+            <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
+              <div className="flex gap-2 items-center flex-wrap">
+                <HeadingDropdown />
+                <FontDropdown />
+
+                < Separator />
+
+                {/* Text Formatting */}
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleBold().run()}
+                  title="Bold (Ctrl + B)"
+                  isActive={editorState?.isBold}
+                >
+                  <strong>B</strong>
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleItalic().run()}
+                  title="Italic (Ctrl + I)"
+                  isActive={editorState?.isItalic}
+                >
+                  <em>I</em>
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleUnderline().run()}
+                  title="Underline (Ctrl + U)"
+                  isActive={editorState?.isUnderline}
+                >
+                  <FaUnderline />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleStrike().run()}
+                  title="Strikethrough (Ctrl + Shift + X)"
+                  isActive={editorState?.isStrike}
+                >
+                  <FaStrikethrough />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
+                  title="Clear Formatting"
+                  isActive={false}
+                >
+                  <FaRemoveFormat />
+                </ToolbarButton>
+
+                <Separator />
+
+                {/* Text Color */}
+                <div className="flex items-center">
+                  <label className="cursor-pointer p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex items-center justify-center text-gray-700 dark:text-gray-300" title="Text Color">
+                    <FaFont className="mr-1" />
+                    <input
+                      type="color"
+                      onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
+                      className="w-0 h-0 opacity-0 absolute"
+                      suppressHydrationWarning
+                    />
+                    <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('textStyle').color || '#000000' }}></div>
+                  </label>
+                </div>
+
+                {/* Highlight Color */}
+                <div className="flex items-center">
+                  <label className="cursor-pointer p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex items-center justify-center text-gray-700 dark:text-gray-300" title="Highlight Color">
+                    <FaHighlighter className="mr-1" />
+                    <input
+                      type="color"
+                      onChange={(e) => editor?.chain().focus().toggleHighlight({ color: e.target.value }).run()}
+                      className="w-0 h-0 opacity-0 absolute"
+                      suppressHydrationWarning
+                    />
+                    <div className="w-4 h-4 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: editor?.getAttributes('highlight').color || 'transparent' }}></div>
+                  </label>
+                </div>
+
+                <Separator />
+
+                {/* Image Upload */}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  suppressHydrationWarning
+                />
+
+                <ToolbarButton
+                  onClick={() => imageInputRef.current?.click()}
+                  title="Insert Image"
+                  isActive={false}
+                >
+                  <FaImage />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => {
+                    const previousUrl = editor?.getAttributes('link').href;
+                    setLinkUrl(previousUrl || '');
+                    setShowLinkModal(true);
+                  }}
+                  title="Insert Link"
+                  isActive={editorState?.isLink}
+                >
+                  <FaLink />
+                </ToolbarButton>
+
+                {editor?.isActive('link') && (
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().unsetLink().run()}
+                    title="Remove Link"
+                    isActive={false}
+                  >
+                    <FaUnlink />
+                  </ToolbarButton>
+                )}
+
+                <Separator />
+
+                {/* Text Alignment */}
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+                  title="Align Left"
+                  isActive={editorState?.isAlignLeft}
+                >
+                  <FaAlignLeft />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+                  title="Align Center"
+                  isActive={editorState?.isAlignCenter}
+                >
+                  <FaAlignCenter />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+                  title="Align Right"
+                  isActive={editorState?.isAlignRight}
+                >
+                  <FaAlignRight />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+                  title="Align Justify"
+                  isActive={editorState?.isAlignJustify}
+                >
+                  <FaAlignJustify />
+                </ToolbarButton>
+
+                <Separator />
+
+                {/* Lists */}
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                  title="Bullet List"
+                  isActive={editorState?.isBulletList}
+                >
+                  <FaListUl />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                  title="Numbered List"
+                  isActive={editorState?.isOrderedList}
+                >
+                  <FaListOl />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+                  title="Blockquote"
+                  isActive={editorState?.isBlockquote}
+                >
+                  <FaQuoteLeft />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+                  title="Code Block"
+                  isActive={editorState?.isCodeBlock}
+                >
+                  <FaCode />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+                  title="Horizontal Rule"
+                  isActive={false}
+                >
+                  <FaMinus />
+                </ToolbarButton>
+
+                <Separator />
+
+                {/* Indentation */}
+                <ToolbarButton
+                  onClick={() => {
+                    // Check if in list
+                    if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+                      editor?.chain().focus().sinkListItem('listItem').run();
+                    }
+                  }}
+                  title="Indent (Tab)"
+                  isActive={false}
+                >
+                  <FaIndent />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => {
+                    // Check if in list
+                    if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+                      editor?.chain().focus().liftListItem('listItem').run();
+                    }
+                  }}
+                  title="Outdent (Shift + Tab)"
+                  isActive={false}
+                >
+                  <FaOutdent />
+                </ToolbarButton>
+
+                <Separator />
+
+                {/* History */}
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().undo().run()}
+                  title="Undo (Ctrl + Z)"
+                  isActive={false}
+                >
+                  <FaUndo />
+                </ToolbarButton>
+
+                <ToolbarButton
+                  onClick={() => editor?.chain().focus().redo().run()}
+                  title="Redo (Ctrl + Shift + Z)"
+                  isActive={false}
+                >
+                  <FaRedo />
+                </ToolbarButton>
+              </div>
+            </div>
+
+            {/* Editor Area */}
+            <div className="flex-1 p-8 overflow-auto bg-gray-100 dark:bg-gray-900 flex justify-center">
+              <div
+                className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 mx-auto transition-all duration-200"
+                style={{
+                  width: '21cm',
+                  minHeight: '29.7cm',
+                  fontFamily: 'Arial, sans-serif'
                 }}
-                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+                onClick={() => editor?.chain().focus().run()}
               >
-                Insert
-              </button>
+                <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </>
-  );
-});
+          {/* Link Modal */}
+          {showLinkModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Insert Link</h3>
+                <input
+                  type="url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowLinkModal(false)}
+                    className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (linkUrl) {
+                        editor?.chain().focus().setLink({ href: linkUrl }).run();
+                      }
+                      setShowLinkModal(false);
+                      setLinkUrl('');
+                    }}
+                    className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    Insert
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    });
 
-export default MainEditor;
+  export default MainEditor;

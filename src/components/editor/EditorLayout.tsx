@@ -225,6 +225,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             onItemClick={handleTOCItemClick}
             onItemRename={handleTOCItemRename}
             onItemDelete={handleTOCItemDelete}
+            onItemMove={(itemId, targetId, position) => {
+              if (editorRef.current) {
+                editorRef.current.handleTOCAction('move', itemId, { targetId, position });
+              }
+            }}
           />
         </aside>
 
@@ -377,19 +382,21 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             />
             <div className="flex-1"></div>
 
-            {/* Bottom action buttons
-            <button 
+            {/* Bottom action buttons */}
+            <button
+              onClick={() => handleSave(false)}
               className="flex h-12 w-12 items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Sauvegarder"
             >
               <FaSave className="text-xl" />
             </button>
-            <button 
+            <button
+              onClick={() => handleSave(true)}
               className="flex h-12 w-12 items-center justify-center rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors"
               title="Publier"
             >
               <FaPaperPlane className="text-xl" />
-            </button> */}
+            </button>
           </div>
         </div>
       </div>

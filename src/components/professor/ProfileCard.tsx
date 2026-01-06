@@ -57,7 +57,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           university: editedProfessor.university,
           grade: editedProfessor.grade,
           certification: editedProfessor.certification,
-          photoUrl: editedProfessor.photoUrl,
+          photoUrl: editedProfessor.photoUrl ? editedProfessor.photoUrl : defaultAvatar,
         };
 
         await fetch(`${OpenAPI.BASE}/users/${editedProfessor.id}`, {

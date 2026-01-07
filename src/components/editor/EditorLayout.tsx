@@ -174,6 +174,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     // Appel au service backend
     console.log("Saving course...", { publish, silent });
     const response = await CourseControllerService.createCourse(authorId, requestBody);
+    alert('Sauvegarde réussie !');
     console.log("Réponse du backend :", response.data);
     
     // Succès : confirmation + mise à jour de l'ID courant

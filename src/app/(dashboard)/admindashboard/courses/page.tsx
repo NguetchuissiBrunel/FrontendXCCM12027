@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaClock, FaTimesCircle, FaFileAlt } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt } from 'react-icons/fa';
 import { AdminService } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -44,7 +44,7 @@ export default function AdminCoursesPage() {
             const coursesData = res.data || [];
             setCourses(coursesData);
 
-            // Calculate stats
+            // Calcul des statistiques basé sur les données réelles de l'API
             setStats({
                 total: coursesData.length,
                 active: coursesData.filter((c: any) => c.status === 'PUBLISHED').length,
@@ -53,6 +53,7 @@ export default function AdminCoursesPage() {
             });
         } catch (error) {
             console.error("Error fetching courses:", error);
+            toast.error("Erreur lors de la récupération des cours");
             setCourses([]);
         } finally {
             setLoading(false);
@@ -74,13 +75,14 @@ export default function AdminCoursesPage() {
                         onClick={async () => {
                             toast.dismiss(t.id);
                             try {
+                                // Appel API réel
                                 await AdminService.deleteCourse(courseId);
                                 toast.success("Cours supprimé avec succès");
+                                // Rafraîchissement complet depuis le serveur
                                 fetchCourses();
                             } catch (error) {
                                 console.error("Error deleting course:", error);
-                                toast.error("Erreur lors de la suppression");
-                                setCourses(courses.filter(c => c.id !== courseId));
+                                toast.error("Erreur lors de la suppression sur le serveur");
                             }
                         }}
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold"
@@ -102,9 +104,13 @@ export default function AdminCoursesPage() {
         return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${badge.color}`}>{badge.label}</span>;
     };
 
-    const filteredCourses = courses.filter(c =>
-        `${c.title} ${c.author?.firstName} ${c.author?.lastName} ${c.category}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredCourses = courses.filter(c => {
+        const title = c.title || '';
+        const authorName = `${c.author?.firstName || ''} ${c.author?.lastName || ''}`;
+        const category = c.category || '';
+
+        return (title + authorName + category).toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     return (
         <div className="space-y-6">
@@ -177,7 +183,7 @@ export default function AdminCoursesPage() {
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Auteur</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Catégorie</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Statut</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Enrollements</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Inscrits</th>
                                     <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>

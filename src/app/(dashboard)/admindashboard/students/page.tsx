@@ -29,7 +29,6 @@ function StudentsList() {
         fetchStudents();
         if (searchParams.get('add') === 'true') {
             setIsModalOpen(true);
-            // Clean up URL
             const newParams = new URLSearchParams(searchParams.toString());
             newParams.delete('add');
             router.replace(`/admindashboard/students?${newParams.toString()}`);
@@ -43,6 +42,7 @@ function StudentsList() {
             setStudents(res.data || []);
         } catch (error) {
             console.error("Error fetching students:", error);
+            toast.error("Impossible de charger la liste des étudiants");
             setStudents([]);
         } finally {
             setLoading(false);
@@ -69,7 +69,6 @@ function StudentsList() {
                                 fetchStudents();
                             } catch (error) {
                                 toast.error("Erreur lors de la suppression");
-                                setStudents(students.filter(s => s.id !== userId));
                             }
                         }}
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold"
@@ -85,24 +84,20 @@ function StudentsList() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            try {
-                await AuthControllerService.register({
-                    ...formData,
-                    role: RegisterRequest.role.STUDENT
-                });
-            } catch {
-                console.warn("⚠️ Échec API, ajout en mode Mock local");
-                // Ajouter aux données mock
-                AdminService.addMockUser({
-                    ...formData,
-                    role: 'student' as any
-                } as any);
-            }
+            // Suppression de 'role' car StudentRegisterRequest ne l'accepte pas
+            await AdminService.registerStudent({
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                password: formData.password,
+                university: formData.university
+                // On ne met pas "role: 'STUDENT'" ici
+            });
 
             toast.success("Étudiant ajouté avec succès");
             setIsModalOpen(false);
             setFormData({ firstName: '', lastName: '', email: '', password: '', university: '' });
-            // Force refresh after a small delay to ensure backend has processed
+
             setTimeout(() => fetchStudents(), 500);
         } catch (error: any) {
             toast.error(error?.message || "Erreur lors de la création");
@@ -393,12 +388,6 @@ function StudentsList() {
                                     <div className="space-y-6">
                                         <div>
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Spécialisation</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
-                                                {selectedUser.specialization || 'Non spécifiée'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Étudiant</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.specialization || 'Non spécifiée'}
                                             </p>

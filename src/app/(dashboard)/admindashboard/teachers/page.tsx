@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate } from 'react-icons/fa';
-import { AdminService, AuthControllerService, RegisterRequest, User } from '@/lib';
+import { AdminService, User } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,6 +42,7 @@ function TeachersList() {
             setTeachers(res.data || []);
         } catch (error) {
             console.error("Error fetching teachers:", error);
+            toast.error("Erreur lors du chargement des enseignants");
             setTeachers([]);
         } finally {
             setLoading(false);
@@ -68,7 +69,6 @@ function TeachersList() {
                                 fetchTeachers();
                             } catch (error) {
                                 toast.error("Erreur lors de la suppression");
-                                setTeachers(teachers.filter(t => t.id !== userId));
                             }
                         }}
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold"
@@ -84,29 +84,24 @@ function TeachersList() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            try {
-                const { subjects: subjectsStr, ...restOfForm } = formData;
-                await AuthControllerService.register({
-                    ...restOfForm,
-                    role: RegisterRequest.role.TEACHER,
-                    specialization: subjectsStr,
-                    subjects: subjectsStr ? subjectsStr.split(',').map(s => s.trim()) : []
-                });
-            } catch {
-                console.warn("⚠️ Échec API, ajout en mode Mock local");
-                AdminService.addMockUser({
-                    ...formData,
-                    role: 'teacher' as any,
-                    specialization: formData.subjects
-                } as any);
-            }
+            // On envoie uniquement les propriétés connues par l'interface TeacherRegisterRequest
+            await AdminService.registerTeacher({
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                password: formData.password,
+                // On transforme la chaîne de caractères en tableau pour le champ 'subjects'
+                subjects: formData.subjects ? formData.subjects.split(',').map(s => s.trim()) : []
+            });
 
             toast.success("Enseignant ajouté avec succès");
             setIsModalOpen(false);
             setFormData({ firstName: '', lastName: '', email: '', password: '', subjects: '' });
-            // Force refresh after a small delay to ensure backend has processed
+
+            // Rafraîchissement des données
             setTimeout(() => fetchTeachers(), 500);
         } catch (error: any) {
+            console.error(error);
             toast.error(error?.message || "Erreur lors de la création");
         } finally {
             setIsSubmitting(false);
@@ -114,7 +109,7 @@ function TeachersList() {
     };
 
     const filteredTeachers = teachers.filter(t =>
-        `${t.firstName} ${t.lastName} ${t.email} ${t.subjects}`.toLowerCase().includes(searchTerm.toLowerCase())
+        `${t.firstName} ${t.lastName} ${t.email} ${t.subjects || t.specialization || ''}`.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -122,7 +117,7 @@ function TeachersList() {
             <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
                 <div>
                     <h1 className="text-2xl font-bold dark:text-white">Gestion des Enseignants</h1>
-                    <p className="text-slate-500 dark:text-slate-400">Liste des {teachers.length} enseignants inscrits.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{teachers.length} enseignants inscrits</p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
@@ -185,7 +180,7 @@ function TeachersList() {
                                         {teacher.email}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                                        {teacher.subjects ? (Array.isArray(teacher.subjects) ? teacher.subjects.join(', ') : teacher.subjects) : 'N/A'}
+                                        {teacher.subjects ? (Array.isArray(teacher.subjects) ? teacher.subjects.join(', ') : teacher.subjects) : (teacher.specialization || 'N/A')}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <button
@@ -193,7 +188,7 @@ function TeachersList() {
                                                 e.stopPropagation();
                                                 handleDelete(teacher.id!);
                                             }}
-                                            className="p-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                                            className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                         >
                                             <FaTrash />
                                         </button>
@@ -376,26 +371,14 @@ function TeachersList() {
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matières</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
                                                 <FaBookOpen className="mr-2 text-slate-400" />
-                                                {selectedUser.subjects || 'Non spécifiées'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Spécialisation</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
-                                                {selectedUser.specialization || 'Non spécifiée'}
+                                                {selectedUser.subjects ? (Array.isArray(selectedUser.subjects) ? selectedUser.subjects.join(', ') : selectedUser.subjects) : (selectedUser.specialization || 'Non spécifiées')}
                                             </p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Certification</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
-                                                {selectedUser.certification || 'Non spécifiée'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Enseignant</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ville</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.city || 'Non spécifiée'}
                                             </p>
@@ -408,7 +391,7 @@ function TeachersList() {
                 )}
             </AnimatePresence>
             <Toaster position="top-right" />
-        </div >
+        </div>
     );
 }
 

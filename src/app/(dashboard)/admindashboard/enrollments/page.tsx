@@ -43,11 +43,11 @@ export default function AdminEnrollmentsPage() {
         setLoading(true);
         try {
             const res = await AdminService.getAllEnrollments();
+            // L'API retourne { data: [...] } d'après votre AdminService refactorisé
             const enrollmentsData = res.data || [];
 
             setEnrollments(enrollmentsData);
 
-            // Calculate stats
             setStats({
                 total: enrollmentsData.length,
                 pending: enrollmentsData.filter((e: any) => e.status === 'PENDING').length,
@@ -56,6 +56,7 @@ export default function AdminEnrollmentsPage() {
             });
         } catch (error) {
             console.error("Error fetching enrollments:", error);
+            toast.error("Erreur lors de la récupération des inscriptions");
             setEnrollments([]);
         } finally {
             setLoading(false);
@@ -77,12 +78,10 @@ export default function AdminEnrollmentsPage() {
                         onClick={async () => {
                             toast.dismiss(t.id);
                             try {
-                                // TODO: Replace with actual API call
-                                // await AdminService.approveEnrollment(enrollmentId);
-                                setEnrollments(enrollments.map(e =>
-                                    e.id === enrollmentId ? { ...e, status: 'APPROVED' } : e
-                                ));
+                                // APPEL API RÉEL
+                                await AdminService.approveEnrollment(enrollmentId);
                                 toast.success("Enrollement approuvé avec succès");
+                                // On rafraîchit la liste pour avoir les données à jour du serveur
                                 fetchEnrollments();
                             } catch (error) {
                                 console.error("Error approving enrollment:", error);
@@ -113,12 +112,10 @@ export default function AdminEnrollmentsPage() {
                         onClick={async () => {
                             toast.dismiss(t.id);
                             try {
-                                // TODO: Replace with actual API call
-                                // await AdminService.rejectEnrollment(enrollmentId);
-                                setEnrollments(enrollments.map(e =>
-                                    e.id === enrollmentId ? { ...e, status: 'REJECTED' } : e
-                                ));
+                                // APPEL API RÉEL
+                                await AdminService.rejectEnrollment(enrollmentId);
                                 toast.success("Enrollement rejeté");
+                                // On rafraîchit la liste
                                 fetchEnrollments();
                             } catch (error) {
                                 console.error("Error rejecting enrollment:", error);
@@ -150,7 +147,10 @@ export default function AdminEnrollmentsPage() {
     };
 
     const filteredEnrollments = enrollments.filter(e => {
-        const matchesSearch = `${e.student.firstName} ${e.student.lastName} ${e.course.title}`.toLowerCase().includes(searchTerm.toLowerCase());
+        // Ajout de vérifications de sécurité pour éviter les erreurs si l'objet student ou course est manquant
+        const studentName = `${e.student?.firstName || ''} ${e.student?.lastName || ''}`.toLowerCase();
+        const courseTitle = (e.course?.title || '').toLowerCase();
+        const matchesSearch = studentName.includes(searchTerm.toLowerCase()) || courseTitle.includes(searchTerm.toLowerCase());
         const matchesFilter = filterStatus === 'ALL' || e.status === filterStatus;
         return matchesSearch && matchesFilter;
     });
@@ -212,46 +212,22 @@ export default function AdminEnrollmentsPage() {
                     />
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => setFilterStatus('ALL')}
-                        className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'ALL'
-                            ? 'bg-purple-600 text-white shadow-lg'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                            }`}
-                    >
-                        Tous
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('PENDING')}
-                        className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'PENDING'
-                            ? 'bg-orange-600 text-white shadow-lg'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                            }`}
-                    >
-                        En Attente
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('APPROVED')}
-                        className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'APPROVED'
-                            ? 'bg-green-600 text-white shadow-lg'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                            }`}
-                    >
-                        Approuvés
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('REJECTED')}
-                        className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'REJECTED'
-                            ? 'bg-red-600 text-white shadow-lg'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                            }`}
-                    >
-                        Rejetés
-                    </button>
+                    {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((status) => (
+                        <button
+                            key={status}
+                            onClick={() => setFilterStatus(status)}
+                            className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === status
+                                ? (status === 'ALL' ? 'bg-purple-600' : status === 'PENDING' ? 'bg-orange-600' : status === 'APPROVED' ? 'bg-green-600' : 'bg-red-600') + ' text-white shadow-lg'
+                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                }`}
+                        >
+                            {status === 'ALL' ? 'Tous' : status === 'PENDING' ? 'En Attente' : status === 'APPROVED' ? 'Approuvés' : 'Rejetés'}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Enrollments Table */}
+            {/* Table/Content */}
             {loading ? (
                 <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
@@ -290,9 +266,9 @@ export default function AdminEnrollmentsPage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-slate-900 dark:text-white">
-                                                        {enrollment.student.firstName} {enrollment.student.lastName}
+                                                        {enrollment.student?.firstName} {enrollment.student?.lastName}
                                                     </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{enrollment.student.email}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{enrollment.student?.email}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -300,13 +276,15 @@ export default function AdminEnrollmentsPage() {
                                             <div className="flex items-center gap-2">
                                                 <FaBook className="text-purple-600 dark:text-purple-400" size={16} />
                                                 <div>
-                                                    <p className="font-medium text-slate-900 dark:text-white">{enrollment.course.title}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{enrollment.course.category}</p>
+                                                    <p className="font-medium text-slate-900 dark:text-white">{enrollment.course?.title}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{enrollment.course?.category}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <p className="text-sm text-slate-600 dark:text-slate-400">{enrollment.enrolledAt}</p>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                                                {enrollment.enrolledAt ? new Date(enrollment.enrolledAt).toLocaleDateString() : 'N/A'}
+                                            </p>
                                         </td>
                                         <td className="px-6 py-4">
                                             {getStatusBadge(enrollment.status)}

@@ -141,11 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       let response;
       try {
+        console.log('📡 Appel API login...');
         response = await AuthControllerService.login({
           email,
           password,
         });
-        console.log('🔐 Réponse de l\'API:', response);
+        console.log('✅ Réponse brute API reçue:', response);
       } catch (apiError: any) {
         console.warn('⚠️ Échec de l\'API de connexion, vérification du mode Mock pour Admin...');
         // Fallback pour Admin si l'API échoue (utile si les endpoints ne sont pas prêts)
@@ -172,13 +173,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (!response || !response.data) {
-        throw new Error('Erreur de connexion. veuillez réessayer.');
+      if (!response) {
+        throw new Error('Aucune réponse du serveur. Veuillez vérifier votre connexion.');
       }
-      const authData: AuthenticationResponse = response.data;
 
-      if (!authData.token) {
-        throw new Error('Token manquant dans la réponse');
+      // Supporter à la fois le format enveloppé { data: ... } et le format direct { token: ... }
+      const authData = ((response as any).data || response) as AuthenticationResponse;
+      console.log('🎫 Données auth extraites:', { ...authData, token: authData.token ? '***' : 'manquant' });
+
+      if (!authData || !authData.token) {
+        console.error('❌ Structure de réponse invalide ou token manquant:', response);
+        const errorMsg = (response as any)?.message || 'Erreur : Le serveur n\'a pas renvoyé de jeton de session.';
+        throw new Error(errorMsg);
       }
 
       // Configurer le token
@@ -231,6 +237,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = (): void => {
     console.log('🚪 Déconnexion');
 
+    // Vérifier le rôle avant de nettoyer
+    const isAdmin = user?.role === 'admin';
+
     clearAuthToken();
     setUser(null);
     setToken(null);
@@ -239,8 +248,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userRole');
 
-    // Rediriger vers la page de connexion
-    router.push('/login');
+    // Rediriger vers la page de connexion appropriée
+    router.push(isAdmin ? '/admin/login' : '/login');
   };
 
   // ==========================================

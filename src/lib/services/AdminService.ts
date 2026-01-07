@@ -4,6 +4,10 @@ import { CancelablePromise } from '../core/CancelablePromise';
 import type { User } from '../models/User';
 import type { CourseResponse } from '../models/CourseResponse';
 import type { ApiResponseVoid } from '../models/ApiResponseVoid';
+import type { RegisterRequest } from '../models/RegisterRequest';
+import type { StudentRegisterRequest } from '../models/StudentRegisterRequest';
+import type { TeacherRegisterRequest } from '../models/TeacherRegisterRequest';
+import type { ApiResponseAuthenticationResponse } from '../models/ApiResponseAuthenticationResponse';
 
 const MOCK_STORAGE_KEYS = {
     STUDENTS: 'mock_students',
@@ -47,12 +51,33 @@ export class AdminService {
      * @returns any OK
      * @throws ApiError
      */
+    public static getAllUsers(): CancelablePromise<{ data: User[] }> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'GET',
+                    url: '/api/users',
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Mode Mock pour Tous les Utilisateurs');
+                const students = getFromStorage(MOCK_STORAGE_KEYS.STUDENTS, INITIAL_MOCK_DATA.students);
+                const teachers = getFromStorage(MOCK_STORAGE_KEYS.TEACHERS, INITIAL_MOCK_DATA.teachers);
+                resolve({ data: [...students, ...teachers] as User[] });
+            }
+        });
+    }
+
+    /**
+     * @returns any OK
+     * @throws ApiError
+     */
     public static getAllStudents(): CancelablePromise<{ data: User[] }> {
         return new CancelablePromise(async (resolve) => {
             try {
                 const result = await __request(OpenAPI, {
                     method: 'GET',
-                    url: '/api/v1/admin/students',
+                    url: '/api/users/students',
                 });
                 resolve(result as any);
             } catch (e) {
@@ -72,7 +97,7 @@ export class AdminService {
             try {
                 const result = await __request(OpenAPI, {
                     method: 'GET',
-                    url: '/api/v1/admin/teachers',
+                    url: '/api/users/teachers',
                 });
                 resolve(result as any);
             } catch (e) {
@@ -93,7 +118,7 @@ export class AdminService {
             try {
                 const result = await __request(OpenAPI, {
                     method: 'DELETE',
-                    url: '/api/v1/admin/users/{userId}',
+                    url: '/api/users/{userId}',
                     path: { 'userId': userId },
                 });
                 resolve(result as any);
@@ -152,6 +177,154 @@ export class AdminService {
                 const updatedCourses = courses.filter((c: any) => c.id !== courseId);
                 saveToStorage(MOCK_STORAGE_KEYS.COURSES, updatedCourses);
                 resolve({ success: true } as any);
+            }
+        });
+    }
+
+    /**
+     * @param userId
+     * @returns User OK
+     * @throws ApiError
+     */
+    public static getStudentDetails(userId: string): CancelablePromise<User> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'GET',
+                    url: '/api/users/students/{userId}',
+                    path: { 'userId': userId },
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Détails Mock pour Étudiant', userId);
+                const students = getFromStorage(MOCK_STORAGE_KEYS.STUDENTS, INITIAL_MOCK_DATA.students);
+                const student = students.find((s: any) => s.id === userId);
+                resolve(student as User);
+            }
+        });
+    }
+
+    /**
+     * @param userId
+     * @returns User OK
+     * @throws ApiError
+     */
+    public static getTeacherDetails(userId: string): CancelablePromise<User> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'GET',
+                    url: '/api/users/teachers/{userId}',
+                    path: { 'userId': userId },
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Détails Mock pour Enseignant', userId);
+                const teachers = getFromStorage(MOCK_STORAGE_KEYS.TEACHERS, INITIAL_MOCK_DATA.teachers);
+                const teacher = teachers.find((t: any) => t.id === userId);
+                resolve(teacher as User);
+            }
+        });
+    }
+
+    /**
+     * @returns User OK
+     * @throws ApiError
+     */
+    public static getCurrentUser(): CancelablePromise<User> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'GET',
+                    url: '/api/users/me',
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Utilisateur Mock (me)');
+                if (typeof window !== 'undefined') {
+                    const userData = localStorage.getItem('currentUser');
+                    if (userData) resolve(JSON.parse(userData));
+                }
+                resolve({ id: '0', firstName: 'Admin', lastName: 'XCCM', email: 'admin@xccm.tn', role: 'admin' } as User);
+            }
+        });
+    }
+
+    /**
+     * @param requestBody
+     * @returns ApiResponseAuthenticationResponse OK
+     * @throws ApiError
+     */
+    public static register(requestBody: RegisterRequest): CancelablePromise<ApiResponseAuthenticationResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/register',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * @param requestBody
+     * @returns ApiResponseAuthenticationResponse OK
+     * @throws ApiError
+     */
+    public static registerTeacher(requestBody: TeacherRegisterRequest): CancelablePromise<ApiResponseAuthenticationResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/register/teacher',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * @param requestBody
+     * @returns ApiResponseAuthenticationResponse OK
+     * @throws ApiError
+     */
+    public static registerStudent(requestBody: StudentRegisterRequest): CancelablePromise<ApiResponseAuthenticationResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/register/student',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Get admin statistics
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getAdminStats(): CancelablePromise<any> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'GET',
+                    url: '/api/v1/admin/stats',
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Mode Mock pour Statistiques');
+                const students = getFromStorage(MOCK_STORAGE_KEYS.STUDENTS, INITIAL_MOCK_DATA.students);
+                const teachers = getFromStorage(MOCK_STORAGE_KEYS.TEACHERS, INITIAL_MOCK_DATA.teachers);
+                const courses = getFromStorage(MOCK_STORAGE_KEYS.COURSES, INITIAL_MOCK_DATA.courses);
+                resolve({
+                    data: {
+                        totalUsers: students.length + teachers.length,
+                        studentCount: students.length,
+                        teacherCount: teachers.length,
+                        totalCourses: courses.length,
+                        activeCourses: courses.length,
+                        draftCourses: 0,
+                        archivedCourses: 0,
+                        totalEnrollments: 0,
+                        pendingEnrollments: 0,
+                        approvedEnrollments: 0,
+                        rejectedEnrollments: 0
+                    }
+                });
             }
         });
     }

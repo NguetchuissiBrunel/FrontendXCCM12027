@@ -30,12 +30,14 @@ export function middleware(request: NextRequest) {
   const isDashboardStudent = pathname.startsWith('/etudashboard');
   const isDashboardAdmin = pathname.startsWith('/admindashboard');
   const isDashboardTeacher = pathname.startsWith('/profdashboard') || pathname.startsWith('/editor');
-  const isProtected = isDashboardStudent || isDashboardTeacher || isDashboardAdmin;
+  // Admin dashboard is no longer protected - removed from isProtected check
+  const isProtected = isDashboardStudent || isDashboardTeacher;
 
   // 1. No token case
   if (!token) {
     if (isProtected) {
-      const loginUrl = new URL('/login', request.url);
+      const loginPath = isDashboardAdmin ? '/admin/login' : '/login';
+      const loginUrl = new URL(loginPath, request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -48,7 +50,8 @@ export function middleware(request: NextRequest) {
 
   if (!payload || isExpired) {
     if (isProtected) {
-      const response = NextResponse.redirect(new URL('/login', request.url));
+      const loginPath = isDashboardAdmin ? '/admin/login' : '/login';
+      const response = NextResponse.redirect(new URL(loginPath, request.url));
       response.cookies.delete('authToken');
       return response;
     }
@@ -79,9 +82,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/etudashboard', request.url));
   }
 
-  if (isDashboardAdmin && !isAdmin) {
-    return NextResponse.redirect(new URL('/admin/login', request.url));
-  }
+  // Admin dashboard protection removed - anyone can access
+  // if (isDashboardAdmin && !isAdmin) {
+  //   return NextResponse.redirect(new URL('/admin/login', request.url));
+  // }
 
   return NextResponse.next();
 }

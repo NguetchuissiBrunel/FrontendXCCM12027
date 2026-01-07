@@ -49,15 +49,35 @@ function TeachersList() {
     };
 
     const handleDelete = async (userId: string) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer cet enseignant ?")) return;
-        try {
-            await AdminService.deleteUser(userId);
-            toast.success("Enseignant supprimé avec succès");
-            fetchTeachers();
-        } catch (error) {
-            toast.error("Erreur lors de la suppression");
-            setTeachers(teachers.filter(t => t.id !== userId));
-        }
+        toast((t) => (
+            <div className="flex flex-col gap-3">
+                <p className="font-bold">Êtes-vous sûr de vouloir supprimer cet enseignant ?</p>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold"
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        onClick={async () => {
+                            toast.dismiss(t.id);
+                            try {
+                                await AdminService.deleteUser(userId);
+                                toast.success("Enseignant supprimé avec succès");
+                                fetchTeachers();
+                            } catch (error) {
+                                toast.error("Erreur lors de la suppression");
+                                setTeachers(teachers.filter(t => t.id !== userId));
+                            }
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold"
+                    >
+                        Supprimer
+                    </button>
+                </div>
+            </div>
+        ), { duration: Infinity });
     };
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -84,7 +104,8 @@ function TeachersList() {
             toast.success("Enseignant ajouté avec succès");
             setIsModalOpen(false);
             setFormData({ firstName: '', lastName: '', email: '', password: '', subjects: '' });
-            fetchTeachers();
+            // Force refresh after a small delay to ensure backend has processed
+            setTimeout(() => fetchTeachers(), 500);
         } catch (error: any) {
             toast.error(error?.message || "Erreur lors de la création");
         } finally {
@@ -374,27 +395,12 @@ function TeachersList() {
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ville</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Enseignant</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.city || 'Non spécifiée'}
                                             </p>
                                         </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">ID Utilisateur</label>
-                                            <p className="text-slate-500 dark:text-slate-400 text-sm font-mono mt-1">
-                                                {selectedUser.id}
-                                            </p>
-                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="mt-10 border-t border-slate-100 dark:border-slate-800 pt-6 flex justify-end">
-                                    <button
-                                        onClick={() => setIsDetailsOpen(false)}
-                                        className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-2.5 rounded-xl font-bold transition-all"
-                                    >
-                                        Fermer
-                                    </button>
                                 </div>
                             </div>
                         </motion.div>

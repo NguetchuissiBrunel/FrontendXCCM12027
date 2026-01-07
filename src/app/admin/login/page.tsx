@@ -43,9 +43,21 @@ const AdminLoginPage = () => {
             router.push('/admindashboard');
         } catch (error: any) {
             console.error("Erreur lors de la connexion admin:", error);
+
             let errorMessage = "Une erreur est survenue. Veuillez réessayer.";
-            if (error?.status === 401) errorMessage = "Email ou mot de passe incorrect";
-            else if (error?.status === 403) errorMessage = "Accès refusé";
+
+            if (error?.body?.message) {
+                errorMessage = error.body.message;
+            } else if (error?.message) {
+                errorMessage = error.message;
+            } else if (error?.status === 401) {
+                errorMessage = "Email ou mot de passe incorrect";
+            } else if (error?.status === 403) {
+                errorMessage = "Accès refusé";
+            } else if (error?.status === 500) {
+                errorMessage = "Erreur interne du serveur (500)";
+            }
+
             setErrors({ submit: errorMessage });
             toast.error(errorMessage);
         } finally {
@@ -115,11 +127,6 @@ const AdminLoginPage = () => {
                 <Link href="/admin/register" className="block text-sm text-purple-600 hover:text-purple-700 font-semibold transition-colors">
                     Créer un compte administrateur
                 </Link>
-                <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-                    <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-                        Retour à la connexion standard
-                    </Link>
-                </div>
             </div>
 
             {errors.submit && <p className="text-red-500 text-xs text-center mt-2">{errors.submit}</p>}

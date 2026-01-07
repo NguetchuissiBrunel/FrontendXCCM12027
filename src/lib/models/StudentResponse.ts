@@ -5,29 +5,17 @@
 /**
  * Données de la réponse
  */
-export type User = {
+export type StudentResponse = {
     id?: string;
     email?: string;
-    password?: string;
-    role?: User.role;
     firstName?: string;
     lastName?: string;
     photoUrl?: string;
     city?: string;
     university?: string;
     specialization?: string;
-    grade?: string;
-    subjects?: string;
-    certification?: string;
     registrationDate?: string;
-    lastLogin?: string;
-    updatedAt?: string;
+    active?: boolean;
+    verified?: boolean;
 };
-export namespace User {
-    export enum role {
-        STUDENT = 'student',
-        TEACHER = 'teacher',
-        ADMIN = 'admin',
-    }
-}
 

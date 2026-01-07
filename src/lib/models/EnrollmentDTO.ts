@@ -6,6 +6,7 @@
  * Données de la réponse
  */
 export type EnrollmentDTO = {
+    id?: number;
     courseId?: number;
     userId?: string;
     enrolledAt?: string;

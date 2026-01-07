@@ -1,8 +1,9 @@
 // src/components/layout/Footer.tsx
 import Link from 'next/link';
 import Image from 'next/image';
+import NewsletterForm from '@/components/common/NewsletterForm';
 
-// Icônes
+// Icônes (garder les mêmes)
 const PhoneIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.5l1 4-3.5 1.5M16 12l2.5-3.5 4 1-1.5 3.5m-14 0l-3.5 1.5 4 1 2.5-3.5m10 3.5l-3.5 1.5 4 1 2.5-3.5m-3 3.5l-2.5 3.5-4-1 1.5-3.5m-7 3.5L5 19a2 2 0 002 2h3.5l1-4-3.5-1.5zM12 12c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5z" /></svg>
 );
@@ -22,7 +23,7 @@ const Footer = () => {
           {/* Section 1: Brand & Contact Info */}
           <div className="space-y-6 md:col-span-2 lg:col-span-1 lg:border-r lg:border-gray-700 lg:pr-6 xl:pr-8">
             <Link href="/" className="flex items-center">
-            <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
+              <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
                 <Image 
                   src="/images/Capture.png" 
                   alt="Logo XCCM" 
@@ -70,7 +71,6 @@ const Footer = () => {
                   >
                     Tarification
                   </Link>
-                   
                 </li>              
                </ul>
             </div>
@@ -96,26 +96,17 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Section 4: Newsletter */}
+          {/* Section 4: Newsletter - MODIFIÉE */}
           <div className="md:col-span-2 lg:col-span-1 lg:border-l lg:border-gray-700 lg:pl-6 xl:pl-8">
-            <h3 className="text-lg font-semibold text-white mb-4">Abonnez-vous à notre Newsletter</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Abonnez-vous à notre Newsletter
+            </h3>
             <p className="text-sm text-gray-400 mb-6 max-w-md">
               Recevez les dernières nouvelles, mises à jour et offres spéciales directement dans votre boîte de réception.
             </p>
-            <form className="flex flex-col space-y-4"> 
-              <input
-                type="email"
-                placeholder="Votre adresse email"
-                aria-label="Adresse email pour la newsletter"
-                className="w-full min-w-0 appearance-none rounded-lg border border-transparent bg-gray-700 dark:bg-gray-800 py-3 px-4 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-colors shadow-inner"
-              />
-              <button
-                type="submit"
-                className="w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white py-3 px-6 rounded-lg transition-colors font-medium shadow-md text-sm"
-              >
-                S'abonner
-              </button>
-            </form>
+            
+            {/* Utilisation du composant NewsletterForm */}
+            <NewsletterForm />
           </div>
         </div>
         

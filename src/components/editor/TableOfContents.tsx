@@ -17,6 +17,7 @@ interface TableOfContentsProps {
   items: TableOfContentsItem[];
   onItemClick?: (itemId: string) => void;
   // Props for compatibility with new feature set if we want to support editing from TOC (optional)
+  onItemMove?: (itemId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   onAddItem?: (type: ItemType, title?: string, parentId?: string) => void;
   onItemRename?: (itemId: string, newTitle: string) => void;
   onItemDelete?: (itemId: string) => void;
@@ -31,6 +32,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   onAddItem,
   onItemRename,
   onItemDelete,
+  onItemMove,
   selectedText = ''
 }) => {
   const [tocItems, setTocItems] = useState<TableOfContentsItem[]>(initialItems || []);
@@ -426,51 +428,36 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
     if (!draggedItem || draggedItem.id === targetItem.id) return;
 
-    // Vérifier si l'élément peut être déposé à cet endroit
-    const canDrop = canDropItem(draggedItem, targetItem);
+    // Determine drop type
+    const isSibling = draggedItem.type === targetItem.type;
+    const isChild = getAllowedChildTypes(targetItem.type).includes(draggedItem.type);
 
-    if (canDrop) {
-      setTocItems(prevItems => {
-        // Supprimer l'élément de sa position actuelle
-        const removeSource = (items: TableOfContentsItem[]): TableOfContentsItem[] => {
-          return items.filter(item => item.id !== draggedItem.id).map(item => ({
-            ...item,
-            children: removeSource(item.children)
-          }));
-        };
+    if (isSibling || isChild) {
+      if (onItemMove) {
+        // If same type, we assume reorder. 
+        // For simplicity in this interaction (without accurate Y calculation inside the item),
+        // we'll default to 'before' for siblings (placing above) and 'inside' for children.
+        // Ideally we'd measure e.nativeEvent.offsetY to decide before/after.
+        // Let's try to be smarter? 
+        // If dropped on top half -> before, bottom half -> after?
+        // We can access e.currentTarget.getBoundingClientRect().
 
-        // Ajouter l'élément à sa nouvelle position
-        const addToTarget = (items: TableOfContentsItem[], targetId: string): TableOfContentsItem[] => {
-          return items.map(item => {
-            if (item.id === targetId) {
-              const isDroppableAsChild = getAllowedChildTypes(item.type).includes(draggedItem.type);
+        let position: 'before' | 'after' | 'inside' = 'inside';
 
-              // Si l'élément peut être un enfant de la cible, l'ajouter comme enfant
-              if (isDroppableAsChild) {
-                const adjustLevel = (item: TableOfContentsItem, newLevel: number): TableOfContentsItem => {
-                  return {
-                    ...item,
-                    level: newLevel,
-                    children: item.children.map(child => adjustLevel(child, newLevel + 1))
-                  };
-                };
+        if (isSibling) {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const y = e.clientY - rect.top;
+          if (y < rect.height / 2) {
+            position = 'before';
+          } else {
+            position = 'after';
+          }
+        } else if (isChild) {
+          position = 'inside';
+        }
 
-                const adjustedItem = adjustLevel(draggedItem, item.level + 1);
-                return { ...item, children: [...item.children, adjustedItem], collapsed: false };
-              }
-              return item;
-            }
-            return { ...item, children: addToTarget(item.children, targetId) };
-          });
-        };
-
-        let updatedItems = removeSource(prevItems);
-        updatedItems = addToTarget(updatedItems, targetItem.id);
-        const renumberedItems = recomputeAllNumbers(updatedItems);
-
-        if (onSave) onSave(renumberedItems);
-        return renumberedItems;
-      });
+        onItemMove(draggedItem.id, targetItem.id, position);
+      }
     }
 
     setDraggedItem(null);
@@ -480,7 +467,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     document.querySelectorAll('.dragging').forEach(el => {
       el.classList.remove('dragging');
     });
-  }, [draggedItem, onSave]);
+  }, [draggedItem, onItemMove]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -494,9 +481,12 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   }, []);
 
   const canDropItem = useCallback((sourceItem: TableOfContentsItem, targetItem: TableOfContentsItem): boolean => {
-    // Vérifier si l'élément source peut être un enfant de l'élément cible
+    // Check if source can be child of target
     const allowedChildTypes = getAllowedChildTypes(targetItem.type);
-    return allowedChildTypes.includes(sourceItem.type);
+    // OR if they are siblings (same type) for reordering
+    const isSibling = sourceItem.type === targetItem.type;
+
+    return allowedChildTypes.includes(sourceItem.type) || isSibling;
   }, []);
 
   const renderItemIcon = (itemType: ItemType) => {

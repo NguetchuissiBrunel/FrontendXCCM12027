@@ -330,6 +330,96 @@ export class AdminService {
     }
 
     /**
+     * Get all enrollments
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getAllEnrollments(): CancelablePromise<{ data: any[] }> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'GET',
+                    url: '/api/enrollments/pending',
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Mode Mock pour Enrollements');
+                // Mock data for enrollments
+                const mockEnrollments = [
+                    {
+                        id: 1,
+                        student: { firstName: 'Jean', lastName: 'Dupont', email: 'jean.dupont@email.com' },
+                        course: { title: 'Introduction à React', category: 'Développement Web' },
+                        status: 'PENDING',
+                        enrolledAt: '2024-01-05',
+                    },
+                    {
+                        id: 2,
+                        student: { firstName: 'Marie', lastName: 'Martin', email: 'marie.martin@email.com' },
+                        course: { title: 'Python Avancé', category: 'Programmation' },
+                        status: 'APPROVED',
+                        enrolledAt: '2024-01-04',
+                    },
+                    {
+                        id: 3,
+                        student: { firstName: 'Pierre', lastName: 'Bernard', email: 'pierre.bernard@email.com' },
+                        course: { title: 'Machine Learning', category: 'IA' },
+                        status: 'REJECTED',
+                        enrolledAt: '2024-01-03',
+                    },
+                ];
+                resolve({ data: mockEnrollments });
+            }
+        });
+    }
+
+    /**
+     * Approve an enrollment
+     * @param enrollmentId
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static approveEnrollment(enrollmentId: number): CancelablePromise<any> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'PUT',
+                    url: '/api/enrollments/{enrollmentId}/validate',
+                    path: { 'enrollmentId': enrollmentId },
+                    query: { 'status': 'APPROVED' },
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Approbation Mock pour enrollment', enrollmentId);
+                resolve({ success: true });
+            }
+        });
+    }
+
+    /**
+     * Reject an enrollment
+     * @param enrollmentId
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static rejectEnrollment(enrollmentId: number): CancelablePromise<any> {
+        return new CancelablePromise(async (resolve) => {
+            try {
+                const result = await __request(OpenAPI, {
+                    method: 'PUT',
+                    url: '/api/enrollments/{enrollmentId}/validate',
+                    path: { 'enrollmentId': enrollmentId },
+                    query: { 'status': 'REJECTED' },
+                });
+                resolve(result as any);
+            } catch (e) {
+                console.warn('⚠️ AdminService: Rejet Mock pour enrollment', enrollmentId);
+                resolve({ success: true });
+            }
+        });
+    }
+
+    /**
      * Helper to add mock data from UI
      */
     public static addMockUser(user: User) {

@@ -42,41 +42,17 @@ export default function AdminEnrollmentsPage() {
     const fetchEnrollments = async () => {
         setLoading(true);
         try {
-            // TODO: Replace with actual API call when available
-            // const res = await AdminService.getAllEnrollments();
-            // Mock data for now
-            const mockEnrollments = [
-                {
-                    id: 1,
-                    student: { firstName: 'Jean', lastName: 'Dupont', email: 'jean.dupont@email.com' },
-                    course: { title: 'Introduction à React', category: 'Développement Web' },
-                    status: 'PENDING',
-                    enrolledAt: '2024-01-05',
-                },
-                {
-                    id: 2,
-                    student: { firstName: 'Marie', lastName: 'Martin', email: 'marie.martin@email.com' },
-                    course: { title: 'Python Avancé', category: 'Programmation' },
-                    status: 'APPROVED',
-                    enrolledAt: '2024-01-04',
-                },
-                {
-                    id: 3,
-                    student: { firstName: 'Pierre', lastName: 'Bernard', email: 'pierre.bernard@email.com' },
-                    course: { title: 'Machine Learning', category: 'IA' },
-                    status: 'REJECTED',
-                    enrolledAt: '2024-01-03',
-                },
-            ];
+            const res = await AdminService.getAllEnrollments();
+            const enrollmentsData = res.data || [];
 
-            setEnrollments(mockEnrollments);
+            setEnrollments(enrollmentsData);
 
             // Calculate stats
             setStats({
-                total: mockEnrollments.length,
-                pending: mockEnrollments.filter((e: any) => e.status === 'PENDING').length,
-                approved: mockEnrollments.filter((e: any) => e.status === 'APPROVED').length,
-                rejected: mockEnrollments.filter((e: any) => e.status === 'REJECTED').length,
+                total: enrollmentsData.length,
+                pending: enrollmentsData.filter((e: any) => e.status === 'PENDING').length,
+                approved: enrollmentsData.filter((e: any) => e.status === 'APPROVED').length,
+                rejected: enrollmentsData.filter((e: any) => e.status === 'REJECTED').length,
             });
         } catch (error) {
             console.error("Error fetching enrollments:", error);
@@ -239,8 +215,8 @@ export default function AdminEnrollmentsPage() {
                     <button
                         onClick={() => setFilterStatus('ALL')}
                         className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'ALL'
-                                ? 'bg-purple-600 text-white shadow-lg'
-                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                            ? 'bg-purple-600 text-white shadow-lg'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                             }`}
                     >
                         Tous
@@ -248,8 +224,8 @@ export default function AdminEnrollmentsPage() {
                     <button
                         onClick={() => setFilterStatus('PENDING')}
                         className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'PENDING'
-                                ? 'bg-orange-600 text-white shadow-lg'
-                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                            ? 'bg-orange-600 text-white shadow-lg'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                             }`}
                     >
                         En Attente
@@ -257,8 +233,8 @@ export default function AdminEnrollmentsPage() {
                     <button
                         onClick={() => setFilterStatus('APPROVED')}
                         className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'APPROVED'
-                                ? 'bg-green-600 text-white shadow-lg'
-                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                            ? 'bg-green-600 text-white shadow-lg'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                             }`}
                     >
                         Approuvés
@@ -266,8 +242,8 @@ export default function AdminEnrollmentsPage() {
                     <button
                         onClick={() => setFilterStatus('REJECTED')}
                         className={`px-4 py-3 rounded-xl font-semibold transition-all ${filterStatus === 'REJECTED'
-                                ? 'bg-red-600 text-white shadow-lg'
-                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                            ? 'bg-red-600 text-white shadow-lg'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                             }`}
                     >
                         Rejetés

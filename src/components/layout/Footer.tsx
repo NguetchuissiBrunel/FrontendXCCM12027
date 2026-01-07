@@ -61,10 +61,18 @@ const Footer = () => {
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Services</h3>
               <ul className="mt-4 space-y-3">
                 <li><Link href="/editor" className="text-sm text-gray-400 hover:text-white transition-colors">Création de Cours</Link></li>
-                <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
+                <li><Link href="/space_coll" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
                 <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Bibliothèque de Contenu</Link></li>
-                <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Tarification</Link></li>
-              </ul>
+                <li>
+                   <Link 
+                    href="/pricing" 
+                    className="text-sm text-gray-400 hover:text-purple-300 transition-colors"
+                  >
+                    Tarification
+                  </Link>
+                   
+                </li>              
+               </ul>
             </div>
 
             <div>

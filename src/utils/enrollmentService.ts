@@ -60,6 +60,24 @@ export class EnrollmentService {
   }
 
   /**
+   * Valider ou rejeter un enrôlement
+   */
+  static async validateEnrollment(enrollmentId: number, status: 'APPROVED' | 'REJECTED'): Promise<void> {
+    await EnrollmentControllerService.validateEnrollment(enrollmentId, status);
+  }
+
+  /**
+   * Obtenir les enrôlements en attente
+   */
+  static async getPendingEnrollments(): Promise<Enrollment[]> {
+    const response = await EnrollmentControllerService.getPendingEnrollments();
+    if (!response.success || !response.data) {
+      return [];
+    }
+    return response.data as unknown as Enrollment[];
+  }
+
+  /**
    * Se désinscrire d'un cours (Non implémenté dans l'API backend actuelle)
    */
   static async unenroll(): Promise<void> {

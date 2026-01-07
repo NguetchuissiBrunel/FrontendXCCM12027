@@ -26,7 +26,7 @@ export default function EnrollmentButton({
   onUnenroll
 }: EnrollmentButtonProps) {
   const { user, isAuthenticated } = useAuth();
-  const { isEnrolled, progress, loading, enroll, unenroll } = useEnrollment(courseId);
+  const { isEnrolled, progress, loading, enroll, unenroll, enrollment } = useEnrollment(courseId);
   const [isLoading, setIsLoading] = useState(false);
 
   // Vérifier si l'utilisateur peut s'inscrire
@@ -127,10 +127,17 @@ export default function EnrollmentButton({
             <span>{user?.role === 'teacher' ? 'Enseignant' : 'Se connecter'}</span>
           </>
         ) : isEnrolled ? (
-          <>
-            <Check className={iconSizes[size]} />
-            <span>{showProgress ? `${progress}% complété` : 'Se désinscrire'}</span>
-          </>
+          enrollment?.status === 'PENDING' ? (
+            <>
+              <Loader2 className={iconSizes[size]} />
+              <span>En attente de validation</span>
+            </>
+          ) : (
+            <>
+              <Check className={iconSizes[size]} />
+              <span>{showProgress ? `${progress}% complété` : 'Se désinscrire'}</span>
+            </>
+          )
         ) : (
           <>
             <BookOpen className={iconSizes[size]} />

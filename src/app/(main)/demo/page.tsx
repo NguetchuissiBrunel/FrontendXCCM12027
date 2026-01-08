@@ -18,19 +18,11 @@ export default function DemoPage() {
                 <div className="relative max-w-4xl mx-auto bg-black rounded-2xl shadow-2xl overflow-hidden aspect-video border-4 border-white dark:border-gray-800">
                     <iframe
                         className="absolute top-0 left-0 w-full h-full"
-                        // Video: NetSuite Supply Chain Control Tower Demo
                         src="https://www.youtube.com/embed/wH2nF_nB0ys?rel=0"
                         title="Démonstration XCCM"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                     ></iframe>
-                    {/* Instructions: To use a local video file:
-                        1. Upload your video (e.g., demo.mp4) to the 'public/videos' folder.
-                        2. Replace this iframe with:
-                        <video controls className="w-full h-full object-cover">
-                            <source src="/videos/demo.mp4" type="video/mp4" />
-                        </video> 
-                    */}
                 </div>
 
                 {/* Features highlight below video */}
@@ -48,8 +40,6 @@ export default function DemoPage() {
                         <p className="text-gray-600 dark:text-gray-400">Adaptez la plateforme à votre image et vos besoins.</p>
                     </div>
                 </div>
-
-
             </div>
         </div>
     );

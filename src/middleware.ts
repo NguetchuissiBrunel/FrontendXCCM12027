@@ -26,15 +26,18 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('authToken')?.value;
 
   // Route categories
-  const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/admin/login' || pathname === '/admin/register';
   const isDashboardStudent = pathname.startsWith('/etudashboard');
+  const isDashboardAdmin = pathname.startsWith('/admindashboard');
   const isDashboardTeacher = pathname.startsWith('/profdashboard') || pathname.startsWith('/editor');
+  // Admin dashboard is no longer protected - removed from isProtected check
   const isProtected = isDashboardStudent || isDashboardTeacher;
 
   // 1. No token case
   if (!token) {
     if (isProtected) {
-      const loginUrl = new URL('/login', request.url);
+      const loginPath = isDashboardAdmin ? '/admin/login' : '/login';
+      const loginUrl = new URL(loginPath, request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -47,7 +50,8 @@ export function middleware(request: NextRequest) {
 
   if (!payload || isExpired) {
     if (isProtected) {
-      const response = NextResponse.redirect(new URL('/login', request.url));
+      const loginPath = isDashboardAdmin ? '/admin/login' : '/login';
+      const response = NextResponse.redirect(new URL(loginPath, request.url));
       response.cookies.delete('authToken');
       return response;
     }
@@ -56,9 +60,13 @@ export function middleware(request: NextRequest) {
 
   // Role identification
   const role = String(payload.role || '').toUpperCase();
+  const isAdmin = role.includes('ADMIN');
   const isTeacher = role.includes('TEACHER') || role.includes('PROFESSOR');
   const isStudent = role.includes('STUDENT');
-  const dashboard = isTeacher ? '/profdashboard' : '/etudashboard';
+
+  let dashboard = '/etudashboard';
+  if (isAdmin) dashboard = '/admindashboard';
+  else if (isTeacher) dashboard = '/profdashboard';
 
   // Redirected authenticated users away from Login/Register
   if (isAuthPage) {
@@ -70,9 +78,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/profdashboard', request.url));
   }
 
-  if (isDashboardTeacher && !isTeacher) {
+  if (isDashboardTeacher && !isTeacher && !isAdmin) {
     return NextResponse.redirect(new URL('/etudashboard', request.url));
   }
+
+  // Admin dashboard protection removed - anyone can access
+  // if (isDashboardAdmin && !isAdmin) {
+  //   return NextResponse.redirect(new URL('/admin/login', request.url));
+  // }
 
   return NextResponse.next();
 }

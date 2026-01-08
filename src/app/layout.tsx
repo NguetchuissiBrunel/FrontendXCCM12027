@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: 'XCCM1 - Plateforme de création de contenu pédagogique',
   description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
 };
-
+export const dynamic = 'force-dynamic';
 import { Suspense } from 'react';
 
 export default function RootLayout({

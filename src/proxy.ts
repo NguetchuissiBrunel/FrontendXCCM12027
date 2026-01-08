@@ -1,4 +1,4 @@
-// middleware.ts
+// src/proxy.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -9,19 +9,14 @@ function decodeJWT(token: string) {
   try {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
+    const jsonPayload = atob(base64);
     return JSON.parse(jsonPayload);
-  } catch {
+  } catch (e) {
     return null;
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('authToken')?.value;
 
@@ -91,5 +86,14 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/etudashboard/:path*', 
+    '/admindashboard/:path*', 
+    '/profdashboard/:path*', 
+    '/editor/:path*',
+    '/login', 
+    '/register',
+    '/admin/login',
+    '/admin/register'
+  ],
 };

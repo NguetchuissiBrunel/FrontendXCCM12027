@@ -10,6 +10,7 @@
  */
 
 'use client';
+export const dynamic = 'force-dynamic';
 
 import EditorLayout from '@/components/editor/EditorLayout';
 import React from 'react';

@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCourses } from '@/hooks/useCourses';
-
 // Composant pour simuler les étoiles de notation
 const StarRating = ({ rating = 5 }: { rating: number }) => (
   <div className="flex text-yellow-400 text-xs">

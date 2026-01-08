@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fa';
 
 import { Heart, Star, Send, Mail, User, MessageSquare, ThumbsUp, Award, Gift, Smile } from 'lucide-react';
+import ContactForm from '@/components/common/ContactForm';
 
 
 // 2. Définir une interface pour vos objets 'helpItems'
@@ -325,142 +326,49 @@ const helpItems: HelpItem[] = useMemo(() => [
       <div className="container bg-purple-100 dark:bg-purple-800 rounded-lg mx-auto px-4 py-8 flex flex-col md:flex-row items-start">
       </div>
       {/* Feedback */}
-      <div className="container w-full bg-white dark:bg-gray-900 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
-        <div className="w-full md:w-1/2">
-          <div className="text-center mb-8">
-            <h2 className="text-4xl text-black dark:text-gray-400 font-bold mb-4 flex items-center justify-center gap-2">
-              <Heart className="text-black dark:text-gray-400 w-10 h-10" />
-              Votre avis nous tient à cœur
-            </h2>
-            <p className="text-black dark:text-gray-500 text-lg">
-              Aidez-nous à améliorer votre expérience en partageant vos impressions
-            </p>
-          </div>
+      // Dans votre ContactPage.tsx, remplacez la section Feedback complètement :
 
-          {/* Stats Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg text-center">
-                <div className="mb-2 text-xl">{stat.icon}</div>
-                <div className="text-lg font-bold dark:text-purple-600 text-purple-900">{stat.value}</div>
-                <div className="text-sm text-black dark:text-gray-400">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Formulaire de feedback */}
-          {submitted ? (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
-              <Smile className="w-16 h-16 text-purple-500 dark:text-purple-400 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-purple-900 dark:text-purple-400 mb-2">
-                Merci pour votre feedback !
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Votre avis est précieux pour nous améliorer.
-              </p>
-              <button
-                onClick={resetForm}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors"
-              >
-                Donner un autre avis
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-              {/* Rating Section */}
-              <div className="mb-6 text-center">
-                <div className="flex justify-center gap-1 mb-3">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="focus:outline-none"
-                    >
-                      <Star
-                        className={`w-8 h-8 transition-colors duration-200 ${
-                          (hoverRating || rating) >= star
-                            ? 'fill-purple-500 text-purple-500 dark:text-purple-400 dark:fill-purple-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  {rating > 0 ? `Vous avez donné ${rating} étoile${rating > 1 ? 's' : ''}` : 'Sélectionnez une note'}
-                </p>
-              </div>
-
-              {/* Feedback Form */}
-              <form onSubmit={handleSubmitFeedback} className="space-y-4">
-                <div className="flex flex-col gap-4">
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="Votre nom"
-                      value={feedbackForm.name}
-                      onChange={handleFeedbackChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="Votre email"
-                      value={feedbackForm.email}
-                      onChange={handleFeedbackChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <MessageSquare className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
-                  <textarea
-                    name="message"
-                    placeholder="Votre message..."
-                    rows={4}
-                    value={feedbackForm.message}
-                    onChange={handleFeedbackChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none resize-none"
-                    required
-                  />
-                </div>
-
-                <button 
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                >
-                  <Send className="w-5 h-5" />
-                  Envoyer mon feedback
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
-        
-        {/* Image Section */}
-        <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
-          <Image 
-            src="/images/ima20.jpeg" 
-            alt="Feedback illustration" 
-            fill
-            className="object-cover w-full h-full"
-            priority
-          />
-        </div>
-      </div>
+{/* Contact Section - REMPLACER LA SECTION FEEDBACK EXISTANTE */}
+<div className="container w-full bg-white dark:bg-gray-900 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
+  <div className="w-full md:w-1/2">
+    <div className="text-center mb-8">
+      <h2 className="text-4xl text-black dark:text-gray-400 font-bold mb-4 flex items-center justify-center gap-2">
+        <Heart className="text-black dark:text-gray-400 w-10 h-10" />
+        Contactez notre support
+      </h2>
+      <p className="text-black dark:text-gray-500 text-lg">
+        Notre équipe est là pour vous aider. Envoyez-nous votre message et nous vous répondrons rapidement.
+      </p>
     </div>
+
+    {/* Stats Section - conserver si vous voulez */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      {stats.map((stat, index) => (
+        <div key={index} className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg text-center">
+          <div className="mb-2 text-xl">{stat.icon}</div>
+          <div className="text-lg font-bold dark:text-purple-600 text-purple-900">{stat.value}</div>
+          <div className="text-sm text-black dark:text-gray-400">{stat.label}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* Utilisation du nouveau ContactForm */}
+    <ContactForm />
+  </div>
+  
+  {/* Image Section - conserver */}
+  <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
+    <Image 
+      src="/images/ima20.jpeg" 
+      alt="Support client" 
+      fill
+      className="object-cover w-full h-full"
+      priority
+    />
+  </div>
+</div>
+      </div>
+    
   );
 };
 

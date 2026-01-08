@@ -2,6 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Home, User, BookOpen, Calendar } from 'lucide-react';
 
 interface SidebarProps {
@@ -39,10 +40,14 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
     <aside className="w-72 bg-gradient-to-b from-purple-100 to-purple-200 dark:from-gray-800 dark:to-gray-900 text-gray-900 dark:text-white min-h-screen p-6 border-r border-purple-200 dark:border-gray-700">
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 bg-purple-600 dark:bg-purple-500 rounded-lg flex items-center justify-center">
-          <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-          </svg>
+        <div className="w-12 h-12 flex items-center justify-center relative bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-purple-100 dark:border-gray-600 overflow-hidden">
+          <Image
+            src="/images/Capture.png"
+            alt="XCCM Logo"
+            width={44}
+            height={44}
+            className="object-contain"
+          />
         </div>
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">XCCM1</h1>
@@ -53,8 +58,8 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
       {/* User Profile */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          <img 
-            src={photoUrl} 
+          <img
+            src={photoUrl}
             alt={userName}
             className="w-12 h-12 rounded-full object-cover border-2 border-purple-200 dark:border-purple-500"
           />
@@ -75,13 +80,12 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
               const isActive = activeTab === item.id;
               return (
                 <li key={item.id}>
-                  <Link 
+                  <Link
                     href={item.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive 
-                        ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-lg' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'
-                    }`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                      ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-lg'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'
+                      }`}
                   >
                     <Icon size={20} />
                     <span>{item.label}</span>

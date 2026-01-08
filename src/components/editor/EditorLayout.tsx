@@ -33,6 +33,8 @@ import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CourseCreateRequest } from '@/lib';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
 
 
 interface EditorLayoutProps {
@@ -142,13 +144,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     );
   };
 
-  const handleSave = async (publish: boolean = false, silent: boolean = false) => {
-    if (!editorInstance) {
-      if (!silent) alert("L'éditeur n'est pas encore chargé.");
-      return;
-    }
+ const handleSave = async (publish: boolean = false, silent: boolean = false) => {
+  
+  if (!editorInstance) {
+    if (!silent) alert("L'éditeur n'est pas encore chargé.");
+    return;
+  }
 
-    const jsonContent = editorInstance.getJSON();
+  const jsonContent = editorInstance.getJSON();
 
     const now = new Date();
     const savedCourse = {
@@ -156,6 +159,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       title: courseTitle.trim() || "Cours sans titre",
       content: jsonContent,
       html: editorInstance.getHTML(),
+      category: "Uncategorized",
       published: publish,
       savedAt: now.toLocaleString('fr-FR', {
         day: '2-digit',
@@ -165,29 +169,57 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         minute: '2-digit',
       }), // e.g., "03/01/2026 14:35"
     };
-
-    try {
-      const existingCourses = JSON.parse(localStorage.getItem('xccm_saved_courses') || '[]');
-
-      if (currentCourseId) {
-        // Update existing
-        const updated = existingCourses.map((c: any) =>
-          c.id === currentCourseId ? savedCourse : c
-        );
-        localStorage.setItem('xccm_saved_courses', JSON.stringify(updated));
-        if (!silent) alert(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
-      } else {
-        // Create new
-        existingCourses.push(savedCourse);
-        localStorage.setItem('xccm_saved_courses', JSON.stringify(existingCourses));
-        setCurrentCourseId(savedCourse.id);
-        if (!silent) alert(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
-      }
-    } catch (error) {
-      console.error("Erreur sauvegarde :", error);
-      if (!silent) alert("Erreur lors de la sauvegarde.");
-    }
+  // Payload conforme à CourseCreateRequest attendu par le backend
+  const requestBody: CourseCreateRequest = {
+    title: courseTitle.trim() || "Cours sans titre",
+    category: "Informatique", // À rendre dynamique plus tard (ex: via un select)
+    description: "Description à venir...", // Optionnel, à enrichir plus tard
+    content: jsonContent, // TipTap JSON → stringifié
+    //published: publish,
   };
+
+  try {
+    // Récupérer l'ID de l'auteur connecté (à adapter selon votre auth)
+    
+    const user = localStorage.getItem("currentUser"); // ← À remplacer par le vrai ID utilisateur
+    console.log("Current user from localStorage:", user);
+    const authorId = user ? JSON.parse(user).id : null;
+    console.log("Author ID:", authorId);
+
+    
+    // Appel au service backend
+    console.log("Saving course...", { publish, silent });
+    const response = await CourseControllerService.createCourse(authorId, requestBody);
+    alert('Sauvegarde réussie !');
+    console.log("Réponse du backend :", response.data);
+    
+    // Succès : confirmation + mise à jour de l'ID courant
+    // if (response?.data?.id) {
+    //   setCurrentCourseId(response.data.id);
+    // }
+
+    // if (!silent) {
+    //   alert(
+    //     publish
+    //       ? "Cours publié avec succès sur le serveur !"
+    //       : "Cours sauvegardé avec succès sur le serveur !"
+    //   );
+    // }
+
+
+  } catch (error: any) {
+    console.error("Erreur lors de la sauvegarde sur le serveur :", error);
+
+    if (!silent) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Impossible de contacter le serveur.";
+
+      alert(`Échec de la sauvegarde : ${message}`);
+    }
+  }
+};
 
   /**
    * Handle editor content change

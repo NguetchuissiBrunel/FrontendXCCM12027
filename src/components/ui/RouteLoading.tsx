@@ -10,9 +10,9 @@ export default function RouteLoading() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    // Détecter les clics sur les liens
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-
       const link = target.closest('a');
 
       if (link &&
@@ -29,39 +29,67 @@ export default function RouteLoading() {
     };
 
     document.addEventListener('click', handleClick);
-
-    return () => {
-      document.removeEventListener('click', handleClick);
-    };
+    return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  // Animation de progression circulaire
+  // Animation de progression réaliste
   useEffect(() => {
     if (!isLoading) return;
 
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
+        // Progression non-linéaire : rapide au début, lent à la fin
+        let increment;
+        if (prev < 30) {
+          increment = 4; // Très rapide au début
+        } else if (prev < 70) {
+          increment = 2; // Moyen au milieu
+        } else if (prev < 90) {
+          increment = 1; // Lent vers la fin
+        } else {
+          increment = 0.5; // Très lent à la fin
         }
-        return prev + 1;
+
+        const newProgress = Math.min(prev + increment, 99);
+
+        // Ne pas dépasser 99% avant que la navigation soit terminée
+        if (newProgress >= 99) {
+          clearInterval(interval);
+        }
+        return newProgress;
       });
     }, 30);
 
     return () => clearInterval(interval);
   }, [isLoading]);
 
+  // Détection du changement d'URL (quand la navigation est terminée)
   useEffect(() => {
     if (isLoading) {
+      // Quand l'URL change, on suppose que la navigation est terminée
+      setProgress(100);
+
+      // Petit délai pour laisser l'animation se terminer
       const timer = setTimeout(() => {
         setIsLoading(false);
         setProgress(0);
-      }, 500);
+      }, 300);
 
       return () => clearTimeout(timer);
     }
   }, [pathname, searchParams, isLoading]);
+
+  // S'assurer que le chargement s'arrête après un délai maximum (sécurité)
+  useEffect(() => {
+    if (isLoading) {
+      const safetyTimer = setTimeout(() => {
+        setIsLoading(false);
+        setProgress(0);
+      }, 10000); // 10 secondes max
+
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [isLoading]);
 
   if (!isLoading) return null;
 
@@ -124,7 +152,7 @@ export default function RouteLoading() {
           {/* Pourcentage au centre */}
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-2xl font-bold text-gray-800 dark:text-white">
-              {progress}%
+              {Math.round(progress)}%
             </span>
           </div>
 
@@ -172,17 +200,6 @@ export default function RouteLoading() {
           <div className="w-48 h-48 border-4 border-purple-200/30 rounded-full animate-ping" />
         </div>
       </div>
-
-      {/* Styles d'animation supplémentaires */}
-      <style jsx>{`
-        @keyframes pulse-soft {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-        .animate-pulse-soft {
-          animation: pulse-soft 2s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 }

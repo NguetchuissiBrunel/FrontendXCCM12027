@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
-import {MdHelpOutline} from 'react-icons/md';
+import { MdHelpOutline } from 'react-icons/md';
 import { clearAuthToken } from '@/utils/authHelpers';
 
 const Navbar = () => {
@@ -70,7 +70,7 @@ const Navbar = () => {
     setCurrentUser(null);
     setUserRole(null);
     clearAuthToken();
-    router.push('/login');
+    window.location.href = '/';
   };
 
   const handleMyAccount = () => {

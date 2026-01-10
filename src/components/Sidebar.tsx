@@ -96,15 +96,6 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
           </ul>
         </nav>
       )}
-
-      {/* Badge pour les notifications (échéances) */}
-      {userRole === 'student' && (
-        <div className="mt-6">
-          <div className="bg-red-500 dark:bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center ml-auto">
-            1
-          </div>
-        </div>
-      )}
     </aside>
   );
 }

@@ -4,9 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { CourseControllerService } from '@/lib';
 
 export interface Course {
-    views: number;
-    likes: number;
-    downloads: number;
     image: any;
     id: number;
     title: string;
@@ -22,8 +19,6 @@ export interface Course {
         email: string;
         university?: string;
         photoUrl?: string;
-        image?: string;
-        designation?: string;
     };
     content?: string;
     coverImage?: string | null;
@@ -50,47 +45,47 @@ export function useCourses(): UseCoursesReturn {
      * Récupère tous les cours enrichis depuis l'API
      */
     const fetchAllCourses = useCallback(async () => {
-    try {
-        setLoading(true);
-        setError(null);
+        try {
+            setLoading(true);
+            setError(null);
 
-        // This is usually a 'BaseResponse' type from your generated API client
-        const response: any = await CourseControllerService.getAllCourses();
+            // This is usually a 'BaseResponse' type from your generated API client
+            const response: any = await CourseControllerService.getAllCourses();
 
-        // Check if response.data exists and is an array
-        if (response && response.success && Array.isArray(response.data)) {
-            setCourses(response.data as Course[]);
-            console.log(`✅ ${response.data.length} cours chargés`);
-        } else {
-            console.warn('⚠️ Format de réponse inattendu:', response);
+            // Check if response.data exists and is an array
+            if (response && response.success && Array.isArray(response.data)) {
+                setCourses(response.data as Course[]);
+                console.log(`✅ ${response.data.length} cours chargés`);
+            } else {
+                console.warn('⚠️ Format de réponse inattendu:', response);
+                setCourses([]);
+            }
+        } catch (err) {
+            console.error('❌ Erreur lors du chargement des cours:', err);
+            setError(err instanceof Error ? err.message : 'Impossible de charger les cours');
             setCourses([]);
+        } finally {
+            setLoading(false);
         }
-    } catch (err) {
-        console.error('❌ Erreur lors du chargement des cours:', err);
-        setError(err instanceof Error ? err.message : 'Impossible de charger les cours');
-        setCourses([]);
-    } finally {
-        setLoading(false);
-    }
-}, []);
+    }, []);
 
     /**
      * Récupère un cours spécifique par son ID
      */
     const fetchCourse = useCallback(async (courseId: number): Promise<Course | null> => {
-    try {
-        const response: any = await CourseControllerService.getEnrichedCourse(courseId);
+        try {
+            const response: any = await CourseControllerService.getEnrichedCourse(courseId);
 
-        if (response && response.success && response.data) {
-            return response.data as Course;
+            if (response && response.success && response.data) {
+                return response.data as Course;
+            }
+
+            return null;
+        } catch (err) {
+            console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
+            throw err;
         }
-
-        return null;
-    } catch (err) {
-        console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
-        throw err;
-    }
-}, []);
+    }, []);
 
     /**
      * Recharge tous les cours

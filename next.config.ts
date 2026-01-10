@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* Configuration des options de build */
-  
+
   // 1. Désactive l'optimisation automatique des polices Google
   // Cela empêche l'erreur "Failed to fetch Inter" car Next.js n'essaiera plus
   // de télécharger les polices pendant le 'npm run build'.
@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
   // 4. Configuration du Proxy (Nouveauté Next.js 16)
   // Si vous avez renommé middleware.ts en proxy.ts, Next.js le gère automatiquement,
   // mais vous pouvez ajouter des configurations spécifiques ici si nécessaire.
+
+  // 5. Suppression des logs en production
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
 };
 
 export default nextConfig;

@@ -57,63 +57,77 @@ export default function PendingEnrollmentsList() {
 
     if (enrollments.length === 0) {
         return (
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
-                <p className="text-gray-500 dark:text-gray-400">Aucune demande d'inscription en attente.</p>
+            <div className="text-center py-20 bg-white/50 dark:bg-gray-800/20 rounded-2xl border border-dashed border-purple-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-purple-50 dark:bg-purple-900/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <BookOpen className="h-10 w-10 text-purple-300 dark:text-purple-700" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tout est à jour !</h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                    Il n'y a aucune demande d'inscription en attente pour le moment.
+                </p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-4">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
-                <BookOpen className="h-5 w-5 text-purple-600" />
-                Demandes d'inscription ({enrollments.length})
-            </h2>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="w-2 h-8 bg-purple-600 rounded-full"></span>
+                    Demandes ({enrollments.length})
+                </h2>
+                <span className="text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-3 py-1 rounded-full">
+                    Action requise
+                </span>
+            </div>
 
-            <div className="grid gap-3">
+            <div className="grid gap-4">
                 {enrollments.map((enrollment) => (
                     <div
                         key={enrollment.id}
-                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                        className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 border border-gray-100 dark:border-gray-700 transition-all duration-300 transform hover:-translate-y-1"
                     >
-                        <div className="flex items-center gap-3 mb-3 sm:mb-0">
-                            <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/40 dark:to-indigo-900/40 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <User className="h-7 w-7 text-purple-600 dark:text-purple-400" />
                             </div>
                             <div>
-                                <p className="font-semibold text-gray-900 dark:text-white">
-                                    {/* Note: Dans un cas réel, l'objet Enrollment devrait inclure les détails de l'utilisateur et du cours. 
-                        Ici, on affiche des infos basiques si disponíveis, ou des IDs.
-                        Il faudrait enrichir le DTO côté backend pour avoir user.name et course.title ici.
-                    */}
+                                <h4 className="font-bold text-gray-900 dark:text-white text-lg">
                                     Étudiant #{enrollment.userId}
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Cours #{enrollment.courseId} • {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                                </p>
+                                </h4>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    <span className="flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        <BookOpen className="h-3.5 w-3.5" />
+                                        Cours #{enrollment.courseId}
+                                    </span>
+                                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                                        Demandé le {new Date(enrollment.enrolledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex gap-2 w-full sm:w-auto">
+                        <div className="flex gap-3 w-full sm:w-auto">
                             <button
                                 onClick={() => handleValidation(enrollment.id, 'APPROVED')}
                                 disabled={processingId === enrollment.id}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 rounded-lg font-medium transition-colors disabled:opacity-50"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-500/20 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-50"
                             >
                                 {processingId === enrollment.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <Loader2 className="h-5 w-5 animate-spin" />
                                 ) : (
-                                    <Check className="h-4 w-4" />
+                                    <Check className="h-5 w-5" />
                                 )}
-                                <span>Valider</span>
+                                <span>Accepter</span>
                             </button>
 
                             <button
                                 onClick={() => handleValidation(enrollment.id, 'REJECTED')}
                                 disabled={processingId === enrollment.id}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-lg font-medium transition-colors disabled:opacity-50"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-50"
                             >
-                                <X className="h-4 w-4" />
+                                <X className="h-5 w-5" />
                                 <span>Rejeter</span>
                             </button>
                         </div>

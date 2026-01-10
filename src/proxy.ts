@@ -33,7 +33,6 @@ export function proxy(request: NextRequest) {
     if (isProtected) {
       const loginPath = isDashboardAdmin ? '/admin/login' : '/login';
       const loginUrl = new URL(loginPath, request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
     return NextResponse.next();
@@ -87,11 +86,11 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/etudashboard/:path*', 
-    '/admindashboard/:path*', 
-    '/profdashboard/:path*', 
+    '/etudashboard/:path*',
+    '/admindashboard/:path*',
+    '/profdashboard/:path*',
     '/editor/:path*',
-    '/login', 
+    '/login',
     '/register',
     '/admin/login',
     '/admin/register'

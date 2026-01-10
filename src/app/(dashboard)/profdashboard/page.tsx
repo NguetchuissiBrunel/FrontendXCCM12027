@@ -8,6 +8,7 @@ import TeachersCard from '@/components/professor/TeachersCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { CourseResponse } from '@/lib/models/CourseResponse';
+import CreateCourseModal from '@/./components/create-course/page'; 
 
 interface User {
   id: string;
@@ -39,6 +40,7 @@ export default function ProfessorDashboard() {
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -85,7 +87,6 @@ export default function ProfessorDashboard() {
 
     if (user) {
       loadDashboardData();
-
     }
   }, [user, authLoading, isAuthenticated, router]);
 
@@ -137,6 +138,12 @@ export default function ProfessorDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
+      {/* Modale de création de cours */}
+      <CreateCourseModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
+
       {/* Top Section with Welcome */}
       <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="max-w-3xl">
@@ -148,15 +155,17 @@ export default function ProfessorDashboard() {
           </p>
         </div>
         <div>
-          <button
-            onClick={() => router.push('/teacher/inscriptions')}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Gérer les inscriptions
-          </button>
+          <div className="flex items-center gap-6">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Gérer les inscriptions
+            </button>
+
+            
+          </div>
         </div>
       </div>
 
@@ -173,15 +182,18 @@ export default function ProfessorDashboard() {
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
               Mes Compositions
             </h2>
-            <p className="text-gray-600 dark:text-gray-300">
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
               Vous n'avez pas encore créé de cours.
-              <button
-                onClick={() => router.push('/editor')}
-                className="ml-2 text-purple-600 dark:text-purple-400 font-bold hover:underline"
-              >
-                Créer mon premier cours
-              </button>
             </p>
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition mx-auto"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Créer un cours
+            </button>
           </div>
         )}
 

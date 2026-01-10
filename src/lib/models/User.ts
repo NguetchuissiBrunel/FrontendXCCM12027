@@ -2,6 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+/**
+ * Données de la réponse
+ */
 export type User = {
     id?: string;
     email?: string;
@@ -18,6 +21,7 @@ export type User = {
     certification?: string;
     registrationDate?: string;
     lastLogin?: string;
+    updatedAt?: string;
 };
 export namespace User {
     export enum role {

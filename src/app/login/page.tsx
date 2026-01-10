@@ -30,12 +30,17 @@ const SigninPage = () => {
   // Rediriger si déjà connecté
   useEffect(() => {
     if (user) {
-      if (user.role === 'student') {
-        router.push('/etudashboard');
-      } else if (user.role === 'teacher') {
-        router.push('/profdashboard');
-      }
+      // Si un callbackUrl existe, on pourrait l'utiliser, sinon dashboard par défaut
+    const params = new URLSearchParams(window.location.search);
+    const callback = params.get('callbackUrl');
+
+    if (callback) {
+      router.push(callback);
+    } else {
+      if (user.role === 'student') router.push('/etudashboard');
+      else if (user.role === 'teacher') router.push('/profdashboard');
     }
+  }
   }, [user, router]);
 
   // Charger le rôle sauvegardé
@@ -187,34 +192,7 @@ const SigninPage = () => {
           )}
         </motion.div>
 
-        {/* Choix du rôle */}
-        <motion.div
-          className="flex space-x-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, role: 'student' })}
-            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${formData.role === 'student'
-              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-              }`}
-          >
-            <FaGraduationCap className="mr-2" /> Étudiant
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, role: 'teacher' })}
-            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${formData.role === 'teacher'
-              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-              }`}
-          >
-            <FaChalkboardTeacher className="mr-2" /> Enseignant
-          </button>
-        </motion.div>
+       
 
         <motion.div
           className="text-center mt-4"

@@ -165,7 +165,7 @@ export interface CourseStructureItem {
   type: ItemType;
   parentId: string | null;
   content?: string;
-  data?: Course | Section | Chapter | Paragraph | Notion | Exercise;
+  data?: Course | Section | Chapter | Paragraph | Notion | Exercise | string;
 }
 
 /**

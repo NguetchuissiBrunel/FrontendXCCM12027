@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { User } from './User';
+import type { AuthorDTO } from './AuthorDTO';
 /**
  * Données de la réponse
  */
@@ -12,10 +12,10 @@ export type CourseResponse = {
     category?: string;
     description?: string;
     status?: CourseResponse.status;
-    author?: User;
+    author?: AuthorDTO;
     createdAt?: string;
     publishedAt?: string;
-    content?: string;
+    content?: Record<string, Record<string, any>>;
     coverImage?: string;
 };
 export namespace CourseResponse {

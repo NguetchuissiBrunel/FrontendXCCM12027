@@ -17,6 +17,7 @@ interface TableOfContentsProps {
   items: TableOfContentsItem[];
   onItemClick?: (itemId: string) => void;
   // Props for compatibility with new feature set if we want to support editing from TOC (optional)
+  onItemMove?: (itemId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   onAddItem?: (type: ItemType, title?: string, parentId?: string) => void;
   onItemRename?: (itemId: string, newTitle: string) => void;
   onItemDelete?: (itemId: string) => void;

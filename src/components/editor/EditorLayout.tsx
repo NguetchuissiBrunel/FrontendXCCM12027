@@ -86,7 +86,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   };
 
   // Ref for MainEditor to handle imperative updates from TOC
-  const editorRef = React.useRef<{ handleTOCAction: (action: 'rename' | 'delete', itemId: string, newTitle?: string) => void }>(null);
+  const editorRef = React.useRef<{ handleTOCAction: (action: 'rename' | 'delete' | 'move', itemId: string, newTitle?: string | any) => void }>(null);
 
   // Ref for auto-save timer
   const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -144,14 +144,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     );
   };
 
- const handleSave = async (publish: boolean = false, silent: boolean = false) => {
-  
-  if (!editorInstance) {
-    if (!silent) alert("L'éditeur n'est pas encore chargé.");
-    return;
-  }
+  const handleSave = async (publish: boolean = false, silent: boolean = false) => {
 
-  const jsonContent = editorInstance.getJSON();
+    if (!editorInstance) {
+      if (!silent) alert("L'éditeur n'est pas encore chargé.");
+      return;
+    }
+
+    const jsonContent = editorInstance.getJSON();
 
     const now = new Date();
     const savedCourse = {
@@ -169,57 +169,57 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         minute: '2-digit',
       }), // e.g., "03/01/2026 14:35"
     };
-  // Payload conforme à CourseCreateRequest attendu par le backend
-  const requestBody: CourseCreateRequest = {
-    title: courseTitle.trim() || "Cours sans titre",
-    category: "Informatique", // À rendre dynamique plus tard (ex: via un select)
-    description: "Description à venir...", // Optionnel, à enrichir plus tard
-    content: jsonContent, // TipTap JSON → stringifié
-    //published: publish,
-  };
+    // Payload conforme à CourseCreateRequest attendu par le backend
+    const requestBody: CourseCreateRequest = {
+      title: courseTitle.trim() || "Cours sans titre",
+      category: "Informatique", // À rendre dynamique plus tard (ex: via un select)
+      description: "Description à venir...", // Optionnel, à enrichir plus tard
+      content: jsonContent, // TipTap JSON → stringifié
+      //published: publish,
+    };
 
-  try {
-    // Récupérer l'ID de l'auteur connecté (à adapter selon votre auth)
-    
-    const user = localStorage.getItem("currentUser"); // ← À remplacer par le vrai ID utilisateur
-    console.log("Current user from localStorage:", user);
-    const authorId = user ? JSON.parse(user).id : null;
-    console.log("Author ID:", authorId);
+    try {
+      // Récupérer l'ID de l'auteur connecté (à adapter selon votre auth)
 
-    
-    // Appel au service backend
-    console.log("Saving course...", { publish, silent });
-    const response = await CourseControllerService.createCourse(authorId, requestBody);
-    alert('Sauvegarde réussie !');
-    console.log("Réponse du backend :", response.data);
-    
-    // Succès : confirmation + mise à jour de l'ID courant
-    // if (response?.data?.id) {
-    //   setCurrentCourseId(response.data.id);
-    // }
-
-    // if (!silent) {
-    //   alert(
-    //     publish
-    //       ? "Cours publié avec succès sur le serveur !"
-    //       : "Cours sauvegardé avec succès sur le serveur !"
-    //   );
-    // }
+      const user = localStorage.getItem("currentUser"); // ← À remplacer par le vrai ID utilisateur
+      console.log("Current user from localStorage:", user);
+      const authorId = user ? JSON.parse(user).id : null;
+      console.log("Author ID:", authorId);
 
 
-  } catch (error: any) {
-    console.error("Erreur lors de la sauvegarde sur le serveur :", error);
+      // Appel au service backend
+      console.log("Saving course...", { publish, silent });
+      const response = await CourseControllerService.createCourse(authorId, requestBody);
+      alert('Sauvegarde réussie !');
+      console.log("Réponse du backend :", response.data);
 
-    if (!silent) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Impossible de contacter le serveur.";
+      // Succès : confirmation + mise à jour de l'ID courant
+      // if (response?.data?.id) {
+      //   setCurrentCourseId(response.data.id);
+      // }
 
-      alert(`Échec de la sauvegarde : ${message}`);
+      // if (!silent) {
+      //   alert(
+      //     publish
+      //       ? "Cours publié avec succès sur le serveur !"
+      //       : "Cours sauvegardé avec succès sur le serveur !"
+      //   );
+      // }
+
+
+    } catch (error: any) {
+      console.error("Erreur lors de la sauvegarde sur le serveur :", error);
+
+      if (!silent) {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Impossible de contacter le serveur.";
+
+        alert(`Échec de la sauvegarde : ${message}`);
+      }
     }
-  }
-};
+  };
 
   /**
    * Handle editor content change

@@ -163,11 +163,11 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           // If we delete first, positions change.
           // Deleting first is easier if we adjust targetPos.
 
-          tr.delete(sourcePos, sourcePos + sourceNode.nodeSize);
+          tr.delete(sourcePos as number, (sourcePos as number) + sourceNode.nodeSize);
 
           // Adjust targetPos if source was before target
-          let adjustedTargetPos = targetPos;
-          if (sourcePos < targetPos) {
+          let adjustedTargetPos = targetPos as number;
+          if ((sourcePos as number) < (targetPos as number)) {
             adjustedTargetPos -= sourceNode.nodeSize;
           }
 
@@ -229,20 +229,20 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       handleDrop: (view, event, slice, moved) => {
         event.preventDefault();
 
-            const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
-            if (!jsonData) return false;
+        const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
+        if (!jsonData) return false;
 
-            try {
-              const draggedItem = JSON.parse(jsonData);
+        try {
+          const draggedItem = JSON.parse(jsonData);
 
-              const typeMap: Record<string, string> = {
-                course: 'heading',
-                section: 'section',
-                chapter: 'chapitre',
-                paragraph: 'paragraphe',
-                notion: 'notion',
-                exercise: 'exercice'
-              };
+          const typeMap: Record<string, string> = {
+            course: 'heading',
+            section: 'section',
+            chapter: 'chapitre',
+            paragraph: 'paragraphe',
+            notion: 'notion',
+            exercise: 'exercice'
+          };
 
           const buildNode = (item: any): any => {
             const nodeType = typeMap[item.type] || 'paragraph';
@@ -263,54 +263,54 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
             const children = (item.children || []).map(buildNode);
 
-                // Default: empty for structural nodes
-                let content: any[] = [];
+            // Default: empty for structural nodes
+            let content: any[] = [];
 
-                // Special handling for notion: title text + full content
-                if (item.type === 'notion') {
-                  // Title as first text
-                  content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
+            // Special handling for notion: title text + full content
+            if (item.type === 'notion') {
+              // Title as first text
+              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
 
-                  // Add actual content if present
-                  if (item.content) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = item.content.trim();
+              // Add actual content if present
+              if (item.content) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = item.content.trim();
 
-                    const parsed: any[] = [];
-                    tempDiv.childNodes.forEach((node) => {
-                      if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-                        parsed.push({ type: 'text', text: node.textContent });
-                      } else if (node.nodeName === 'P') {
-                        const pContent: any[] = [];
-                        node.childNodes.forEach((child) => {
-                          if (child.nodeType === Node.TEXT_NODE && child.textContent) {
-                            pContent.push({ type: 'text', text: child.textContent });
-                          }
-                        });
-                        if (pContent.length > 0) {
-                          parsed.push({ type: 'paragraph', content: pContent });
-                        }
+                const parsed: any[] = [];
+                tempDiv.childNodes.forEach((node) => {
+                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+                    parsed.push({ type: 'text', text: node.textContent });
+                  } else if (node.nodeName === 'P') {
+                    const pContent: any[] = [];
+                    node.childNodes.forEach((child) => {
+                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+                        pContent.push({ type: 'text', text: child.textContent });
                       }
                     });
-
-                    content = [...content, ...parsed];
+                    if (pContent.length > 0) {
+                      parsed.push({ type: 'paragraph', content: pContent });
+                    }
                   }
-                }
+                });
 
-                // Exercise: simple question list
-                if (item.type === 'exercise' && item.data?.questions) {
-                  const questionsText = item.data.questions
-                    .map((q: any, i: number) => `${i + 1}. ${q.question}`)
-                    .join('\n\n');
-                  content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
-                }
+                content = [...content, ...parsed];
+              }
+            }
 
-                return {
-                  type: nodeType,
-                  attrs,
-                  content: [...content, ...children]
-                };
-              };
+            // Exercise: simple question list
+            if (item.type === 'exercise' && item.data?.questions) {
+              const questionsText = item.data.questions
+                .map((q: any, i: number) => `${i + 1}. ${q.question}`)
+                .join('\n\n');
+              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+            }
+
+            return {
+              type: nodeType,
+              attrs,
+              content: [...content, ...children]
+            };
+          };
 
           // Main handling logic
           const coords = { left: event.clientX, top: event.clientY };
@@ -398,22 +398,22 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     },
   });
 
-      const imageInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-      const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const url = e.target?.result as string;
-            editor?.chain().focus().setImage({ src: url }).run();
-          };
-          reader.readAsDataURL(file);
-        }
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const url = e.target?.result as string;
+        editor?.chain().focus().setImage({ src: url }).run();
       };
+      reader.readAsDataURL(file);
+    }
+  };
 
-      const [showLinkModal, setShowLinkModal] = useState(false);
-      const [linkUrl, setLinkUrl] = useState('');
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
 
   const ToolbarButton = ({
     onClick,
@@ -439,14 +439,14 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     </button>
   );
 
-      const Separator = () => (
-        <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2" />
-      );
+  const Separator = () => (
+    <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2" />
+  );
 
-      const HeadingDropdown = () => {
-        const currentOption = headingOptions.find(
-          opt => opt.value === editorState?.currentHeading
-        ) || headingOptions[0];
+  const HeadingDropdown = () => {
+    const currentOption = headingOptions.find(
+      opt => opt.value === editorState?.currentHeading
+    ) || headingOptions[0];
 
     const handleChange = (value: string | number) => {
       if (value === 'paragraph') {
@@ -560,15 +560,15 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               <FaStrikethrough />
             </ToolbarButton>
 
-                <ToolbarButton
-                  onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
-                  title="Clear Formatting"
-                  isActive={false}
-                >
-                  <FaRemoveFormat />
-                </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
+              title="Clear Formatting"
+              isActive={false}
+            >
+              <FaRemoveFormat />
+            </ToolbarButton>
 
-                <Separator />
+            <Separator />
 
             {/* Text Color */}
             <div className="flex items-center">
@@ -598,7 +598,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               </label>
             </div>
 
-                <Separator />
+            <Separator />
 
             {/* Image Upload */}
             <input
@@ -610,13 +610,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               suppressHydrationWarning
             />
 
-                <ToolbarButton
-                  onClick={() => imageInputRef.current?.click()}
-                  title="Insert Image"
-                  isActive={false}
-                >
-                  <FaImage />
-                </ToolbarButton>
+            <ToolbarButton
+              onClick={() => imageInputRef.current?.click()}
+              title="Insert Image"
+              isActive={false}
+            >
+              <FaImage />
+            </ToolbarButton>
 
             <ToolbarButton
               onClick={() => {
@@ -630,17 +630,17 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               <FaLink />
             </ToolbarButton>
 
-                {editor?.isActive('link') && (
-                  <ToolbarButton
-                    onClick={() => editor?.chain().focus().unsetLink().run()}
-                    title="Remove Link"
-                    isActive={false}
-                  >
-                    <FaUnlink />
-                  </ToolbarButton>
-                )}
+            {editor?.isActive('link') && (
+              <ToolbarButton
+                onClick={() => editor?.chain().focus().unsetLink().run()}
+                title="Remove Link"
+                isActive={false}
+              >
+                <FaUnlink />
+              </ToolbarButton>
+            )}
 
-                <Separator />
+            <Separator />
 
             {/* Text Alignment */}
             <ToolbarButton
@@ -675,7 +675,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               <FaAlignJustify />
             </ToolbarButton>
 
-                <Separator />
+            <Separator />
 
             {/* Lists */}
             <ToolbarButton
@@ -747,26 +747,26 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               <FaOutdent />
             </ToolbarButton>
 
-                <Separator />
+            <Separator />
 
-                {/* History */}
-                <ToolbarButton
-                  onClick={() => editor?.chain().focus().undo().run()}
-                  title="Undo (Ctrl + Z)"
-                  isActive={false}
-                >
-                  <FaUndo />
-                </ToolbarButton>
+            {/* History */}
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().undo().run()}
+              title="Undo (Ctrl + Z)"
+              isActive={false}
+            >
+              <FaUndo />
+            </ToolbarButton>
 
-                <ToolbarButton
-                  onClick={() => editor?.chain().focus().redo().run()}
-                  title="Redo (Ctrl + Shift + Z)"
-                  isActive={false}
-                >
-                  <FaRedo />
-                </ToolbarButton>
-              </div>
-            </div>
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().redo().run()}
+              title="Redo (Ctrl + Shift + Z)"
+              isActive={false}
+            >
+              <FaRedo />
+            </ToolbarButton>
+          </div>
+        </div>
 
         {/* Editor Area */}
         <div className="flex-1 p-8 overflow-auto bg-gray-100 dark:bg-gray-900 flex justify-center">
@@ -823,4 +823,4 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   );
 });
 
-  export default MainEditor;
+export default MainEditor;

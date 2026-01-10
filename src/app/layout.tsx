@@ -1,19 +1,18 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import RouteLoading from '@/components/ui/RouteLoading';
 import { AuthProvider } from "@/contexts/AuthContext";
 import './globals.css';
+import { Suspense } from 'react';
 
-
-//const inter = Inter({ subsets: ['latin'] });
-// <body className={inter.className}>
 export const metadata: Metadata = {
   title: 'XCCM1 - Plateforme de création de contenu pédagogique',
   description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
 };
+
+// Force le rendu dynamique pour éviter que Next.js n'essaie de 
+// pré-générer des pages nécessitant des données privées au build
 export const dynamic = 'force-dynamic';
-import { Suspense } from 'react';
 
 export default function RootLayout({
   children,
@@ -22,10 +21,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-     
+      {/* On utilise "font-sans" (configuré dans Tailwind) au lieu de Inter 
+          pour éviter l'erreur de récupération Google Fonts (ETIMEDOUT)
+      */}
       <body className="antialiased font-sans">
         <div className="min-h-screen flex flex-col">
-
           <main className="grow">
             <Suspense fallback={null}>
               <RouteLoading />
@@ -34,7 +34,6 @@ export default function RootLayout({
               {children}
             </AuthProvider>
           </main>
-
         </div>
       </body>
     </html>

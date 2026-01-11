@@ -19,9 +19,14 @@ export interface Course {
         email: string;
         university?: string;
         photoUrl?: string;
+        image?: string;
+        designation?: string;
     };
     content?: string;
     coverImage?: string | null;
+    views?: number;
+    likes?: number;
+    downloads?: number;
 }
 
 interface UseCoursesReturn {

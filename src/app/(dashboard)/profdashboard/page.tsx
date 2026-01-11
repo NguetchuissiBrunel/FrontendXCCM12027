@@ -107,7 +107,7 @@ export default function ProfessorDashboard() {
     : user.email.split('@')[0];
 
   const professor = {
-    id: user.id,
+    id: user.email,
     name: displayName,
     city: user.city || 'Non spécifiée',
     university: user.university || 'Non spécifiée',
@@ -137,70 +137,70 @@ export default function ProfessorDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-        {/* Modale de création de cours */}
-        <CreateCourseModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-        />
+      {/* Modale de création de cours */}
+      <CreateCourseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
 
-        {/* Top Section with Welcome */}
-        <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-400 mb-3">
-              Bienvenue Professeur {user.firstName} !
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300 italic">
-              "L'éducation est l'arme la plus puissante que vous puissiez utiliser pour changer le monde." - Nelson Mandela
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-6">
-              <button
-                onClick={() => router.push('/teacher/inscriptions')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Gérer les inscriptions
-              </button>
-
-
-            </div>
-          </div>
+      {/* Top Section with Welcome */}
+      <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="max-w-3xl">
+          <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-400 mb-3">
+            Bienvenue Professeur {user.firstName} !
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 italic">
+            "L'éducation est l'arme la plus puissante que vous puissiez utiliser pour changer le monde." - Nelson Mandela
+          </p>
         </div>
-
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-8 pb-8 space-y-8">
-          {/* Profile Card */}
-          <ProfileCard professor={professor} />
-
-          {/* Compositions Card */}
-          {compositions.length > 0 ? (
-            <CompositionsCard compositions={compositions} />
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-                Mes Compositions
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Vous n'avez pas encore créé de cours.
-              </p>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition mx-auto"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Créer un cours
-              </button>
-            </div>
-          )}
+        <div>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => router.push('/teacher/inscriptions')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Gérer les inscriptions
+            </button>
 
 
+          </div>
         </div>
       </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-8 pb-8 space-y-8">
+        {/* Profile Card */}
+        <ProfileCard professor={professor} />
+
+        {/* Compositions Card */}
+        {compositions.length > 0 ? (
+          <CompositionsCard compositions={compositions} />
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
+            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+              Mes Compositions
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Vous n'avez pas encore créé de cours.
+            </p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition mx-auto"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Créer un cours
+            </button>
+          </div>
+        )}
+
+
+      </div>
+    </div>
   );
 }

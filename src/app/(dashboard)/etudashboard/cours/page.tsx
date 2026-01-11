@@ -10,13 +10,25 @@ import { EnrollmentService } from '@/utils/enrollmentService';
 import { useCourses } from '@/hooks/useCourses';
 import { EnrichedCourse } from '@/types/enrollment';
 
+import { useLoading } from '@/contexts/LoadingContext';
+import { EnrichedCourse } from '@/types/enrollment';
+
 export default function StudentCourses() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrichedCourse[]>([]);
   const { courses: allCourses, loading: coursesLoading } = useCourses();
   const router = useRouter();
+
+  useEffect(() => {
+    if (authLoading || loading || coursesLoading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [authLoading, loading, coursesLoading, startLoading, stopLoading]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -101,15 +113,8 @@ export default function StudentCourses() {
     }
   };
 
-  if (loading || authLoading || coursesLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement de vos cours...</p>
-        </div>
-      </div>
-    );
+  if (loading || authLoading || coursesLoading || globalLoading) {
+    return null;
   }
 
   if (error) {
@@ -168,7 +173,7 @@ export default function StudentCourses() {
                 <div className="flex items-center mb-4">
                   <div className="relative w-8 h-8 mr-3">
                     <img
-                      src={course.author.image?course.author.image:'/images/prof.jpeg'}
+                      src={course.author.image ? course.author.image : '/images/prof.jpeg'}
                       alt={course.author.name}
                       className="rounded-full object-cover w-full h-full"
                     />

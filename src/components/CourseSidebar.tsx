@@ -1,13 +1,13 @@
 // src/components/CourseSidebar.tsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  ChevronRight, 
-  ChevronDown, 
-  Download, 
-  BookOpen, 
-  Layers, 
-  FileText, 
+import {
+  Search,
+  ChevronRight,
+  ChevronDown,
+  Download,
+  BookOpen,
+  Layers,
+  FileText,
   BookMarked,
   Bookmark,
   Coffee,
@@ -34,15 +34,15 @@ interface CourseSidebarProps {
   setShowExercise: (show: boolean) => void;
 }
 
-const CourseSidebar: React.FC<CourseSidebarProps> = ({ 
-  courseData, 
-  currentSectionIndex, 
-  currentChapterIndex, 
+const CourseSidebar: React.FC<CourseSidebarProps> = ({
+  courseData,
+  currentSectionIndex,
+  currentChapterIndex,
   currentParagraphIndex,
-  setCurrentSectionIndex, 
-  setCurrentChapterIndex, 
+  setCurrentSectionIndex,
+  setCurrentChapterIndex,
   setCurrentParagraphIndex,
-  setShowExercise 
+  setShowExercise
 }) => {
   const [expandedParts, setExpandedParts] = useState<{ [key: number]: boolean }>({});
   const [expandedChapters, setExpandedChapters] = useState<{ [key: string]: boolean }>({});
@@ -50,7 +50,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearch, setShowSearch] = useState<boolean>(false);
-  
+
   const hasSections = courseData?.sections?.length > 0;
 
   useEffect(() => {
@@ -59,14 +59,14 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
         ...prev,
         [currentSectionIndex]: true
       }));
-      
+
       if (currentChapterIndex !== undefined && currentChapterIndex !== null) {
         setExpandedChapters(prev => ({
           ...prev,
           [`${currentSectionIndex}-${currentChapterIndex}`]: true
         }));
       }
-      
+
       if (currentParagraphIndex !== undefined && currentParagraphIndex !== null) {
         setActiveParagraph(`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`);
       }
@@ -98,14 +98,14 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    
+
     if (!term.trim()) {
       setSearchResults([]);
       return;
     }
-    
+
     const results: SearchResult[] = [];
-    
+
     courseData.sections.forEach((section: Section, sectionIndex: number) => {
       if (section.title.toLowerCase().includes(term)) {
         results.push({
@@ -114,7 +114,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
           path: [sectionIndex]
         });
       }
-      
+
       if (section.chapters) {
         section.chapters.forEach((chapter: Chapter, chapterIndex: number) => {
           if (chapter.title.toLowerCase().includes(term)) {
@@ -124,7 +124,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
               path: [sectionIndex, chapterIndex]
             });
           }
-          
+
           if (chapter.paragraphs) {
             chapter.paragraphs.forEach((paragraph: Paragraph, paragraphIndex: number) => {
               if (paragraph.title.toLowerCase().includes(term)) {
@@ -149,7 +149,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
         });
       }
     });
-    
+
     setSearchResults(results);
   };
 
@@ -175,14 +175,14 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
         setCurrentSectionIndex(sectionIndex);
         setCurrentChapterIndex(0);
         setCurrentParagraphIndex(paragraphIndex);
-        setActiveParagraph(`${sectionIndex}-${paragraphIndex}`);
+        setActiveParagraph(`${sectionIndex}-0-${paragraphIndex}`);
       } else {
         const chapterIndex = result.path[1]!;
         const paragraphIndex = result.path[2]!;
         handleParagraphClick(sectionIndex, chapterIndex, paragraphIndex);
       }
     }
-    
+
     setSearchTerm('');
     setSearchResults([]);
     setShowSearch(false);
@@ -209,7 +209,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
           SOMMAIRE
         </h2>
       </div>
-      
+
       {/* Search Bar */}
       <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
         <div className="relative">
@@ -242,7 +242,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
           )}
         </div>
       </div>
-      
+
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-2">
         {hasSections ? (
@@ -250,11 +250,10 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
             <div key={sectionIndex} className="mb-2 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
               <button
                 type="button"
-                className={`w-full flex items-center justify-between p-3 rounded-t-lg cursor-pointer transition-all ${
-                  expandedParts[sectionIndex] 
-                    ? 'bg-purple-400 text-white shadow-md' 
-                    : 'hover:bg-purple-50 dark:hover:bg-purple-900/30 text-gray-800 dark:text-gray-200'
-                }`}
+                className={`w-full flex items-center justify-between p-3 rounded-t-lg cursor-pointer transition-all ${expandedParts[sectionIndex]
+                  ? 'bg-purple-400 text-white shadow-md'
+                  : 'hover:bg-purple-50 dark:hover:bg-purple-900/30 text-gray-800 dark:text-gray-200'
+                  }`}
                 onClick={() => togglePart(sectionIndex)}
               >
                 <div className="flex items-center">
@@ -273,16 +272,15 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                   {section.chapters && section.chapters.length > 0 ? (
                     section.chapters.map((chapter: Chapter, chapterIndex: number) => {
                       const chapterPath = `${sectionIndex}-${chapterIndex}`;
-                      
+
                       return (
                         <div key={chapterIndex} className="mb-1 pl-1 pr-1">
                           <button
                             type="button"
-                            className={`w-full flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                              expandedChapters[chapterPath] 
-                                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 shadow-sm' 
-                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                            }`}
+                            className={`w-full flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${expandedChapters[chapterPath]
+                              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 shadow-sm'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }`}
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleChapter(chapterPath);
@@ -305,11 +303,10 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                                 <button
                                   key={paragraphIndex}
                                   type="button"
-                                  className={`w-full p-2 text-xs rounded-lg cursor-pointer transition-all flex items-center ${
-                                    activeParagraph === `${sectionIndex}-${chapterIndex}-${paragraphIndex}`
-                                      ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 shadow-sm'
-                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                  }`}
+                                  className={`w-full p-2 text-xs rounded-lg cursor-pointer transition-all flex items-center ${activeParagraph === `${sectionIndex}-${chapterIndex}-${paragraphIndex}`
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleParagraphClick(sectionIndex, chapterIndex, paragraphIndex);
@@ -330,17 +327,16 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                         <button
                           key={paragraphIndex}
                           type="button"
-                          className={`w-full p-2 text-xs rounded-lg cursor-pointer transition-all flex items-center ${
-                            activeParagraph === `${sectionIndex}-${paragraphIndex}`
-                              ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                          }`}
+                          className={`w-full p-2 text-xs rounded-lg cursor-pointer transition-all flex items-center ${activeParagraph === `${sectionIndex}-${paragraphIndex}`
+                            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setCurrentSectionIndex(sectionIndex);
                             setCurrentChapterIndex(0);
                             setCurrentParagraphIndex(paragraphIndex);
-                            setActiveParagraph(`${sectionIndex}-${paragraphIndex}`);
+                            setActiveParagraph(`${sectionIndex}-0-${paragraphIndex}`);
                             setShowExercise(false);
                           }}
                         >
@@ -362,9 +358,9 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
           </div>
         )}
       </nav>
-      
+
       <div className="p-2 border-t border-gray-200 dark:border-gray-700">
-        <button 
+        <button
           onClick={handleDownloadClick}
           className="fixed bottom-4 left-20 bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 shadow-lg transition-all hover:shadow-xl"
           title="Télécharger le cours"

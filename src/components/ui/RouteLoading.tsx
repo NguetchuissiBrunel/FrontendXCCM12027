@@ -1,13 +1,16 @@
-// components/RouteLoading.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function RouteLoading() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { isLoading: contextLoading, startLoading, stopLoading } = useLoading();
+  const [internalLoading, setInternalLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const activeLoading = internalLoading || contextLoading;
 
   useEffect(() => {
     // Détecter les clics sur les liens
@@ -23,7 +26,7 @@ export default function RouteLoading() {
         !link.classList.contains('no-loading') &&
         link.getAttribute('href')?.startsWith('/')
       ) {
-        setIsLoading(true);
+        setInternalLoading(true);
         setProgress(0);
       }
     };
@@ -34,7 +37,7 @@ export default function RouteLoading() {
 
   // Animation de progression réaliste
   useEffect(() => {
-    if (!isLoading) return;
+    if (!activeLoading) return;
 
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -61,37 +64,42 @@ export default function RouteLoading() {
     }, 30);
 
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [activeLoading]);
 
-  // Détection du changement d'URL (quand la navigation est terminée)
+  // Détection du changement d'URL
   useEffect(() => {
-    if (isLoading) {
-      // Quand l'URL change, on suppose que la navigation est terminée
-      setProgress(100);
+    if (internalLoading) {
+      // On arrête le loading INTERNE quand l'URL change
+      // Mais activeLoading restera true si le CONTEXTE est toujours loading
+      setInternalLoading(false);
+    }
+  }, [pathname, searchParams, internalLoading]);
 
-      // Petit délai pour laisser l'animation se terminer
+  // Détection de fin de chargement globale
+  useEffect(() => {
+    if (!internalLoading && !contextLoading && progress > 0) {
+      setProgress(100);
       const timer = setTimeout(() => {
-        setIsLoading(false);
         setProgress(0);
       }, 300);
-
       return () => clearTimeout(timer);
     }
-  }, [pathname, searchParams, isLoading]);
+  }, [internalLoading, contextLoading, progress]);
 
   // S'assurer que le chargement s'arrête après un délai maximum (sécurité)
   useEffect(() => {
-    if (isLoading) {
+    if (activeLoading) {
       const safetyTimer = setTimeout(() => {
-        setIsLoading(false);
+        setInternalLoading(false);
+        stopLoading();
         setProgress(0);
-      }, 10000); // 10 secondes max
+      }, 15000); // 15 secondes max
 
       return () => clearTimeout(safetyTimer);
     }
-  }, [isLoading]);
+  }, [activeLoading, stopLoading]);
 
-  if (!isLoading) return null;
+  if (!activeLoading && progress === 0) return null;
 
   // Calcul pour la barre circulaire (SVG)
   const radius = 40;

@@ -5,8 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 export default function TeacherEnrollmentsPage() {
-    const { user, loading } = useAuth();
+    const { user, loading: authLoading } = useAuth();
+    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [isMounted, setIsMounted] = useState(false);
     const router = useRouter();
 
@@ -14,12 +17,16 @@ export default function TeacherEnrollmentsPage() {
         setIsMounted(true);
     }, []);
 
-    if (loading || !isMounted) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
-            </div>
-        );
+    useEffect(() => {
+        if (authLoading || !isMounted) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [authLoading, isMounted, startLoading, stopLoading]);
+
+    if (authLoading || !isMounted || globalLoading) {
+        return null;
     }
 
     // Protection de route basique

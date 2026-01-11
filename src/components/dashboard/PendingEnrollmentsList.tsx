@@ -6,12 +6,16 @@ import { Enrollment } from '@/types/enrollment';
 import { Check, X, Loader2, User, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
 
 export default function PendingEnrollmentsList() {
     const { user } = useAuth();
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
+    const [studentNames, setStudentNames] = useState<Record<string, string>>({});
+    const [courseTitles, setCourseTitles] = useState<Record<number, string>>({});
 
     useEffect(() => {
         fetchPendingEnrollments();
@@ -22,11 +26,44 @@ export default function PendingEnrollmentsList() {
         try {
             const data = await EnrollmentService.getPendingEnrollments();
             setEnrollments(data);
+
+            // Une fois les enrôlements récupérés, charger les noms en parallèle
+            loadDetails(data);
         } catch (error) {
             console.error("Erreur lors de la récupération des enrôlements en attente:", error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadDetails = async (enrollments: Enrollment[]) => {
+        const studentIds = Array.from(new Set(enrollments.map(e => e.userId)));
+        const courseIds = Array.from(new Set(enrollments.map(e => e.courseId)));
+
+        // Charger les noms des étudiants
+        studentIds.forEach(async (id) => {
+            try {
+                const response = await GestionDesUtilisateursService.getStudentById(id);
+                if (response.data) {
+                    const name = `Étudiant ${response.data.firstName || ''} ${response.data.lastName || ''}`.trim() || `Étudiant #${id}`;
+                    setStudentNames(prev => ({ ...prev, [id]: name }));
+                }
+            } catch (err) {
+                console.warn(`Impossible de charger l'étudiant ${id}`, err);
+            }
+        });
+
+        // Charger les titres des cours
+        courseIds.forEach(async (id) => {
+            try {
+                const response = await CourseControllerService.getEnrichedCourse(id);
+                if (response.data) {
+                    setCourseTitles(prev => ({ ...prev, [id]: response.data!.title || `Cours #${id}` }));
+                }
+            } catch (err) {
+                console.warn(`Impossible de charger le cours ${id}`, err);
+            }
+        });
     };
 
     const handleValidation = async (id: number, status: 'APPROVED' | 'REJECTED') => {
@@ -95,16 +132,16 @@ export default function PendingEnrollmentsList() {
                             </div>
                             <div>
                                 <h4 className="font-bold text-gray-900 dark:text-white text-lg">
-                                    Étudiant #{enrollment.userId}
+                                    {studentNames[enrollment.userId] || `Étudiant #${enrollment.userId}`}
                                 </h4>
                                 <div className="flex flex-wrap items-center gap-2 mt-1">
                                     <span className="flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                                         <BookOpen className="h-3.5 w-3.5" />
-                                        Cours #{enrollment.courseId}
+                                        {courseTitles[enrollment.courseId] || `Cours #${enrollment.courseId}`}
                                     </span>
                                     <span className="text-gray-300 dark:text-gray-600">•</span>
                                     <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                                        Demandé le {new Date(enrollment.enrolledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                                        Demandé le {new Date(enrollment.enrolledAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
                                     </span>
                                 </div>
                             </div>

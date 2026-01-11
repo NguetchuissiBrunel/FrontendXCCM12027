@@ -33,13 +33,24 @@ interface Teacher {
   university?: string;
 }
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 export default function ProfessorDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [authLoading, loading, startLoading, stopLoading]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -73,8 +84,6 @@ export default function ProfessorDashboard() {
         }
 
         // 2. Fetch other teachers (optional feature, if API exists)
-        // For now, let's keep it empty or mock it if there's no "get all teachers" endpoint
-        // or just use public courses authors
         setTeachers([]);
 
       } catch (error) {
@@ -89,15 +98,8 @@ export default function ProfessorDashboard() {
     }
   }, [user, authLoading, isAuthenticated, router]);
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
-      </div>
-    );
+  if (authLoading || loading || globalLoading) {
+    return null;
   }
 
   if (!user) return null;

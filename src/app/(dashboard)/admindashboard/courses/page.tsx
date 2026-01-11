@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt } from 'react-icons/fa';
 import { AdminService } from '@/lib';
+import { useLoading } from '@/contexts/LoadingContext';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
@@ -25,6 +26,7 @@ const StatsCard = ({ title, value, icon, color }: any) => (
 export default function AdminCoursesPage() {
     const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [searchTerm, setSearchTerm] = useState('');
     const [stats, setStats] = useState({
         total: 0,
@@ -32,6 +34,14 @@ export default function AdminCoursesPage() {
         draft: 0,
         archived: 0,
     });
+
+    useEffect(() => {
+        if (loading) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [loading, startLoading, stopLoading]);
 
     useEffect(() => {
         fetchCourses();
@@ -163,11 +173,8 @@ export default function AdminCoursesPage() {
                 />
             </div>
 
-            {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-                    <p className="text-slate-500 dark:text-slate-400 mt-4">Chargement des cours...</p>
-                </div>
+            {loading || globalLoading ? (
+                null
             ) : filteredCourses.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <FaBook className="mx-auto text-slate-300 dark:text-slate-700 mb-4" size={48} />

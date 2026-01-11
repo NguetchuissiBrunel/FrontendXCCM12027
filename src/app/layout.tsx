@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 // pré-générer des pages nécessitant des données privées au build
 export const dynamic = 'force-dynamic';
 
+import { LoadingProvider } from "@/contexts/LoadingContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -28,12 +30,14 @@ export default function RootLayout({
       <body className="antialiased font-sans">
         <div className="min-h-screen flex flex-col">
           <main className="grow">
-            <Suspense fallback={null}>
-              <RouteLoading />
-            </Suspense>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <LoadingProvider>
+              <Suspense fallback={null}>
+                <RouteLoading />
+              </Suspense>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </LoadingProvider>
             <Toaster position="top-right" />
           </main>
         </div>

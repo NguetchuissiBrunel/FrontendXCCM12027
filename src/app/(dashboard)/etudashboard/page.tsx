@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { BookOpen } from 'lucide-react';
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface User {
   id: string;
@@ -21,8 +22,17 @@ interface User {
 export default function StudentHome() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]); // Utiliser un type plus précis si possible
   const router = useRouter();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -43,19 +53,11 @@ export default function StudentHome() {
 
         setUser(userData);
 
-        // Charger les cours
-        // Note: Il faudrait idéalement une méthode qui retourne les cours ENTIERS + l'objet enrollment
-        // Pour l'instant on simule ou on utilise ce qu'on a.
-        // On va essayer de récupérer via EnrollmentService.getMyEnrollments()
-        // Si cette méthode ne retourne que les enrollments sans les détails du cours, il faudra peut-être fetcher les cours ensuite.
-        // Supposons que le backend a été malin et renvoie les détails du cours dans le DTO ou qu'on doit faire avec.
-
-        // Temporaire : on va juste vérifier si EnrollmentService est disponible et essayer
         try {
           // Import dynamique pour éviter les soucis de cycle ou de type si pas encore 100% prêt
           const { EnrollmentService } = await import('@/utils/enrollmentService');
           const enrollments = await EnrollmentService.getMyEnrollments();
-          setEnrolledCourses(enrollments);
+          setEnrolledCourses(enrollments || []);
         } catch (err) {
           console.error("Impossible de charger les cours", err);
         }
@@ -71,15 +73,8 @@ export default function StudentHome() {
     loadData();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
-      </div>
-    );
+  if (loading || globalLoading) {
+    return null;
   }
 
   if (!user) return null;
@@ -134,7 +129,7 @@ export default function StudentHome() {
                   <div className="p-5">
                     <div className="flex justify-between items-start mb-2">
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${enrollment.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                          enrollment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                        enrollment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
                         }`}>
                         {enrollment.status === 'APPROVED' ? 'Actif' : enrollment.status === 'PENDING' ? 'En attente' : enrollment.status}
                       </span>
@@ -165,8 +160,8 @@ export default function StudentHome() {
                       onClick={() => router.push(`/courses/${enrollment.courseId}`)} // Adapt ID if routing uses slug
                       disabled={enrollment.status !== 'APPROVED'}
                       className={`mt-4 w-full py-2 rounded-lg font-medium transition-colors ${enrollment.status === 'APPROVED'
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         }`}
                     >
                       {enrollment.status === 'APPROVED' ? 'Continuer' : 'En attente'}

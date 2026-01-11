@@ -4,6 +4,7 @@ import RouteLoading from '@/components/ui/RouteLoading';
 import { AuthProvider } from "@/contexts/AuthContext";
 import './globals.css';
 import { Suspense } from 'react';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'XCCM1 - Plateforme de création de contenu pédagogique',
@@ -33,6 +34,7 @@ export default function RootLayout({
             <AuthProvider>
               {children}
             </AuthProvider>
+            <Toaster position="top-right" />
           </main>
         </div>
       </body>

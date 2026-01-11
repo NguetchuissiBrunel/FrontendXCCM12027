@@ -51,7 +51,7 @@ const SignupPage = () => {
   const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const router = useRouter();
   const { registerStudent, registerTeacher, user } = useAuth();
 
@@ -84,25 +84,25 @@ const SignupPage = () => {
 
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.email.trim()) {
       newErrors.email = "L'email est requis";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "L'email n'est pas valide";
     }
-    
+
     if (!formData.password) {
       newErrors.password = "Le mot de passe est requis";
     } else if (formData.password.length < 8) {
       newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
     }
-    
+
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Veuillez confirmer votre mot de passe";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
@@ -283,8 +283,8 @@ const SignupPage = () => {
             type="button"
             onClick={() => setFormData({ ...formData, role: 'student' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${formData.role === 'student'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
               }`}
           >
             <FaGraduationCap className="mr-2" /> Étudiant
@@ -293,8 +293,8 @@ const SignupPage = () => {
             type="button"
             onClick={() => setFormData({ ...formData, role: 'teacher' })}
             className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${formData.role === 'teacher'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
               }`}
           >
             <FaChalkboardTeacher className="mr-2" /> Enseignant
@@ -467,8 +467,7 @@ const SignupPage = () => {
         </Link>
       </div>
 
-      {errors.submit && <p className="text-red-500 dark:text-red-400 text-sm text-center">{errors.submit}</p>}
-      <Toaster position="top-right" reverseOrder={false} />
+      {/* Toaster - Supprimé car géré au niveau global RootLayout */}
     </motion.div>
   ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);
 

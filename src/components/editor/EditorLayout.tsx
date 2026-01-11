@@ -15,6 +15,7 @@
 
 import React, { useState } from 'react';
 import { Editor } from '@tiptap/react';
+import { toast } from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
   FaInfo,
@@ -33,8 +34,8 @@ import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { CourseCreateRequest } from '@/lib';
-import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { useAuth } from '@/contexts/AuthContext';
+import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
 
 
 interface EditorLayoutProps {
@@ -63,7 +64,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   // State for course title and current course ID
   const [courseTitle, setCourseTitle] = useState<string>("Nouveau cours");
-  const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
+  const [courseCategory, setCourseCategory] = useState<string>("Informatique");
+  const [courseDescription, setCourseDescription] = useState<string>("");
+  const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
+
+  const { user } = useAuth();
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
@@ -145,79 +150,68 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   };
 
   const handleSave = async (publish: boolean = false, silent: boolean = false) => {
-
     if (!editorInstance) {
-      if (!silent) alert("L'éditeur n'est pas encore chargé.");
+      if (!silent) toast.error("L'éditeur n'est pas encore chargé.");
+      return;
+    }
+
+    if (!user) {
+      if (!silent) toast.error("Vous devez être connecté pour sauvegarder votre cours.");
       return;
     }
 
     const jsonContent = editorInstance.getJSON();
 
-    const now = new Date();
-    const savedCourse = {
-      id: currentCourseId || Date.now().toString(),
-      title: courseTitle.trim() || "Cours sans titre",
-      content: jsonContent,
-      html: editorInstance.getHTML(),
-      category: "Uncategorized",
-      published: publish,
-      savedAt: now.toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }), // e.g., "03/01/2026 14:35"
-    };
-    // Payload conforme à CourseCreateRequest attendu par le backend
-    const requestBody: CourseCreateRequest = {
-      title: courseTitle.trim() || "Cours sans titre",
-      category: "Informatique", // À rendre dynamique plus tard (ex: via un select)
-      description: "Description à venir...", // Optionnel, à enrichir plus tard
-      content: jsonContent, // TipTap JSON → stringifié
-      //published: publish,
-    };
-
     try {
-      // Récupérer l'ID de l'auteur connecté (à adapter selon votre auth)
+      if (currentCourseId) {
+        // Update existing course
+        const updateData: CourseUpdateRequest = {
+          title: courseTitle.trim() || "Cours sans titre",
+          content: jsonContent as any,
+          category: courseCategory.trim() || "Informatique",
+          description: courseDescription.trim() || "Description du cours",
+        };
 
-      const user = localStorage.getItem("currentUser"); // ← À remplacer par le vrai ID utilisateur
-      console.log("Current user from localStorage:", user);
-      const authorId = user ? JSON.parse(user).id : null;
-      console.log("Author ID:", authorId);
+        await CourseControllerService.updateCourse(currentCourseId, updateData);
 
+        // Update status if publish is requested
+        if (publish) {
+          await CourseControllerService.updateCourseStatus(currentCourseId, 'PUBLISHED');
+        }
 
-      // Appel au service backend
-      console.log("Saving course...", { publish, silent });
-      const response = await CourseControllerService.createCourse(authorId, requestBody);
-      alert('Sauvegarde réussie !');
-      console.log("Réponse du backend :", response.data);
+        if (!silent) toast.success(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
+      } else {
+        // Create new course
+        const createData: CourseCreateRequest = {
+          title: courseTitle.trim() || "Cours sans titre",
+          content: jsonContent as any,
+          category: courseCategory.trim() || "Informatique",
+          description: courseDescription.trim() || "Description du cours",
+        };
 
-      // Succès : confirmation + mise à jour de l'ID courant
-      // if (response?.data?.id) {
-      //   setCurrentCourseId(response.data.id);
-      // }
+        const response = await CourseControllerService.createCourse(user.id, createData);
 
-      // if (!silent) {
-      //   alert(
-      //     publish
-      //       ? "Cours publié avec succès sur le serveur !"
-      //       : "Cours sauvegardé avec succès sur le serveur !"
-      //   );
-      // }
+        // Standardize response extraction based on OpenAPI output (ApiResponseCourseResponse)
+        const responseData = (response as any).data || response;
+        const createdCourseId = responseData?.id;
 
+        if (createdCourseId) {
+          setCurrentCourseId(createdCourseId);
 
-    } catch (error: any) {
-      console.error("Erreur lors de la sauvegarde sur le serveur :", error);
+          // Publish if requested
+          if (publish) {
+            await CourseControllerService.updateCourseStatus(createdCourseId, 'PUBLISHED');
+          }
 
-      if (!silent) {
-        const message =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Impossible de contacter le serveur.";
-
-        alert(`Échec de la sauvegarde : ${message}`);
+          if (!silent) toast.success(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
+        } else {
+          throw new Error("Impossible de récupérer l'ID du cours créé.");
+        }
       }
+    } catch (error: any) {
+      console.error("Erreur sauvegarde :", error);
+      const message = error?.response?.data?.message || error?.message || "Erreur de communication avec le serveur.";
+      if (!silent) toast.error(`Échec de la sauvegarde : ${message}`);
     }
   };
 
@@ -307,8 +301,57 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     <FaTimes />
                   </button>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  Informations du cours à venir...
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                      Titre du cours
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
+                      value={courseTitle}
+                      onChange={(e) => setCourseTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                      Catégorie
+                    </label>
+                    <select
+                      className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
+                      value={courseCategory}
+                      onChange={(e) => setCourseCategory(e.target.value)}
+                    >
+                      <option value="Informatique">Informatique</option>
+                      <option value="Mathématiques">Mathématiques</option>
+                      <option value="Physique">Physique</option>
+                      <option value="Langues">Langues</option>
+                      <option value="Autre">Autre</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                      Description
+                    </label>
+                    <textarea
+                      rows={4}
+                      className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors resize-none"
+                      value={courseDescription}
+                      onChange={(e) => setCourseDescription(e.target.value)}
+                      placeholder="Résumé du cours..."
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => handleSave(false)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                    >
+                      <FaSave /> Sauvegarder les infos
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -332,11 +375,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {activePanel === 'author' && (
               <MyCoursesPanel
                 onClose={() => setActivePanel(null)}
-                onLoadCourse={(content, courseId, title) => {
+                onLoadCourse={(content, courseId, title, category, description) => {
                   if (editorInstance) {
                     editorInstance.commands.setContent(content);
-                    setCurrentCourseId(courseId);
+                    setCurrentCourseId(Number(courseId));
                     setCourseTitle(title);
+                    setCourseCategory(category);
+                    setCourseDescription(description);
                   }
                 }}
               />

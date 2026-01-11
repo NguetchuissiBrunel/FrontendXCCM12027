@@ -5,6 +5,7 @@ import { EnrollmentService } from '@/utils/enrollmentService';
 import { Enrollment } from '@/types/enrollment';
 import { Check, X, Loader2, User, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 export default function PendingEnrollmentsList() {
     const { user } = useAuth();
@@ -35,10 +36,11 @@ export default function PendingEnrollmentsList() {
             // Retirer l'élément de la liste
             setEnrollments(prev => prev.filter(e => e.id !== id));
 
-            // Feedback utilisateur (optionnel, pourrait être un toast)
-            console.log(`Enrôlement ${status === 'APPROVED' ? 'validé' : 'rejeté'} avec succès`);
+            // Feedback utilisateur
+            toast.success(`Enrôlement ${status === 'APPROVED' ? 'accepté' : 'rejeté'} avec succès`);
         } catch (error) {
             console.error(`Erreur lors de la ${status === 'APPROVED' ? 'validation' : 'rejet'}:`, error);
+            toast.error(`Erreur lors de l'opération. Veuillez réessayer.`);
         } finally {
             setProcessingId(null);
         }

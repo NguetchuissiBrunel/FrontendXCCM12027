@@ -14,8 +14,7 @@ export interface Course {
     // Updated to match your JSON
     author?: {
         id: string;
-        firstName: string;
-        lastName: string;
+        name: string;
         email: string;
         university?: string;
         photoUrl?: string;

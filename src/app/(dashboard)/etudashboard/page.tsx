@@ -6,6 +6,8 @@ import Sidebar from '@/components/Sidebar';
 import { BookOpen } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
 
+import { Metadata } from 'next';
+
 interface User {
   id: string;
   firstName: string;
@@ -18,6 +20,11 @@ interface User {
   university?: string;
   city?: string;
 }
+
+export const viewport = {
+  width: 1280,
+  initialScale: 0.8,
+};
 
 export default function StudentHome() {
   const [user, setUser] = useState<User | null>(null);

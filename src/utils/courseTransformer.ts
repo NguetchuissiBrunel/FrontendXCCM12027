@@ -5,13 +5,35 @@ import { extractTOC, TableOfContentsItem } from './extractTOC';
  * Transforms Tiptap JSON content into a structured CourseData object
  * compatible with the Course viewer and PDF generator.
  */
+
+export const extractTextFromContent = (content: any): string => {
+    if (!content) return '';
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+        return content.map((node: any) => {
+            if (node.type === 'text') return node.text;
+            if (node.content) return extractTextFromContent(node.content);
+            return '';
+        }).join(' ');
+    }
+    if (content.type === 'doc' && content.content) return extractTextFromContent(content.content);
+    if (content.content) return extractTextFromContent(content.content);
+    return '';
+};
+
 export function transformTiptapToCourseData(apiCourse: any): CourseData {
     const contentJSON = typeof apiCourse.content === 'string'
         ? JSON.parse(apiCourse.content)
         : apiCourse.content;
 
     // 1. Extract the hierarchy (TOC) from the Tiptap JSON
-    const toc = extractTOC(contentJSON);
+    let toc: TableOfContentsItem[] = [];
+    try {
+        toc = extractTOC(contentJSON);
+    } catch (error) {
+        console.error("Error extracting TOC from course content:", error);
+    }
+
 
     // 2. Map TOC to Section/Chapter/Paragraph structure
     // The extractTOC returns a tree of TableOfContentsItem
@@ -68,7 +90,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                         if (grandChild.type === 'paragraph' || grandChild.type === 'notion' || grandChild.type === 'exercise') {
                             const para: Paragraph = {
                                 title: grandChild.title,
-                                content: getRawText(grandChild.content),
+                                content: grandChild.content || [],
                                 notions: grandChild.type === 'notion' ? [grandChild.title] : [],
                                 exercise: grandChild.type === 'exercise' ? { questions: [] } : undefined
                             };
@@ -80,7 +102,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                     // Paragraph directly under section
                     section.paragraphs!.push({
                         title: child.title,
-                        content: getRawText(child.content),
+                        content: child.content || [],
                         notions: []
                     });
                 }

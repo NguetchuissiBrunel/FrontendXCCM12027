@@ -8,6 +8,7 @@ import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/typ
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import CourseContentRenderer from './CourseContentRenderer';
 
 
 interface OrientationSelectorProps {
@@ -18,7 +19,7 @@ interface OrientationSelectorProps {
 
 const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSelect, onClose }) => {
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full">
@@ -26,7 +27,7 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
           <Layout className="h-5 w-5 mr-2 text-purple-600" />
           Choisissez l'orientation du PDF
         </h3>
-        
+
         <div className="grid grid-cols-2 gap-4 mt-6 mb-6">
           <button
             onClick={() => onSelect('p')}
@@ -38,7 +39,7 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
             </div>
             <span className="font-medium text-purple-700">Portrait</span>
           </button>
-          
+
           <button
             onClick={() => onSelect('l')}
             className="p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-400 transition-all flex flex-col items-center"
@@ -50,7 +51,7 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
             <span className="font-medium text-purple-700">Paysage</span>
           </button>
         </div>
-        
+
         <div className="flex justify-end">
           <button
             onClick={onClose}
@@ -70,7 +71,7 @@ interface CourseProps {
 }
 
 const Course: React.FC<CourseProps> = ({ courseData }) => {
-    const { user } = useAuth();
+  const { user } = useAuth();
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState<number>(0);
@@ -129,7 +130,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
     }
 
     const isLastSection = currentSectionIndex === courseData.sections.length - 1;
-    
+
     if (hasChapters && chapter) {
       const isLastChapter = currentChapterIndex === section.chapters!.length - 1;
       const isLastParagraph = currentParagraphIndex === chapter.paragraphs.length - 1;
@@ -145,11 +146,11 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
   const handleDownloadPDF = () => {
     setShowOrientationSelector(true);
   };
-  
+
   const handleOrientationSelect = (orientation: 'p' | 'l') => {
     setShowOrientationSelector(false);
     setPdfGenerating(true);
-    
+
     downloadCourseAsPDF(courseData, orientation)
       .then(() => setPdfGenerating(false))
       .catch(() => setPdfGenerating(false));
@@ -157,14 +158,14 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
 
   const isCurrentExerciseCompleted = (): boolean => {
     if (!paragraph || !paragraph.exercise) return true;
-    
+
     const exerciseId = `${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`;
     return exerciseScore[exerciseId] !== undefined && exerciseScore[exerciseId] >= 70;
   };
 
   const nextParagraph = () => {
     if (!hasSections || !section) return;
-    
+
     if (showExercise) {
       if (!isCurrentExerciseCompleted()) return;
       setShowExercise(false);
@@ -306,7 +307,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 flex">
-      <CourseSidebar 
+      <CourseSidebar
         courseData={courseData}
         currentSectionIndex={currentSectionIndex}
         currentChapterIndex={currentChapterIndex}
@@ -329,14 +330,20 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
               <span className="flex items-center"><Download className="h-5 w-5 mr-2" /> {courseData.downloads} téléchargements</span>
             </div>
           </div>
-          
+
           {/* Content */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12">
             {!showExercise ? (
               <>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{paragraph?.title || "Titre non disponible"}</h2>
-                <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">{paragraph?.content || "Contenu non disponible"}</p>
-                
+                {paragraph?.content ? (
+                  <div className="mb-8">
+                    <CourseContentRenderer content={paragraph.content} />
+                  </div>
+                ) : (
+                  <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">Contenu non disponible</p>
+                )}
+
                 {paragraph?.notions && paragraph.notions.length > 0 && (
                   <div className="mb-8">
                     <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
@@ -390,11 +397,10 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                     Soumettre les réponses
                   </button>
                   {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] !== undefined && (
-                    <div className={`p-4 rounded-lg ${
-                      exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' 
-                        : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                    }`}>
+                    <div className={`p-4 rounded-lg ${exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70
+                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                      : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                      }`}>
                       <p className="font-semibold">Score: {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`]}%</p>
                       {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70 ? (
                         <p>Félicitations ! Vous pouvez continuer.</p>
@@ -419,22 +425,22 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
               <ArrowLeft className="h-5 w-5 mr-2" />
               Précédent
             </button>
-            
+
             <button
               onClick={nextParagraph}
               disabled={!canGoNext}
               className="px-5 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-md hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-medium"
               type="button"
             >
-              {showExercise 
+              {showExercise
                 ? <>Continuer <ArrowRight className="h-5 w-5 ml-2" /></>
-                : paragraph?.exercise 
+                : paragraph?.exercise
                   ? <>Passer à l'exercice <Award className="h-5 w-5 ml-2" /></>
                   : <>Suivant <ArrowRight className="h-5 w-5 ml-2" /></>
               }
             </button>
           </div>
-          
+
           {/* Section de conclusion */}
           {courseCompleted && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mt-12">
@@ -541,10 +547,10 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
           )}
         </div>
       </div>
-      <OrientationSelector 
-        isOpen={showOrientationSelector} 
-        onSelect={handleOrientationSelect} 
-        onClose={() => setShowOrientationSelector(false)} 
+      <OrientationSelector
+        isOpen={showOrientationSelector}
+        onSelect={handleOrientationSelect}
+        onClose={() => setShowOrientationSelector(false)}
       />
     </div>
   );

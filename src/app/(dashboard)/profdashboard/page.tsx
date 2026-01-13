@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { CourseResponse } from '@/lib/models/CourseResponse';
 import CreateCourseModal from '@/./components/create-course/page';
+import { EnrollmentService } from '@/utils/enrollmentService';
+
 
 interface User {
   id: string;
@@ -43,6 +45,8 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
+
 
   useEffect(() => {
     if (authLoading || loading) {
@@ -85,6 +89,11 @@ export default function ProfessorDashboard() {
 
         // 2. Fetch other teachers (optional feature, if API exists)
         setTeachers([]);
+
+        // 3. Fetch pending inscriptions count
+        const pendingData = await EnrollmentService.getPendingEnrollments();
+        setPendingInscriptionsCount(pendingData.length);
+
 
       } catch (error) {
         console.error('Erreur lors du chargement des données du tableau de bord:', error);
@@ -159,13 +168,18 @@ export default function ProfessorDashboard() {
           <div className="flex items-center gap-6">
             <button
               onClick={() => router.push('/teacher/inscriptions')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+              className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Gérer les inscriptions
+              {pendingInscriptionsCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-gray-800 animate-bounce">
+                  {pendingInscriptionsCount}
+                </span>
+              )}
             </button>
 
 

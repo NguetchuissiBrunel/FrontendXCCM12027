@@ -14,7 +14,6 @@ import {
   List,
   Target
 } from 'lucide-react';
-import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
 import { CourseData, Section, Chapter, Paragraph } from '@/types/course';
 
 interface SearchResult {
@@ -32,6 +31,7 @@ interface CourseSidebarProps {
   setCurrentChapterIndex: (index: number) => void;
   setCurrentParagraphIndex: (index: number) => void;
   setShowExercise: (show: boolean) => void;
+  onDownloadRequest: () => void;
 }
 
 const CourseSidebar: React.FC<CourseSidebarProps> = ({
@@ -42,7 +42,8 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   setCurrentSectionIndex,
   setCurrentChapterIndex,
   setCurrentParagraphIndex,
-  setShowExercise
+  setShowExercise,
+  onDownloadRequest
 }) => {
   const [expandedParts, setExpandedParts] = useState<{ [key: number]: boolean }>({});
   const [expandedChapters, setExpandedChapters] = useState<{ [key: string]: boolean }>({});
@@ -195,9 +196,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   };
 
   const handleDownloadClick = () => {
-    downloadCourseAsPDF(courseData, 'p').catch((error) => {
-      console.error('Erreur lors du téléchargement:', error);
-    });
+    onDownloadRequest();
   };
 
   return (

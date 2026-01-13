@@ -128,13 +128,22 @@ export function useCourse(courseId: number) {
                 setLoading(true);
                 setError(null);
 
-                console.log(`📖 Chargement du cours ${courseId}...`);
+                const enrichedResponse: any = await CourseControllerService.getEnrichedCourse(courseId);
+                const allResponse: any = await CourseControllerService.getAllCourses();
 
-                const response = await CourseControllerService.getEnrichedCourse(courseId);
+                if (enrichedResponse && enrichedResponse.success && enrichedResponse.data) {
+                    const enrichedData = enrichedResponse.data;
 
-                if (response) {
-                    setCourse(response as Course);
-                    console.log(`✅ Cours ${courseId} chargé`);
+                    // Find the course in the full list to get the content
+                    // (The enriched endpoint doesn't seem to return the content body)
+                    const fullCourse = allResponse?.data?.find((c: any) => c.id === courseId);
+
+                    setCourse({
+                        ...enrichedData,
+                        content: fullCourse?.content || enrichedData.content
+                    } as Course);
+                } else {
+                    console.warn('⚠️ Échec du chargement du cours:', enrichedResponse);
                 }
             } catch (err) {
                 console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);

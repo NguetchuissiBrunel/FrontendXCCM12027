@@ -99,6 +99,12 @@ function extractTOCRecursive(
   level: number = 0
 ): TableOfContentsItem[] {
   const items: TableOfContentsItem[] = [];
+
+  // Safety check: ensure nodes is an array
+  if (!nodes || !Array.isArray(nodes)) {
+    return items;
+  }
+
   const levelCounters = [...counters];
 
   for (const node of nodes) {
@@ -162,7 +168,7 @@ function extractTOCRecursive(
           level: config.level,
           number: numberStr,
           children: [],
-          content: node.content ? JSON.stringify(node.content) : undefined,
+          content: node.content,
         };
         // Recursively extract children
         if (node.content && Array.isArray(node.content)) {
@@ -192,11 +198,31 @@ function extractTOCRecursive(
  * @returns Array of TableOfContentsItem in hierarchical structure
  */
 export function extractTOC(editorJSON: any): TableOfContentsItem[] {
-  if (!editorJSON || !editorJSON.content) {
+  if (!editorJSON) {
     return [];
   }
 
-  return extractTOCRecursive(editorJSON.content);
+  // Case 1: editorJSON is already the array of nodes
+  if (Array.isArray(editorJSON)) {
+    return extractTOCRecursive(editorJSON);
+  }
+
+  // Case 2: TipTap doc structure
+  if (editorJSON.type === 'doc' && Array.isArray(editorJSON.content)) {
+    return extractTOCRecursive(editorJSON.content);
+  }
+
+  // Case 3: Object with content property (generic or partially malformed)
+  if (editorJSON.content && Array.isArray(editorJSON.content)) {
+    return extractTOCRecursive(editorJSON.content);
+  }
+
+  // Fallback: If it's a single node that is a hierarchy node
+  if (isHierarchyNode(editorJSON)) {
+    return extractTOCRecursive([editorJSON]);
+  }
+
+  return [];
 }
 
 /**

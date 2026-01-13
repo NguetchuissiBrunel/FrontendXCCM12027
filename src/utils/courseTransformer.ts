@@ -120,7 +120,9 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
         likes: apiCourse.likes || 0,
         downloads: apiCourse.downloads || 0,
         author: {
-            name: apiCourse.author ? `${apiCourse.author.firstName} ${apiCourse.author.lastName}` : "Auteur inconnu",
+            name: apiCourse.author
+                ? (apiCourse.author.name || `${apiCourse.author.firstName || ''} ${apiCourse.author.lastName || ''}`.trim() || "Auteur inconnu")
+                : "Auteur inconnu",
             image: apiCourse.author?.image || apiCourse.author?.photoUrl || "",
             designation: apiCourse.author?.designation
         },

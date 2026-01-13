@@ -6,6 +6,6 @@ export type CourseUpdateRequest = {
     title?: string;
     category?: string;
     description?: string;
-    content?: Record<string, Record<string, any>>;
+    content?: string;
 };
 

@@ -1,4 +1,4 @@
-// app/(dashboard)/profdashboard/page.tsx
+// app/(dashboard)/profdashboard/page.tsx - Version mise à jour
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,8 +9,15 @@ import { CourseControllerService } from '@/lib/services/CourseControllerService'
 import { StatsControllerService, CourseStatsResponse } from '@/lib/services/StatsControllerService';
 import CreateCourseModal from '@/./components/create-course/page';
 import { useLoading } from '@/contexts/LoadingContext';
+import { ExerciseService } from '@/lib/services/ExerciseService';
 
 // Définir les interfaces pour les statistiques
+interface Course {
+  id?: number | string;
+  title?: string;
+  category?: string;
+}
+
 interface ExerciseStat {
   exerciseId: number;
   title: string;
@@ -69,6 +76,11 @@ export default function ProfessorDashboard() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [coursesStats, setCoursesStats] = useState<CourseStats[]>([]);
+  const [exercisesStats, setExercisesStats] = useState({
+    totalExercises: 0,
+    pendingSubmissions: 0,
+    averageScore: 0
+  });
   const [overallStats, setOverallStats] = useState({
     totalStudents: 0,
     activeStudents: 0,
@@ -76,13 +88,12 @@ export default function ProfessorDashboard() {
     publications: 0,
     totalExercises: 0,
     averageProgress: 0,
-    completedStudents: 0
+    completedStudents: 0,
+    pendingSubmissions: 0
   });
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
-
 
   useEffect(() => {
     if (authLoading || loading) {
@@ -92,7 +103,7 @@ export default function ProfessorDashboard() {
     }
   }, [authLoading, loading, startLoading, stopLoading]);
 
-  // Fonction pour calculer les statistiques globales CORRECTEMENT
+  // Fonction pour calculer les statistiques globales
   const calculateOverallStats = (stats: CourseStats[]) => {
     if (stats.length === 0) return {
       totalStudents: 0,
@@ -101,7 +112,8 @@ export default function ProfessorDashboard() {
       publications: 0,
       totalExercises: 0,
       averageProgress: 0,
-      completedStudents: 0
+      completedStudents: 0,
+      pendingSubmissions: 0
     };
 
     const totalStudents = stats.reduce((acc, stat) => acc + stat.totalEnrolled, 0);
@@ -126,8 +138,49 @@ export default function ProfessorDashboard() {
       publications: stats.length,
       totalExercises,
       averageProgress: Math.round(averageProgress),
-      completedStudents
+      completedStudents,
+      pendingSubmissions: 0 // Calculé séparément
     };
+  };
+
+  // Fonction pour calculer les statistiques d'exercices
+  const calculateExercisesStats = async (courses: Course[]) => {
+    try {
+      let totalPending = 0;
+      let totalExercisesCount = 0;
+      
+      // Pour chaque cours, compter les soumissions en attente
+      for (const course of courses) {
+        const courseId = parseCourseId(course.id);
+        if (courseId > 0) {
+          try {
+            // Récupérer les exercices du cours
+            const exercises = await ExerciseService.getTeacherCourseExercises(courseId);
+            totalExercisesCount += exercises.length;
+            
+            // Pour chaque exercice, compter les soumissions en attente
+            for (const exercise of exercises) {
+              const submissions = await ExerciseService.getExerciseSubmissions(exercise.id);
+              const pending = submissions.filter(s => !s.graded).length;
+              totalPending += pending;
+            }
+          } catch (error) {
+            console.error(`Erreur chargement exercices cours ${courseId}:`, error);
+          }
+        }
+      }
+      
+      setExercisesStats({
+        totalExercises: totalExercisesCount,
+        pendingSubmissions: totalPending,
+        averageScore: 0 // À calculer si nécessaire
+      });
+      
+      return totalPending;
+    } catch (error) {
+      console.error('Erreur calcul statistiques exercices:', error);
+      return 0;
+    }
   };
 
   // Fonction pour formater la distribution des performances
@@ -141,7 +194,6 @@ export default function ProfessorDashboard() {
       ];
     }
 
-    // Calculer la distribution globale à partir de tous les cours
     const totalDistribution = {
       excellent: 0,
       good: 0,
@@ -158,8 +210,7 @@ export default function ProfessorDashboard() {
       totalDistribution.total += stat.performanceDistribution.total;
     });
 
-    // Calculer les pourcentages
-    const totalStudents = totalDistribution.total || 1; // Éviter la division par zéro
+    const totalStudents = totalDistribution.total || 1;
 
     return [
       { 
@@ -185,6 +236,113 @@ export default function ProfessorDashboard() {
     ];
   };
 
+  const loadDashboardData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      console.log('Chargement des données pour l\'utilisateur:', user.id);
+
+      // 1. Fetch courses (compositions) pour cet enseignant
+      const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
+      console.log('Cours récupérés:', coursesResponse.data);
+      
+      if (coursesResponse.data) {
+        const courses = coursesResponse.data as Course[];
+        
+        // 2. Calculer les statistiques d'exercices
+        const pendingSubmissions = await calculateExercisesStats(courses);
+        
+        // 3. Fetch les statistiques pour tous les cours
+        const statsResponse = await StatsControllerService.getTeacherCoursesStats();
+        console.log('Statistiques récupérées:', statsResponse.data);
+        
+        if (statsResponse.data) {
+          const coursesStatsData = statsResponse.data as CourseStatsResponse[];
+          const convertedStats: CourseStats[] = coursesStatsData.map(stat => ({
+            ...stat,
+            exerciseStats: stat.exerciseStats || []
+          }));
+          
+          console.log('Statistiques converties:', convertedStats);
+          setCoursesStats(convertedStats);
+
+          // Calculer les statistiques globales avec les soumissions en attente
+          const overall = {
+            ...calculateOverallStats(convertedStats),
+            pendingSubmissions
+          };
+          console.log('Statistiques globales calculées:', overall);
+          setOverallStats(overall);
+
+          // Mapper les compositions avec les données réelles
+          const mappedCompositions: Composition[] = courses.map((course: Course) => {
+            const courseIdNum = parseCourseId(course.id);
+            
+            const courseStat = convertedStats.find(s => s.courseId === courseIdNum);
+            
+            if (!courseStat) {
+              console.log(`Pas de stats pour le cours ${course.id} (${course.title})`);
+              return {
+                id: course.id?.toString() || Math.random().toString(),
+                title: course.title || 'Sans titre',
+                class: course.category || 'Non spécifiée',
+                participants: 0,
+                likes: 0,
+                downloads: 0,
+                courseStats: undefined
+              };
+            }
+            
+            let totalLikes = 0;
+            let totalDownloads = 0;
+            
+            if (courseStat.exerciseStats) {
+              totalLikes = courseStat.exerciseStats.reduce((sum, ex) => sum + (ex.submissionCount || 0), 0);
+              totalDownloads = courseStat.exerciseStats.reduce((sum, ex) => sum + (ex.maxScore || 0), 0);
+            }
+            
+            return {
+              id: course.id?.toString() || Math.random().toString(),
+              title: course.title || 'Sans titre',
+              class: course.category || 'Non spécifiée',
+              participants: courseStat.totalEnrolled || 0,
+              likes: totalLikes,
+              downloads: totalDownloads,
+              courseStats: courseStat
+            };
+          });
+          
+          console.log('Compositions mappées:', mappedCompositions);
+          setCompositions(mappedCompositions);
+        } else {
+          console.log('Aucune statistique disponible');
+          const mappedCompositions: Composition[] = courses.map((course: Course)=> ({
+            id: course.id?.toString() || Math.random().toString(),
+            title: course.title || 'Sans titre',
+            class: course.category || 'Non spécifiée',
+            participants: 0,
+            likes: 0,
+            downloads: 0,
+            courseStats: undefined
+          }));
+          setCompositions(mappedCompositions);
+        }
+      } else {
+        console.log('Aucun cours trouvé pour cet enseignant');
+        setCompositions([]);
+      }
+
+      // 4. Fetch other teachers (optionnel)
+      setTeachers([]);
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des données du tableau de bord:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -196,115 +354,6 @@ export default function ProfessorDashboard() {
       return;
     }
 
-    const loadDashboardData = async () => {
-      if (!user) return;
-
-      try {
-        setLoading(true);
-        console.log('Chargement des données pour l\'utilisateur:', user.id);
-
-        // 1. Fetch courses (compositions) pour cet enseignant
-        const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
-        console.log('Cours récupérés:', coursesResponse.data);
-        
-        if (coursesResponse.data) {
-          // 2. Fetch les statistiques pour tous les cours
-          const statsResponse = await StatsControllerService.getTeacherCoursesStats();
-          console.log('Statistiques récupérées:', statsResponse.data);
-          
-          if (statsResponse.data) {
-            const coursesStatsData = statsResponse.data as CourseStatsResponse[];
-            // Convertir CourseStatsResponse en CourseStats
-            const convertedStats: CourseStats[] = coursesStatsData.map(stat => ({
-              ...stat,
-              exerciseStats: stat.exerciseStats || []
-            }));
-            
-            console.log('Statistiques converties:', convertedStats);
-            setCoursesStats(convertedStats);
-
-            // Calculer les statistiques globales
-            const overall = calculateOverallStats(convertedStats);
-            console.log('Statistiques globales calculées:', overall);
-            setOverallStats(overall);
-
-            // Mapper les compositions avec les données réelles
-            const mappedCompositions: Composition[] = coursesResponse.data.map((course) => {
-              const courseIdNum = parseCourseId(course.id);
-              
-              // Trouver les statistiques pour ce cours
-              const courseStat = convertedStats.find(s => s.courseId === courseIdNum);
-              
-              // Si pas de statistiques pour ce cours, créer des valeurs par défaut
-              if (!courseStat) {
-                console.log(`Pas de stats pour le cours ${course.id} (${course.title})`);
-                return {
-                  id: course.id?.toString() || Math.random().toString(),
-                  title: course.title || 'Sans titre',
-                  class: course.category || 'Non spécifiée',
-                  participants: 0,
-                  likes: 0,
-                  downloads: 0,
-                  courseStats: undefined
-                };
-              }
-              
-              // Calculer les likes et downloads depuis les statistiques d'exercices
-              let totalLikes = 0;
-              let totalDownloads = 0;
-              
-              if (courseStat.exerciseStats) {
-                totalLikes = courseStat.exerciseStats.reduce((sum, ex) => sum + (ex.submissionCount || 0), 0);
-                totalDownloads = courseStat.exerciseStats.reduce((sum, ex) => sum + (ex.maxScore || 0), 0);
-              }
-              
-              return {
-                id: course.id?.toString() || Math.random().toString(),
-                title: course.title || 'Sans titre',
-                class: course.category || 'Non spécifiée',
-                participants: courseStat.totalEnrolled || 0,
-                likes: totalLikes,
-                downloads: totalDownloads,
-                courseStats: courseStat
-              };
-            });
-            
-            console.log('Compositions mappées:', mappedCompositions);
-            setCompositions(mappedCompositions);
-          } else {
-            console.log('Aucune statistique disponible');
-            // Fallback si les statistiques ne sont pas disponibles
-            const mappedCompositions: Composition[] = coursesResponse.data.map((course) => ({
-              id: course.id?.toString() || Math.random().toString(),
-              title: course.title || 'Sans titre',
-              class: course.category || 'Non spécifiée',
-              participants: 0,
-              likes: 0,
-              downloads: 0,
-              courseStats: undefined
-            }));
-            setCompositions(mappedCompositions);
-          }
-        } else {
-          console.log('Aucun cours trouvé pour cet enseignant');
-          setCompositions([]);
-        }
-
-        // 3. Fetch other teachers (optionnel)
-        setTeachers([]);
-
-        // 3. Fetch pending inscriptions count
-        const pendingData = await EnrollmentService.getPendingEnrollments();
-        setPendingInscriptionsCount(pendingData.length);
-
-
-      } catch (error) {
-        console.error('Erreur lors du chargement des données du tableau de bord:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (user) {
       loadDashboardData();
     }
@@ -313,63 +362,7 @@ export default function ProfessorDashboard() {
   // Recharger les données lorsque le modal de création de cours se ferme
   useEffect(() => {
     if (!isModalOpen && user) {
-      const reloadData = async () => {
-        try {
-          setLoading(true);
-          const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
-          const statsResponse = await StatsControllerService.getTeacherCoursesStats();
-          
-          if (coursesResponse.data && statsResponse.data) {
-            const coursesStatsData = statsResponse.data as CourseStatsResponse[];
-            const convertedStats: CourseStats[] = coursesStatsData.map(stat => ({
-              ...stat,
-              exerciseStats: stat.exerciseStats || []
-            }));
-            
-            setCoursesStats(convertedStats);
-            
-            const overall = calculateOverallStats(convertedStats);
-            setOverallStats(overall);
-            
-            const mappedCompositions: Composition[] = coursesResponse.data.map((course) => {
-              const courseIdNum = parseCourseId(course.id);
-              const courseStat = convertedStats.find(s => s.courseId === courseIdNum);
-              
-              if (!courseStat) {
-                return {
-                  id: course.id?.toString() || Math.random().toString(),
-                  title: course.title || 'Sans titre',
-                  class: course.category || 'Non spécifiée',
-                  participants: 0,
-                  likes: 0,
-                  downloads: 0,
-                  courseStats: undefined
-                };
-              }
-              
-              const totalLikes = courseStat.exerciseStats?.reduce((sum, ex) => sum + (ex.submissionCount || 0), 0) || 0;
-              const totalDownloads = courseStat.exerciseStats?.reduce((sum, ex) => sum + (ex.maxScore || 0), 0) || 0;
-              
-              return {
-                id: course.id?.toString() || Math.random().toString(),
-                title: course.title || 'Sans titre',
-                class: course.category || 'Non spécifiée',
-                participants: courseStat.totalEnrolled || 0,
-                likes: totalLikes,
-                downloads: totalDownloads,
-                courseStats: courseStat
-              };
-            });
-            setCompositions(mappedCompositions);
-          }
-        } catch (error) {
-          console.error('Erreur lors du rechargement des données:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      reloadData();
+      loadDashboardData();
     }
   }, [isModalOpen, user]);
 
@@ -406,7 +399,8 @@ export default function ProfessorDashboard() {
     averageProgress: overallStats.averageProgress,
     totalExercises: overallStats.totalExercises,
     completedStudents: overallStats.completedStudents,
-    coursesStats: coursesStats
+    coursesStats: coursesStats,
+    pendingSubmissions: overallStats.pendingSubmissions
   };
 
   return (
@@ -431,7 +425,7 @@ export default function ProfessorDashboard() {
           <div className="flex items-center gap-4 flex-wrap">
             <button
               onClick={() => router.push('/teacher/inscriptions')}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -440,40 +434,50 @@ export default function ProfessorDashboard() {
               Gérer les inscriptions
             </button>
             
-            {/* NOUVEAU : Bouton Gérer les exercices */}
+            {/* Bouton pour gérer les exercices */}
             <button
-              onClick={() => router.push('/teacher/exercises')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+              onClick={() => {
+                // Si l'enseignant a des cours, rediriger vers la gestion des exercices
+                if (compositions.length > 0) {
+                  router.push(`/profdashboard/exercises/${compositions[0].id}`);
+                } else {
+                  alert("Créez d'abord un cours pour gérer les exercices");
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               Gérer les exercices
             </button>
             
-            {/* NOUVEAU : Bouton Corriger les exercices */}
-            <button
-              onClick={() => router.push('/teacher/grading')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Corriger les exercices
-            </button>
+            {/* Notification des soumissions en attente */}
+            {overallStats.pendingSubmissions > 0 && (
+              <button
+                onClick={() => {
+                  // Trouver le premier cours avec des soumissions en attente
+                  const courseWithPending = compositions.find(c => 
+                    c.courseStats?.exerciseStats?.some(e => e.submissionCount > 0)
+                  );
+                  if (courseWithPending) {
+                    router.push(`/profdashboard/exercises/${courseWithPending.id}/grading`);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition relative"
+              >
+                <span className="absolute -top-2 -right-2 bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                  {overallStats.pendingSubmissions}
+                </span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Corriger ({overallStats.pendingSubmissions})
+              </button>
+            )}
             
-            <button
-              onClick={() => router.push('/teacher/analytics')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-purple-600 text-purple-600 dark:text-purple-400 dark:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Voir les statistiques détaillées
-            </button>
           </div>
         </div>
       </div>
@@ -491,6 +495,7 @@ export default function ProfessorDashboard() {
           <CompositionsCard 
             compositions={compositions} 
             coursesStats={coursesStats}
+            onManageExercises={(courseId) => router.push(`/profdashboard/exercises/${courseId}`)}
           />
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
@@ -544,9 +549,10 @@ export default function ProfessorDashboard() {
                 <p className="text-3xl font-bold text-gray-800 dark:text-white">
                   {overallStats.totalExercises}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  dans {overallStats.publications} cours
-                </p>
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span>{overallStats.pendingSubmissions} en attente</span>
+                  <span>{overallStats.publications} cours</span>
+                </div>
               </div>
               <div className="bg-purple-50 dark:bg-gray-700 p-4 rounded-lg">
                 <p className="text-sm text-purple-600 dark:text-purple-400">Taux de Participation</p>
@@ -559,39 +565,40 @@ export default function ProfessorDashboard() {
               </div>
             </div>
             
-            {/* NOUVEAU : Section spécifique pour les exercices */}
+            {/* Section rapide pour les exercices */}
             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                Statistiques des exercices
+                Gestion des Exercices
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                  <p className="text-sm text-green-600 dark:text-green-400">Exercices créés</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                    {overallStats.totalExercises}
-                  </p>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                  <p className="text-sm text-blue-600 dark:text-blue-400">Exercices publiés</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                    {overallStats.totalExercises > 0 ? Math.round(overallStats.totalExercises * 0.7) : 0}
-                    <span className="text-sm font-normal text-gray-500 ml-2">
-                      (~70%)
-                    </span>
-                  </p>
-                </div>
-                <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-                  <p className="text-sm text-orange-600 dark:text-orange-400">À corriger</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                    {overallStats.totalStudents > 0 ? Math.round(overallStats.totalStudents * 0.3) : 0}
-                    <span className="text-sm font-normal text-gray-500 ml-2">
-                      soumissions
-                    </span>
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                <p>Cliquez sur "Gérer les exercices" pour créer de nouveaux exercices ou sur "Corriger les exercices" pour noter les soumissions.</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    if (compositions.length > 0) {
+                      router.push(`/profdashboard/exercises/${compositions[0].id}`);
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Voir tous les exercices
+                </button>
+                {overallStats.pendingSubmissions > 0 && (
+                  <button
+                    onClick={() => {
+                      // Trouver le cours avec le plus de soumissions en attente
+                      let targetCourseId = compositions[0]?.id;
+                      for (const course of compositions) {
+                        if (course.courseStats?.exerciseStats?.some(e => e.submissionCount > 0)) {
+                          targetCourseId = course.id;
+                          break;
+                        }
+                      }
+                      router.push(`/profdashboard/exercises/${targetCourseId}/grading`);
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                  >
+                    Corriger les soumissions ({overallStats.pendingSubmissions})
+                  </button>
+                )}
               </div>
             </div>
           </div>

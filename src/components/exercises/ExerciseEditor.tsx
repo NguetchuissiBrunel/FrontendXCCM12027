@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ExerciseService } from '@/lib/services/ExerciseService';  // Si alias configuré
+import { ExerciseService } from '@/lib/services/ExerciseService';
 import { Exercise, Question } from '@/types/exercise';
 import { toast } from 'react-hot-toast';
 import { FaPlus, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
@@ -61,7 +61,8 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
 
   const handleSubmit = async () => {
     try {
-      if (!formData.title?.trim()) {
+      const trimmedTitle = formData.title?.trim();
+      if (!trimmedTitle) {
         toast.error('Le titre est requis');
         return;
       }
@@ -71,18 +72,33 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
         return;
       }
 
+      // Créer un objet avec les types exacts attendus par les services
       const exerciseData = {
-        ...formData,
+        title: trimmedTitle,
+        description: formData.description || '',
+        maxScore: formData.maxScore || 20,
+        dueDate: formData.dueDate || undefined,
+        status: (formData.status === 'DRAFT' || formData.status === 'PUBLISHED') 
+          ? formData.status 
+          : 'DRAFT' as 'DRAFT' | 'PUBLISHED' | undefined,
         questions,
         courseId
       };
 
       let savedExercise;
       if (isEditMode && exercise?.id) {
-        savedExercise = await ExerciseService.updateExercise(exercise.id, exerciseData);
+        // Pour l'édition: UpdateExerciseRequest n'inclut pas 'id' dans le body
+        savedExercise = await ExerciseService.updateExercise(exercise.id, {
+          ...exerciseData,
+          // N'incluez pas 'id' ici car il est déjà dans l'URL/paramètre
+        });
         toast.success('Exercice mis à jour');
       } else {
-        savedExercise = await ExerciseService.createExercise(courseId, exerciseData);
+        // Pour la création: CreateExerciseRequest
+        savedExercise = await ExerciseService.createExercise(courseId, {
+          ...exerciseData,
+          status: exerciseData.status || 'DRAFT' // Valeur par défaut
+        });
         toast.success('Exercice créé');
       }
 

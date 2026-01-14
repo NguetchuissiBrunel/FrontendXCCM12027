@@ -70,12 +70,12 @@ export async function uploadImageToCloudinary(
     }
 
     // Get environment variables
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset) {
         throw new Error(
-            'Configuration Cloudinary manquante. Veuillez configurer NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME et NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET dans vos variables d\'environnement.'
+            'Configuration Cloudinary manquante. Veuillez configurer CLOUDINARY_CLOUD_NAME et CLOUDINARY_UPLOAD_PRESET dans vos variables d\'environnement.'
         );
     }
 

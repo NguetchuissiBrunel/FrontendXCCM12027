@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { Users, Award, Clock } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { OpenAPI } from '@/lib/core/OpenAPI';
 
 interface Professor {
@@ -76,11 +77,11 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           onUpdate(editedProfessor);
         }
 
-        alert('Profil mis à jour avec succès !');
+        toast.success('Profil mis à jour avec succès !');
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du profil');
+      toast.error('Erreur lors de la sauvegarde du profil');
     } finally {
       setIsSaving(false);
     }
@@ -105,6 +106,9 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
       const validation = CloudinaryService.validateFile(file);
       if (!validation.valid) {
         alert(validation.error || 'Fichier invalide');
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Veuillez sélectionner une image valide');
         return;
       }
 
@@ -120,6 +124,20 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
       alert(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("L'image ne doit pas dépasser 5Mo");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setEditedProfessor({
+          ...editedProfessor,
+          photoUrl: base64String
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 

@@ -420,17 +420,33 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6">
                   <h3 className="text-xl font-semibold text-purple-800 dark:text-purple-400 mb-4 flex items-center">
                     <CheckCircle className="h-6 w-6 mr-2 text-purple-600" />
-                    Ce que vous avez appris
+                    Aperçu du cours
                   </h3>
-                  {courseData.learningObjectives && courseData.learningObjectives.length > 0 ? (
-                    <ul className="space-y-3">
-                      {courseData.learningObjectives.map((objective: string, index: number) => (
-                        <li key={index} className="flex items-start">
-                          <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 mr-3"></div>
-                          <span className="text-gray-700 dark:text-gray-300">{objective}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {(courseData.introduction || (courseData.sections && courseData.sections.length > 0)) ? (
+                    <div className="space-y-4">
+                      {courseData.introduction && (
+                        <div>
+                          <h4 className="font-bold text-gray-800 dark:text-white mb-2">Description</h4>
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {courseData.introduction}
+                          </p>
+                        </div>
+                      )}
+
+                      {courseData.sections && courseData.sections.length > 0 && (
+                        <div>
+                          <h4 className="font-bold text-gray-800 dark:text-white mb-2 mt-4">Plan du cours</h4>
+                          <ul className="space-y-2">
+                            {courseData.sections.map((section: Section, index: number) => (
+                              <li key={index} className="flex items-start">
+                                <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 mr-3 flex-shrink-0"></div>
+                                <span className="text-gray-700 dark:text-gray-300 font-medium">{section.title}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-gray-500 dark:text-gray-400">Aucun objectif d'apprentissage n'a été défini pour ce cours.</p>
                   )}
@@ -488,11 +504,11 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                 </button>
                 <button
                   onClick={() => setShowDownloadModal(true)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-5 rounded-3xl font-black text-lg shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-5 rounded-3xl font-black text-lg shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                   type="button"
                 >
                   <Download size={24} />
-                  Télécharger le package complet
+                  Télécharger le cours
                 </button>
               </div>
             </div>

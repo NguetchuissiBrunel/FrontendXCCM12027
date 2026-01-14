@@ -114,7 +114,7 @@ const Bibliotheque = () => {
     return courses.filter(course =>
       course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (course.category && course.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (course.author?.lastName && course.author.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (course.author?.name && course.author.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [courses, searchTerm]);
@@ -246,7 +246,7 @@ const Bibliotheque = () => {
                       />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{course.author?.lastName}</p>
+                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{course.author?.name}</p>
                       <StarRating rating={5} />
                     </div>
                   </div>

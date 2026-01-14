@@ -32,7 +32,7 @@ export class AdminService {
     public static getAllStudents(): CancelablePromise<{ data: User[] }> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/users/students',
+            url: '/api/v1/admin/students',
         });
     }
 
@@ -45,7 +45,7 @@ export class AdminService {
     public static getAllTeachers(): CancelablePromise<{ data: User[] }> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/users/teachers',
+            url: '/api/v1/admin/teachers',
         });
     }
 
@@ -59,7 +59,7 @@ export class AdminService {
     public static deleteUser(userId: string): CancelablePromise<ApiResponseVoid> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/users/{userId}',
+            url: '/api/v1/admin/users/{userId}',
             path: { 'userId': userId },
         });
     }
@@ -161,7 +161,7 @@ export class AdminService {
     public static registerTeacher(requestBody: TeacherRegisterRequest): CancelablePromise<ApiResponseAuthenticationResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/auth/register/teacher',
+            url: '/api/v1/admin/users/teacher',
             body: requestBody,
             mediaType: 'application/json',
         });
@@ -177,7 +177,7 @@ export class AdminService {
     public static registerStudent(requestBody: StudentRegisterRequest): CancelablePromise<ApiResponseAuthenticationResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/auth/register/student',
+            url: '/api/v1/admin/users/student',
             body: requestBody,
             mediaType: 'application/json',
         });
@@ -210,6 +210,19 @@ export class AdminService {
     }
 
     /**
+     * Créer un administrateur (via Admin Controller)
+     * Endpoint: POST /api/v1/admin/users/admin
+     */
+    public static createAdmin(requestBody: RegisterRequest): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/admin/users/admin',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * Récupérer les statistiques globales
      * Endpoint: GET /api/v1/admin/stats
      * @returns any OK (Structure JSON: { success: boolean, data: { ... } })
@@ -231,7 +244,7 @@ export class AdminService {
     public static getAllEnrollments(): CancelablePromise<{ data: any[] }> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/enrollments/pending',
+            url: '/api/v1/admin/enrollments',
         });
     }
 

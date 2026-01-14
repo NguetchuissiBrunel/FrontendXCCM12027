@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt, FaUserGraduate } from 'react-icons/fa';
 import { AdminService } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -40,11 +40,26 @@ export default function AdminCoursesPage() {
     const fetchCourses = async () => {
         setLoading(true);
         try {
-            const res = await AdminService.getAllCourses();
-            const coursesData = res.data || [];
-            setCourses(coursesData);
+            const [res, enrollRes] = await Promise.all([
+                AdminService.getAllCourses(),
+                AdminService.getAllEnrollments()
+            ]);
 
-            // Calcul des statistiques basé sur les données réelles de l'API
+            const coursesData = res.data || [];
+            const enrollmentsData = enrollRes.data || [];
+
+            // Filtrer et enrichir les cours avec le nombre d'inscriptions approuvées
+            const processedCourses = coursesData
+                .filter((c: any) => c.status === 'PUBLISHED')
+                .map((course: any) => ({
+                    ...course,
+                    approvedEnrollmentsCount: enrollmentsData.filter(
+                        (e: any) => e.course?.id === course.id && e.status === 'APPROVED'
+                    ).length
+                }));
+
+            setCourses(processedCourses);
+
             setStats({
                 total: coursesData.length,
                 active: coursesData.filter((c: any) => c.status === 'PUBLISHED').length,
@@ -106,7 +121,7 @@ export default function AdminCoursesPage() {
 
     const filteredCourses = courses.filter(c => {
         const title = c.title || '';
-        const authorName = `${c.author?.firstName || ''} ${c.author?.lastName || ''}`;
+        const authorName = `${c.author?.name || ''} ${c.author?.designation || ''}`;
         const category = c.category || '';
 
         return (title + authorName + category).toLowerCase().includes(searchTerm.toLowerCase());
@@ -125,7 +140,7 @@ export default function AdminCoursesPage() {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <StatsCard
                     title="Total Cours"
                     value={loading ? "..." : stats.total}
@@ -133,22 +148,10 @@ export default function AdminCoursesPage() {
                     color="bg-purple-600"
                 />
                 <StatsCard
-                    title="Actifs"
+                    title="Cours Actifs"
                     value={loading ? "..." : stats.active}
                     icon={<FaCheckCircle size={20} />}
                     color="bg-green-600"
-                />
-                <StatsCard
-                    title="Brouillons"
-                    value={loading ? "..." : stats.draft}
-                    icon={<FaFileAlt size={20} />}
-                    color="bg-yellow-600"
-                />
-                <StatsCard
-                    title="Archivés"
-                    value={loading ? "..." : stats.archived}
-                    icon={<FaTimesCircle size={20} />}
-                    color="bg-slate-600"
                 />
             </div>
 
@@ -207,10 +210,9 @@ export default function AdminCoursesPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <p className="text-sm text-slate-900 dark:text-white">
-                                                {course.author?.firstName} {course.author?.lastName}
+                                            <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                                {course.author ? `${course.author.designation} ${course.author.name}` : 'Enseignant inconnu'}
                                             </p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{course.author?.email}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-full text-xs font-medium">
@@ -222,9 +224,9 @@ export default function AdminCoursesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1">
-                                                <FaEye className="text-slate-400" size={14} />
-                                                <span className="text-sm text-slate-600 dark:text-slate-400">
-                                                    {course.enrollmentCount || 0}
+                                                <FaUserGraduate className="text-purple-400" size={14} />
+                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                    {course.approvedEnrollmentsCount || 0}
                                                 </span>
                                             </div>
                                         </td>

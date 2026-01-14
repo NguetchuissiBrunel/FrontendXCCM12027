@@ -1,13 +1,13 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate, FaEye, FaEyeSlash, FaUniversity, FaAward } from 'react-icons/fa';
-import { AdminService, User } from '@/lib';
+import { FaTrash, FaSearch, FaUserShield, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { AdminService, RegisterRequest, User } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
-function TeachersList() {
-    const [teachers, setTeachers] = useState<User[]>([]);
+function AdminsList() {
+    const [admins, setAdmins] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,31 +23,33 @@ function TeachersList() {
         email: '',
         password: '',
         confirmPassword: '',
-        subjects: '',
     });
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
-        fetchTeachers();
+        fetchAdmins();
         if (searchParams.get('add') === 'true') {
             setIsModalOpen(true);
             const newParams = new URLSearchParams(searchParams.toString());
             newParams.delete('add');
-            router.replace(`/admindashboard/teachers?${newParams.toString()}`);
+            router.replace(`/admindashboard/admins?${newParams.toString()}`);
         }
     }, [searchParams, router]);
 
-    const fetchTeachers = async () => {
+    const fetchAdmins = async () => {
         setLoading(true);
         try {
-            const res = await AdminService.getAllTeachers();
-            setTeachers(res.data || []);
+            const res = await AdminService.getAllUsers();
+            // Filter only admins
+            const allUsers = res.data || [];
+            const adminUsers = allUsers.filter(u => u.role === User.role.ADMIN);
+            setAdmins(adminUsers);
         } catch (error) {
-            console.error("Error fetching teachers:", error);
-            toast.error("Erreur lors du chargement des enseignants");
-            setTeachers([]);
+            console.error("Error fetching admins:", error);
+            toast.error("Impossible de charger la liste des administrateurs");
+            setAdmins([]);
         } finally {
             setLoading(false);
         }
@@ -56,7 +58,7 @@ function TeachersList() {
     const handleDelete = async (userId: string) => {
         toast((t) => (
             <div className="flex flex-col gap-3">
-                <p className="font-bold">Êtes-vous sûr de vouloir supprimer cet enseignant ?</p>
+                <p className="font-bold">Êtes-vous sûr de vouloir supprimer cet administrateur ?</p>
                 <div className="flex gap-2">
                     <button
                         onClick={() => toast.dismiss(t.id)}
@@ -69,8 +71,8 @@ function TeachersList() {
                             toast.dismiss(t.id);
                             try {
                                 await AdminService.deleteUser(userId);
-                                toast.success("Enseignant supprimé avec succès");
-                                fetchTeachers();
+                                toast.success("Administrateur supprimé avec succès");
+                                fetchAdmins();
                             } catch (error) {
                                 toast.error("Erreur lors de la suppression");
                             }
@@ -94,46 +96,42 @@ function TeachersList() {
 
         setIsSubmitting(true);
         try {
-            // On envoie uniquement les propriétés connues par l'interface TeacherRegisterRequest
-            await AdminService.registerTeacher({
-                firstName: formData.firstName,
-                lastName: formData.lastName,
+            await AdminService.createAdmin({
                 email: formData.email,
                 password: formData.password,
                 confirmPassword: formData.confirmPassword,
-                // On transforme la chaîne de caractères en tableau pour le champ 'subjects'
-                subjects: formData.subjects ? formData.subjects.split(',').map(s => s.trim()) : [],
-                city: "",
-                university: "",
-                certification: "",
-                grade: "",
-                photoUrl: ""
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                role: RegisterRequest.role.ADMIN
             });
 
-            toast.success("Enseignant ajouté avec succès");
+            toast.success("Administrateur ajouté avec succès");
             setIsModalOpen(false);
-            setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', subjects: '' });
+            setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
 
-            // Rafraîchissement des données
-            setTimeout(() => fetchTeachers(), 500);
+            setTimeout(() => fetchAdmins(), 500);
         } catch (error: any) {
-            console.error(error);
             toast.error(error?.message || "Erreur lors de la création");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const filteredTeachers = teachers.filter(t =>
-        `${t.firstName} ${t.lastName} ${t.email} ${t.subjects || t.specialization || ''}`.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredAdmins = admins.filter(a =>
+        `${a.firstName} ${a.lastName} ${a.email}`.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                <div>
-                    <h1 className="text-2xl font-bold dark:text-white">Gestion des Enseignants</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{teachers.length} enseignants inscrits</p>
+                <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+                        <FaUserShield size={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold dark:text-white">Administrateurs</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{admins.length} administrateurs</p>
+                    </div>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
@@ -148,7 +146,7 @@ function TeachersList() {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
                 <input
                     type="text"
-                    placeholder="Rechercher un enseignant..."
+                    placeholder="Rechercher un administrateur..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
@@ -161,7 +159,6 @@ function TeachersList() {
                         <tr className="bg-slate-50 dark:bg-slate-800/50">
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nom</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Matières</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
                         </tr>
                     </thead>
@@ -171,38 +168,34 @@ function TeachersList() {
                                 <tr key={i} className="animate-pulse">
                                     <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-40"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32"></div></td>
                                     <td className="px-6 py-4"></td>
                                 </tr>
                             ))
-                        ) : filteredTeachers.length === 0 ? (
+                        ) : filteredAdmins.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-6 py-8 text-center text-slate-500">Aucun enseignant trouvé</td>
+                                <td colSpan={3} className="px-6 py-8 text-center text-slate-500">Aucun administrateur trouvé</td>
                             </tr>
                         ) : (
-                            filteredTeachers.map((teacher) => (
+                            filteredAdmins.map((admin) => (
                                 <tr
-                                    key={teacher.id}
+                                    key={admin.id}
                                     onClick={() => {
-                                        setSelectedUser(teacher);
+                                        setSelectedUser(admin);
                                         setIsDetailsOpen(true);
                                     }}
                                     className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer"
                                 >
                                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                                        {teacher.firstName} {teacher.lastName}
+                                        {admin.firstName} {admin.lastName}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                                        {teacher.email}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                                        {teacher.subjects ? (Array.isArray(teacher.subjects) ? teacher.subjects.join(', ') : teacher.subjects) : (teacher.specialization || 'N/A')}
+                                        {admin.email}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDelete(teacher.id!);
+                                                handleDelete(admin.id!);
                                             }}
                                             className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                         >
@@ -236,9 +229,9 @@ function TeachersList() {
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="text-2xl font-bold dark:text-white flex items-center space-x-2">
                                         <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
-                                            <FaChalkboardTeacher />
+                                            <FaUserShield />
                                         </div>
-                                        <span>Ajouter un Enseignant</span>
+                                        <span>Nouvel Administrateur</span>
                                     </h2>
                                     <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                                         <FaTimes size={20} />
@@ -248,7 +241,7 @@ function TeachersList() {
                                 <form onSubmit={handleCreate} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Prénom</label>
+                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Prénom</label>
                                             <div className="relative">
                                                 <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
@@ -257,12 +250,12 @@ function TeachersList() {
                                                     value={formData.firstName}
                                                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                    placeholder="Albert"
+                                                    placeholder="Admin"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Nom</label>
+                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Nom</label>
                                             <div className="relative">
                                                 <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
@@ -271,14 +264,14 @@ function TeachersList() {
                                                     value={formData.lastName}
                                                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                    placeholder="Einstein"
+                                                    placeholder="Principal"
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email</label>
                                         <div className="relative">
                                             <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
@@ -287,13 +280,13 @@ function TeachersList() {
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                placeholder="albert.einstein@univ.tn"
+                                                placeholder="admin@xccm.tn"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Mot de passe</label>
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Mot de passe</label>
                                         <div className="relative">
                                             <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
@@ -315,7 +308,7 @@ function TeachersList() {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Confirmer mot de passe</label>
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Confirmer mot de passe</label>
                                         <div className="relative">
                                             <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
@@ -336,26 +329,12 @@ function TeachersList() {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1.5 pb-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Matières / Spécialisation</label>
-                                        <div className="relative">
-                                            <FaBookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <input
-                                                type="text"
-                                                value={formData.subjects}
-                                                onChange={(e) => setFormData({ ...formData, subjects: e.target.value })}
-                                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                placeholder="Physique, Mathématiques"
-                                            />
-                                        </div>
-                                    </div>
-
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
                                         className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-purple-500/30 disabled:opacity-50 mt-4"
                                     >
-                                        {isSubmitting ? 'Création...' : 'Ajouter l\'enseignant'}
+                                        {isSubmitting ? 'Création...' : 'Ajouter l\'administrateur'}
                                     </button>
                                 </form>
                             </div>
@@ -388,14 +367,14 @@ function TeachersList() {
                                             {selectedUser.photoUrl ? (
                                                 <img src={selectedUser.photoUrl} alt="Profile" className="w-full h-full object-cover" />
                                             ) : (
-                                                <FaUserGraduate size={32} />
+                                                <FaUserShield size={32} />
                                             )}
                                         </div>
                                         <div>
                                             <h2 className="text-2xl font-bold dark:text-white">
                                                 {selectedUser.firstName} {selectedUser.lastName}
                                             </h2>
-                                            <p className="text-purple-600 dark:text-purple-400 font-medium">Enseignant</p>
+                                            <p className="text-purple-600 dark:text-purple-400 font-medium">Administrateur</p>
                                         </div>
                                     </div>
                                     <button onClick={() => setIsDetailsOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
@@ -406,18 +385,6 @@ function TeachersList() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prénom</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
-                                                {selectedUser.firstName}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nom</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
-                                                {selectedUser.lastName}
-                                            </p>
-                                        </div>
-                                        <div>
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
                                                 <FaEnvelope className="mr-2 text-slate-400" />
@@ -425,33 +392,9 @@ function TeachersList() {
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matières</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
-                                                <FaBookOpen className="mr-2 text-slate-400" />
-                                                {selectedUser.subjects ? (Array.isArray(selectedUser.subjects) ? selectedUser.subjects.join(', ') : selectedUser.subjects) : (selectedUser.specialization || 'Non spécifiées')}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <div>
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ville</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.city || 'Non spécifiée'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Université</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
-                                                <FaUniversity className="mr-2 text-slate-400" />
-                                                {selectedUser.university || 'Non spécifiée'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Grade</label>
-                                            <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
-                                                <FaAward className="mr-2 text-slate-400" />
-                                                {selectedUser.grade || 'Non spécifié'}
                                             </p>
                                         </div>
                                     </div>
@@ -466,10 +409,10 @@ function TeachersList() {
     );
 }
 
-export default function AdminTeachersPage() {
+export default function AdminsPage() {
     return (
         <Suspense fallback={<div>Chargement...</div>}>
-            <TeachersList />
+            <AdminsList />
         </Suspense>
     );
 }

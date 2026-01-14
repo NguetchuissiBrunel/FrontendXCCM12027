@@ -1,6 +1,7 @@
 // src/utils/DownloadPdf.tsx
 import jsPDF from 'jspdf';
 import { CourseData, Section, Chapter, Paragraph } from '@/types/course';
+import { extractTextFromContent } from './courseTransformer';
 
 export const downloadCourseAsPDF = async (courseData: CourseData, orientation: 'p' | 'l' = 'p'): Promise<boolean> => {
   try {
@@ -198,7 +199,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
                 doc.setFontSize(fontSize.normal);
                 doc.setTextColor(...colors.dark);
                 doc.setFont("helvetica", "normal");
-                const contentLines = doc.splitTextToSize(paragraph.content, pageWidth - 2 * margin);
+                const contentLines = doc.splitTextToSize(extractTextFromContent(paragraph.content), pageWidth - 2 * margin);
                 doc.text(contentLines, margin, y);
                 y += contentLines.length * (fontSize.normal * lineSpacing) + 15;
 

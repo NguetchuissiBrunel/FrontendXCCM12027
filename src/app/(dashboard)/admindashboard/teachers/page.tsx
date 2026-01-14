@@ -1,14 +1,27 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+<<<<<<< HEAD
 import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate, FaEye, FaEyeSlash, FaUniversity, FaAward } from 'react-icons/fa';
+=======
+import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate } from 'react-icons/fa';
+>>>>>>> main
 import { AdminService, User } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
+<<<<<<< HEAD
 function TeachersList() {
     const [teachers, setTeachers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+=======
+import { useLoading } from '@/contexts/LoadingContext';
+
+function TeachersList() {
+    const [teachers, setTeachers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
+>>>>>>> main
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,11 +30,23 @@ function TeachersList() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
+<<<<<<< HEAD
+=======
+    useEffect(() => {
+        if (loading) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [loading, startLoading, stopLoading]);
+
+>>>>>>> main
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         email: '',
         password: '',
+<<<<<<< HEAD
         confirmPassword: '',
         subjects: '',
     });
@@ -29,6 +54,11 @@ function TeachersList() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+=======
+        subjects: '',
+    });
+
+>>>>>>> main
     useEffect(() => {
         fetchTeachers();
         if (searchParams.get('add') === 'true') {
@@ -86,12 +116,15 @@ function TeachersList() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+<<<<<<< HEAD
 
         if (formData.password !== formData.confirmPassword) {
             toast.error("Les mots de passe ne correspondent pas");
             return;
         }
 
+=======
+>>>>>>> main
         setIsSubmitting(true);
         try {
             // On envoie uniquement les propriétés connues par l'interface TeacherRegisterRequest
@@ -100,6 +133,7 @@ function TeachersList() {
                 lastName: formData.lastName,
                 email: formData.email,
                 password: formData.password,
+<<<<<<< HEAD
                 confirmPassword: formData.confirmPassword,
                 // On transforme la chaîne de caractères en tableau pour le champ 'subjects'
                 subjects: formData.subjects ? formData.subjects.split(',').map(s => s.trim()) : [],
@@ -108,11 +142,19 @@ function TeachersList() {
                 certification: "",
                 grade: "",
                 photoUrl: ""
+=======
+                // On transforme la chaîne de caractères en tableau pour le champ 'subjects'
+                subjects: formData.subjects ? formData.subjects.split(',').map(s => s.trim()) : []
+>>>>>>> main
             });
 
             toast.success("Enseignant ajouté avec succès");
             setIsModalOpen(false);
+<<<<<<< HEAD
             setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', subjects: '' });
+=======
+            setFormData({ firstName: '', lastName: '', email: '', password: '', subjects: '' });
+>>>>>>> main
 
             // Rafraîchissement des données
             setTimeout(() => fetchTeachers(), 500);
@@ -166,6 +208,7 @@ function TeachersList() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+<<<<<<< HEAD
                         {loading ? (
                             Array(3).fill(0).map((_, i) => (
                                 <tr key={i} className="animate-pulse">
@@ -175,6 +218,10 @@ function TeachersList() {
                                     <td className="px-6 py-4"></td>
                                 </tr>
                             ))
+=======
+                        {loading || globalLoading ? (
+                            null
+>>>>>>> main
                         ) : filteredTeachers.length === 0 ? (
                             <tr>
                                 <td colSpan={4} className="px-6 py-8 text-center text-slate-500">Aucun enseignant trouvé</td>
@@ -297,6 +344,7 @@ function TeachersList() {
                                         <div className="relative">
                                             <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
+<<<<<<< HEAD
                                                 type={showPassword ? "text" : "password"}
                                                 required
                                                 value={formData.password}
@@ -333,6 +381,15 @@ function TeachersList() {
                                             >
                                                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                                             </button>
+=======
+                                                type="password"
+                                                required
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
+                                                placeholder="••••••••"
+                                            />
+>>>>>>> main
                                         </div>
                                     </div>
 
@@ -406,6 +463,7 @@ function TeachersList() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
                                         <div>
+<<<<<<< HEAD
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prénom</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.firstName}
@@ -418,6 +476,8 @@ function TeachersList() {
                                             </p>
                                         </div>
                                         <div>
+=======
+>>>>>>> main
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
                                                 <FaEnvelope className="mr-2 text-slate-400" />
@@ -440,6 +500,7 @@ function TeachersList() {
                                                 {selectedUser.city || 'Non spécifiée'}
                                             </p>
                                         </div>
+<<<<<<< HEAD
                                         <div>
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Université</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
@@ -454,6 +515,8 @@ function TeachersList() {
                                                 {selectedUser.grade || 'Non spécifié'}
                                             </p>
                                         </div>
+=======
+>>>>>>> main
                                     </div>
                                 </div>
                             </div>

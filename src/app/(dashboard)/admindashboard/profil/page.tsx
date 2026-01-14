@@ -2,7 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaUserShield, FaEnvelope, FaUser } from 'react-icons/fa';
+<<<<<<< HEAD
 import { AdminService } from '@/lib';
+=======
+>>>>>>> main
 import { Award, BookOpen, Clock } from 'lucide-react';
 import { OpenAPI } from '@/lib/core/OpenAPI';
 import toast, { Toaster } from 'react-hot-toast';
@@ -24,8 +27,11 @@ export default function AdminProfile() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+<<<<<<< HEAD
     const [stats, setStats] = useState({ totalUsers: 0 });
     const [statsLoading, setStatsLoading] = useState(true);
+=======
+>>>>>>> main
     const router = useRouter();
 
     useEffect(() => {
@@ -45,6 +51,7 @@ export default function AdminProfile() {
         } finally {
             setLoading(false);
         }
+<<<<<<< HEAD
         fetchStats();
     }, [router]);
 
@@ -60,6 +67,10 @@ export default function AdminProfile() {
         }
     };
 
+=======
+    }, [router]);
+
+>>>>>>> main
     const handleEdit = () => {
         setIsEditing(true);
     };
@@ -330,15 +341,23 @@ export default function AdminProfile() {
                 {/* Right Column - Admin Info */}
                 <div className="col-span-2 space-y-6">
                     {/* Admin Stats */}
+<<<<<<< HEAD
                     <div className="grid grid-cols-2 gap-6">
+=======
+                    <div className="grid grid-cols-3 gap-6">
+>>>>>>> main
                         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
                             <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                                 <FaUser className="text-purple-600 dark:text-purple-400" size={32} />
                             </div>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Utilisateurs</p>
+<<<<<<< HEAD
                             <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">
                                 {statsLoading ? "..." : stats.totalUsers}
                             </p>
+=======
+                            <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">0</p>
+>>>>>>> main
                         </div>
 
                         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
@@ -348,6 +367,17 @@ export default function AdminProfile() {
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Accès Admin</p>
                             <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">✓</p>
                         </div>
+<<<<<<< HEAD
+=======
+
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+                            <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
+                                <FaEnvelope className="text-purple-600 dark:text-purple-400" size={32} />
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Messages</p>
+                            <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">0</p>
+                        </div>
+>>>>>>> main
                     </div>
 
                     {/* Admin Privileges */}

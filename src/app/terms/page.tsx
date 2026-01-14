@@ -43,10 +43,10 @@ export default function TermsOfService() {
         <div className="max-w-5xl mx-auto">
           {/* Hero Header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full mb-5 shadow-xl">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full mb-5 shadow-xl">
               <FileText className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-700 to-purple-700 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-700 to-purple-800 bg-clip-text text-transparent">
               Conditions d'Utilisation
             </h1>
             <p className="mt-3 text-gray-600 text-lg">Plateforme XCCM1 – ENSPY Yaoundé</p>
@@ -60,7 +60,7 @@ export default function TermsOfService() {
           <div className="flex flex-wrap justify-center gap-3 mb-12 print:hidden">
             <button
               onClick={printPDF}
-              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-xl shadow-sm hover:shadow-lg hover:border-indigo-400 transition-all duration-300 font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-xl shadow-sm hover:shadow-lg hover:border-purple-400 transition-all duration-300 font-medium"
             >
               <Download className="w-5 h-5" />
               Télécharger en PDF
@@ -69,7 +69,7 @@ export default function TermsOfService() {
               href="https://github.com/enspy-xccm/xccm1/blob/main/LICENSE"
               target="_blank"
               rel="noopener"
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium"
             >
               <ExternalLink className="w-5 h-5" />
               Voir la Licence MIT
@@ -81,9 +81,9 @@ export default function TermsOfService() {
             <div className="lg:col-span-2 space-y-8">
               {/* 1. Acceptation */}
               <section id="acceptation" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <span className="text-indigo-700 font-bold">1</span>
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <span className="text-purple-700 font-bold">1</span>
                   </div>
                   Acceptation des Conditions
                 </h2>
@@ -104,23 +104,23 @@ export default function TermsOfService() {
 
               {/* 2. Description */}
               <section id="description" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-indigo-700" />
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Globe className="w-5 h-5 text-purple-700" />
                   </div>
                   Description du Service
                 </h2>
                 <ul className="space-y-3 text-gray-700">
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="w-5 h-5 text-indigo-600 mt-0.5" />
+                    <ChevronRight className="w-5 h-5 text-purple-600 mt-0.5" />
                     <span><strong>XCCM1</strong> est une plateforme web académique permettant la création, structuration et partage de contenus pédagogiques sous forme de <em>granules</em>.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="w-5 h-5 text-indigo-600 mt-0.5" />
+                    <ChevronRight className="w-5 h-5 text-purple-600 mt-0.5" />
                     <span>Destinée aux <strong>enseignants</strong> et <strong>étudiants</strong> de l'ENSPY.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="w-5 h-5 text-indigo-600 mt-0.5" />
+                    <ChevronRight className="w-5 h-5 text-purple-600 mt-0.5" />
                     <span>Prototype développé dans le cadre du cours <strong>GIF4087-1</strong> (2025–2026).</span>
                   </li>
                 </ul>
@@ -128,22 +128,22 @@ export default function TermsOfService() {
 
               {/* 3. Comptes */}
               <section id="comptes" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-5 h-5 text-indigo-700" />
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Users className="w-5 h-5 text-purple-700" />
                   </div>
                   Comptes Utilisateur
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-200">
-                    <h3 className="font-semibold text-indigo-800 mb-2">Étudiants</h3>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-50 p-4 rounded-xl border border-purple-200">
+                    <h3 className="font-semibold text-purple-800 mb-2">Étudiants</h3>
                     <ul className="text-sm space-y-1 text-gray-700">
                       <li>Accès en lecture</li>
                       <li>Consultation des cours</li>
                       <li>Téléchargement PDF/Word</li>
                     </ul>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-xl border border-purple-200">
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-50 p-4 rounded-xl border border-purple-200">
                     <h3 className="font-semibold text-purple-800 mb-2">Enseignants</h3>
                     <ul className="text-sm space-y-1 text-gray-700">
                       <li>Création de granules</li>
@@ -156,9 +156,9 @@ export default function TermsOfService() {
 
               {/* 4. Contenu */}
               <section id="contenu" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-indigo-700" />
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-purple-700" />
                   </div>
                   Contenu Utilisateur
                 </h2>
@@ -180,21 +180,21 @@ export default function TermsOfService() {
 
               {/* 5. Propriété Intellectuelle */}
               <section id="propriete" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-indigo-700" />
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-purple-700" />
                   </div>
                   Propriété Intellectuelle
                 </h2>
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-5 rounded-xl border-l-4 border-indigo-500">
-                  <p className="text-sm font-medium text-indigo-900">
+                <div className="bg-gradient-to-r from-purple-50 to-purple-50 p-5 rounded-xl border-l-4 border-purple-500">
+                  <p className="text-sm font-medium text-purple-900">
                     Le code source de XCCM1 est publié sous <strong>licence MIT</strong> à des fins éducatives.
                   </p>
                   <a
                     href="https://github.com/enspy-xccm/xccm1/blob/main/LICENSE"
                     target="_blank"
                     rel="noopener"
-                    className="inline-flex items-center gap-1 mt-2 text-indigo-600 hover:underline text-sm"
+                    className="inline-flex items-center gap-1 mt-2 text-purple-600 hover:underline text-sm"
                   >
                     <ExternalLink className="w-3 h-3" />
                     Voir la licence complète
@@ -204,9 +204,9 @@ export default function TermsOfService() {
 
               {/* 6. Responsabilité */}
               <section id="responsabilite" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <AlertCircle className="w-5 h-5 text-indigo-700" />
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <AlertCircle className="w-5 h-5 text-purple-700" />
                   </div>
                   Limitation de Responsabilité
                 </h2>
@@ -220,9 +220,9 @@ export default function TermsOfService() {
 
               {/* 7. Résiliation */}
               <section id="resiliation" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-indigo-700" />
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-purple-700" />
                   </div>
                   Résiliation
                 </h2>
@@ -233,21 +233,21 @@ export default function TermsOfService() {
 
               {/* 8. Contact */}
               <section id="contact" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-indigo-700" />
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-purple-700" />
                   </div>
                   Contact
                 </h2>
                 <button
                   onClick={() => copyEmail('xccm@enspy.ucac-icam.cm')}
-                  className="w-full p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 hover:from-indigo-100 hover:to-purple-100 transition-all flex items-center justify-between group"
+                  className="w-full p-4 bg-gradient-to-r from-purple-50 to-purple-50 rounded-xl border border-purple-200 hover:from-purple-100 hover:to-purple-100 transition-all flex items-center justify-between group"
                 >
                   <div className="flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-indigo-700" />
-                    <span className="font-medium text-indigo-900">xccm@enspy.ucac-icam.cm</span>
+                    <Mail className="w-5 h-5 text-purple-700" />
+                    <span className="font-medium text-purple-900">xccm@enspy.ucac-icam.cm</span>
                   </div>
-                  {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-indigo-600 group-hover:text-indigo-800" />}
+                  {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-purple-600 group-hover:text-purple-800" />}
                 </button>
               </section>
             </div>
@@ -255,14 +255,14 @@ export default function TermsOfService() {
             {/* Sidebar - Navigation Rapide */}
             <aside className="lg:col-span-1">
               <div className="sticky top-24 space-y-6">
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-purple-600 to-purple-600 text-white p-6 rounded-2xl shadow-xl">
                   <h3 className="font-bold text-lg mb-2">Prototype ENSPY</h3>
                   <p className="text-sm opacity-90">GIF4087-1 • 2025–2026</p>
                   <p className="text-xs mt-2 opacity-75">Supervisé par Dr. Bernabe BATCHAKUI</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                  <h3 className="font-bold text-indigo-700 mb-4">Sommaire</h3>
+                  <h3 className="font-bold text-purple-700 mb-4">Sommaire</h3>
                   <nav className="space-y-2 text-sm">
                     {[
                       { id: 'acceptation', label: '1. Acceptation' },
@@ -277,7 +277,7 @@ export default function TermsOfService() {
                       <button
                         key={item.id}
                         onClick={() => scrollTo(item.id)}
-                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-indigo-50 text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-purple-50 text-purple-600 hover:text-purple-800 transition-colors flex items-center gap-2"
                       >
                         <ChevronRight className="w-4 h-4" />
                         {item.label}

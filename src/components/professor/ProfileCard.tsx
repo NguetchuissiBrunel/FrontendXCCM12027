@@ -2,6 +2,8 @@
 'use client';
 import { useState } from 'react';
 import { Users, Award, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { OpenAPI } from '@/lib/core/OpenAPI';
 
 interface Professor {
   id: string;
@@ -30,7 +32,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedProfessor, setEditedProfessor] = useState<Professor>(professor);
-  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
+  const defaultAvatar = '/images/prof.jpeg';
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -47,7 +49,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
       const currentUser = localStorage.getItem('currentUser');
       if (currentUser) {
         const userData = JSON.parse(currentUser);
-        
+
         const updatedUser = {
           ...userData,
           firstName: editedProfessor.name.split(' ')[0],
@@ -56,10 +58,10 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           university: editedProfessor.university,
           grade: editedProfessor.grade,
           certification: editedProfessor.certification,
-          photoUrl: editedProfessor.photoUrl,
+          photoUrl: editedProfessor.photoUrl ? editedProfessor.photoUrl : defaultAvatar,
         };
 
-        await fetch(`http://localhost:4000/users/${editedProfessor.id}`, {
+        const response = await fetch(`${OpenAPI.BASE}/users/${editedProfessor.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -67,19 +69,21 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           body: JSON.stringify(updatedUser),
         });
 
+        if (!response.ok) throw new Error('Failed to update profile');
+
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        
+
         setIsEditing(false);
-        
+
         if (onUpdate) {
           onUpdate(editedProfessor);
         }
-        
-        alert('Profil mis à jour avec succès !');
+
+        toast.success('Profil mis à jour avec succès !');
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du profil');
+      toast.error('Erreur lors de la sauvegarde du profil');
     } finally {
       setIsSaving(false);
     }
@@ -92,28 +96,33 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
     });
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        alert("L'image ne doit pas dépasser 5MB");
+    if (!file) return;
+
+    try {
+      // Import dynamically
+      const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+
+      // Validate file
+      const validation = CloudinaryService.validateFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error || 'Fichier invalide');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setEditedProfessor({
-          ...editedProfessor,
-          photoUrl: base64String
-        });
-      };
-      reader.readAsDataURL(file);
+      // Upload to Cloudinary
+      const url = await CloudinaryService.uploadImage(file, { folder: 'profiles' });
+
+      setEditedProfessor({
+        ...editedProfessor,
+        photoUrl: url
+      });
+
+      toast.success('Photo mise à jour avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');
     }
   };
 
@@ -137,9 +146,9 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">Profil de l'Enseignant</h2>
+        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">Profil de l&apos;Enseignant</h2>
         {!isEditing ? (
-          <button 
+          <button
             onClick={handleEdit}
             className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
           >
@@ -147,13 +156,13 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           </button>
         ) : (
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleCancel}
               className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
               Annuler
             </button>
-            <button 
+            <button
               onClick={handleSave}
               disabled={isSaving}
               className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
@@ -169,22 +178,22 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700">
             <div className="relative w-32 h-32 mx-auto mb-4">
-              <img 
-                src={editedProfessor.photoUrl || defaultAvatar} 
+              <img
+                src={editedProfessor.photoUrl || defaultAvatar}
                 alt={editedProfessor.name}
                 className="w-full h-full rounded-full object-cover border-2 border-purple-200 dark:border-purple-500"
               />
-              
+
               {/* Edit Photo Button */}
               {isEditing && (
-                <label 
+                <label
                   htmlFor="prof-photo-upload"
                   className="absolute bottom-0 right-0 bg-purple-600 dark:bg-purple-500 text-white rounded-full p-2 cursor-pointer hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-5 w-5" 
-                    viewBox="0 0 20 20" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
                     fill="currentColor"
                   >
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -199,11 +208,11 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 </label>
               )}
             </div>
-            
+
             <div className="text-center">
               <p className="text-sm text-gray-500 dark:text-gray-400">No. Enseignant</p>
               <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.id}</p>
-              
+
               {/* Editable Name */}
               {isEditing ? (
                 <div className="mt-2 space-y-2">
@@ -243,7 +252,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.city || 'Non Spécifié'}</p>
               )}
             </div>
-            
+
             <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
               <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Université:</p>
               {isEditing ? (
@@ -258,7 +267,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.university || 'Non Spécifié'}</p>
               )}
             </div>
-            
+
             <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
               <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Grade:</p>
               {isEditing ? (
@@ -273,7 +282,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.grade || 'Non Spécifié'}</p>
               )}
             </div>
-            
+
             <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
               <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Certification:</p>
               {isEditing ? (
@@ -323,7 +332,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           {/* Performance Distribution */}
           <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-8 border border-purple-200 dark:border-purple-900/30">
             <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Distribution des performances</h3>
-            
+
             {/* Chart */}
             <div className="flex justify-center mb-8">
               <div className="relative w-48 h-48">

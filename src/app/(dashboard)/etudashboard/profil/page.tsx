@@ -1,9 +1,13 @@
-// app/etudashboard/profil/page.tsx
+// app/(dashboard)/etudashboard/profil/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import Sidebar from '@/components/Sidebar';
 import { Award, BookOpen, Clock } from 'lucide-react';
+import { OpenAPI } from '@/lib/core/OpenAPI';
+
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface User {
   id: string;
@@ -29,13 +33,22 @@ export default function StudentProfile() {
   const [user, setUser] = useState<User | null>(null);
   const [editedUser, setEditedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
+
+  useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
-    
+
     if (!currentUser) {
       router.push('/login');
       return;
@@ -43,12 +56,12 @@ export default function StudentProfile() {
 
     try {
       const userData = JSON.parse(currentUser);
-      
+
       if (userData.role !== 'student') {
         router.push('/profdashboard');
         return;
       }
-      
+
       setUser(userData);
       setEditedUser(userData);
     } catch (error) {
@@ -70,10 +83,10 @@ export default function StudentProfile() {
 
   const handleSave = async () => {
     if (!editedUser) return;
-    
+
     setIsSaving(true);
     try {
-      await fetch(`http://localhost:4000/users/${editedUser.id}`, {
+      await fetch(`${OpenAPI.BASE}/users/${editedUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -82,14 +95,14 @@ export default function StudentProfile() {
       });
 
       localStorage.setItem('currentUser', JSON.stringify(editedUser));
-      
+
       setUser(editedUser);
       setIsEditing(false);
-      
-      alert('Profil mis à jour avec succès !');
+
+      toast.success('Profil mis à jour avec succès !');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du profil');
+      toast.error('Erreur lors de la sauvegarde du profil');
     } finally {
       setIsSaving(false);
     }
@@ -107,12 +120,12 @@ export default function StudentProfile() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide');
+        toast.error('Veuillez sélectionner une image valide');
         return;
       }
-      
+
       if (file.size > 5 * 1024 * 1024) {
-        alert("L'image ne doit pas dépasser 5MB");
+        toast.error("L'image ne doit pas dépasser 5Mo");
         return;
       }
 
@@ -144,7 +157,7 @@ export default function StudentProfile() {
 
   const displayName = `${editedUser.firstName} ${editedUser.lastName}`;
   const userLevel = editedUser.specialization || editedUser.level || 'Étudiant';
-  const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
+  const defaultAvatar = '/images/pp.jpeg';
 
   const grades = [
     { subject: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
@@ -155,18 +168,18 @@ export default function StudentProfile() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-      <Sidebar 
-        userRole="student" 
+      <Sidebar
+        userRole="student"
         userName={displayName}
         userLevel={userLevel}
         activeTab="profil"
       />
-      
+
       <main className="flex-1 p-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">Mon Profil Étudiant</h1>
           {!isEditing ? (
-            <button 
+            <button
               onClick={handleEdit}
               className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
             >
@@ -174,13 +187,13 @@ export default function StudentProfile() {
             </button>
           ) : (
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={handleCancel}
                 className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 Annuler
               </button>
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={isSaving}
                 className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
@@ -197,21 +210,21 @@ export default function StudentProfile() {
             {/* Profile Picture */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
               <div className="relative w-32 h-32 mx-auto mb-4">
-                <img 
-                  src={editedUser.photoUrl || defaultAvatar} 
+                <img
+                  src={editedUser.photoUrl || defaultAvatar}
                   alt={displayName}
                   className="w-full h-full rounded-full object-cover border-2 border-purple-200 dark:border-purple-500"
                 />
-                
+
                 {isEditing && (
-                  <label 
+                  <label
                     htmlFor="photo-upload"
                     className="absolute bottom-0 right-0 bg-purple-600 dark:bg-purple-500 text-white rounded-full p-2 cursor-pointer hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
                   >
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className="h-5 w-5" 
-                      viewBox="0 0 20 20" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
                       fill="currentColor"
                     >
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -226,11 +239,11 @@ export default function StudentProfile() {
                   </label>
                 )}
               </div>
-              
+
               <div className="text-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400">No. Étudiant</p>
                 <p className="font-semibold text-gray-800 dark:text-white">{editedUser.id}</p>
-                
+
                 {isEditing ? (
                   <div className="mt-2 space-y-2">
                     <input
@@ -271,7 +284,7 @@ export default function StudentProfile() {
                   <p className="font-semibold text-gray-800 dark:text-white">{editedUser.specialization || 'Non spécifié'}</p>
                 )}
               </div>
-              
+
               {/* Niveau */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
                 <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Niveau:</p>
@@ -287,7 +300,7 @@ export default function StudentProfile() {
                   <p className="font-semibold text-gray-800 dark:text-white">{editedUser.level || 'Non spécifié'}</p>
                 )}
               </div>
-              
+
               {/* Université */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
                 <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Université:</p>
@@ -303,7 +316,7 @@ export default function StudentProfile() {
                   <p className="font-semibold text-gray-800 dark:text-white">{editedUser.university || 'Non spécifié'}</p>
                 )}
               </div>
-              
+
               {/* Ville */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
                 <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Ville:</p>
@@ -388,7 +401,7 @@ export default function StudentProfile() {
             {/* Grade Distribution */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Répartition des Notes</h3>
-              
+
               <div className="space-y-6">
                 {grades.map((grade, index) => (
                   <div key={index}>
@@ -397,7 +410,7 @@ export default function StudentProfile() {
                       <span className="font-bold text-purple-600 dark:text-purple-400">{grade.value}%</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div 
+                      <div
                         className={`${grade.color} h-3 rounded-full transition-all duration-500`}
                         style={{ width: `${grade.value}%` }}
                       />
@@ -476,7 +489,7 @@ export default function StudentProfile() {
                 <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Centres d'intérêt</h3>
                 <div className="flex flex-wrap gap-2">
                   {user.interests.map((interest, index) => (
-                    <span 
+                    <span
                       key={index}
                       className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-900/30 px-4 py-2 rounded-full text-sm font-medium"
                     >

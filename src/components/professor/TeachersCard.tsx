@@ -17,21 +17,21 @@ interface TeachersCardProps {
 
 export default function TeachersCard({ teachers }: TeachersCardProps) {
   const defaultAvatar = '/images/Applying Lean to Education -.jpeg';
-  
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-6">
-        Rencontrez d'autres enseignants de votre domaine
+        Rencontrez d&apos;autres enseignants de votre domaine
       </h2>
-      
+
       <div className="grid grid-cols-4 gap-6">
         {teachers.map((teacher) => (
-          <div 
+          <div
             key={teacher.id}
             className="bg-white dark:bg-gray-800 border-2 border-purple-100 dark:border-purple-900/30 rounded-xl p-6 hover:border-purple-300 dark:hover:border-purple-500 hover:shadow-md dark:hover:shadow-gray-900/70 transition-all"
           >
             {/* Profile Image */}
-            <img 
+            <img
               src={teacher.image || defaultAvatar}
               alt={teacher.name}
               className="w-20 h-20 mx-auto rounded-full object-cover mb-4 border-2 border-purple-200 dark:border-purple-500"

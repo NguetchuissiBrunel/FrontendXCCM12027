@@ -1,6 +1,7 @@
 // src/utils/DownloadPdf.tsx
 import jsPDF from 'jspdf';
 import { CourseData, Section, Chapter, Paragraph } from '@/types/course';
+import { extractTextFromContent } from './courseTransformer';
 
 export const downloadCourseAsPDF = async (courseData: CourseData, orientation: 'p' | 'l' = 'p'): Promise<boolean> => {
   try {
@@ -9,7 +10,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 40;
     let y = margin;
-    
+
     const fontSize = {
       title: 22,
       subtitle: 20,
@@ -19,7 +20,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       normal: 12,
       small: 10
     };
-    
+
     const colors = {
       primary: [100, 50, 200],
       partie: [100, 50, 200],
@@ -29,65 +30,65 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       dark: [50, 50, 50],
       light: [150, 150, 150]
     } as const;
-    
+
     const lineSpacing = 1.3;
     const formattedDate = new Date().toLocaleDateString();
-    
+
     // Page de garde
     doc.setDrawColor(...colors.primary);
     doc.setLineWidth(10);
     doc.roundedRect(20, 20, pageWidth - 40, pageHeight - 40, 10, 10, 'S');
-    
+
     if (courseData.image) {
       try {
         const imgWidth = pageWidth - 100;
         const imgHeight = 200;
         const imgX = 50;
         const imgY = 80;
-        
+
         doc.addImage(courseData.image, 'JPEG', imgX, imgY, imgWidth, imgHeight);
-        
+
         doc.setDrawColor(...colors.primary);
         doc.setLineWidth(0.5);
         doc.rect(imgX, imgY, imgWidth, imgHeight);
-      } catch (error) {
+      } catch {
         console.log("Image non chargée, utilisation du placeholder");
       }
     }
-    
+
     const titleY = courseData.image ? 350 : pageHeight / 3;
-    
+
     doc.setTextColor(...colors.primary);
     doc.setFontSize(fontSize.title);
     doc.setFont("helvetica", "bold");
-    
+
     const titleLines = doc.splitTextToSize(courseData.title, pageWidth - 100);
     const titleHeight = titleLines.length * (fontSize.title * lineSpacing);
-    
+
     doc.text(titleLines, pageWidth / 2, titleY, { align: 'center' });
-    
+
     doc.setDrawColor(...colors.primary);
     doc.setLineWidth(2);
-    doc.line(pageWidth / 2 - 120, titleY + titleHeight + 15, 
-             pageWidth / 2 + 120, titleY + titleHeight + 15);
-    
+    doc.line(pageWidth / 2 - 120, titleY + titleHeight + 15,
+      pageWidth / 2 + 120, titleY + titleHeight + 15);
+
     doc.setFontSize(fontSize.subtitle);
     doc.setTextColor(...colors.primary);
     doc.setFont("helvetica", "normal");
     const categoryText = courseData.category || "Formation";
     doc.text(categoryText, pageWidth / 2, titleY + titleHeight + 50, { align: 'center' });
-    
+
     if (courseData.author) {
       doc.setFontSize(fontSize.normal);
       doc.setTextColor(...colors.primary);
       const authorText = `Par ${courseData.author.name}`;
       doc.text(authorText, pageWidth / 2, titleY + titleHeight + 80, { align: 'center' });
     }
-  
+
     doc.setFontSize(fontSize.small);
     doc.setTextColor(...colors.light);
     doc.text(formattedDate, pageWidth / 2, pageHeight - margin, { align: 'center' });
-    
+
     // Table des matières
     doc.addPage();
     y = margin;
@@ -198,7 +199,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
                 doc.setFontSize(fontSize.normal);
                 doc.setTextColor(...colors.dark);
                 doc.setFont("helvetica", "normal");
-                const contentLines = doc.splitTextToSize(paragraph.content, pageWidth - 2 * margin);
+                const contentLines = doc.splitTextToSize(extractTextFromContent(paragraph.content), pageWidth - 2 * margin);
                 doc.text(contentLines, margin, y);
                 y += contentLines.length * (fontSize.normal * lineSpacing) + 15;
 
@@ -225,7 +226,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
                     y += notionLines.length * (fontSize.small * lineSpacing) + 10;
                   });
                 }
-                
+
                 y += 10;
               });
             }
@@ -233,7 +234,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
         }
       });
     }
-    
+
     // Conclusion
     doc.addPage();
     y = margin * 2;
@@ -252,16 +253,16 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
     doc.line(margin, y + 30, margin + doc.getTextWidth(conclusionTitle) * 1.5, y + 30);
 
     y = y + 60;
-            
+
     doc.setFontSize(fontSize.normal);
     doc.setTextColor(0, 0, 0);
-    
+
     if (courseData.conclusion) {
       const splitConclusion = doc.splitTextToSize(courseData.conclusion, pageWidth - 2 * margin);
       doc.text(splitConclusion, margin, y);
       y += splitConclusion.length * (fontSize.normal * lineSpacing) + 25;
     }
-    
+
     if (courseData.learningObjectives && courseData.learningObjectives.length > 0) {
       doc.setFontSize(fontSize.paragraphe);
       doc.setTextColor(...colors.notion);
@@ -272,8 +273,8 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       doc.setFontSize(fontSize.normal);
       doc.setTextColor(...colors.dark);
       doc.setFont("helvetica", "normal");
-      
-      courseData.learningObjectives.forEach((objective: string, idx: number) => {
+
+      courseData.learningObjectives.forEach((objective: string) => {
         if (y > pageHeight - margin) {
           doc.addPage();
           y = margin;
@@ -287,28 +288,28 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
     // Pied de page sur toutes les pages - CORRECTION ICI
     // On utilise une approche différente pour compter les pages
-    const totalPages = (doc as any).internal.pages.length - 1; // -1 car l'index commence à 0
-    
+    const totalPages = doc.getNumberOfPages();
+
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      
+
       doc.setFontSize(fontSize.small);
       doc.setTextColor(150, 150, 150);
-      
+
       const pageText = `Page ${i} sur ${totalPages}`;
       doc.text(pageText, pageWidth - margin - doc.getTextWidth(pageText), pageHeight - 15);
-      
+
       // Ajouter aussi le titre court en bas de page
       const shortTitle = (courseData.title.substring(0, 30) + (courseData.title.length > 30 ? '...' : '')) || 'Sans titre';
       doc.text(shortTitle, margin, pageHeight - 15);
-      
+
       // Ajouter la date au centre
       doc.text(formattedDate, pageWidth / 2, pageHeight - 15, { align: 'center' });
     }
-    
+
     const safeTitle = courseData.title.replace(/\s+/g, '_').replace(/[^\w-]/g, '') || 'cours';
     doc.save(`${safeTitle}.pdf`);
-    
+
     return true;
   } catch (error) {
     console.error("Erreur lors de la génération du PDF:", error);

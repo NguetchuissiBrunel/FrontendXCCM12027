@@ -14,76 +14,106 @@ export function useEnrollment(courseId?: number) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Si pas authentifié OU utilisateur n'est pas un étudiant
-    if (!isAuthenticated || (user && user.role !== 'student')) {
-      setIsEnrolled(false);
-      setEnrollment(null);
-      setProgress(0);
-      setLoading(false);
-      return;
-    }
+    const checkEnrollment = async () => {
+      // Si pas authentifié OU utilisateur n'est pas un étudiant
+      if (!isAuthenticated || (user && !user.role?.includes('student'))) {
+        setIsEnrolled(false);
+        setEnrollment(null);
+        setProgress(0);
+        setLoading(false);
+        return;
+      }
 
-    if (courseId && user && user.role === 'student') {
-      const enrolled = EnrollmentService.isEnrolled(courseId, user.id);
-      const enrollmentData = EnrollmentService.getEnrollment(courseId, user.id);
-      
-      setIsEnrolled(enrolled);
-      setEnrollment(enrollmentData);
-      setProgress(enrollmentData?.progress || 0);
+      if (courseId && user) {
+        setLoading(true);
+        try {
+          const enrollmentData = await EnrollmentService.getEnrollment(courseId);
+
+          if (enrollmentData) {
+            setIsEnrolled(true);
+            setEnrollment(enrollmentData);
+            setProgress(enrollmentData.progress || 0);
+          } else {
+            setIsEnrolled(false);
+            setEnrollment(null);
+            setProgress(0);
+          }
+        } catch (error) {
+          console.error("Erreur lors de la récupération de l'enrôlement:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) {
+      checkEnrollment();
     }
-    
-    setLoading(false);
   }, [courseId, user, authLoading, isAuthenticated]);
 
-  const enroll = (): Enrollment | null => {
+  const enroll = async (): Promise<Enrollment | null> => {
     // Vérifier les permissions
-    if (!isAuthenticated || !user || !courseId || user.role !== 'student') {
-      console.log('⚠️ Enrollement non autorisé: ', {
-        isAuthenticated,
-        userRole: user?.role,
-        hasCourseId: !!courseId
-      });
+    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student')) {
       return null;
     }
-    
-    const newEnrollment = EnrollmentService.enrollStudent(courseId, user.id);
-    setEnrollment(newEnrollment);
-    setIsEnrolled(true);
-    setProgress(0);
-    
-    return newEnrollment;
+
+    setLoading(true);
+    try {
+      const newEnrollment = await EnrollmentService.enrollStudent(courseId);
+      setEnrollment(newEnrollment);
+      setIsEnrolled(true);
+      setProgress(0);
+      return newEnrollment;
+    } catch (error) {
+      console.error("Erreur d'enrôlement:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const unenroll = (): void => {
-    if (!isAuthenticated || !user || !courseId || user.role !== 'student') return;
-    
-    EnrollmentService.unenroll(courseId, user.id);
-    setEnrollment(null);
-    setIsEnrolled(false);
-    setProgress(0);
+  const unenroll = async (): Promise<void> => {
+    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student')) return;
+
+    setLoading(true);
+    try {
+      await EnrollmentService.unenroll();
+      setEnrollment(null);
+      setIsEnrolled(false);
+      setProgress(0);
+    } catch (error) {
+      console.error("Erreur de désinscription:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateProgress = (newProgress: number): void => {
-    if (!isAuthenticated || !user || !courseId || user.role !== 'student') return;
-    
-    EnrollmentService.updateProgress(courseId, user.id, newProgress);
-    setProgress(newProgress);
-    
-    // Mettre à jour l'objet enrollment local
-    setEnrollment(prev => prev ? {
-      ...prev,
-      progress: newProgress,
-      lastAccessed: new Date().toISOString(),
-      completed: newProgress >= 100
-    } : null);
+  const updateProgress = async (newProgress: number): Promise<void> => {
+    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student') || !enrollment?.id) return;
+
+    try {
+      await EnrollmentService.updateProgress(enrollment.id, newProgress);
+      setProgress(newProgress);
+
+      // Mettre à jour l'objet enrollment local
+      setEnrollment(prev => prev ? {
+        ...prev,
+        progress: newProgress,
+        completed: newProgress >= 100
+      } : null);
+    } catch (error) {
+      console.error("Erreur de mise à jour de la progression:", error);
+    }
   };
 
-  const markChapterCompleted = (chapterIndex: number, totalChapters: number): void => {
-    if (!isAuthenticated || !user || !courseId || user.role !== 'student') return;
-    
-    EnrollmentService.markChapterCompleted(courseId, user.id, chapterIndex, totalChapters);
-    const newProgress = EnrollmentService.getProgress(courseId, user.id);
-    setProgress(newProgress);
+  const markChapterCompleted = async (chapterIndex: number, totalChapters: number): Promise<void> => {
+    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student') || !enrollment?.id) return;
+
+    const progressPerChapter = 100 / totalChapters;
+    const newProgress = Math.min(100, progress + progressPerChapter);
+    await updateProgress(newProgress);
   };
 
   return {

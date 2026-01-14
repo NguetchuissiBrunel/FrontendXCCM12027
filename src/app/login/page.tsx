@@ -2,38 +2,18 @@
 import Link from "next/link";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import toast, { Toaster } from 'react-hot-toast';
-import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock } from "react-icons/fa";
+import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 type FormData = {
   email: string;
   password: string;
-  role: 'student' | 'teacher'; 
+  role: 'student' | 'teacher';
 };
 
-type User = {
-  id: string | number;
-  fullName: string;
-  email: string;
-  password: string;
-  role: 'student' | 'teacher';
-  registrationDate: string;
-  lastLogin?: string;
-  studentDetails?: {
-    interests: string[];
-    studyLevel: string;
-    faculty: string;
-    specialization: string;
-    reason: string;
-  };
-  teacherDetails?: {
-    teachingDepartments: string[];
-    subjects: string[];
-    teachingGoal: string;
-  };
-};
+
 
 const SigninPage = () => {
   const [formData, setFormData] = useState<FormData>({
@@ -41,24 +21,30 @@ const SigninPage = () => {
     password: '',
     role: 'student',
   });
-  const [users, setUsers] = useState<User[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { login, user } = useAuth();
 
-  // Charger les utilisateurs depuis JSON Server avec axios
+  // Rediriger si déjà connecté
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get<User[]>("http://localhost:4000/users");
-        setUsers(res.data);
-        console.log("Utilisateurs chargés depuis json-server:", res.data);
-      } catch (error) {
-        toast.error("Erreur lors du chargement des utilisateurs.");
-      }
-    };
-    fetchUsers();
+    if (user) {
+      // Si un callbackUrl existe, on pourrait l'utiliser, sinon dashboard par défaut
+      const params = new URLSearchParams(window.location.search);
+      const callback = params.get('callbackUrl');
 
+      if (callback) {
+        router.push(callback);
+      } else {
+        if (user.role === 'student') router.push('/etudashboard');
+        else if (user.role === 'teacher') router.push('/profdashboard');
+      }
+    }
+  }, [user, router]);
+
+  // Charger le rôle sauvegardé
+  useEffect(() => {
     const savedRole = localStorage.getItem('userRole');
     if (savedRole === 'student' || savedRole === 'teacher') {
       setFormData(prev => ({
@@ -88,51 +74,37 @@ const SigninPage = () => {
     setIsSubmitting(true);
 
     try {
-      const user = users.find(
-        (u) =>
-          u.email.toLowerCase() === formData.email.toLowerCase() &&
-          u.password === formData.password
-      );
-
-      if (!user) {
-        const emailExists = users.some(
-          (u) => u.email.toLowerCase() === formData.email.toLowerCase()
-        );
-        const errorMessage = emailExists
-          ? "Mot de passe incorrect"
-          : "Aucun compte associé à cet email";
-        setErrors({ submit: errorMessage });
-        toast.error(errorMessage);
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Mettre à jour la date de dernière connexion dans json-server
-      const updatedUser = { ...user, lastLogin: new Date().toISOString() };
-      await axios.put(`http://localhost:4000/users/${user.id}`, updatedUser);
-
-      // Sauvegarder les infos dans localStorage
-      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-      localStorage.setItem("userRole", user.role);
+      // Utiliser la fonction login du contexte AuthContext
+      await login(formData.email, formData.password);
 
       toast.success("Connexion réussie !");
 
-      // Redirection selon le rôle
-      if (user.role === "student") {
-        router.push("/etudashboard");
-      } else if (user.role === "teacher") {
-        router.push("/profdashboard");
-      } else {
-        router.push("/dashboard");
-      }
-    } catch (error) {
+      // La redirection est gérée par le useEffect ci-dessus
+      // qui surveille le changement de l'utilisateur
+    } catch (error: any) {
       console.error("Erreur lors de la connexion:", error);
-      setErrors({ submit: "Une erreur est survenue. Veuillez réessayer." });
-      toast.error("Une erreur est survenue. Veuillez réessayer.");
+
+      // Gérer les erreurs API
+      let errorMessage = "Une erreur est survenue. Veuillez réessayer.";
+
+      if (error?.body?.message) {
+        errorMessage = error.body.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.status === 401) {
+        errorMessage = "Email ou mot de passe incorrect";
+      } else if (error?.status === 403) {
+        errorMessage = "Accès refusé";
+      } else if (error?.status === 500) {
+        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
+      }
+
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, users, validateForm, router]);
+  }, [formData, validateForm, login]);
 
   const renderForm = useMemo(() => (
     <motion.div
@@ -145,7 +117,7 @@ const SigninPage = () => {
 
       {/* Champ email */}
       <div className="space-y-4">
-        <motion.div 
+        <motion.div
           className="relative"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -172,7 +144,7 @@ const SigninPage = () => {
         </motion.div>
 
         {/* Champ mot de passe */}
-        <motion.div 
+        <motion.div
           className="relative"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -180,13 +152,35 @@ const SigninPage = () => {
         >
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             placeholder="Votre mot de passe"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-12 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all" // Ajout de pr-12
           />
+
+          {/* Bouton œil - CORRECTION */}
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setShowPassword(!showPassword);
+              }
+            }}
+          >
+            {showPassword ? (
+              <FaEyeSlash size={20} className="text-gray-500 dark:text-gray-400" />
+            ) : (
+              <FaEye size={20} className="text-gray-500 dark:text-gray-400" />
+            )}
+          </button>
+
           {errors.password && (
             <motion.p
               initial={{ opacity: 0 }}
@@ -198,36 +192,7 @@ const SigninPage = () => {
           )}
         </motion.div>
 
-        {/* Choix du rôle */}
-        <motion.div 
-          className="flex space-x-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, role: 'student' })}
-            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
-              formData.role === 'student' 
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-            }`}
-          >
-            <FaGraduationCap className="mr-2" /> Étudiant
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, role: 'teacher' })}
-            className={`flex-1 py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
-              formData.role === 'teacher'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-            }`}
-          >
-            <FaChalkboardTeacher className="mr-2" /> Enseignant
-          </button>
-        </motion.div>
+
 
         <motion.div
           className="text-center mt-4"
@@ -274,24 +239,14 @@ const SigninPage = () => {
           Inscrivez-vous
         </Link>
       </motion.div>
-      
-      {users.length > 0 && (
-        <motion.div
-          className="text-xs text-center mt-2 text-gray-400 dark:text-gray-500"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-        >
-          {users.length} utilisateur(s) enregistré(s)
-        </motion.div>
-      )}
-      {/* Toaster */}
-      <Toaster position="top-right" reverseOrder={false} />
+
+
+      {/* Toaster - Supprimé car géré au niveau global RootLayout */}
     </motion.div>
-  ), [formData, errors, handleSubmit, isSubmitting, users.length]);
+  ), [formData, errors, handleSubmit, isSubmitting, showPassword]);
 
   return (
-    <div 
+    <div
       className="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center transition-colors duration-300"
       style={{ backgroundImage: "url('/images/fond5.jpeg')" }}
     >

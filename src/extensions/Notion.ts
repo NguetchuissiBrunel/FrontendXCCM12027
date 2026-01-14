@@ -20,7 +20,7 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import NotionNodeView from './NotionNodeView';
 
 export interface NotionOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module '@tiptap/core' {
@@ -39,7 +39,7 @@ export default Node.create<NotionOptions>({
 
   group: 'block',
 
-  content: 'inline*',
+  content: 'block+',
 
   defining: true,
 
@@ -103,11 +103,11 @@ export default Node.create<NotionOptions>({
     return {
       setNotion:
         () =>
-        ({ commands }) => {
-          // Generate unique ID for this notion
-          const id = `notion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.setNode(this.name, { id });
-        },
+          ({ commands }) => {
+            // Generate unique ID for this notion
+            const id = `notion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return commands.setNode(this.name, { id });
+          },
     };
   },
 

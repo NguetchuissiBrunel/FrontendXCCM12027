@@ -36,20 +36,20 @@ const NODE_TYPE_MAP: Record<string, { itemType: ItemType; level: number }> = {
  */
 function extractTextContent(content: any[]): string {
   if (!content || !Array.isArray(content)) return '';
-  
+
   for (const item of content) {
     // Direct text node
     if (item.type === 'text' && item.text) {
       return item.text.trim();
     }
-    
+
     // Paragraph or other container with text
     if (item.content && Array.isArray(item.content)) {
       const text = extractTextContent(item.content);
       if (text) return text;
     }
   }
-  
+
   return '';
 }
 
@@ -61,7 +61,7 @@ function isHierarchyNode(node: any): boolean {
   if (node.type === 'heading' && node.attrs?.level === 1) {
     return true;
   }
-  
+
   // Custom XCCM nodes
   return ['section', 'chapitre', 'paragraphe', 'notion', 'exercice'].includes(node.type);
 }
@@ -77,7 +77,7 @@ function getNodeConfig(node: any): { itemType: ItemType; level: number } | null 
     }
     return null; // Ignore H2-H6
   }
-  
+
   // Custom nodes
   return NODE_TYPE_MAP[node.type] || null;
 }
@@ -99,12 +99,18 @@ function extractTOCRecursive(
   level: number = 0
 ): TableOfContentsItem[] {
   const items: TableOfContentsItem[] = [];
+
+  // Safety check: ensure nodes is an array
+  if (!nodes || !Array.isArray(nodes)) {
+    return items;
+  }
+
   const levelCounters = [...counters];
 
   for (const node of nodes) {
     if (isHierarchyNode(node)) {
       const config = getNodeConfig(node);
-      
+
       if (config) {
         // Increment counter at current level
         while (levelCounters.length <= config.level) {
@@ -122,7 +128,7 @@ function extractTOCRecursive(
 
         // Extract title from node
         let title = '';
-        
+
         // Try node.attrs.title first (stored attribute)
         if (node.attrs?.title && node.attrs.title !== config.itemType) {
           title = node.attrs.title;
@@ -130,7 +136,7 @@ function extractTOCRecursive(
           // Extract first line of text from content
           title = extractTextContent(node.content || []);
         }
-        
+
         // Fallback to type name with counter
         const typeLabels: Record<ItemType, string> = {
           course: 'Cours',
@@ -145,13 +151,11 @@ function extractTOCRecursive(
         const numberStr = generateNumber(levelCounters.slice(0, config.level + 1));
 
         // Format title as "Type Number: Content"
-        const typeLabel = typeLabels[config.itemType];
-        let displayTitle = '';
-        if (title) {
-          displayTitle = `${typeLabel} ${numberStr}: ${title}`;
-        } else {
-          displayTitle = `${typeLabel} ${numberStr}`;
-        }
+        // Format title
+        // We do NOT add Type Label or Number to the title anymore.
+        // The TableOfContents component handles display.
+        // We only return the raw title.
+        let displayTitle = title || ''; // Just the raw title, or empty string
 
         // Generate unique ID
         const id = node.attrs?.id || `${config.itemType}-${levelCounters.join('-')}`;
@@ -164,7 +168,7 @@ function extractTOCRecursive(
           level: config.level,
           number: numberStr,
           children: [],
-          content: node.content ? JSON.stringify(node.content) : undefined,
+          content: node.content,
         };
         // Recursively extract children
         if (node.content && Array.isArray(node.content)) {
@@ -194,11 +198,31 @@ function extractTOCRecursive(
  * @returns Array of TableOfContentsItem in hierarchical structure
  */
 export function extractTOC(editorJSON: any): TableOfContentsItem[] {
-  if (!editorJSON || !editorJSON.content) {
+  if (!editorJSON) {
     return [];
   }
 
-  return extractTOCRecursive(editorJSON.content);
+  // Case 1: editorJSON is already the array of nodes
+  if (Array.isArray(editorJSON)) {
+    return extractTOCRecursive(editorJSON);
+  }
+
+  // Case 2: TipTap doc structure
+  if (editorJSON.type === 'doc' && Array.isArray(editorJSON.content)) {
+    return extractTOCRecursive(editorJSON.content);
+  }
+
+  // Case 3: Object with content property (generic or partially malformed)
+  if (editorJSON.content && Array.isArray(editorJSON.content)) {
+    return extractTOCRecursive(editorJSON.content);
+  }
+
+  // Fallback: If it's a single node that is a hierarchy node
+  if (isHierarchyNode(editorJSON)) {
+    return extractTOCRecursive([editorJSON]);
+  }
+
+  return [];
 }
 
 /**
@@ -206,7 +230,7 @@ export function extractTOC(editorJSON: any): TableOfContentsItem[] {
  */
 export function flattenTOC(items: TableOfContentsItem[]): TableOfContentsItem[] {
   const flattened: TableOfContentsItem[] = [];
-  
+
   function flatten(items: TableOfContentsItem[]) {
     for (const item of items) {
       flattened.push(item);
@@ -215,7 +239,7 @@ export function flattenTOC(items: TableOfContentsItem[]): TableOfContentsItem[] 
       }
     }
   }
-  
+
   flatten(items);
   return flattened;
 }

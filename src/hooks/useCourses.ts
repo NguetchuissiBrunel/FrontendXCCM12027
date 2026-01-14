@@ -124,11 +124,17 @@ export function useCourse(courseId: number) {
     const [error, setError] = useState<string | null>(null);
 
     // Attendre que l'authentification soit initialisée
-    const { loading: authLoading } = useAuth();
+    const { isAuthenticated, loading: authLoading } = useAuth();
 
     useEffect(() => {
         // Si l'auth est encore en cours de chargement, on attend
         if (authLoading) return;
+
+        // Si l'utilisateur n'est pas authentifié, on ne fait pas d'appel API pour éviter l'erreur Forbidden
+        if (!isAuthenticated) {
+            setLoading(false);
+            return;
+        }
 
         const loadCourse = async () => {
             try {
@@ -163,7 +169,7 @@ export function useCourse(courseId: number) {
         if (courseId) {
             loadCourse();
         }
-    }, [courseId, authLoading]);
+    }, [courseId, authLoading, isAuthenticated]);
 
     return { course, loading: loading || authLoading, error };
 }

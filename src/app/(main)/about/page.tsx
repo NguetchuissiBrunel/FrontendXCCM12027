@@ -147,18 +147,34 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
               >
-                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
-                  Introduction
-                </h2>
-                <div className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-6 text-slate-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-slate-200">
-                  <p>
-                    <strong>XCCM1</strong> est un prototype academique realise dans le cadre du
-                    cours <strong>Interface Homme-Machine (GIF4087-1)</strong> a l&apos;ENSPY Yaounde.
-                  </p>
-                  <p className="mt-3">
-                    Il introduit le concept de <strong>granules</strong> pour structurer les cours
-                    en modules reutilisables, versionnes et partageables.
-                  </p>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Introduction</h2>
+                </div>
+                <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                        <span className="font-bold text-purple-600 dark:text-purple-400">XCCM (eXtensible Content Composition Module)</span> est un projet innovant développé dans le cadre du cours 
+                        <span className="font-semibold"> Interface Homme-Machine (GIF4087-1)</span> à l'
+                        <span className="font-bold">École Nationale Supérieure Polytechnique de Yaoundé (ENSPY)</span>.
+                      </p>
+                      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                        Sous la supervision du <span className="font-bold">Pr. Bernabe BATCHAKUI</span>, cette plateforme vise à transformer la création de contenu pédagogique 
+                        à travers une approche modulaire basée sur des <span className="font-semibold text-purple-600 dark:text-purple-400">"granules de connaissance"</span>.
+                      </p>
+                    </div>
+                    <div className="hidden md:block w-48 h-48 relative rounded-xl overflow-hidden shadow-lg">
+                      <Image
+                        src={isDarkMode ? "/images/image3.png" : "/images/image1.png"}
+                        alt="XCCM Platform"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </section>
@@ -278,37 +294,45 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
               >
-                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
-                  Stack technique
-                </h2>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {[
-                    {
-                      title: 'Frontend',
-                      items: ['Next.js 16 + App Router', 'React + TypeScript', 'Tailwind CSS'],
-                    },
-                    {
-                      title: 'Backend & donnees',
-                      items: ['API REST + WebSockets', 'PostgreSQL + JSONB', 'Export PDF/Word'],
-                    },
-                  ].map((block) => (
-                    <div
-                      key={block.title}
-                      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                    >
-                      <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">
-                        {block.title}
-                      </p>
-                      <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                        {block.items.map((item) => (
-                          <li key={item} className="flex items-center gap-2">
-                            <ChevronRight className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Équipe de Développement</h2>
+                </div>
+
+                <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 mb-8">
+                  <div className="text-center mb-8">
+                    <p className="text-lg text-gray-700 dark:text-gray-300">
+                      <span className="font-bold text-purple-600 dark:text-purple-400">12 étudiants</span> de 4ᵉ année Génie Informatique (2025–2026) sous la supervision du{' '}
+                      <span className="font-bold">Pr. Bernabe BATCHAKUI</span>
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {[
+                      "AZANGUE LEONEL DELMAT", "BALA ANDEGUE FRANCOIS LIONNEL", "NKOLO ANTAGANA STACY",
+                      "NANA NDOUNDAM GABRIELLE", "NANKENG TSAMO PIERRE MARCELLE", "NCHANG ROY FRU",
+                      "NGUETCHUISSI TCHUGOUA BRUNEL LANDRY", "SOUNTSA DJIELE PIO VIANNEY",
+                      "OSSOMBE PIERRE RENE RAOUL", "NKAMLA CHEDJOU JOHAN", "NTIH TCHIO TAMOGOU DARYL",
+                      "TAGASTING FOSTING SAMUEL SEAN"
+                    ].map((name, i) => (
+                      <div
+                        key={i}
+                        className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl text-center border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-sm">
+                          {name.split(' ')[0][0]}
+                        </div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {name.split(' ')[0]}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {name.split(' ').slice(1).join(' ')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             </section>

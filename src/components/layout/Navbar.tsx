@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
+import { MdHelpOutline } from 'react-icons/md';
 import { clearAuthToken } from '@/utils/authHelpers';
 
 const Navbar = () => {
@@ -20,7 +21,7 @@ const Navbar = () => {
     // Thème
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setIsDarkMode(true);
       document.documentElement.classList.add('dark');
@@ -31,7 +32,7 @@ const Navbar = () => {
     // Utilisateur connecté
     const userData = localStorage.getItem('currentUser');
     const role = localStorage.getItem('userRole');
-    
+
     if (userData) {
       setCurrentUser(JSON.parse(userData));
     }
@@ -51,7 +52,7 @@ const Navbar = () => {
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-    
+
     if (newDarkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -69,7 +70,7 @@ const Navbar = () => {
     setCurrentUser(null);
     setUserRole(null);
     clearAuthToken();
-    router.push('/login');
+    window.location.href = '/';
   };
 
   const handleMyAccount = () => {
@@ -82,78 +83,73 @@ const Navbar = () => {
 
   // Liens de navigation de base
   const baseNavLinks = [
-    { 
-      href: '/', 
-      label: 'Accueil', 
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> 
+    {
+      href: '/',
+      label: 'Accueil',
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
     },
-    { 
-      href: '/bibliotheque', 
-      label: 'Bibliothèque', 
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> 
+    {
+      href: '/bibliotheque',
+      label: 'Bibliothèque',
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
     },
   ];
 
   // Lien "Éditer" seulement pour les enseignants
   const teacherNavLink = {
-    href: '/editor', 
-    label: 'Éditer', 
+    href: '/editor',
+    label: 'Éditer',
     icon: <FaEdit className="w-5 h-5" />
   };
 
   // Lien "Aide" pour tous
   const helpNavLink = {
-    href: '/aide', 
-    label: 'Aide', 
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9.09 9a3 3 0 015.82 1c0 2-3 2-3 4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-    ),
+    href: '/aide',
+    label: 'Aide',
+    icon: <MdHelpOutline className="w-5 h-5" />
   };
 
   // Construire les liens de navigation selon le rôle
   const getNavLinks = () => {
     const links = [...baseNavLinks];
-    
+
     // Ajouter "Éditer" seulement pour les enseignants
     if (userRole === 'teacher') {
       links.push(teacherNavLink);
     }
-    
+
     // Toujours ajouter "Aide"
     links.push(helpNavLink);
-    
+
     return links;
   };
 
   const navLinks = getNavLinks();
 
+  if (pathname.startsWith('/admindashboard')) {
+    return null;
+  }
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 shadow-xl border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6"> 
-        
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+
         <div className="flex items-center justify-between h-16">
-          
+
           {/* GROUPE GAUCHE : Logo + Nom */}
           <div className="flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
-                <Image 
-                  src="/images/Capture.png" 
-                  alt="Logo XCCM" 
-                  width={80} 
-                  height={80} 
-                  className="rounded-full object-cover" 
+                <Image
+                  src="/images/Capture.png"
+                  alt="Logo XCCM"
+                  width={80}
+                  height={80}
+                  className="rounded-full object-cover"
                 />
               </div>
-              
-              
+
+
               <span className="text-lg lg:text-xl font-bold text-gray-800 dark:text-white hidden sm:block">XCCM1</span>
             </Link>
           </div>
@@ -169,23 +165,23 @@ const Navbar = () => {
                     href={item.href}
                     className={`
                       relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center space-x-2
-                      ${isActive 
-                        ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 shadow-sm' 
+                      ${isActive
+                        ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 shadow-sm'
                         : 'text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-gray-800'
                       }
                     `}
                   >
                     <span className={`
                       w-5 h-5 transition-colors
-                      ${isActive 
-                        ? 'text-purple-600 dark:text-purple-400' 
+                      ${isActive
+                        ? 'text-purple-600 dark:text-purple-400'
                         : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-300'
                       }
                     `}>
                       {item.icon}
                     </span>
                     <span className="ml-1">{item.label}</span>
-                    
+
                     {/* Indicateur de page active (petit point en bas) */}
                     {isActive && (
                       <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full"></div>
@@ -197,10 +193,10 @@ const Navbar = () => {
           </div>
 
           {/* GROUPE DROITE : Mode Sombre/Clair + Boutons selon connexion */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
-            
+          <div className="hidden lg:flex items-center space-x-4 flex-shrink-0">
+
             {/* Icône Mode Sombre/Clair */}
-            <button 
+            <button
               onClick={toggleDarkMode}
               className="text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300"
               aria-label={isDarkMode ? "Activer le mode clair" : "Activer le mode sombre"}
@@ -262,8 +258,8 @@ const Navbar = () => {
             ) : (
               // Utilisateur non connecté
               <div className="flex items-center space-x-3">
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className={`
                     px-4 py-2 text-sm font-medium transition-all duration-300 border rounded-lg flex items-center space-x-2
                     ${isActiveLink('/login')
@@ -330,8 +326,8 @@ const Navbar = () => {
                   >
                     <span className={`
                       w-5 h-5
-                      ${isActive 
-                        ? 'text-purple-600 dark:text-purple-400' 
+                      ${isActive
+                        ? 'text-purple-600 dark:text-purple-400'
                         : 'text-gray-400 dark:text-gray-500'
                       }
                     `}>
@@ -345,7 +341,7 @@ const Navbar = () => {
                 );
               })}
 
-              <button 
+              <button
                 onClick={toggleDarkMode}
                 className="w-full text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-colors"
               >
@@ -411,8 +407,8 @@ const Navbar = () => {
                   </>
                 ) : (
                   <>
-                    <Link 
-                      href="/login" 
+                    <Link
+                      href="/login"
                       className={`
                         block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-all duration-300
                         ${isActiveLink('/login')
@@ -427,8 +423,8 @@ const Navbar = () => {
                       </svg>
                       <span>Connexion</span>
                     </Link>
-                    <Link 
-                      href="/register" 
+                    <Link
+                      href="/register"
                       className={`
                         block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 flex items-center space-x-3 justify-center
                         ${isActiveLink('/register')

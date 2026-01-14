@@ -4,11 +4,13 @@ import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { useState } from 'react';
 import {
-  Check,
-  ChevronRight,
-  Clock,
-  Copy,
+  Shield,
+  Lock,
+  Mail,
   Download,
+  ExternalLink,
+  Check,
+  Copy,
   Eye,
   EyeOff,
   FileText,
@@ -144,17 +146,15 @@ export default function PrivacyPolicyPage() {
                   </span>
                   Introduction
                 </h2>
-                <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                  <p>
-                    XCCM1 est une <strong>plateforme académique open-source</strong> développée par
-                    les étudiants de <strong>4ᵉ année Génie Informatique</strong> à l&apos;ENSPY
-                    Yaoundé, sous la supervision du <strong>Dr. Bernabe BATCHAKUI</strong>.
+                <div className="prose prose-purple max-w-none">
+                  <p className="text-gray-700 leading-relaxed">
+                    XCCM1 est une <strong>plateforme académique open-source</strong> développée par les étudiants de
+                    <strong> 4ᵉ année Génie Informatique</strong> à l'<strong>ENSPY Yaoundé</strong> sous la supervision du
+                    <strong> Pr. Bernabe BATCHAKUI</strong>.
                   </p>
-                  <p>
-                    Cette politique de confidentialité explique comment nous collectons, utilisons
-                    et protégeons vos données dans le respect de la{' '}
-                    <strong>Loi n° 2010/012 du 21 décembre 2010</strong> relative à la cybersécurité
-                    et à la cybercriminalité au Cameroun.
+                  <p className="mt-4 text-gray-700">
+                    Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos données
+                    dans le respect de la <strong>Loi n° 2010/012 du 21 décembre 2010</strong> relative à la cybersécurité et à la cybercriminalité au Cameroun.
                   </p>
                   <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 dark:border-purple-500/30 dark:bg-purple-500/10">
                     <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
@@ -320,8 +320,8 @@ export default function PrivacyPolicyPage() {
                         {droit.desc}
                       </p>
                       {showDetails[droit.right] && (
-                        <p className="mt-3 text-xs font-medium text-purple-700 dark:text-purple-300">
-                          Envoyez un e-mail a <strong>{contactEmail}</strong>.
+                        <p className="mt-3 text-xs text-purple-700 animate-fade-in">
+                          Envoyez un email à <strong>xccm@enspy.cm</strong>
                         </p>
                       )}
                     </button>

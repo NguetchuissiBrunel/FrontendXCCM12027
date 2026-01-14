@@ -1,76 +1,25 @@
 // src/components/Course.tsx
 "use client";
 import React, { useState, useEffect } from "react";
-import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, BookUp, Tv } from "lucide-react";
+import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, BookUp, Tv, FileText } from "lucide-react";
 import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
+import { downloadCourseAsDocx } from "@/utils/DownloadDocx";
 import CourseSidebar from "@/components/CourseSidebar";
+import SmartNotes from "@/components/SmartNotes";
+import DownloadOptions from './DownloadOptions';
 import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/types/course";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import CourseContentRenderer from './CourseContentRenderer';
 
-
-interface OrientationSelectorProps {
-  isOpen: boolean;
-  onSelect: (orientation: 'p' | 'l') => void;
-  onClose: () => void;
-}
-
-const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSelect, onClose }) => {
-  if (!isOpen) return null;
-  
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-          <Layout className="h-5 w-5 mr-2 text-purple-600" />
-          Choisissez l'orientation du PDF
-        </h3>
-        
-        <div className="grid grid-cols-2 gap-4 mt-6 mb-6">
-          <button
-            onClick={() => onSelect('p')}
-            className="p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-400 transition-all flex flex-col items-center"
-            type="button"
-          >
-            <div className="w-20 h-28 border-2 border-purple-400 rounded-md mb-3 flex items-center justify-center">
-              <BookUp className="h-8 w-8 text-purple-500" />
-            </div>
-            <span className="font-medium text-purple-700">Portrait</span>
-          </button>
-          
-          <button
-            onClick={() => onSelect('l')}
-            className="p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-400 transition-all flex flex-col items-center"
-            type="button"
-          >
-            <div className="w-28 h-20 border-2 border-purple-400 rounded-md mb-3 flex items-center justify-center">
-              <Tv className="h-8 w-8 text-purple-500" />
-            </div>
-            <span className="font-medium text-purple-700">Paysage</span>
-          </button>
-        </div>
-        
-        <div className="flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            type="button"
-          >
-            Annuler
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 interface CourseProps {
   courseData: CourseData;
 }
 
 const Course: React.FC<CourseProps> = ({ courseData }) => {
-    const { user } = useAuth();
+  const { user } = useAuth();
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState<number>(0);
@@ -79,6 +28,8 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
   const [courseCompleted, setCourseCompleted] = useState<boolean>(false);
   const [currentExerciseAnswers, setCurrentExerciseAnswers] = useState<{ [key: number]: string }>({});
   const [pdfGenerating, setPdfGenerating] = useState<boolean>(false);
+  const [docxGenerating, setDocxGenerating] = useState<boolean>(false);
+  const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const [evaluation, setEvaluation] = useState<{
     rating: number;
     feedback: string;
@@ -129,7 +80,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
     }
 
     const isLastSection = currentSectionIndex === courseData.sections.length - 1;
-    
+
     if (hasChapters && chapter) {
       const isLastChapter = currentChapterIndex === section.chapters!.length - 1;
       const isLastParagraph = currentParagraphIndex === chapter.paragraphs.length - 1;
@@ -145,26 +96,35 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
   const handleDownloadPDF = () => {
     setShowOrientationSelector(true);
   };
-  
+
   const handleOrientationSelect = (orientation: 'p' | 'l') => {
-    setShowOrientationSelector(false);
     setPdfGenerating(true);
-    
+
     downloadCourseAsPDF(courseData, orientation)
-      .then(() => setPdfGenerating(false))
+      .then(() => {
+        setPdfGenerating(false);
+        setShowDownloadModal(false);
+      })
       .catch(() => setPdfGenerating(false));
+  };
+
+  const handleDownloadDocx = async () => {
+    setDocxGenerating(true);
+    await downloadCourseAsDocx(courseData);
+    setDocxGenerating(false);
+    setShowDownloadModal(false);
   };
 
   const isCurrentExerciseCompleted = (): boolean => {
     if (!paragraph || !paragraph.exercise) return true;
-    
+
     const exerciseId = `${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`;
     return exerciseScore[exerciseId] !== undefined && exerciseScore[exerciseId] >= 70;
   };
 
   const nextParagraph = () => {
     if (!hasSections || !section) return;
-    
+
     if (showExercise) {
       if (!isCurrentExerciseCompleted()) return;
       setShowExercise(false);
@@ -306,7 +266,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 flex">
-      <CourseSidebar 
+      <CourseSidebar
         courseData={courseData}
         currentSectionIndex={currentSectionIndex}
         currentChapterIndex={currentChapterIndex}
@@ -315,28 +275,37 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
         setCurrentChapterIndex={setCurrentChapterIndex}
         setCurrentParagraphIndex={setCurrentParagraphIndex}
         setShowExercise={setShowExercise}
+        onDownloadRequest={() => setShowDownloadModal(true)}
       />
 
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-20">
           {/* Header */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">{courseData.title}</h1>
-            <p className="text-xl text-purple-600 dark:text-purple-400 mb-6">{courseData.category}</p>
-            <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400">
-              <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.views} vues</span>
-              <span className="flex items-center"><ThumbsUp className="h-5 w-5 mr-2" /> {courseData.likes} likes</span>
-              <span className="flex items-center"><Download className="h-5 w-5 mr-2" /> {courseData.downloads} téléchargements</span>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
+              <p className="text-xl text-purple-600 dark:text-purple-400 mb-4">{courseData.category}</p>
+              <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400">
+                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.views} vues</span>
+                <span className="flex items-center"><ThumbsUp className="h-5 w-5 mr-2" /> {courseData.likes} likes</span>
+                <span className="flex items-center"><Download className="h-5 w-5 mr-2" /> {courseData.downloads} téléchargements</span>
+              </div>
             </div>
           </div>
-          
+
           {/* Content */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12">
             {!showExercise ? (
               <>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{paragraph?.title || "Titre non disponible"}</h2>
-                <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">{paragraph?.content || "Contenu non disponible"}</p>
-                
+                {paragraph?.content ? (
+                  <div className="mb-8">
+                    <CourseContentRenderer content={paragraph.content} />
+                  </div>
+                ) : (
+                  <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">Contenu non disponible</p>
+                )}
+
                 {paragraph?.notions && paragraph.notions.length > 0 && (
                   <div className="mb-8">
                     <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
@@ -390,11 +359,10 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                     Soumettre les réponses
                   </button>
                   {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] !== undefined && (
-                    <div className={`p-4 rounded-lg ${
-                      exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' 
-                        : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                    }`}>
+                    <div className={`p-4 rounded-lg ${exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70
+                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                      : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                      }`}>
                       <p className="font-semibold">Score: {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`]}%</p>
                       {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70 ? (
                         <p>Félicitations ! Vous pouvez continuer.</p>
@@ -419,22 +387,22 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
               <ArrowLeft className="h-5 w-5 mr-2" />
               Précédent
             </button>
-            
+
             <button
               onClick={nextParagraph}
               disabled={!canGoNext}
               className="px-5 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-md hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-medium"
               type="button"
             >
-              {showExercise 
+              {showExercise
                 ? <>Continuer <ArrowRight className="h-5 w-5 ml-2" /></>
-                : paragraph?.exercise 
+                : paragraph?.exercise
                   ? <>Passer à l'exercice <Award className="h-5 w-5 ml-2" /></>
                   : <>Suivant <ArrowRight className="h-5 w-5 ml-2" /></>
               }
             </button>
           </div>
-          
+
           {/* Section de conclusion */}
           {courseCompleted && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mt-12">
@@ -452,17 +420,33 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6">
                   <h3 className="text-xl font-semibold text-purple-800 dark:text-purple-400 mb-4 flex items-center">
                     <CheckCircle className="h-6 w-6 mr-2 text-purple-600" />
-                    Ce que vous avez appris
+                    Aperçu du cours
                   </h3>
-                  {courseData.learningObjectives && courseData.learningObjectives.length > 0 ? (
-                    <ul className="space-y-3">
-                      {courseData.learningObjectives.map((objective: string, index: number) => (
-                        <li key={index} className="flex items-start">
-                          <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 mr-3"></div>
-                          <span className="text-gray-700 dark:text-gray-300">{objective}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {(courseData.introduction || (courseData.sections && courseData.sections.length > 0)) ? (
+                    <div className="space-y-4">
+                      {courseData.introduction && (
+                        <div>
+                          <h4 className="font-bold text-gray-800 dark:text-white mb-2">Description</h4>
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {courseData.introduction}
+                          </p>
+                        </div>
+                      )}
+
+                      {courseData.sections && courseData.sections.length > 0 && (
+                        <div>
+                          <h4 className="font-bold text-gray-800 dark:text-white mb-2 mt-4">Plan du cours</h4>
+                          <ul className="space-y-2">
+                            {courseData.sections.map((section: Section, index: number) => (
+                              <li key={index} className="flex items-start">
+                                <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 mr-3 flex-shrink-0"></div>
+                                <span className="text-gray-700 dark:text-gray-300 font-medium">{section.title}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-gray-500 dark:text-gray-400">Aucun objectif d'apprentissage n'a été défini pour ce cours.</p>
                   )}
@@ -519,32 +503,26 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                   Obtenir votre certification
                 </button>
                 <button
-                  onClick={handleDownloadPDF}
-                  className="bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center"
-                  disabled={pdfGenerating}
+                  onClick={() => setShowDownloadModal(true)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-5 rounded-3xl font-black text-lg shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                   type="button"
                 >
-                  {pdfGenerating ? (
-                    <>
-                      <div className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-                      Génération en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-5 w-5 mr-2" />
-                      Télécharger en PDF
-                    </>
-                  )}
+                  <Download size={24} />
+                  Télécharger le cours
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
-      <OrientationSelector 
-        isOpen={showOrientationSelector} 
-        onSelect={handleOrientationSelect} 
-        onClose={() => setShowOrientationSelector(false)} 
+      <SmartNotes courseId={courseData.id} courseTitle={courseData.title} />
+      <DownloadOptions
+        isOpen={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        onSelectPdf={handleOrientationSelect}
+        onSelectWord={handleDownloadDocx}
+        isPdfLoading={pdfGenerating}
+        isWordLoading={docxGenerating}
       />
     </div>
   );

@@ -15,13 +15,31 @@
  * @date December 2025
  */
 
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 
 export default function SectionNodeView({ node, updateAttributes }: NodeViewProps) {
   // const [isHovered, setIsHovered] = useState(false); // Removed hover state reliance for border
 
 
+  const titleRef = useRef<HTMLInputElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  
+  useLayoutEffect(() => {
+    const resize = () => {
+      if (titleRef.current && measureRef.current) {
+        const width = measureRef.current.offsetWidth + 16;
+        titleRef.current.style.width = `${Math.max(width, 70)}px`;
+      }
+    };
+  
+    // Run immediately
+    resize();
+  
+    // Run again after paint (important for initial drop)
+    requestAnimationFrame(resize);
+  }, [node.attrs.title]);
+  
   return (
     <NodeViewWrapper
       className="section-node"

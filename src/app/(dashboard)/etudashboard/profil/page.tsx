@@ -2,9 +2,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import Sidebar from '@/components/Sidebar';
 import { Award, BookOpen, Clock } from 'lucide-react';
 import { OpenAPI } from '@/lib/core/OpenAPI';
+
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface User {
   id: string;
@@ -30,9 +33,18 @@ export default function StudentProfile() {
   const [user, setUser] = useState<User | null>(null);
   const [editedUser, setEditedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
@@ -87,10 +99,10 @@ export default function StudentProfile() {
       setUser(editedUser);
       setIsEditing(false);
 
-      alert('Profil mis à jour avec succès !');
+      toast.success('Profil mis à jour avec succès !');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du profil');
+      toast.error('Erreur lors de la sauvegarde du profil');
     } finally {
       setIsSaving(false);
     }
@@ -108,12 +120,12 @@ export default function StudentProfile() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide');
+        toast.error('Veuillez sélectionner une image valide');
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        alert("L'image ne doit pas dépasser 5MB");
+        toast.error("L'image ne doit pas dépasser 5Mo");
         return;
       }
 

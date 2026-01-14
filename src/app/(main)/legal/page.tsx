@@ -1,5 +1,8 @@
 'use client';
 
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   Check,
@@ -43,26 +46,22 @@ export default function LegalMentionsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50 pt-16 dark:bg-slate-950">
-      <div className="mx-auto max-w-6xl px-4 pb-16">
-        <header className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-purple-700 shadow-sm dark:border-purple-500/40 dark:bg-slate-900 dark:text-purple-300">
-            <FileText className="h-4 w-4" />
-            Mentions légales
-          </div>
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-white">
-            Cadre juridique XCCM1
-          </h1>
-          <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">
-            Plateforme académique ENSPY - GIF4087-1
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
-              Mise à jour : 13 novembre 2025
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
-              Version 1.0
-            </span>
+    <>
+
+      <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
+        <div className="max-w-5xl mx-auto">
+          {/* Header Hero */}
+          <div className="text-center mb-12 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-purple-600 rounded-full mb-4 shadow-lg">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-700 to-purple-700 bg-clip-text text-transparent">
+              Mentions Légales
+            </h1>
+            <p className="mt-3 text-gray-600">Plateforme XCCM1 – ENSPY Yaoundé</p>
+            <p className="mt-1 text-sm text-gray-500">Mise à jour : <strong>13 novembre 2025</strong></p>
           </div>
         </header>
 
@@ -104,62 +103,41 @@ export default function LegalMentionsPage() {
               </div>
             ))}
           </div>
-        </section>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-3">
-          <div className="space-y-8 lg:col-span-2">
-            <section
-              id="editeur"
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-            >
-              <h2 className="flex items-center gap-3 text-xl font-semibold text-slate-900 dark:text-white">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-sm font-semibold text-purple-700 dark:bg-purple-500/10 dark:text-purple-300">
-                  1
-                </span>
-                Éditeur du site
-              </h2>
-              <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                <p>Projet académique réalisé sous la direction de :</p>
-                <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 dark:border-purple-500/30 dark:bg-purple-500/10">
-                  <strong className="block text-purple-800 dark:text-purple-200">
-                    École Nationale Supérieure Polytechnique
-                  </strong>
-                  <span className="text-xs">BP 8390 Yaoundé, Cameroun</span>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
-                    <span className="inline-flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-purple-600 dark:text-purple-300" />
-                      (+237) 222 23 61 00
-                    </span>
-                    <a
-                      href="http://polytechnique.cm"
-                      target="_blank"
-                      rel="noopener"
-                      className="inline-flex items-center gap-1 text-purple-600 hover:underline dark:text-purple-300"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      www.polytechnique.cm
+          <div className="grid gap-8 lg:grid-cols-3">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* 1. Éditeur */}
+              <section id="editeur" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <span className="text-purple-700 font-bold">1</span>
+                  </div>
+                  Éditeur du site
+                </h2>
+                <div className="space-y-3 text-gray-700">
+                  <p>Projet académique réalisé sous la direction de :</p>
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-50 p-4 rounded-xl border-l-4 border-purple-500">
+                    <strong className="block text-purple-800">École Nationale Supérieure Polytechnique</strong>
+                    <span className="text-sm">BP 8390 Yaoundé, Cameroun</span><br />
+                    <span className="text-sm flex items-center gap-1"><Phone className="w-3 h-3" /> (+237) 222 23 61 00</span><br />
+                    <a href="http://www.enspy.ucac-icam.cm" target="_blank" rel="noopener" className="text-sm text-purple-600 hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> www.enspy.cm
                     </a>
                   </div>
+                  <p className="mt-3">
+                    <strong>Responsable :</strong> Pr. Bernabe BATCHAKUI<br />
+                    <span className="text-sm text-gray-600">Superviseur – Génie Informatique</span><br />
+                    <button
+                      onClick={() => copyEmail('bernabe.batchakui@enspy.ucac-icam.cm')}
+                      className="mt-1 inline-flex items-center gap-1 text-purple-600 hover:text-purple-800 text-sm font-medium"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : 'bernabe.batchakui@enspy.ucac-icam.cm'}
+                    </button>
+                  </p>
                 </div>
-                <div>
-                  <strong>Responsable :</strong> Dr. Bernabe BATCHAKUI
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    Superviseur – Génie Informatique
-                  </div>
-                  <button
-                    onClick={() => copyEmail('bernabe.batchakui@enspy.ucac-icam.cm')}
-                    className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-300"
-                  >
-                    <Mail className="h-4 w-4" />
-                    {copied ? (
-                      <Check className="h-4 w-4 text-emerald-600" />
-                    ) : (
-                      'bernabe.batchakui@enspy.cm'
-                    )}
-                  </button>
-                </div>
-              </div>
-            </section>
+              </section>
 
             <section
               id="equipe"
@@ -306,41 +284,41 @@ export default function LegalMentionsPage() {
               </p>
             </section>
 
-            <section
-              id="contact"
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-            >
-              <h2 className="flex items-center gap-3 text-xl font-semibold text-slate-900 dark:text-white">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-sm font-semibold text-purple-700 dark:bg-purple-500/10 dark:text-purple-300">
-                  7
-                </span>
-                Contact & Ressources
-              </h2>
-              <div className="mt-4 space-y-3">
-                <button
-                  onClick={() => copyEmail('xccm@enspy.ucac-icam.cm')}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:border-purple-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                >
-                  <span className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-                    xccm@enspy.ucac-icam.cm
-                  </span>
-                  {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                </button>
-                <a
-                  href="https://github.com/Prrojet-XCCM1/FrontendXCCM12027.git"
-                  target="_blank"
-                  rel="noopener"
-                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-purple-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-                >
-                  <span className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-                    github.com/Prrojet-XCCM1/FrontendXCCM12027.git
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </a>
-              </div>
-            </section>
+              {/* 7. Contact */}
+              <section id="contact" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <span className="text-purple-700 font-bold">7</span>
+                  </div>
+                  Contact & Ressources
+                </h2>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => copyEmail('xccm@enspy.cm')}
+                    className="w-full text-left p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-purple-700" />
+                      <span className="font-medium">xccm@enspy.cm</span>
+                    </div>
+                    {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-purple-600" />}
+                  </button>
+                  <a
+                    href="https://github.com/enspy-xccm/xccm1"
+                    target="_blank"
+                    rel="noopener"
+                    className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-black rounded-sm flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">G</span>
+                      </div>
+                      <span className="font-medium">github.com/enspy-xccm/xccm1</span>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-purple-600" />
+                  </a>
+                </div>
+              </section>
 
             <section
               id="droit"

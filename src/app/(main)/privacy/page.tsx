@@ -206,7 +206,7 @@ export default function PrivacyPolicyPage() {
                         {cat.items.map((item) => (
                           <li key={item} className="flex items-center gap-2">
                             <span className="h-1 w-1 rounded-full bg-purple-600 dark:bg-purple-400" />
-                            {item}
+                            {item}yep 
                           </li>
                         ))}
                       </ul>

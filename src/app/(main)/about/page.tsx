@@ -16,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const sections = [
   { id: 'intro', label: 'Introduction', icon: BookOpen },
@@ -28,6 +29,7 @@ const sections = [
 
 export default function AboutPage() {
   const [activeSection, setActiveSection] = useState('intro');
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -46,6 +48,15 @@ export default function AboutPage() {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      setIsDarkMode(true);
+    }
   }, []);
 
   return (

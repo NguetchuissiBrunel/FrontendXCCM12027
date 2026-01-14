@@ -113,6 +113,8 @@ export function useCourses(): UseCoursesReturn {
     };
 }
 
+import { useAuth } from '@/contexts/AuthContext';
+
 /**
  * Hook pour récupérer un cours spécifique
  */
@@ -121,7 +123,13 @@ export function useCourse(courseId: number) {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Attendre que l'authentification soit initialisée
+    const { loading: authLoading } = useAuth();
+
     useEffect(() => {
+        // Si l'auth est encore en cours de chargement, on attend
+        if (authLoading) return;
+
         const loadCourse = async () => {
             try {
                 setLoading(true);
@@ -155,7 +163,7 @@ export function useCourse(courseId: number) {
         if (courseId) {
             loadCourse();
         }
-    }, [courseId]);
+    }, [courseId, authLoading]);
 
-    return { course, loading, error };
+    return { course, loading: loading || authLoading, error };
 }

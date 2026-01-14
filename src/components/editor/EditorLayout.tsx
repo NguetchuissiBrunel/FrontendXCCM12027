@@ -69,6 +69,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // State for course title and current course ID
   const [courseTitle, setCourseTitle] = useState<string>("Nouveau cours");
   const [courseCategory, setCourseCategory] = useState<string>("Informatique");
+  const [customCategory, setCustomCategory] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
 
@@ -262,6 +263,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const handleCreateCourse = (data: { title: string; category: string; description: string }) => {
     setCourseTitle(data.title);
     setCourseCategory(data.category);
+    setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(data.category) ? "" : data.category);
     setCourseDescription(data.description);
     setCurrentCourseId(null);
     if (editorInstance) {
@@ -410,19 +412,43 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     </label>
                     <select
                       className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
-                      value={courseCategory}
-                      onChange={(e) => setCourseCategory(e.target.value)}
+                      value={["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) ? courseCategory : "Autre"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Autre") {
+                          setCourseCategory("Autre");
+                          setCustomCategory("");
+                        } else {
+                          setCourseCategory(val);
+                        }
+                      }}
                     >
                       <option value="Informatique">Informatique</option>
                       <option value="Mathématiques">Mathématiques</option>
                       <option value="Physique">Physique</option>
                       <option value="Langues">Langues</option>
-                      {courseCategory && !["Informatique", "Mathématiques", "Physique", "Langues", "Autre"].includes(courseCategory) && (
-                        <option value={courseCategory}>{courseCategory}</option>
-                      )}
                       <option value="Autre">Autre</option>
                     </select>
                   </div>
+
+                  {!["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) && (
+                    <div className="animate-in slide-in-from-top-1 duration-200">
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                        Nom de la catégorie
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Saisissez une catégorie..."
+                        className="w-full text-sm py-2 px-3 border-b-2 border-purple-400 bg-purple-50/30 dark:bg-purple-900/10 outline-none focus:border-purple-600 transition-colors"
+                        value={courseCategory === "Autre" ? customCategory : courseCategory}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomCategory(val);
+                          setCourseCategory(val || "Autre");
+                        }}
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
@@ -474,6 +500,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     setCurrentCourseId(Number(courseId));
                     setCourseTitle(title);
                     setCourseCategory(category);
+                    setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(category) ? "" : category);
                     setCourseDescription(description);
                   }
                 }}

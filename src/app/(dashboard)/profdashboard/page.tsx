@@ -81,6 +81,8 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
+
 
   useEffect(() => {
     if (authLoading || loading) {
@@ -291,6 +293,11 @@ export default function ProfessorDashboard() {
         // 3. Fetch other teachers (optionnel)
         setTeachers([]);
 
+        // 3. Fetch pending inscriptions count
+        const pendingData = await EnrollmentService.getPendingEnrollments();
+        setPendingInscriptionsCount(pendingData.length);
+
+
       } catch (error) {
         console.error('Erreur lors du chargement des données du tableau de bord:', error);
       } finally {
@@ -424,7 +431,7 @@ export default function ProfessorDashboard() {
           <div className="flex items-center gap-4 flex-wrap">
             <button
               onClick={() => router.push('/teacher/inscriptions')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+              className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

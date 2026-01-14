@@ -192,7 +192,7 @@ export default function AboutPage() {
                         <span className="font-bold">École Nationale Supérieure Polytechnique de Yaoundé (ENSPY)</span>.
                       </p>
                       <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-                        Sous la supervision du <span className="font-bold">Dr. Bernabe BATCHAKUI</span>, cette plateforme vise à transformer la création de contenu pédagogique 
+                        Sous la supervision du <span className="font-bold">Pr. Bernabe BATCHAKUI</span>, cette plateforme vise à transformer la création de contenu pédagogique 
                         à travers une approche modulaire basée sur des <span className="font-semibold text-purple-600 dark:text-purple-400">"granules de connaissance"</span>.
                       </p>
                     </div>
@@ -350,7 +350,7 @@ export default function AboutPage() {
                   <div className="text-center mb-8">
                     <p className="text-lg text-gray-700 dark:text-gray-300">
                       <span className="font-bold text-purple-600 dark:text-purple-400">12 étudiants</span> de 4ᵉ année Génie Informatique (2025–2026) sous la supervision du{' '}
-                      <span className="font-bold">Dr. Bernabe BATCHAKUI</span>
+                      <span className="font-bold">Pr. Bernabe BATCHAKUI</span>
                     </p>
                   </div>
 

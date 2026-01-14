@@ -19,23 +19,10 @@ export type OpenAPIConfig = {
     ENCODE_PATH?: ((path: string) => string) | undefined;
 };
 
-/**
- * Détection de l'environnement
- * Durant 'npm run build', isBrowser est false.
- */
-const isBrowser = typeof window !== 'undefined';
-
 export const OpenAPI: OpenAPIConfig = {
-    /**
-     * SÉCURITÉ DE BUILD : 
-     * Si nous sommes côté serveur durant le build, BASE est vide ('').
-     * En production (navigateur), on utilise l'URL Render ou la variable d'env.
-     */
-    BASE: isBrowser 
-        ? (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xccm1-backend-0m4d.onrender.com')
-        : '', 
+    BASE: 'https://xccm1-backend-0m4d.onrender.com',
     VERSION: '1.0.0',
-    WITH_CREDENTIALS: true, 
+    WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',
     TOKEN: undefined,
     USERNAME: undefined,

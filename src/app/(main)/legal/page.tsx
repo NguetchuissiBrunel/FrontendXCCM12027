@@ -1,7 +1,7 @@
 'use client';
 
-import  Footer  from '@/components/layout/Footer';
-import  Navbar  from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Copy, Download, Mail, Phone, MapPin, ExternalLink, Check } from 'lucide-react';
@@ -28,7 +28,7 @@ export default function LegalMentions() {
 
   return (
     <>
-     
+
       <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
         <div className="max-w-5xl mx-auto">
           {/* Header Hero */}
@@ -83,11 +83,11 @@ export default function LegalMentions() {
                     <span className="text-sm">BP 8390 Yaoundé, Cameroun</span><br />
                     <span className="text-sm flex items-center gap-1"><Phone className="w-3 h-3" /> (+237) 222 23 61 00</span><br />
                     <a href="http://www.enspy.ucac-icam.cm" target="_blank" rel="noopener" className="text-sm text-purple-600 hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> www.enspy.ucac-icam.cm
+                      <ExternalLink className="w-3 h-3" /> www.enspy.cm
                     </a>
                   </div>
                   <p className="mt-3">
-                    <strong>Responsable :</strong> Dr. Bernabe BATCHAKUI<br />
+                    <strong>Responsable :</strong> Pr. Bernabe BATCHAKUI<br />
                     <span className="text-sm text-gray-600">Superviseur – Génie Informatique</span><br />
                     <button
                       onClick={() => copyEmail('bernabe.batchakui@enspy.ucac-icam.cm')}
@@ -223,12 +223,12 @@ export default function LegalMentions() {
                 </h2>
                 <div className="space-y-3">
                   <button
-                    onClick={() => copyEmail('xccm@enspy.ucac-icam.cm')}
+                    onClick={() => copyEmail('xccm@enspy.cm')}
                     className="w-full text-left p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-purple-700" />
-                      <span className="font-medium">xccm@enspy.ucac-icam.cm</span>
+                      <span className="font-medium">xccm@enspy.cm</span>
                     </div>
                     {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-purple-600" />}
                   </button>

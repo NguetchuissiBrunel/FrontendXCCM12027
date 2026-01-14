@@ -11,6 +11,7 @@ import {
 
 import { Heart, Star, Send, Mail, User, MessageSquare, ThumbsUp, Award, Gift, Smile } from 'lucide-react';
 import ContactForm from '@/components/common/ContactForm';
+import { toast } from 'react-hot-toast';
 
 
 // 2. Définir une interface pour vos objets 'helpItems'
@@ -49,7 +50,7 @@ const ContactPage = () => {
     e.preventDefault();
     // Validation basique
     if (!feedbackForm.name || !feedbackForm.email || !feedbackForm.message) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 

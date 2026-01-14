@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import {
     BookOpen,
     Plus,
@@ -16,6 +17,7 @@ import {
     Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 // Types locaux pour le formulaire (basés sur src/types/course.ts mais adaptés pour l'édition)
 interface LocalParagraph {
@@ -65,6 +67,7 @@ export default function CreateCoursePage() {
     const [activeTab, setActiveTab] = useState<'basics' | 'curriculum' | 'preview'>('basics');
     const [formData, setFormData] = useState<CourseFormState>(initialFormState);
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+    const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
 
     // Handlers pour les champs de base
     const handleBasicChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -109,11 +112,17 @@ export default function CreateCoursePage() {
     };
 
     const removeSection = (id: string) => {
-        if (confirm('Êtes-vous sûr de vouloir supprimer cette section ?')) {
+        setSectionToDelete(id);
+    };
+
+    const confirmRemoveSection = () => {
+        if (sectionToDelete) {
             setFormData(prev => ({
                 ...prev,
-                sections: prev.sections.filter(s => s.id !== id)
+                sections: prev.sections.filter(s => s.id !== sectionToDelete)
             }));
+            setSectionToDelete(null);
+            toast.success('Section supprimée');
         }
     };
 
@@ -221,11 +230,20 @@ export default function CreateCoursePage() {
     // Submit Mock
     const handleSubmit = () => {
         console.log('Course Data Submitted:', formData);
-        alert('Cours sauvegardé (simulation) ! Vérifiez la console pour les données JSON.');
+        toast.success('Cours sauvegardé (simulation) ! Vérifiez la console pour les données JSON.');
     };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-12 px-4">
+            <ConfirmModal
+                isOpen={!!sectionToDelete}
+                onClose={() => setSectionToDelete(null)}
+                onConfirm={confirmRemoveSection}
+                title="Supprimer la section"
+                message="Êtes-vous sûr de vouloir supprimer cette section ? Tout son contenu sera perdu."
+                confirmText="Supprimer"
+                type="danger"
+            />
             <div className="max-w-6xl mx-auto">
                 <header className="mb-8 flex justify-between items-center">
                     <div>
@@ -252,8 +270,8 @@ export default function CreateCoursePage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`flex items-center px-6 py-3 font-medium transition-colors border-b-2 ${activeTab === tab.id
-                                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
                                 }`}
                         >
                             <tab.icon className="w-4 h-4 mr-2" />

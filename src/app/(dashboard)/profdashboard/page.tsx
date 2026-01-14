@@ -7,7 +7,7 @@ import CompositionsCard, { Composition } from '@/components/professor/Compositio
 import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { CourseResponse } from '@/lib/models/CourseResponse';
-import CreateCourseModal from '@/./components/create-course/page';
+import CreateCourseModal from '@/components/create-course/page';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { toast } from 'react-hot-toast';
 

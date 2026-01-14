@@ -16,7 +16,7 @@
 import React, { useState, useEffect } from 'react';
 import { Editor } from '@tiptap/react';
 import { useSearchParams } from 'next/navigation';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
   FaInfo,
@@ -39,7 +39,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
 import EditorEntranceModal from './EditorEntranceModal';
-import CreateCourseModal from '../create-course/page';
+import CreateCourseModal from '@/components/create-course/page';
 
 
 interface EditorLayoutProps {
@@ -290,7 +290,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   };
 
   return (
-
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
       {/* Entrance Modal */}
       <EditorEntranceModal
@@ -598,7 +597,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         </div>
       </div>
     </div>
-
   );
 };
 

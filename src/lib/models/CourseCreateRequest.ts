@@ -6,6 +6,6 @@ export type CourseCreateRequest = {
     title?: string;
     category?: string;
     description?: string;
-    content?: string;
+    content?: Record<string, Record<string, any>>;
 };
 

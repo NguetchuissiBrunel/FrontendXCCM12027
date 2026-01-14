@@ -2,14 +2,19 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { StudentExerciseResponse } from './StudentExerciseResponse';
 /**
  * Réponse API standardisée
  */
-export type ApiResponse = {
+export type ApiResponseListStudentExerciseResponse = {
     /**
      * Code de statut HTTP
      */
-    status?: number;
+    code?: number;
+    /**
+     * Indique si l'opération a réussi
+     */
+    success?: boolean;
     /**
      * Message décrivant le résultat de l'opération
      */
@@ -17,7 +22,7 @@ export type ApiResponse = {
     /**
      * Données de la réponse
      */
-    data?: Record<string, any>;
+    data?: Array<StudentExerciseResponse>;
     /**
      * Erreurs de validation (si applicable)
      */
@@ -30,6 +35,5 @@ export type ApiResponse = {
      * Horodatage de la réponse
      */
     timestamp?: string;
-    success?: boolean;
 };
 

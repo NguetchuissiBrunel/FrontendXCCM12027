@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import ImageUploader from '@/components/upload/ImageUploader';
 
 type FormData = {
   email: string;
@@ -113,29 +114,17 @@ const SignupPage = () => {
     }
   }, [currentStep, validateStep1]);
 
-  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setErrors({ ...errors, photo: 'Veuillez sélectionner une image valide' });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors({ ...errors, photo: 'L\'image ne doit pas dépasser 5MB' });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPhotoPreview(base64String);
-        setFormData({ ...formData, photoUrl: base64String });
-        setErrors({ ...errors, photo: '' });
-      };
-      reader.readAsDataURL(file);
-    }
+  const handlePhotoUploadComplete = useCallback((url: string) => {
+    setPhotoPreview(url);
+    setFormData({ ...formData, photoUrl: url });
+    setErrors({ ...errors, photo: '' });
+    toast.success('Photo uploadée avec succès');
   }, [formData, errors]);
+
+  const handlePhotoUploadError = useCallback((error: string) => {
+    setErrors({ ...errors, photo: error });
+    toast.error(error);
+  }, [errors]);
 
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
@@ -147,6 +136,7 @@ const SignupPage = () => {
           confirmPassword: formData.confirmPassword,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          photoUrl: formData.photoUrl,
           city: formData.city,
           university: formData.university,
           specialization: formData.specialization,
@@ -171,6 +161,7 @@ const SignupPage = () => {
           confirmPassword: formData.confirmPassword,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          photoUrl: formData.photoUrl,
           grade: formData.grade,
           subjects: formData.subjects || [],
           certification: formData.certification,
@@ -354,34 +345,12 @@ const SignupPage = () => {
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center space-x-4">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 dark:border-purple-900/30 shadow-lg">
-              <img
-                src={photoPreview}
-                alt="Prévisualisation"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <div className="flex-1">
-              <label
-                htmlFor="photo-upload"
-                className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg cursor-pointer hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg"
-              >
-                <FaCamera className="mr-2" />
-                Choisir une photo
-              </label>
-              <input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">JPG, PNG ou JPEG (Max. 5MB)</p>
-              {errors.photo && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.photo}</p>}
-            </div>
-          </div>
+          <ImageUploader
+            currentImageUrl={photoPreview}
+            onUploadComplete={handlePhotoUploadComplete}
+            onUploadError={handlePhotoUploadError}
+            placeholder="Cliquez ou glissez votre photo ici"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -469,7 +438,7 @@ const SignupPage = () => {
 
       {/* Toaster - Supprimé car géré au niveau global RootLayout */}
     </motion.div>
-  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);
+  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUploadComplete, handlePhotoUploadError, photoPreview]);
 
   return (
     <div

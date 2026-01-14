@@ -14,10 +14,14 @@ import {
     ChevronRight,
     Image as ImageIcon,
     CheckCircle,
-    Eye
+    Eye,
+    Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 // Types locaux pour le formulaire (basés sur src/types/course.ts mais adaptés pour l'édition)
 interface LocalParagraph {
@@ -67,7 +71,10 @@ export default function CreateCoursePage() {
     const [activeTab, setActiveTab] = useState<'basics' | 'curriculum' | 'preview'>('basics');
     const [formData, setFormData] = useState<CourseFormState>(initialFormState);
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-    const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const { user } = useAuth();
+    const router = useRouter();
 
     // Handlers pour les champs de base
     const handleBasicChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -227,10 +234,66 @@ export default function CreateCoursePage() {
         }));
     };
 
-    // Submit Mock
-    const handleSubmit = () => {
-        console.log('Course Data Submitted:', formData);
-        toast.success('Cours sauvegardé (simulation) ! Vérifiez la console pour les données JSON.');
+    // Upload image to Cloudinary
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingImage(true);
+        try {
+            const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+
+            const validation = CloudinaryService.validateFile(file);
+            if (!validation.valid) {
+                toast.error(validation.error || 'Fichier invalide');
+                return;
+            }
+
+            const url = await CloudinaryService.uploadImage(file, { folder: 'courses' });
+            setFormData(prev => ({ ...prev, image: url }));
+            toast.success('Image uploadée avec succès');
+        } catch (error) {
+            console.error('Erreur lors de l\'upload:', error);
+            toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload');
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    // Submit to API
+    const handleSubmit = async () => {
+        if (!user?.id) {
+            toast.error('Vous devez être connecté pour créer un cours');
+            return;
+        }
+
+        if (!formData.title || !formData.description) {
+            toast.error('Veuillez remplir au moins le titre et la description');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Préparer le contenu au format attendu par le backend
+            const content = JSON.stringify({
+                sections: formData.sections
+            });
+
+            await CourseControllerService.createCourse(user.id, {
+                title: formData.title,
+                category: formData.category,
+                description: formData.description,
+                content: content
+            });
+
+            toast.success('Cours créé avec succès !');
+            router.push('/profdashboard');
+        } catch (error) {
+            console.error('Erreur lors de la création:', error);
+            toast.error('Erreur lors de la création du cours');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -252,10 +315,11 @@ export default function CreateCoursePage() {
                     </div>
                     <button
                         onClick={handleSubmit}
-                        className="flex items-center px-6 py-3 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition"
+                        disabled={isSubmitting}
+                        className="flex items-center px-6 py-3 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save className="w-5 h-5 mr-2" />
-                        Sauvegarder
+                        {isSubmitting ? 'Enregistrement...' : 'Sauvegarder'}
                     </button>
                 </header>
 
@@ -270,6 +334,8 @@ export default function CreateCoursePage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`flex items-center px-6 py-3 font-medium transition-colors border-b-2 ${activeTab === tab.id
+                                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
                                 ? 'border-purple-600 text-purple-600 dark:text-purple-400'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
                                 }`}
@@ -318,19 +384,29 @@ export default function CreateCoursePage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image de couverture (URL)</label>
-                                    <div className="flex">
-                                        <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500">
-                                            <ImageIcon className="w-5 h-5" />
-                                        </span>
-                                        <input
-                                            type="text"
-                                            name="image"
-                                            value={formData.image}
-                                            onChange={handleBasicChange}
-                                            className="flex-1 px-4 py-3 rounded-r-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none"
-                                            placeholder="https://..."
-                                        />
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image de couverture</label>
+                                    <div className="flex gap-4">
+                                        {formData.image && (
+                                            <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-purple-200">
+                                                <img src={formData.image} alt="Cover" className="w-full h-full object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-purple-500 transition">
+                                                <Upload className="w-5 h-5 mr-2 text-gray-500" />
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                    {isUploadingImage ? 'Upload en cours...' : 'Choisir une image'}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                                                    onChange={handleImageUpload}
+                                                    disabled={isUploadingImage}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                            <p className="text-xs text-gray-500 mt-2">JPG, PNG, WEBP (Max 5MB)</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

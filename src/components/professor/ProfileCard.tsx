@@ -93,28 +93,33 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
     });
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide');
+    if (!file) return;
+
+    try {
+      // Import dynamically to avoid issues
+      const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+
+      // Validate file
+      const validation = CloudinaryService.validateFile(file);
+      if (!validation.valid) {
+        alert(validation.error || 'Fichier invalide');
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        alert("L'image ne doit pas dépasser 5MB");
-        return;
-      }
+      // Upload to Cloudinary
+      const url = await CloudinaryService.uploadImage(file);
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setEditedProfessor({
-          ...editedProfessor,
-          photoUrl: base64String
-        });
-      };
-      reader.readAsDataURL(file);
+      setEditedProfessor({
+        ...editedProfessor,
+        photoUrl: url
+      });
+
+      alert('Photo uploadée avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      alert(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');
     }
   };
 

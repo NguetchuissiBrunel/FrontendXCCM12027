@@ -12,6 +12,7 @@ export type { ApiResponseAuthenticationResponse } from './models/ApiResponseAuth
 export type { AuthenticationRequest } from './models/AuthenticationRequest';
 export type { AuthenticationResponse } from './models/AuthenticationResponse';
 export type { CourseCreateRequest } from './models/CourseCreateRequest';
+export type { CourseResponse } from './models/CourseResponse';
 export type { CourseUpdateRequest } from './models/CourseUpdateRequest';
 export type { PasswordResetRequest } from './models/PasswordResetRequest';
 export type { PasswordUpdateRequest } from './models/PasswordUpdateRequest';

@@ -9,6 +9,7 @@ import { CourseControllerService } from '@/lib/services/CourseControllerService'
 import { CourseResponse } from '@/lib/models/CourseResponse';
 import CreateCourseModal from '@/./components/create-course/page';
 import { EnrollmentService } from '@/utils/enrollmentService';
+import { toast } from 'react-hot-toast';
 
 
 interface User {
@@ -82,7 +83,8 @@ export default function ProfessorDashboard() {
             class: c.category || 'Non spécifiée',
             participants: Math.floor(Math.random() * 50), // Mock data as backend might not have this yet
             likes: 0,
-            downloads: 0
+            downloads: 0,
+            status: c.status as any
           }));
           setCompositions(mappedCompositions);
         }
@@ -106,6 +108,30 @@ export default function ProfessorDashboard() {
       loadDashboardData();
     }
   }, [user, authLoading, isAuthenticated, router]);
+
+  const handleCreateCourseSubmit = (data: { title: string; category: string; description: string }) => {
+    const params = new URLSearchParams({
+      new: 'true',
+      title: data.title,
+      category: data.category,
+      description: data.description
+    });
+    router.push(`/editor?${params.toString()}`);
+  };
+
+  const handleDeleteComposition = async (id: string) => {
+    try {
+      startLoading();
+      await CourseControllerService.deleteCourse(Number(id));
+      setCompositions(prev => prev.filter(c => c.id !== id));
+      toast.success("Cours supprimé avec succès.");
+    } catch (error) {
+      console.error("Erreur lors de la suppression du cours:", error);
+      toast.error("Impossible de supprimer le cours.");
+    } finally {
+      stopLoading();
+    }
+  };
 
   if (authLoading || loading || globalLoading) {
     return null;
@@ -152,6 +178,7 @@ export default function ProfessorDashboard() {
       <CreateCourseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateCourseSubmit}
       />
 
       {/* Top Section with Welcome */}
@@ -194,28 +221,34 @@ export default function ProfessorDashboard() {
 
         {/* Compositions Card */}
         {compositions.length > 0 ? (
-          <CompositionsCard compositions={compositions} />
+          <CompositionsCard
+            compositions={compositions}
+            onDelete={handleDeleteComposition}
+            onCreateClick={() => setIsModalOpen(true)}
+          />
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Mes Compositions
-            </h2>
+            <div className="flex items-center justify-between mb-8 border-b border-purple-100 dark:border-gray-700 pb-4">
+              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                Mes Compositions
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Créer un cours
+              </button>
+            </div>
+
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               Vous n'avez pas encore créé de cours.
             </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition mx-auto"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Créer un cours
-            </button>
           </div>
+
         )}
-
-
       </div>
     </div>
   );

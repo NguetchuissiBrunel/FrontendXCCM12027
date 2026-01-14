@@ -13,8 +13,9 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Editor } from '@tiptap/react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
@@ -35,7 +36,10 @@ import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
+import EditorEntranceModal from './EditorEntranceModal';
+import CreateCourseModal from '../create-course/page';
 
 
 interface EditorLayoutProps {
@@ -72,6 +76,33 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+
+  // Modal state for save/publish confirmation
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    type: 'save' | 'publish' | null;
+  }>({ isOpen: false, type: null });
+
+  const [isEntranceModalOpen, setIsEntranceModalOpen] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+
+  // Handle initialization from query params
+  useEffect(() => {
+    const isNew = searchParams.get('new') === 'true';
+    if (isNew) {
+      const title = searchParams.get('title');
+      const category = searchParams.get('category');
+      const description = searchParams.get('description');
+
+      if (title) setCourseTitle(title);
+      if (category) setCourseCategory(category);
+      if (description) setCourseDescription(description);
+
+      setIsEntranceModalOpen(false);
+    }
+  }, [searchParams]);
 
   // Extract TOC from editor in real-time
   const tocItems = useTOC(editorInstance, 300);
@@ -215,6 +246,31 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     }
   };
 
+  const triggerSaveConfirm = (isPublish: boolean) => {
+    setConfirmConfig({ isOpen: true, type: isPublish ? 'publish' : 'save' });
+  };
+
+  const handleConfirmedAction = () => {
+    if (confirmConfig.type === 'publish') {
+      handleSave(true);
+    } else if (confirmConfig.type === 'save') {
+      handleSave(false);
+    }
+    setConfirmConfig({ isOpen: false, type: null });
+  };
+
+  const handleCreateCourse = (data: { title: string; category: string; description: string }) => {
+    setCourseTitle(data.title);
+    setCourseCategory(data.category);
+    setCourseDescription(data.description);
+    setCurrentCourseId(null);
+    if (editorInstance) {
+      editorInstance.commands.setContent('');
+    }
+    setIsCreateModalOpen(false);
+    toast.success("Nouveau cours initialisé !");
+  };
+
   /**
    * Handle editor content change
    */
@@ -234,6 +290,40 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   return (
 
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+      {/* Entrance Modal */}
+      <EditorEntranceModal
+        isOpen={isEntranceModalOpen}
+        onClose={() => setIsEntranceModalOpen(false)}
+        onCreateNew={() => {
+          setIsEntranceModalOpen(false);
+          setIsCreateModalOpen(true);
+        }}
+        onModifyExisting={() => {
+          setIsEntranceModalOpen(false);
+          setActivePanel('author'); // Open 'Mes Cours' panel
+        }}
+      />
+
+      {/* Course Creation Modal */}
+      <CreateCourseModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateCourse}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false, type: null })}
+        onConfirm={handleConfirmedAction}
+        title={confirmConfig.type === 'publish' ? 'Publier le cours' : 'Sauvegarder le cours'}
+        message={confirmConfig.type === 'publish'
+          ? 'Êtes-vous sûr de vouloir publier ce cours ? Il sera visible par tous les étudiants.'
+          : 'Voulez-vous enregistrer les modifications actuelles ?'
+        }
+        confirmText={confirmConfig.type === 'publish' ? 'Publier maintenant' : 'Enregistrer'}
+        type={confirmConfig.type === 'publish' ? 'info' : 'warning'}
+      />
       {/* Navbar at the top */}
       <nav className="h-16 flex-none z-10">
         <Navbar />
@@ -327,6 +417,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       <option value="Mathématiques">Mathématiques</option>
                       <option value="Physique">Physique</option>
                       <option value="Langues">Langues</option>
+                      {courseCategory && !["Informatique", "Mathématiques", "Physique", "Langues", "Autre"].includes(courseCategory) && (
+                        <option value={courseCategory}>{courseCategory}</option>
+                      )}
                       <option value="Autre">Autre</option>
                     </select>
                   </div>
@@ -346,7 +439,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
                   <div className="pt-2">
                     <button
-                      onClick={() => handleSave(false)}
+                      onClick={() => triggerSaveConfirm(false)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
                     >
                       <FaSave /> Sauvegarder les infos
@@ -461,14 +554,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
             {/* Bottom action buttons */}
             <button
-              onClick={() => handleSave(false)}
+              onClick={() => triggerSaveConfirm(false)}
               className="flex h-12 w-12 items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Sauvegarder"
             >
               <FaSave className="text-xl" />
             </button>
             <button
-              onClick={() => handleSave(true)}
+              onClick={() => triggerSaveConfirm(true)}
               className="flex h-12 w-12 items-center justify-center rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors"
               title="Publier"
             >

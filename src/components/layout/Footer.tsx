@@ -5,13 +5,13 @@ import NewsletterForm from '@/components/common/NewsletterForm';
 
 // Icônes (garder les mêmes)
 const PhoneIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.5l1 4-3.5 1.5M16 12l2.5-3.5 4 1-1.5 3.5m-14 0l-3.5 1.5 4 1 2.5-3.5m10 3.5l-3.5 1.5 4 1 2.5-3.5m-3 3.5l-2.5 3.5-4-1 1.5-3.5m-7 3.5L5 19a2 2 0 002 2h3.5l1-4-3.5-1.5zM12 12c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5z" /></svg>
+  <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.5l1 4-3.5 1.5M16 12l2.5-3.5 4 1-1.5 3.5m-14 0l-3.5 1.5 4 1 2.5-3.5m10 3.5l-3.5 1.5 4 1 2.5-3.5m-3 3.5l-2.5 3.5-4-1 1.5-3.5m-7 3.5L5 19a2 2 0 002 2h3.5l1-4-3.5-1.5zM12 12c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5z" /></svg>
 );
 const MailIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-1 12H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2z" /></svg>
+  <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-1 12H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2z" /></svg>
 );
 const MapPinIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+  <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
 );
 
 const Footer = () => {
@@ -19,7 +19,7 @@ const Footer = () => {
     <footer className="bg-gray-900 dark:bg-gray-950 text-white transition-colors duration-300">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
-          
+
           {/* Section 1: Brand & Contact Info */}
           <div className="space-y-6 md:col-span-2 lg:col-span-1 lg:border-r lg:border-gray-700 lg:pr-6 xl:pr-8">
             <Link href="/" className="flex items-center">
@@ -35,29 +35,29 @@ const Footer = () => {
               <span className="text-2xl font-bold tracking-tight">XCCM1</span>
             </Link>
             <p className="text-gray-400 text-sm max-w-md">
-              Plateforme de création et de partage de contenu pédagogique. 
+              Plateforme de création et de partage de contenu pédagogique.
               Innovez dans l'éducation avec nos outils.
             </p>
-            
+
             <div className="space-y-2 pt-4">
-                <div className="flex items-center space-x-3 text-sm text-gray-400">
-                    <MailIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
-                    <a href="mailto:contact@xccm.com" className="hover:text-purple-300 transition-colors">contact@xccm1.com</a>
-                </div>
-                <div className="flex items-center space-x-3 text-sm text-gray-400">
-                    <PhoneIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
-                    <span>+237 (123) 456-789</span>
-                </div>
-                <div className="flex items-start space-x-3 text-sm text-gray-400">
-                    <MapPinIcon className="h-5 w-5 text-purple-400 flex-shrink-0 mt-1" />
-                    <span>237, Melen Polytechnique <br/> Yaounde, Cameroun </span>
-                </div>
+              <div className="flex items-center space-x-3 text-sm text-gray-400">
+                <MailIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
+                <a href="mailto:contact@xccm1.com" className="hover:text-purple-300 transition-colors">contact@xccm1.com</a>
+              </div>
+              <div className="flex items-center space-x-3 text-sm text-gray-400">
+                <PhoneIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
+                <span>+237 (123) 456-789</span>
+              </div>
+              <div className="flex items-start space-x-3 text-sm text-gray-400">
+                <MapPinIcon className="h-5 w-5 text-purple-400 flex-shrink-0 mt-1" />
+                <span>237, Melen Polytechnique <br /> Yaounde, Cameroun </span>
+              </div>
             </div>
           </div>
 
           {/* Section 2 & 3: Navigation Links */}
           <div className="md:col-span-2 lg:col-span-2 grid grid-cols-2 gap-8 sm:grid-cols-3 lg:pl-6 xl:pl-8">
-            
+
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Services</h3>
               <ul className="mt-4 space-y-3">
@@ -74,7 +74,7 @@ const Footer = () => {
                 </li>              
                </ul>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Entreprise</h3>
               <ul className="mt-4 space-y-3">
@@ -84,7 +84,7 @@ const Footer = () => {
                 <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Partenaires</Link></li>
               </ul>
             </div>
-             
+
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Ressources</h3>
               <ul className="mt-4 space-y-3">
@@ -109,11 +109,11 @@ const Footer = () => {
             <NewsletterForm />
           </div>
         </div>
-        
+
         {/* Bottom Bar: Social & Copyright */}
         <div className="mt-12 border-t border-gray-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            
+
             {/* Social Icons */}
             <div className="flex space-x-6 order-2 md:order-1">
               <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors" aria-label="Facebook">
@@ -129,20 +129,20 @@ const Footer = () => {
 
             {/* Legal Links */}
             <div className="flex flex-wrap justify-center gap-4 md:gap-6 order-3 md:order-2 text-sm">
-                <Link href="/legal" className="text-gray-400 hover:text-purple-400 transition-colors">
-                    Mentions légales
-                </Link>
-                <Link href="/privacy" className="text-gray-400 hover:text-purple-400 transition-colors">
-                    Politique de confidentialité
-                </Link>
-                <Link href="/terms" className="text-gray-400 hover:text-purple-400 transition-colors">
-                    Conditions d'utilisation
-                </Link>
+              <Link href="/legal" className="text-gray-400 hover:text-purple-400 transition-colors">
+                Mentions légales
+              </Link>
+              <Link href="/privacy" className="text-gray-400 hover:text-purple-400 transition-colors">
+                Politique de confidentialité
+              </Link>
+              <Link href="/terms" className="text-gray-400 hover:text-purple-400 transition-colors">
+                Conditions d'utilisation
+              </Link>
             </div>
 
             {/* Copyright */}
             <p className="text-sm text-gray-400 order-1 md:order-3 text-center md:text-left">
-              &copy; {new Date().getFullYear()} XCCM. Tous droits réservés.
+              &copy; {new Date().getFullYear()} XCCM1. Tous droits réservés.
             </p>
           </div>
         </div>

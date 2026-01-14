@@ -1,82 +1,85 @@
-// middleware.ts
+// middleware.ts (à la racine du projet, au même niveau que app/)
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-/**
- * Cleanly decode JWT payload for Edge Runtime
- */
-function decodeJWT(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
-
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get('authToken')?.value;
-
-  // Route categories
-  const isAuthPage = pathname === '/login' || pathname === '/register';
-  const isDashboardStudent = pathname.startsWith('/etudashboard');
-  const isDashboardTeacher = pathname.startsWith('/profdashboard') || pathname.startsWith('/editor');
-  const isProtected = isDashboardStudent || isDashboardTeacher;
-
-  // 1. No token case
-  if (!token) {
-    if (isProtected) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  const { pathname } = request.nextUrl; 
+  
+  // Récupérer les informations utilisateur depuis les cookies
+  const userCookie = request.cookies.get('currentUser')?.value;
+  
+  // Routes publiques (accessibles sans authentification)
+  const publicRoutes = ['/', '/login', '/register', '/bibliotheque', '/about', '/contact'];
+  
+  // Routes protégées pour les étudiants
+  const studentRoutes = ['/etudashboard', '/etudashboard/profil', '/etudashboard/cours', '/etudashboard/echeances'];
+  
+  // Routes protégées pour les professeurs
+  const professorRoutes = ['/profdashboard', '/editor'];
+  
+  // Vérifier si la route est publique
+  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith('/courses/'));
+  
+  // Vérifier si la route est pour étudiant
+  const isStudentRoute = studentRoutes.some(route => pathname.startsWith(route));
+  
+  // Vérifier si la route est pour professeur
+  const isProfessorRoute = professorRoutes.some(route => pathname.startsWith(route));
+  
+  // DEBUG: Ajouter des logs
+  console.log('=== MIDDLEWARE DEBUG ===');
+  console.log('Pathname:', pathname);
+  console.log('Has userCookie:', !!userCookie);
+  console.log('isPublicRoute:', isPublicRoute);
+  console.log('isStudentRoute:', isStudentRoute);
+  console.log('isProfessorRoute:', isProfessorRoute);
+  
+  // Si c'est une route publique, laisser passer
+  if (isPublicRoute) {
+	console.log('Route publique - Accès autorisé');
     return NextResponse.next();
   }
-
-  // 2. Token case: Validate and Route
-  const payload = decodeJWT(token);
-  const isExpired = payload?.exp ? Date.now() >= payload.exp * 1000 : true;
-
-  if (!payload || isExpired) {
-    if (isProtected) {
-      const response = NextResponse.redirect(new URL('/login', request.url));
-      response.cookies.delete('authToken');
-      return response;
+  
+  // Si pas de cookie utilisateur et il veut accéder à une route privée, rediriger vers login
+  if (!userCookie) {
+	console.log('Pas de cookie - Redirection vers login');
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+  
+  try {
+    const user = JSON.parse(userCookie);
+    console.log('User role:', user.role);
+    
+    // Vérifier les permissions selon le rôle
+    
+    //Un prof veut accéder à une route d'étudiant, on le renvoit à son dashboard
+    if (isStudentRoute && user.role !== 'student') {
+	  console.log(`Accès refusé: ${user.role} essaie d'accéder à une route étudiant`);
+      return NextResponse.redirect(new URL('/profdashboard', request.url));
     }
+    
+    //Un étudiant veut accéder à une route de prof, on le renvoit à son dashboard
+    if (isProfessorRoute && user.role !== 'teacher') {
+	  console.log(`Accès refusé: ${user.role} essaie d'accéder à une route professeur`);
+      return NextResponse.redirect(new URL('/etudashboard', request.url));
+    }
+    
+    console.log('Accès autorisé');
+    // Tout est OK, laisser passer
     return NextResponse.next();
+    
+  } catch (error) {
+    // Cookie invalide, rediriger vers login
+    console.log('Cookie invalide - Redirection vers login');
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('currentUser');
+    return response;
   }
-
-  // Role identification
-  const role = String(payload.role || '').toUpperCase();
-  const isTeacher = role.includes('TEACHER') || role.includes('PROFESSOR');
-  const isStudent = role.includes('STUDENT');
-  const dashboard = isTeacher ? '/profdashboard' : '/etudashboard';
-
-  // Redirected authenticated users away from Login/Register
-  if (isAuthPage) {
-    return NextResponse.redirect(new URL(dashboard, request.url));
-  }
-
-  // Role-based protection
-  if (isDashboardStudent && !isStudent) {
-    return NextResponse.redirect(new URL('/profdashboard', request.url));
-  }
-
-  if (isDashboardTeacher && !isTeacher) {
-    return NextResponse.redirect(new URL('/etudashboard', request.url));
-  }
-
-  return NextResponse.next();
 }
 
+// Configuration du middleware
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/profdashboard', '/editor', '/etudashboard/:path*', '/login', '/register', '/bibliotheque'
+  ],
 };

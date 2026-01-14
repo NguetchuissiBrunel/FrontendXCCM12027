@@ -17,6 +17,7 @@ interface TableOfContentsProps {
   items: TableOfContentsItem[];
   onItemClick?: (itemId: string) => void;
   // Props for compatibility with new feature set if we want to support editing from TOC (optional)
+  onItemMove?: (itemId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   onAddItem?: (type: ItemType, title?: string, parentId?: string) => void;
   onItemRename?: (itemId: string, newTitle: string) => void;
   onItemDelete?: (itemId: string) => void;
@@ -48,6 +49,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   // État pour l'élément en cours de glissement
   const [draggedItem, setDraggedItem] = useState<TableOfContentsItem | null>(null);
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<'before' | 'after' | 'inside' | null>(null);
+  const [dropAllowed, setDropAllowed] = useState<boolean>(true);
 
   // États pour le menu contextuel
   const [contextMenu, setContextMenu] = useState<{
@@ -405,12 +408,31 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     if (!draggedItem || draggedItem.id === item.id) return;
 
     // Vérifier si l'élément peut être déposé à cet endroit
-    const canDrop = canDropItem(draggedItem, item);
+    const isSibling = draggedItem.type === item.type;
+    const isChild = getAllowedChildTypes(item.type).includes(draggedItem.type);
+    const canDrop = isSibling || isChild;
+
+    setDragOverItemId(item.id);
+    setDropAllowed(canDrop);
 
     if (canDrop) {
-      setDragOverItemId(item.id);
+      const rect = e.currentTarget.getBoundingClientRect();
+      const relativeY = e.clientY - rect.top;
+
+      if (isSibling && isChild) {
+        // Both allowed? Unusual but if so, top/bottom = before/after, middle = inside
+        if (relativeY < rect.height * 0.25) setDropPosition('before');
+        else if (relativeY > rect.height * 0.75) setDropPosition('after');
+        else setDropPosition('inside');
+      } else if (isSibling) {
+        if (relativeY < rect.height / 2) setDropPosition('before');
+        else setDropPosition('after');
+      } else {
+        setDropPosition('inside');
+      }
       e.dataTransfer.dropEffect = 'move';
     } else {
+      setDropPosition(null);
       e.dataTransfer.dropEffect = 'none';
     }
   }, [draggedItem]);
@@ -419,6 +441,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragOverItemId(null);
+    setDropPosition(null);
+    setDropAllowed(true);
   }, []);
 
   const handleItemDrop = useCallback((e: React.DragEvent, targetItem: TableOfContentsItem) => {
@@ -433,34 +457,16 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
     if (isSibling || isChild) {
       if (onItemMove) {
-        // If same type, we assume reorder. 
-        // For simplicity in this interaction (without accurate Y calculation inside the item),
-        // we'll default to 'before' for siblings (placing above) and 'inside' for children.
-        // Ideally we'd measure e.nativeEvent.offsetY to decide before/after.
-        // Let's try to be smarter? 
-        // If dropped on top half -> before, bottom half -> after?
-        // We can access e.currentTarget.getBoundingClientRect().
-
-        let position: 'before' | 'after' | 'inside' = 'inside';
-
-        if (isSibling) {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const y = e.clientY - rect.top;
-          if (y < rect.height / 2) {
-            position = 'before';
-          } else {
-            position = 'after';
-          }
-        } else if (isChild) {
-          position = 'inside';
-        }
-
+        // Use the position calculated during dragOver
+        const position = dropPosition || (isChild ? 'inside' : 'after');
         onItemMove(draggedItem.id, targetItem.id, position);
       }
     }
 
     setDraggedItem(null);
     setDragOverItemId(null);
+    setDropPosition(null);
+    setDropAllowed(true);
 
     // Nettoyer les effets visuels
     document.querySelectorAll('.dragging').forEach(el => {
@@ -472,6 +478,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     e.preventDefault();
     setDraggedItem(null);
     setDragOverItemId(null);
+    setDropPosition(null);
+    setDropAllowed(true);
 
     // Nettoyer les effets visuels
     document.querySelectorAll('.dragging').forEach(el => {
@@ -497,107 +505,142 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   const memoizedTocItems = useMemo(() => {
     if (!tocItems || tocItems.length === 0) return null;
 
-    const renderItems = (items: TableOfContentsItem[]) => items.map((item) => (
-      <div key={item.id} className="mb-1">
-        <div
-          className={`group flex items-center p-2 border-l-4 ${getItemColor(item.type)} rounded-r shadow-sm transition-all duration-200 hover:shadow-md ${getIndentation(item.level)} ${dragOverItemId === item.id ? 'bg-purple-50 border-purple-300' : ''} ${item.id === dragOverItemId ? 'bg-purple-50' : 'bg-white dark:bg-gray-800'}`}
-          onContextMenu={(e) => handleContextMenu(e, item)}
-          onClick={() => onItemClick && onItemClick(item.id)}
-          draggable
-          onDragStart={(e) => handleDragStart(e, item)}
-          onDragOver={(e) => handleItemDragOver(e, item)}
-          onDragLeave={handleItemDragLeave}
-          onDrop={(e) => handleItemDrop(e, item)}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="mr-1.5 text-gray-400 cursor-move opacity-50 group-hover:opacity-100 dark:text-gray-500">
-            <GripVertical size={14} />
-          </div>
+    const renderItems = (itemsList: TableOfContentsItem[]) => itemsList.map((item) => {
+      const isDragTarget = dragOverItemId === item.id;
 
-          {item.children && item.children.length > 0 ? (
-            <button
-              className="mr-1.5 text-gray-600 hover:text-gray-800 transition-colors duration-150 dark:text-gray-400 dark:hover:text-gray-200"
-              onClick={(e) => toggleCollapse(item.id, e)}
-            >
-              {item.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-            </button>
-          ) : (
-            <div className="mr-1.5 w-4"></div>
+      // Custom borders/background for drag feedback
+      let dragClasses = '';
+      if (isDragTarget) {
+        if (!dropAllowed) {
+          dragClasses = 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 cursor-no-drop';
+        } else {
+          if (dropPosition === 'inside') {
+            dragClasses = 'bg-purple-100 dark:bg-purple-900/30 border-purple-400 dark:border-purple-600 scale-[1.02]';
+          } else {
+            dragClasses = 'bg-purple-50 dark:bg-purple-900/10 border-purple-300 dark:border-purple-800';
+          }
+        }
+      }
+
+      return (
+        <div key={item.id} className="mb-1 relative">
+          {/* Indicators for before/after reordering */}
+          {isDragTarget && dropAllowed && dropPosition === 'before' && (
+            <div className="absolute -top-1 left-0 right-0 h-1 bg-purple-500 rounded-full z-10" />
           )}
 
-          <div className="mr-2 text-gray-600 dark:text-gray-400">
-            {renderItemIcon(item.type)}
+          <div
+            className={`group flex items-center p-2 border-l-4 ${getItemColor(item.type)} rounded-r shadow-sm transition-all duration-200 hover:shadow-md ${getIndentation(item.level)} ${dragClasses} ${!isDragTarget ? 'bg-white dark:bg-gray-800' : ''}`}
+            onContextMenu={(e) => handleContextMenu(e, item)}
+            onClick={() => onItemClick && onItemClick(item.id)}
+            draggable
+            onDragStart={(e) => handleDragStart(e, item)}
+            onDragOver={(e) => handleItemDragOver(e, item)}
+            onDragLeave={handleItemDragLeave}
+            onDrop={(e) => handleItemDrop(e, item)}
+            onDragEnd={handleDragEnd}
+          >
+            {isDragTarget && !dropAllowed && (
+              <div className="absolute inset-0 bg-red-400/5 dark:bg-red-400/10 pointer-events-none rounded flex items-center justify-center">
+                <span className="text-[10px] font-bold text-red-600 dark:text-red-400 opacity-80 uppercase tracking-tighter">Déplacement non autorisé</span>
+              </div>
+            )}
+            <div className="mr-1.5 text-gray-400 cursor-move opacity-50 group-hover:opacity-100 dark:text-gray-500">
+              <GripVertical size={14} />
+            </div>
+
+            {item.children && item.children.length > 0 ? (
+              <button
+                className="mr-1.5 text-gray-600 hover:text-gray-800 transition-colors duration-150 dark:text-gray-400 dark:hover:text-gray-200"
+                onClick={(e) => toggleCollapse(item.id, e)}
+              >
+                {item.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+              </button>
+            ) : (
+              <div className="mr-1.5 w-4"></div>
+            )}
+
+            <div className="mr-2 text-gray-600 dark:text-gray-400">
+              {renderItemIcon(item.type)}
+            </div>
+
+            <div className="whitespace-nowrap text-sm mr-2 font-medium text-gray-700 dark:text-gray-300">
+              {item.number}:
+            </div>
+
+            {renamingItemId === item.id ? (
+              <div className="flex-grow flex">
+                <input
+                  ref={renameInputRef}
+                  type="text"
+                  className="w-full text-sm py-0.5 px-1 border border-purple-300 focus:border-purple-500 rounded outline-none dark:bg-gray-700 dark:text-white"
+                  value={newItemTitle}
+                  onChange={(e) => setNewItemTitle(e.target.value)}
+                  onBlur={() => saveRename(item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveRename(item.id);
+                    if (e.key === 'Escape') cancelRename();
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex-grow font-medium overflow-hidden">
+                {expandedTitles.includes(item.id) ? (
+                  <p className="text-sm dark:text-white" onClick={(e) => toggleTitleExpansion(item.id, e)}>{item.title}</p>
+                ) : (
+                  <div className="flex items-center">
+                    <p className="text-sm truncate dark:text-white">{item.title.length > 30 ? item.title.substring(0, 30) : item.title}</p>
+                    {item.title.length > 30 && (
+                      <button
+                        className="ml-1 text-purple-500 hover:text-purple-700 text-xs"
+                        onClick={(e) => toggleTitleExpansion(item.id, e)}
+                      >
+                        ...
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex space-x-1 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                className="text-gray-400 hover:text-purple-600 transition-colors duration-200"
+                onClick={(e) => { e.stopPropagation(); renameItem(item.id); }}
+                title="Renommer"
+              >
+                <Edit2 size={14} />
+              </button>
+              <button
+                className="text-gray-400 hover:text-red-600 transition-colors duration-200"
+                onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+                title="Supprimer"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
 
-          <div className="whitespace-nowrap text-sm mr-2 font-medium text-gray-700 dark:text-gray-300">
-            {item.number}:
-          </div>
-
-          {renamingItemId === item.id ? (
-            <div className="flex-grow flex">
-              <input
-                ref={renameInputRef}
-                type="text"
-                className="w-full text-sm py-0.5 px-1 border border-purple-300 focus:border-purple-500 rounded outline-none dark:bg-gray-700 dark:text-white"
-                value={newItemTitle}
-                onChange={(e) => setNewItemTitle(e.target.value)}
-                onBlur={() => saveRename(item.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveRename(item.id);
-                  if (e.key === 'Escape') cancelRename();
-                }}
-              />
-            </div>
-          ) : (
-            <div className="flex-grow font-medium overflow-hidden">
-              {expandedTitles.includes(item.id) ? (
-                <p className="text-sm dark:text-white" onClick={(e) => toggleTitleExpansion(item.id, e)}>{item.title}</p>
-              ) : (
-                <div className="flex items-center">
-                  <p className="text-sm truncate dark:text-white">{item.title.length > 30 ? item.title.substring(0, 30) : item.title}</p>
-                  {item.title.length > 30 && (
-                    <button
-                      className="ml-1 text-purple-500 hover:text-purple-700 text-xs"
-                      onClick={(e) => toggleTitleExpansion(item.id, e)}
-                    >
-                      ...
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+          {/* Indicator for after reordering */}
+          {isDragTarget && dropAllowed && dropPosition === 'after' && (
+            <div className="absolute -bottom-1 left-0 right-0 h-1 bg-purple-500 rounded-full z-10" />
           )}
 
-          <div className="flex space-x-1 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              className="text-gray-400 hover:text-purple-600 transition-colors duration-200"
-              onClick={(e) => { e.stopPropagation(); renameItem(item.id); }}
-              title="Renommer"
-            >
-              <Edit2 size={14} />
-            </button>
-            <button
-              className="text-gray-400 hover:text-red-600 transition-colors duration-200"
-              onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
-              title="Supprimer"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+          {!item.collapsed && item.children && item.children.length > 0 && (
+            <div className="mt-1">
+              {renderItems(item.children)}
+            </div>
+          )}
         </div>
-
-        {!item.collapsed && item.children && item.children.length > 0 && (
-          <div className="mt-1">
-            {renderItems(item.children)}
-          </div>
-        )}
-      </div>
-    ));
+      );
+    });
 
     return renderItems(tocItems);
   }, [
     tocItems,
     dragOverItemId,
+    dropPosition,
+    dropAllowed,
     renamingItemId,
     expandedTitles,
     handleContextMenu,

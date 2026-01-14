@@ -39,7 +39,7 @@ export default Node.create<ExerciceOptions>({
 
   group: 'block',
 
-  content: 'inline*',
+  content: 'block+',
 
   defining: true,
 
@@ -103,11 +103,11 @@ export default Node.create<ExerciceOptions>({
     return {
       setExercice:
         () =>
-        ({ commands }) => {
-          // Generate unique ID for this exercice
-          const id = `exercice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.setNode(this.name, { id });
-        },
+          ({ commands }) => {
+            // Generate unique ID for this exercice
+            const id = `exercice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return commands.setNode(this.name, { id });
+          },
     };
   },
 

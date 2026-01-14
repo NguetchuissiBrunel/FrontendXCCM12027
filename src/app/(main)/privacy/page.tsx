@@ -1,18 +1,18 @@
 // src/app/privacy/page.tsx
 'use client';
 
-import  Footer  from '@/components/layout/Footer';
-import  Navbar  from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
 import { useState } from 'react';
-import { 
-  Shield, 
-  Lock, 
-  Mail, 
-  Download, 
-  ExternalLink, 
-  Check, 
-  Copy, 
-  Eye, 
+import {
+  Shield,
+  Lock,
+  Mail,
+  Download,
+  ExternalLink,
+  Check,
+  Copy,
+  Eye,
   EyeOff,
   FileText,
   Clock,
@@ -91,12 +91,12 @@ export default function PrivacyPolicy() {
                 </h2>
                 <div className="prose prose-purple max-w-none">
                   <p className="text-gray-700 leading-relaxed">
-                    XCCM1 est une <strong>plateforme académique open-source</strong> développée par les étudiants de 
-                    <strong> 4ᵉ année Génie Informatique</strong> à l'<strong>ENSPY Yaoundé</strong> sous la supervision du 
-                    <strong> Dr. Bernabe BATCHAKUI</strong>.
+                    XCCM1 est une <strong>plateforme académique open-source</strong> développée par les étudiants de
+                    <strong> 4ᵉ année Génie Informatique</strong> à l'<strong>ENSPY Yaoundé</strong> sous la supervision du
+                    <strong> Pr. Bernabe BATCHAKUI</strong>.
                   </p>
                   <p className="mt-4 text-gray-700">
-                    Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos données 
+                    Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos données
                     dans le respect de la <strong>Loi n° 2010/012 du 21 décembre 2010</strong> relative à la cybersécurité et à la cybercriminalité au Cameroun.
                   </p>
                   <div className="mt-6 p-5 bg-gradient-to-r from-purple-50 to-purple-50 rounded-2xl border-l-4 border-purple-500">
@@ -220,7 +220,7 @@ export default function PrivacyPolicy() {
                       <p className="text-sm text-gray-600 mt-2">{droit.desc}</p>
                       {showDetails[droit.right] && (
                         <p className="mt-3 text-xs text-purple-700 animate-fade-in">
-                          Envoyez un email à <strong>xccm@enspy.ucac-icam.cm</strong>
+                          Envoyez un email à <strong>xccm@enspy.cm</strong>
                         </p>
                       )}
                     </button>

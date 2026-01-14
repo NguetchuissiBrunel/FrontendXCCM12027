@@ -16,7 +16,6 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setMessage({ type: 'error', text: 'Veuillez entrer une adresse email valide' });
       return;
@@ -27,22 +26,22 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
 
     try {
       const request: NewsletterRequest = { email };
-      
+
       await PublicServicesService.subscribeNewsletter(request);
-      
-      setMessage({ 
-        type: 'success', 
-        text: 'Merci ! Vous êtes maintenant inscrit à notre newsletter.' 
+
+      setMessage({
+        type: 'success',
+        text: 'Merci ! Vous êtes maintenant inscrit à notre newsletter.'
       });
       setEmail(''); // Réinitialiser le champ
-      
+
       // Optionnel: Reset message après 5 secondes
       setTimeout(() => setMessage(null), 5000);
     } catch (error: any) {
       console.error('Erreur inscription newsletter:', error);
-      
+
       let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
-      
+
       if (error.status === 400) {
         errorMessage = 'Cette adresse email est déjà inscrite.';
       } else if (error.status === 422) {
@@ -50,7 +49,6 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
       } else if (error.status === 429) {
         errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
       }
-      
       setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
@@ -66,19 +64,19 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Votre adresse email"
+            suppressHydrationWarning={true}
             aria-label="Adresse email pour la newsletter"
             className="w-full min-w-0 appearance-none rounded-lg border border-transparent bg-gray-700 dark:bg-gray-800 py-3 px-4 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-colors shadow-inner"
             disabled={loading}
             required
           />
         </div>
-        
+
         <button
           type="submit"
           disabled={loading}
-          className={`w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white py-3 px-6 rounded-lg transition-all font-medium shadow-md text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
-            loading ? 'animate-pulse' : ''
-          }`}
+          className={`w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white py-3 px-6 rounded-lg transition-all font-medium shadow-md text-sm disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'animate-pulse' : ''
+            }`}
         >
           {loading ? (
             <span className="flex items-center justify-center">
@@ -96,11 +94,10 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
 
       {/* Messages de feedback */}
       {message && (
-        <div className={`rounded-lg p-3 text-sm ${
-          message.type === 'success' 
-            ? 'bg-green-900/30 text-green-300 border border-green-800' 
+        <div className={`rounded-lg p-3 text-sm ${message.type === 'success'
+            ? 'bg-green-900/30 text-green-300 border border-green-800'
             : 'bg-red-900/30 text-red-300 border border-red-800'
-        }`}>
+          }`}>
           <div className="flex items-start">
             {message.type === 'success' ? (
               <svg className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -118,8 +115,8 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
 
       {/* Note de confidentialité */}
       <p className="text-xs text-gray-400 mt-2">
-        En vous abonnant, vous acceptez de recevoir nos newsletters. 
-        Vous pouvez vous désinscrire à tout moment via le lien présent dans chaque email. 
+        En vous abonnant, vous acceptez de recevoir nos newsletters.
+        Vous pouvez vous désinscrire à tout moment via le lien présent dans chaque email.
         Vos données sont protégées conformément à notre{' '}
         <a href="/privacy" className="text-purple-400 hover:text-purple-300 underline">
           politique de confidentialité

@@ -4,9 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { CourseControllerService } from '@/lib';
 
 export interface Course {
-    views: number;
-    likes: number;
-    downloads: number;
     image: any;
     id: number;
     title: string;
@@ -17,8 +14,7 @@ export interface Course {
     // Updated to match your JSON
     author?: {
         id: string;
-        firstName: string;
-        lastName: string;
+        name: string;
         email: string;
         university?: string;
         photoUrl?: string;
@@ -27,6 +23,9 @@ export interface Course {
     };
     content?: string;
     coverImage?: string | null;
+    views?: number;
+    likes?: number;
+    downloads?: number;
 }
 
 interface UseCoursesReturn {
@@ -50,47 +49,47 @@ export function useCourses(): UseCoursesReturn {
      * Récupère tous les cours enrichis depuis l'API
      */
     const fetchAllCourses = useCallback(async () => {
-    try {
-        setLoading(true);
-        setError(null);
+        try {
+            setLoading(true);
+            setError(null);
 
-        // This is usually a 'BaseResponse' type from your generated API client
-        const response: any = await CourseControllerService.getAllCourses();
+            // This is usually a 'BaseResponse' type from your generated API client
+            const response: any = await CourseControllerService.getAllCourses();
 
-        // Check if response.data exists and is an array
-        if (response && response.success && Array.isArray(response.data)) {
-            setCourses(response.data as Course[]);
-            console.log(`✅ ${response.data.length} cours chargés`);
-        } else {
-            console.warn('⚠️ Format de réponse inattendu:', response);
+            // Check if response.data exists and is an array
+            if (response && response.success && Array.isArray(response.data)) {
+                setCourses(response.data as Course[]);
+                console.log(`✅ ${response.data.length} cours chargés`);
+            } else {
+                console.warn('⚠️ Format de réponse inattendu:', response);
+                setCourses([]);
+            }
+        } catch (err) {
+            console.error('❌ Erreur lors du chargement des cours:', err);
+            setError(err instanceof Error ? err.message : 'Impossible de charger les cours');
             setCourses([]);
+        } finally {
+            setLoading(false);
         }
-    } catch (err) {
-        console.error('❌ Erreur lors du chargement des cours:', err);
-        setError(err instanceof Error ? err.message : 'Impossible de charger les cours');
-        setCourses([]);
-    } finally {
-        setLoading(false);
-    }
-}, []);
+    }, []);
 
     /**
      * Récupère un cours spécifique par son ID
      */
     const fetchCourse = useCallback(async (courseId: number): Promise<Course | null> => {
-    try {
-        const response: any = await CourseControllerService.getEnrichedCourse(courseId);
+        try {
+            const response: any = await CourseControllerService.getEnrichedCourse(courseId);
 
-        if (response && response.success && response.data) {
-            return response.data as Course;
+            if (response && response.success && response.data) {
+                return response.data as Course;
+            }
+
+            return null;
+        } catch (err) {
+            console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
+            throw err;
         }
-
-        return null;
-    } catch (err) {
-        console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
-        throw err;
-    }
-}, []);
+    }, []);
 
     /**
      * Recharge tous les cours
@@ -114,6 +113,8 @@ export function useCourses(): UseCoursesReturn {
     };
 }
 
+import { useAuth } from '@/contexts/AuthContext';
+
 /**
  * Hook pour récupérer un cours spécifique
  */
@@ -122,19 +123,40 @@ export function useCourse(courseId: number) {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Attendre que l'authentification soit initialisée
+    const { isAuthenticated, loading: authLoading } = useAuth();
+
     useEffect(() => {
+        // Si l'auth est encore en cours de chargement, on attend
+        if (authLoading) return;
+
+        // Si l'utilisateur n'est pas authentifié, on ne fait pas d'appel API pour éviter l'erreur Forbidden
+        if (!isAuthenticated) {
+            setLoading(false);
+            return;
+        }
+
         const loadCourse = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                console.log(`📖 Chargement du cours ${courseId}...`);
+                const enrichedResponse: any = await CourseControllerService.getEnrichedCourse(courseId);
+                const allResponse: any = await CourseControllerService.getAllCourses();
 
-                const response = await CourseControllerService.getEnrichedCourse(courseId);
+                if (enrichedResponse && enrichedResponse.success && enrichedResponse.data) {
+                    const enrichedData = enrichedResponse.data;
 
-                if (response) {
-                    setCourse(response as Course);
-                    console.log(`✅ Cours ${courseId} chargé`);
+                    // Find the course in the full list to get the content
+                    // (The enriched endpoint doesn't seem to return the content body)
+                    const fullCourse = allResponse?.data?.find((c: any) => c.id === courseId);
+
+                    setCourse({
+                        ...enrichedData,
+                        content: fullCourse?.content || enrichedData.content
+                    } as Course);
+                } else {
+                    console.warn('⚠️ Échec du chargement du cours:', enrichedResponse);
                 }
             } catch (err) {
                 console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
@@ -147,7 +169,7 @@ export function useCourse(courseId: number) {
         if (courseId) {
             loadCourse();
         }
-    }, [courseId]);
+    }, [courseId, authLoading, isAuthenticated]);
 
-    return { course, loading, error };
+    return { course, loading: loading || authLoading, error };
 }

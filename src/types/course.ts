@@ -13,7 +13,7 @@ export interface ExerciseQuestion {
 
 export interface Paragraph {
   title: string;
-  content: string;
+  content: any;
   notions: string[];
   exercise?: {
     questions: ExerciseQuestion[];

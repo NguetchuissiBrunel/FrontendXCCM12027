@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 // 1. Importer 'Image' de Next.js
-import Image from 'next/image'; 
-import { 
-  FaFileAlt, FaSearch, FaKey, FaUser, 
-  FaFileUpload, FaShare, FaCreditCard, 
-  FaBook, FaUserPlus, FaHeadset,FaTimes 
+import Image from 'next/image';
+import {
+  FaFileAlt, FaSearch, FaKey, FaUser,
+  FaFileUpload, FaShare, FaCreditCard,
+  FaBook, FaUserPlus, FaHeadset, FaTimes
 } from 'react-icons/fa';
 
 import { Heart, Star, Send, Mail, User, MessageSquare, ThumbsUp, Award, Gift, Smile } from 'lucide-react';
 import ContactForm from '@/components/common/ContactForm';
+import { toast } from 'react-hot-toast';
 
 
 // 2. Définir une interface pour vos objets 'helpItems'
@@ -31,7 +32,7 @@ const ContactPage = () => {
   const handleSuggestionClick = (item: HelpItem) => {
     setSearchQuery(item.title);
     console.log(item.solution);
-    closeSearch(); 
+    closeSearch();
   };
 
   const [rating, setRating] = useState(0);
@@ -43,17 +44,17 @@ const ContactPage = () => {
     rating: 0
   });
   const [submitted, setSubmitted] = useState(false);
-  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);  
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
-   const handleSubmitFeedback = async (e: React.FormEvent) => {
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
-   // Validation basique
+    // Validation basique
     if (!feedbackForm.name || !feedbackForm.email || !feedbackForm.message) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-  setSubmitted(true);
+    setSubmitted(true);
 
   };
 
@@ -68,53 +69,53 @@ const ContactPage = () => {
     setRating(0);
   };
 
-// 5. Appliquer le type 'HelpItem[]'
-const helpItems: HelpItem[] = useMemo(() => [
-  {
-    title: "Problème de connexion",
-    icon: <FaKey className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Vérifiez vos identifiants, effacez le cache du navigateur, ou utilisez la fonction 'mot de passe oublié'. Si le problème persiste, contactez le support."
-  },
-  {
-    title: "Mot de passe oublié",
-    icon: <FaUser className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Suivez les instructions envoyées à votre email pour réinitialiser votre mot de passe."
-  },
-  {
-    title: "Service client",
-    icon: <FaHeadset className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Notre équipe est disponible 24/7. Contactez-nous par chat en direct ou envoyez un email à support@xccm.com pour une assistance rapide."
-  },
-  {
-    title: "Changer de compte",
-    icon: <FaUserPlus className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Accédez aux paramètres du compte, sélectionnez 'Changer de compte' et suivez les étapes pour basculer vers un autre profil."
-  },
-  {
-    title: "Créer mon premier document",
-    icon: <FaFileUpload className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Cliquez sur le bouton '+' dans votre tableau de bord, choisissez un modèle ou commencez avec une page blanche."
-  },
-  {
-    title: "Partager ma composition",
-    icon: <FaShare className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Ouvrez votre composition, cliquez sur 'Partager' en haut à droite, et choisissez votre méthode de partage préférée."
-  },
-  {
-    title: "Renouveler mon abonnement",
-    icon: <FaCreditCard className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Allez dans 'Paramètres → Abonnement', sélectionnez votre plan et suivez les instructions de paiement."
-  },
-  {
-    title: "Tuto global",
-    icon: <FaBook className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-    solution: "Explorez notre guide complet étape par étape. Accédez à 'Aide → Tutoriels' pour des vidéos et guides détaillés."
-  }
-], []); // <-- Le tableau de dépendances vide [] est crucial
+  // 5. Appliquer le type 'HelpItem[]'
+  const helpItems: HelpItem[] = useMemo(() => [
+    {
+      title: "Problème de connexion",
+      icon: <FaKey className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Vérifiez vos identifiants, effacez le cache du navigateur, ou utilisez la fonction 'mot de passe oublié'. Si le problème persiste, contactez le support."
+    },
+    {
+      title: "Mot de passe oublié",
+      icon: <FaUser className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Suivez les instructions envoyées à votre email pour réinitialiser votre mot de passe."
+    },
+    {
+      title: "Service client",
+      icon: <FaHeadset className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Notre équipe est disponible 24/7. Contactez-nous par chat en direct ou envoyez un email à support@xccm.com pour une assistance rapide."
+    },
+    {
+      title: "Changer de compte",
+      icon: <FaUserPlus className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Accédez aux paramètres du compte, sélectionnez 'Changer de compte' et suivez les étapes pour basculer vers un autre profil."
+    },
+    {
+      title: "Créer mon premier document",
+      icon: <FaFileUpload className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Cliquez sur le bouton '+' dans votre tableau de bord, choisissez un modèle ou commencez avec une page blanche."
+    },
+    {
+      title: "Partager ma composition",
+      icon: <FaShare className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Ouvrez votre composition, cliquez sur 'Partager' en haut à droite, et choisissez votre méthode de partage préférée."
+    },
+    {
+      title: "Renouveler mon abonnement",
+      icon: <FaCreditCard className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Allez dans 'Paramètres → Abonnement', sélectionnez votre plan et suivez les instructions de paiement."
+    },
+    {
+      title: "Tuto global",
+      icon: <FaBook className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
+      solution: "Explorez notre guide complet étape par étape. Accédez à 'Aide → Tutoriels' pour des vidéos et guides détaillés."
+    }
+  ], []); // <-- Le tableau de dépendances vide [] est crucial
 
   // NOUVELLES FONCTIONS POUR GÉRER L'OVERLAY
   const openSearch = () => setIsSearchOverlayOpen(true);
-  
+
   const closeSearch = () => setIsSearchOverlayOpen(false);
 
   // Fonction pour basculer l'overlay et vider la recherche
@@ -134,7 +135,7 @@ const helpItems: HelpItem[] = useMemo(() => [
       return []; // Retourne un tableau vide
     }
     // Retourne le tableau filtré
-    return helpItems.filter(item => 
+    return helpItems.filter(item =>
       item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, helpItems]); // Dépendances: se recalcule si searchQuery ou helpItems changent
@@ -148,7 +149,7 @@ const helpItems: HelpItem[] = useMemo(() => [
       question: "Comment réinitialiser mon mot de passe ?",
       answer: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Vous recevrez un email avec des instructions."
     },
-    { 
+    {
       question: "Comment contacter le support client ?",
       answer: "Notre équipe est disponible 24/7. Vous pouvez nous contacter par chat en direct ou par email."
     },
@@ -191,12 +192,12 @@ const helpItems: HelpItem[] = useMemo(() => [
       {/* Header Section */}
       <div className="relative flex-grow">
         <div className="relative h-[300px] sm:h-[400px]">
-         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat 
+          <div className="absolute inset-0 bg-cover bg-center bg-no-repeat 
                     bg-[url('/images/fond9.jpeg')] 
                     dark:bg-[url('/images/unnamed.jpg')]">
             <div className="absolute inset-0 bg-purple-900/35 dark:bg-purple-900/30" />
           </div>
-          
+
           <div className="container mx-auto relative h-full flex flex-col items-center justify-center">
             <div className="w-full max-w-4xl text-center px-4">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white dark:text-white flex items-center">
@@ -209,22 +210,22 @@ const helpItems: HelpItem[] = useMemo(() => [
               </p>
 
               {/* ----- NOUVEAU BLOC DE RECHERCHE (DEBUT) ----- */}
-              
-              <div className={`max-w-xl w-full mx-auto ${isSearchOverlayOpen 
-                  ? 'z-50 fixed top-20 left-1/2 -translate-x-1/2 px-4' // Se fixe à 5rem (80px) du haut
-                  : 'relative' // Reste normal dans l'en-tête
+
+              <div className={`max-w-xl w-full mx-auto ${isSearchOverlayOpen
+                ? 'z-50 fixed top-20 left-1/2 -translate-x-1/2 px-4' // Se fixe à 5rem (80px) du haut
+                : 'relative' // Reste normal dans l'en-tête
                 }`}>
                 <form onSubmit={(e) => e.preventDefault()} className="relative flex items-center">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                    onFocus={openSearch} 
+                    onFocus={openSearch}
                     placeholder="Rechercher une solution..."
-                    className="w-full pl-12 pr-16 py-4 text-gray-900 dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base bg-white dark:bg-gray-800"                  />
+                    className="w-full pl-12 pr-16 py-4 text-gray-900 dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base bg-white dark:bg-gray-800" />
                   <button
-                    type="button" 
-                    onClick={toggleSearchOverlay} 
+                    type="button"
+                    onClick={toggleSearchOverlay}
                     className="absolute right-2 p-2 sm:p-3 text-white bg-purple-600 dark:bg-purple-700 rounded-full hover:bg-purple-700 transition-colors"
                   >
                     {isSearchOverlayOpen ? (
@@ -238,13 +239,13 @@ const helpItems: HelpItem[] = useMemo(() => [
 
               {/* NOUVEL OVERLAY PLEIN ÉCRAN */}
               {isSearchOverlayOpen && (
-                <div 
+                <div
                   // Ajout d'un effet de flou (backdrop-blur) pour un look plus moderne
                   className="fixed inset-0 top-0 left-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-40 overflow-y-auto"
                 >
                   {/* Padding pour laisser la place au formulaire de recherche (pt-40 = 160px) */}
-                  <div className="container mx-auto px-4 py-8 pt-40"> 
-                    
+                  <div className="container mx-auto px-4 py-8 pt-40">
+
                     {/* Logique d'affichage des résultats (maintenant dans l'overlay) */}
                     {searchQuery.trim() === '' && (
                       <div className="text-center text-gray-500 dark:text-gray-400 py-10">
@@ -257,8 +258,8 @@ const helpItems: HelpItem[] = useMemo(() => [
                         <div className="space-y-4 max-w-xl mx-auto">
                           <h2 className="text-gray-500 dark:text-gray-400 mb-4 font-semibold">Résultats pour &quot;{searchQuery}&quot;</h2>
                           {filteredItems.map((item, index) => (
-                            <div 
-                              key={index} 
+                            <div
+                              key={index}
                               className="cursor-pointer p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-shadow"
                               onClick={() => handleSuggestionClick(item)} // <-- Appel corrigé
                             >
@@ -276,7 +277,7 @@ const helpItems: HelpItem[] = useMemo(() => [
                   </div>
                 </div>
               )}
-            {/* ----- NOUVEAU BLOC DE RECHERCHE (FIN) ----- */}
+              {/* ----- NOUVEAU BLOC DE RECHERCHE (FIN) ----- */}
             </div>
           </div>
         </div>
@@ -307,7 +308,7 @@ const helpItems: HelpItem[] = useMemo(() => [
         <div className="space-y-4">
           {faqItems.map((item, index) => (
             <div key={index} className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4">
-              <button 
+              <button
                 className="flex justify-between items-center w-full text-left"
                 onClick={() => toggleFaq(index)}
               >
@@ -326,49 +327,48 @@ const helpItems: HelpItem[] = useMemo(() => [
       <div className="container bg-purple-100 dark:bg-purple-800 rounded-lg mx-auto px-4 py-8 flex flex-col md:flex-row items-start">
       </div>
       {/* Feedback */}
-      // Dans votre ContactPage.tsx, remplacez la section Feedback complètement :
 
-{/* Contact Section - REMPLACER LA SECTION FEEDBACK EXISTANTE */}
-<div className="container w-full bg-white dark:bg-gray-900 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
-  <div className="w-full md:w-1/2">
-    <div className="text-center mb-8">
-      <h2 className="text-4xl text-black dark:text-gray-400 font-bold mb-4 flex items-center justify-center gap-2">
-        <Heart className="text-black dark:text-gray-400 w-10 h-10" />
-        Contactez notre support
-      </h2>
-      <p className="text-black dark:text-gray-500 text-lg">
-        Notre équipe est là pour vous aider. Envoyez-nous votre message et nous vous répondrons rapidement.
-      </p>
-    </div>
+      {/* Contact Section - REMPLACER LA SECTION FEEDBACK EXISTANTE */}
+      <div className="container w-full bg-white dark:bg-gray-900 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
+        <div className="w-full md:w-1/2">
+          <div className="text-center mb-8">
+            <h2 className="text-4xl text-black dark:text-gray-400 font-bold mb-4 flex items-center justify-center gap-2">
+              <Heart className="text-black dark:text-gray-400 w-10 h-10" />
+              Contactez notre support
+            </h2>
+            <p className="text-black dark:text-gray-500 text-lg">
+              Notre équipe est là pour vous aider. Envoyez-nous votre message et nous vous répondrons rapidement.
+            </p>
+          </div>
 
-    {/* Stats Section - conserver si vous voulez */}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      {stats.map((stat, index) => (
-        <div key={index} className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg text-center">
-          <div className="mb-2 text-xl">{stat.icon}</div>
-          <div className="text-lg font-bold dark:text-purple-600 text-purple-900">{stat.value}</div>
-          <div className="text-sm text-black dark:text-gray-400">{stat.label}</div>
+          {/* Stats Section - conserver si vous voulez */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg text-center">
+                <div className="mb-2 text-xl">{stat.icon}</div>
+                <div className="text-lg font-bold dark:text-purple-600 text-purple-900">{stat.value}</div>
+                <div className="text-sm text-black dark:text-gray-400">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Utilisation du nouveau ContactForm */}
+          <ContactForm />
         </div>
-      ))}
+
+        {/* Image Section - conserver */}
+        <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
+          <Image
+            src="/images/ima20.jpeg"
+            alt="Support client"
+            fill
+            className="object-cover w-full h-full"
+            priority
+          />
+        </div>
+      </div>
     </div>
 
-    {/* Utilisation du nouveau ContactForm */}
-    <ContactForm />
-  </div>
-  
-  {/* Image Section - conserver */}
-  <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
-    <Image 
-      src="/images/ima20.jpeg" 
-      alt="Support client" 
-      fill
-      className="object-cover w-full h-full"
-      priority
-    />
-  </div>
-</div>
-      </div>
-    
   );
 };
 

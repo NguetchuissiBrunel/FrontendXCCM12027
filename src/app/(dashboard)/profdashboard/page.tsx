@@ -4,10 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProfileCard from '@/components/professor/ProfileCard';
 import CompositionsCard, { Composition } from '@/components/professor/CompositionsCard';
-import TeachersCard from '@/components/professor/TeachersCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { CourseResponse } from '@/lib/models/CourseResponse';
+import CreateCourseModal from '@/components/create-course/page';
+import { EnrollmentService } from '@/utils/enrollmentService';
+import { toast } from 'react-hot-toast';
+
 
 interface User {
   id: string;
@@ -33,12 +36,26 @@ interface Teacher {
   university?: string;
 }
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 export default function ProfessorDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
+
+
+  useEffect(() => {
+    if (authLoading || loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [authLoading, loading, startLoading, stopLoading]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -66,15 +83,19 @@ export default function ProfessorDashboard() {
             class: c.category || 'Non spécifiée',
             participants: Math.floor(Math.random() * 50), // Mock data as backend might not have this yet
             likes: 0,
-            downloads: 0
+            downloads: 0,
+            status: c.status as any
           }));
           setCompositions(mappedCompositions);
         }
 
         // 2. Fetch other teachers (optional feature, if API exists)
-        // For now, let's keep it empty or mock it if there's no "get all teachers" endpoint
-        // or just use public courses authors
         setTeachers([]);
+
+        // 3. Fetch pending inscriptions count
+        const pendingData = await EnrollmentService.getPendingEnrollments();
+        setPendingInscriptionsCount(pendingData.length);
+
 
       } catch (error) {
         console.error('Erreur lors du chargement des données du tableau de bord:', error);
@@ -85,19 +106,35 @@ export default function ProfessorDashboard() {
 
     if (user) {
       loadDashboardData();
-
     }
   }, [user, authLoading, isAuthenticated, router]);
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
-      </div>
-    );
+  const handleCreateCourseSubmit = (data: { title: string; category: string; description: string }) => {
+    const params = new URLSearchParams({
+      new: 'true',
+      title: data.title,
+      category: data.category,
+      description: data.description
+    });
+    router.push(`/editor?${params.toString()}`);
+  };
+
+  const handleDeleteComposition = async (id: string) => {
+    try {
+      startLoading();
+      await CourseControllerService.deleteCourse(Number(id));
+      setCompositions(prev => prev.filter(c => c.id !== id));
+      toast.success("Cours supprimé avec succès.");
+    } catch (error) {
+      console.error("Erreur lors de la suppression du cours:", error);
+      toast.error("Impossible de supprimer le cours.");
+    } finally {
+      stopLoading();
+    }
+  };
+
+  if (authLoading || loading || globalLoading) {
+    return null;
   }
 
   if (!user) return null;
@@ -107,7 +144,7 @@ export default function ProfessorDashboard() {
     : user.email.split('@')[0];
 
   const professor = {
-    id: user.id,
+    id: user.email,
     name: displayName,
     city: user.city || 'Non spécifiée',
     university: user.university || 'Non spécifiée',
@@ -137,6 +174,13 @@ export default function ProfessorDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
+      {/* Modale de création de cours */}
+      <CreateCourseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateCourseSubmit}
+      />
+
       {/* Top Section with Welcome */}
       <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="max-w-3xl">
@@ -148,15 +192,25 @@ export default function ProfessorDashboard() {
           </p>
         </div>
         <div>
-          <button
-            onClick={() => router.push('/teacher/inscriptions')}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Gérer les inscriptions
-          </button>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => router.push('/teacher/inscriptions')}
+              className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Gérer les inscriptions
+              {pendingInscriptionsCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-gray-800 animate-bounce">
+                  {pendingInscriptionsCount}
+                </span>
+              )}
+            </button>
+
+
+          </div>
         </div>
       </div>
 
@@ -167,39 +221,33 @@ export default function ProfessorDashboard() {
 
         {/* Compositions Card */}
         {compositions.length > 0 ? (
-          <CompositionsCard compositions={compositions} />
+          <CompositionsCard
+            compositions={compositions}
+            onDelete={handleDeleteComposition}
+            onCreateClick={() => setIsModalOpen(true)}
+          />
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Mes Compositions
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Vous n'avez pas encore créé de cours.
+            <div className="flex items-center justify-between mb-8 border-b border-purple-100 dark:border-gray-700 pb-4">
+              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                Mes Compositions
+              </h2>
               <button
-                onClick={() => router.push('/editor')}
-                className="ml-2 text-purple-600 dark:text-purple-400 font-bold hover:underline"
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition"
               >
-                Créer mon premier cours
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Créer un cours
               </button>
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Vous n'avez pas encore créé de cours.
             </p>
           </div>
-        )}
 
-        {/* Teachers Network Card */}
-        {teachersList.length > 0 && (
-          <TeachersCard teachers={teachersList} />
-        )}
-
-        {/* Message si pas d'autres enseignants */}
-        {teachersList.length === 0 && teachers.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Rencontrez d'autres enseignants
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Aucun autre enseignant inscrit pour le moment. Invitez vos collègues à rejoindre la plateforme !
-            </p>
-          </div>
         )}
       </div>
     </div>

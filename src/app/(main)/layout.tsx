@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { AuthProvider } from "@/contexts/AuthContext"; 
+import FlottingCard from '@/components/assistantIa/FlottingCard';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
           <div className="grow">
             {children}
           </div>
+          <FlottingCard />
           <Footer />
         </AuthProvider>
         </div>

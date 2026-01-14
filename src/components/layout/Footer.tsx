@@ -24,21 +24,12 @@ const Footer = () => {
           <div className="space-y-6 md:col-span-2 lg:col-span-1 lg:border-r lg:border-gray-700 lg:pr-6 xl:pr-8">
             <Link href="/" className="flex items-center">
               <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
-<<<<<<< HEAD
                 <Image
                   src="/images/Capture.png"
                   alt="Logo XCCM"
                   width={80}
                   height={80}
                   className="rounded-full object-cover"
-=======
-                <Image 
-                  src="/images/Capture.png" 
-                  alt="Logo XCCM" 
-                  width={80} 
-                  height={80} 
-                  className="rounded-full object-cover" 
->>>>>>> main
                 />
               </div>
               <span className="text-2xl font-bold tracking-tight">XCCM1</span>
@@ -74,14 +65,14 @@ const Footer = () => {
                 <li><Link href="/space_coll" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
                 <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Bibliothèque de Contenu</Link></li>
                 <li>
-                   <Link 
-                    href="/pricing" 
+                  <Link
+                    href="/pricing"
                     className="text-sm text-gray-400 hover:text-purple-300 transition-colors"
                   >
                     Tarification
                   </Link>
-                </li>              
-               </ul>
+                </li>
+              </ul>
             </div>
 
             <div>
@@ -113,7 +104,6 @@ const Footer = () => {
             <p className="text-sm text-gray-400 mb-6 max-w-md">
               Recevez les dernières nouvelles, mises à jour et offres spéciales directement dans votre boîte de réception.
             </p>
-<<<<<<< HEAD
             <form className="flex flex-col space-y-4">
               <input
                 type="email"
@@ -128,11 +118,6 @@ const Footer = () => {
                 S'abonner
               </button>
             </form>
-=======
-            
-            {/* Utilisation du composant NewsletterForm */}
-            <NewsletterForm />
->>>>>>> main
           </div>
         </div>
 

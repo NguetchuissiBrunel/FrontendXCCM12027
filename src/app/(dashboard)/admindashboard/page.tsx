@@ -4,11 +4,6 @@ import { FaUsers, FaChalkboardTeacher, FaBook, FaChartBar, FaUserShield, FaCheck
 import { useState, useEffect } from 'react';
 import { AdminService } from '@/lib';
 
-<<<<<<< HEAD
-=======
-import { useLoading } from '@/contexts/LoadingContext';
-
->>>>>>> main
 const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
     <motion.div
         whileHover={{ y: -5 }}
@@ -42,18 +37,6 @@ export default function AdminOverview() {
         rejectedEnrollments: 0,
     });
     const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
-=======
-    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
-
-    useEffect(() => {
-        if (loading) {
-            startLoading();
-        } else {
-            stopLoading();
-        }
-    }, [loading, startLoading, stopLoading]);
->>>>>>> main
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -97,13 +80,6 @@ export default function AdminOverview() {
         fetchStats();
     }, []);
 
-<<<<<<< HEAD
-=======
-    if (loading || globalLoading) {
-        return null;
-    }
-
->>>>>>> main
     return (
         <div className="space-y-8">
             {/* Section Utilisateurs */}

@@ -1,13 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
 import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt, FaUserGraduate } from 'react-icons/fa';
 import { AdminService } from '@/lib';
-=======
-import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt } from 'react-icons/fa';
-import { AdminService } from '@/lib';
-import { useLoading } from '@/contexts/LoadingContext';
->>>>>>> main
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
@@ -31,10 +25,6 @@ const StatsCard = ({ title, value, icon, color }: any) => (
 export default function AdminCoursesPage() {
     const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
-=======
-    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
->>>>>>> main
     const [searchTerm, setSearchTerm] = useState('');
     const [stats, setStats] = useState({
         total: 0,
@@ -44,24 +34,12 @@ export default function AdminCoursesPage() {
     });
 
     useEffect(() => {
-<<<<<<< HEAD
-=======
-        if (loading) {
-            startLoading();
-        } else {
-            stopLoading();
-        }
-    }, [loading, startLoading, stopLoading]);
-
-    useEffect(() => {
->>>>>>> main
         fetchCourses();
     }, []);
 
     const fetchCourses = async () => {
         setLoading(true);
         try {
-<<<<<<< HEAD
             const [res, enrollRes] = await Promise.all([
                 AdminService.getAllCourses(),
                 AdminService.getAllEnrollments()
@@ -82,13 +60,6 @@ export default function AdminCoursesPage() {
 
             setCourses(processedCourses);
 
-=======
-            const res = await AdminService.getAllCourses();
-            const coursesData = res.data || [];
-            setCourses(coursesData);
-
-            // Calcul des statistiques basé sur les données réelles de l'API
->>>>>>> main
             setStats({
                 total: coursesData.length,
                 active: coursesData.filter((c: any) => c.status === 'PUBLISHED').length,
@@ -150,11 +121,7 @@ export default function AdminCoursesPage() {
 
     const filteredCourses = courses.filter(c => {
         const title = c.title || '';
-<<<<<<< HEAD
         const authorName = `${c.author?.name || ''} ${c.author?.designation || ''}`;
-=======
-        const authorName = `${c.author?.firstName || ''} ${c.author?.lastName || ''}`;
->>>>>>> main
         const category = c.category || '';
 
         return (title + authorName + category).toLowerCase().includes(searchTerm.toLowerCase());
@@ -173,11 +140,7 @@ export default function AdminCoursesPage() {
             </div>
 
             {/* Statistics Cards */}
-<<<<<<< HEAD
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-=======
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
->>>>>>> main
                 <StatsCard
                     title="Total Cours"
                     value={loading ? "..." : stats.total}
@@ -185,30 +148,11 @@ export default function AdminCoursesPage() {
                     color="bg-purple-600"
                 />
                 <StatsCard
-<<<<<<< HEAD
                     title="Cours Actifs"
-=======
-                    title="Actifs"
->>>>>>> main
                     value={loading ? "..." : stats.active}
                     icon={<FaCheckCircle size={20} />}
                     color="bg-green-600"
                 />
-<<<<<<< HEAD
-=======
-                <StatsCard
-                    title="Brouillons"
-                    value={loading ? "..." : stats.draft}
-                    icon={<FaFileAlt size={20} />}
-                    color="bg-yellow-600"
-                />
-                <StatsCard
-                    title="Archivés"
-                    value={loading ? "..." : stats.archived}
-                    icon={<FaTimesCircle size={20} />}
-                    color="bg-slate-600"
-                />
->>>>>>> main
             </div>
 
             <div className="relative">
@@ -222,16 +166,11 @@ export default function AdminCoursesPage() {
                 />
             </div>
 
-<<<<<<< HEAD
             {loading ? (
                 <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
                     <p className="text-slate-500 dark:text-slate-400 mt-4">Chargement des cours...</p>
                 </div>
-=======
-            {loading || globalLoading ? (
-                null
->>>>>>> main
             ) : filteredCourses.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <FaBook className="mx-auto text-slate-300 dark:text-slate-700 mb-4" size={48} />
@@ -271,16 +210,9 @@ export default function AdminCoursesPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-<<<<<<< HEAD
                                             <p className="text-sm font-medium text-slate-900 dark:text-white">
                                                 {course.author ? `${course.author.designation} ${course.author.name}` : 'Enseignant inconnu'}
                                             </p>
-=======
-                                            <p className="text-sm text-slate-900 dark:text-white">
-                                                {course.author?.firstName} {course.author?.lastName}
-                                            </p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{course.author?.email}</p>
->>>>>>> main
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-full text-xs font-medium">
@@ -292,15 +224,9 @@ export default function AdminCoursesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1">
-<<<<<<< HEAD
                                                 <FaUserGraduate className="text-purple-400" size={14} />
                                                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                                                     {course.approvedEnrollmentsCount || 0}
-=======
-                                                <FaEye className="text-slate-400" size={14} />
-                                                <span className="text-sm text-slate-600 dark:text-slate-400">
-                                                    {course.enrollmentCount || 0}
->>>>>>> main
                                                 </span>
                                             </div>
                                         </td>

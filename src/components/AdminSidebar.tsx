@@ -2,11 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-<<<<<<< HEAD
 import { FaUsers, FaChalkboardTeacher, FaBook, FaThLarge, FaSignOutAlt, FaUserGraduate, FaUser } from 'react-icons/fa';
-=======
-import { FaUsers, FaChalkboardTeacher, FaBook, FaThLarge, FaSignOutAlt, FaUserGraduate } from 'react-icons/fa';
->>>>>>> main
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
@@ -20,10 +16,7 @@ const AdminSidebar = () => {
         { name: 'Enseignants', icon: <FaChalkboardTeacher />, path: '/admindashboard/teachers' },
         { name: 'Cours', icon: <FaBook />, path: '/admindashboard/courses' },
         { name: 'Enrollements', icon: <FaUserGraduate />, path: '/admindashboard/enrollments' },
-<<<<<<< HEAD
         { name: 'Administrateurs', icon: <FaUser />, path: '/admindashboard/admins' },
-=======
->>>>>>> main
     ];
 
     return (

@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCourses } from '@/hooks/useCourses';
-
 // Composant pour simuler les étoiles de notation
 const StarRating = ({ rating = 5 }: { rating: number }) => (
   <div className="flex text-yellow-400 text-xs">
@@ -41,9 +40,9 @@ export default function HomePage() {
       likes: course?.likes || 0,
       downloads: course?.downloads || 0,
       author: {
-        name: course.author?.name || "Auteur inconnu",
-        image: course.author?.image ? course.author.image : "/images/prof.jpeg",
-        designation: course.author?.designation || "Enseignant"
+        name: course.author ? `${course.author.name}` : "Auteur inconnu",
+        image: course.author?.image || course.author?.photoUrl || "/images/prof.jpeg",
+        designation: course.author?.designation || course.author?.university || "Enseignant"
       },
       rating: 5,
       link: `/courses/${course.id}`,

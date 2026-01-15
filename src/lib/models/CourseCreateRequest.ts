@@ -9,6 +9,10 @@ export type CourseCreateRequest = {
     title?: string;
     category?: string;
     description?: string;
+<<<<<<< HEAD
     content?: JSONContent;
+=======
+    content?: Record<string, Record<string, any>>;
+>>>>>>> main
 };
 

@@ -8,7 +8,6 @@ import {
   BookOpen,
   Check,
   ChevronRight,
-  Code,
   FileText,
   Github,
   Globe,
@@ -22,14 +21,21 @@ const sections = [
   { id: 'intro', label: 'Introduction', icon: BookOpen },
   { id: 'problematique', label: 'Problematique', icon: FileText },
   { id: 'solution', label: 'Solution', icon: Sparkles },
-  { id: 'equipe', label: 'Equipe', icon: Users },
-  { id: 'tech', label: 'Technologies', icon: Code },
+  { id: 'tech', label: 'Equipe', icon: Users },
   { id: 'avenir', label: 'Avenir', icon: Globe },
 ];
 
 export default function AboutPage() {
   const [activeSection, setActiveSection] = useState('intro');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    return savedTheme === 'dark' || (!savedTheme && prefersDark);
+  });
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -48,15 +54,6 @@ export default function AboutPage() {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
-    }
   }, []);
 
   return (
@@ -158,26 +155,36 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl flex items-center justify-center">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20">
                     <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Introduction</h2>
+                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Introduction</h2>
                 </div>
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800">
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <div className="flex items-start gap-4">
                     <div className="flex-1">
-                      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                        <span className="font-bold text-purple-600 dark:text-purple-400">XCCM (eXtensible Content Composition Module)</span> est un projet innovant développé dans le cadre du cours 
-                        <span className="font-semibold"> Interface Homme-Machine (GIF4087-1)</span> à l'
-                        <span className="font-bold">École Nationale Supérieure Polytechnique de Yaoundé (ENSPY)</span>.
+                      <p className="mb-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          XCCM (eXtensible Content Composition Module)
+                        </span>{' '}
+                        est un projet innovant développé dans le cadre du cours
+                        <span className="font-semibold"> Interface Homme-Machine (GIF4087-1)</span> à l&apos;
+                        <span className="font-semibold">
+                          École Nationale Supérieure Polytechnique de Yaoundé (ENSPY)
+                        </span>
+                        .
                       </p>
-                      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-                        Sous la supervision du <span className="font-bold">Pr. Bernabe BATCHAKUI</span>, cette plateforme vise à transformer la création de contenu pédagogique 
-                        à travers une approche modulaire basée sur des <span className="font-semibold text-purple-600 dark:text-purple-400">"granules de connaissance"</span>.
+                      <p className="text-base leading-relaxed text-slate-600 dark:text-slate-300">
+                        Sous la supervision du <span className="font-semibold">Pr. Bernabe BATCHAKUI</span>, cette plateforme vise à transformer la création de contenu pédagogique
+                        à travers une approche modulaire basée sur des{' '}
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          &quot;granules de connaissance&quot;
+                        </span>
+                        .
                       </p>
                     </div>
-                    <div className="hidden md:block w-48 h-48 relative rounded-xl overflow-hidden shadow-lg">
+                    <div className="relative hidden h-48 w-48 overflow-hidden rounded-xl shadow-sm md:block">
                       <Image
                         src={isDarkMode ? "/images/image3.png" : "/images/image1.png"}
                         alt="XCCM Platform"
@@ -254,50 +261,6 @@ export default function AboutPage() {
               </motion.div>
             </section>
 
-            <section id="equipe" className="scroll-mt-24">
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
-                  Equipe de developpement
-                </h2>
-                <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                  12 etudiants de 4e annee Genie Informatique (2025-2026)
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {[
-                    'AZANGUE LEONEL DELMAT',
-                    'BALA ANDEGUE FRANCOIS LIONNEL',
-                    'NKOLO ANTAGANA STACY',
-                    'NANA NDOUNDAM GABRIELLE',
-                    'NANKENG TSAMO PIERRE MARCELLE',
-                    'NCHANG ROY FRU',
-                    'NGUETCHUISSI TCHUGOUA BRUNEL LANDRY',
-                    'SOUNTSA DJIELE PIO VIANNEY',
-                    'OSSOMBE PIERRE RENE RAOUL',
-                    'NKAMLA CHEDJOU JOHAN',
-                    'NTIH TCHIO TAMOGOU DARYL',
-                    'TAGASTING FOSTING SAMUEL SEAN',
-                  ].map((name) => (
-                    <div
-                      key={name}
-                      className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                    >
-                      <p className="font-semibold text-slate-900 dark:text-white">
-                        {name.split(' ')[0]}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-300">
-                        {name.split(' ').slice(1).join(' ')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </section>
-
             <section id="tech" className="scroll-mt-24">
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -305,22 +268,22 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20">
+                    <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Équipe de Développement</h2>
+                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Équipe de Développement</h2>
                 </div>
 
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 mb-8">
-                  <div className="text-center mb-8">
-                    <p className="text-lg text-gray-700 dark:text-gray-300">
-                      <span className="font-bold text-purple-600 dark:text-purple-400">12 étudiants</span> de 4ᵉ année Génie Informatique (2025–2026) sous la supervision du{' '}
-                      <span className="font-bold">Pr. Bernabe BATCHAKUI</span>
+                <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <div className="mb-8 text-center">
+                    <p className="text-base text-slate-600 dark:text-slate-300">
+                      <span className="font-semibold text-purple-600 dark:text-purple-400">12 étudiants</span> de 4ᵉ année Génie Informatique (2025–2026) sous la supervision du{' '}
+                      <span className="font-semibold">Pr. Bernabe BATCHAKUI</span>
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                     {[
                       "AZANGUE LEONEL DELMAT", "BALA ANDEGUE FRANCOIS LIONNEL", "NKOLO ANTAGANA STACY",
                       "NANA NDOUNDAM GABRIELLE", "NANKENG TSAMO PIERRE MARCELLE", "NCHANG ROY FRU",
@@ -330,15 +293,15 @@ export default function AboutPage() {
                     ].map((name, i) => (
                       <div
                         key={i}
-                        className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl text-center border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center transition-colors hover:border-purple-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-purple-700"
                       >
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-sm">
+                        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-blue-400 text-sm font-semibold text-white">
                           {name.split(' ')[0][0]}
                         </div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <p className="truncate text-sm font-medium text-slate-900 dark:text-white">
                           {name.split(' ')[0]}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                           {name.split(' ').slice(1).join(' ')}
                         </p>
                       </div>

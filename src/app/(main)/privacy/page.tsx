@@ -1,18 +1,16 @@
 'use client';
 
-import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { useState } from 'react';
 import {
-  Shield,
-  Lock,
-  Mail,
-  Download,
-  ExternalLink,
   Check,
+  ChevronRight,
+  Clock,
   Copy,
+  Download,
   Eye,
   EyeOff,
+  ExternalLink,
   FileText,
   Lock,
   Mail,
@@ -206,7 +204,7 @@ export default function PrivacyPolicyPage() {
                         {cat.items.map((item) => (
                           <li key={item} className="flex items-center gap-2">
                             <span className="h-1 w-1 rounded-full bg-purple-600 dark:bg-purple-400" />
-                            {item}yep 
+                            {item}
                           </li>
                         ))}
                       </ul>

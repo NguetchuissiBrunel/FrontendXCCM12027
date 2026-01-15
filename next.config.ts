@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
+  },
 
   // 4. For the "Failed to fetch Inter" error:
   // This is a network issue, not just a config issue. 

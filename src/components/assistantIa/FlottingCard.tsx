@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, Loader2, Maximize2, Minimize2 } from 'lucide-react';
-import { ChatService } from '@/lib2/services/ChatService'; 
+import { MessageCircle, X, Send, Bot, Loader2, Maximize2, Minimize2, Square } from 'lucide-react';
+import { ChatService } from '@/lib2/services/ChatService';
+import { CancelError } from '@/lib2/core/CancelablePromise';
 import { motion } from 'framer-motion'; 
 
 interface Message {
@@ -80,6 +81,7 @@ export default function AIChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const requestRef = useRef<any>(null);
 
   useEffect(() => { 
     if (isOpen) {
@@ -137,6 +139,12 @@ export default function AIChatWidget() {
     return () => window.removeEventListener('keydown', onKey);
   }, [isFullscreen]);
 
+  const handleStop = () => {
+    if (requestRef.current) {
+      requestRef.current.cancel();
+    }
+  };
+
   const handleSend = async () => { 
     const trimmedInput = input.trim();
     if (!trimmedInput || isLoading) return;
@@ -156,7 +164,7 @@ export default function AIChatWidget() {
 
     try {
       // Appeler l'API via le service généré
-      const response = await ChatService.postChat({
+      const request = ChatService.postChat({
         question: trimmedInput,
         user_role: userRole,
         discipline: selectedDiscipline as any,
@@ -165,6 +173,8 @@ export default function AIChatWidget() {
         // course_context: "Votre contexte de cours ici",
         // difficulty_level: "intermediate",
       });
+      requestRef.current = request;
+      const response = await request;
 
       // Remplacer le message de chargement par la réponse
       setMessages(prev => {
@@ -199,16 +209,23 @@ export default function AIChatWidget() {
     } catch (error) {
       console.error('Erreur API:', error);
       
-      // Remplacer le message de chargement par un message d'erreur
       setMessages(prev => {
         const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'assistant',
-          content: 'Désolé, une erreur est survenue lors de la communication avec l\'assistant. Veuillez réessayer.',
-        };
+        if (error instanceof CancelError) {
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: 'La réflexion a été arrêtée par l\'utilisateur.',
+          };
+        } else {
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: 'Désolé, une erreur est survenue lors de la communication avec l\'assistant. Veuillez réessayer.',
+          };
+        }
         return newMessages;
       });
     } finally {
+      requestRef.current = null;
       setIsLoading(false);
     }
   };
@@ -400,17 +417,23 @@ export default function AIChatWidget() {
                 disabled={isLoading}
                 className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none text-sm dark:text-white disabled:opacity-50"
               />
-              <button 
-                onClick={handleSend} 
-                disabled={isLoading || !input.trim()}
-                className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors flex items-center justify-center"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
+              {isLoading ? (
+                <button 
+                  onClick={handleStop}
+                  className="bg-red-500 text-white p-3 rounded-2xl shadow-lg active:scale-95 hover:bg-red-600 transition-colors flex items-center justify-center"
+                  title="Arrêter la réflexion"
+                >
+                  <Square size={20} fill="currentColor" />
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSend} 
+                  disabled={!input.trim()}
+                  className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors flex items-center justify-center"
+                >
                   <Send size={20} />
-                )}
-              </button>
+                </button>
+              )}
             </div>
             
             {/* Suggestions rapides */}

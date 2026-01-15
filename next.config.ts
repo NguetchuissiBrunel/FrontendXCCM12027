@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // 1. optimizeFonts is no longer a top-level key in recent versions.
   // Next.js handles font optimization automatically via next/font.
   // If you must disable it, it usually lives under 'experimental' or is managed in Layout.
-  
+
   // 2. Handling build errors
   typescript: {
     ignoreBuildErrors: true,
@@ -15,6 +15,17 @@ const nextConfig: NextConfig = {
   // Remove 'eslint' key from next.config.js per Next.js 13+ recommendations.
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
+  },
+
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
   },
 
   // 4. For the "Failed to fetch Inter" error:

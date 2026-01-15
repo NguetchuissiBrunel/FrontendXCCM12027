@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import './globals.css';
 import { Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
+import FlottingCard from '@/components/assistantIa/FlottingCard';
 
 export const metadata: Metadata = {
   title: 'XCCM1 - Plateforme de création de contenu pédagogique',
@@ -37,6 +38,7 @@ export default function RootLayout({
               <AuthProvider>
                 {children}
               </AuthProvider>
+               <FlottingCard />
             </LoadingProvider>
             <Toaster position="top-right" />
           </main>

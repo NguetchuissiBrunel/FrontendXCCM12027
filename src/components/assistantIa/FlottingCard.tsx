@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import { ChatService } from '@/lib2/services/ChatService'; 
 import { motion } from 'framer-motion'; 
 
@@ -78,6 +78,8 @@ export default function AIChatWidget() {
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => { 
     if (isOpen) {
@@ -88,7 +90,7 @@ export default function AIChatWidget() {
   }, [messages, isOpen]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMobile) return;
+    if (isMobile || isFullscreen) return;
     const target = e.target as HTMLElement;
     if (target.closest('.chat-header')) {
       setIsDragging(true);
@@ -112,7 +114,30 @@ export default function AIChatWidget() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isDragging, handleMouseMove]);
 
-  const handleSend = async () => {
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      prevPositionRef.current = position;
+      setIsFullscreen(true);
+      setIsDragging(false);
+    } else {
+      if (prevPositionRef.current) {
+        setPosition(prevPositionRef.current);
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isFullscreen]);
+
+  const handleSend = async () => { 
     const trimmedInput = input.trim();
     if (!trimmedInput || isLoading) return;
     
@@ -232,22 +257,24 @@ export default function AIChatWidget() {
       {isOpen && (
         <div
           className={`pointer-events-auto fixed bg-white dark:bg-gray-900 shadow-2xl flex flex-col border border-purple-200 dark:border-gray-700 transition-all duration-200
-            ${isMobile 
-              ? 'inset-x-2 bottom-20 top-16 rounded-3xl w-auto h-auto' 
-              : 'rounded-2xl w-[400px] h-[550px]'
+            ${isFullscreen
+              ? 'inset-0 rounded-none w-full h-full'
+              : isMobile 
+                ? 'inset-x-2 bottom-20 top-16 rounded-3xl w-auto h-auto' 
+                : 'rounded-2xl w-[400px] h-[550px]'
             }
           `}
-          style={!isMobile ? { 
+          style={!isMobile && !isFullscreen ? { 
             left: `${position.x}px`, 
             top: `${position.y}px`, 
             cursor: isDragging ? 'grabbing' : 'default',
             touchAction: 'none' 
-          } : {}}
+          } : { touchAction: 'none' }}
           onMouseDown={handleMouseDown}
         >
           {/* Header */}
           <div className={`chat-header bg-gradient-to-r from-purple-600 to-purple-500 text-white p-4 flex items-center justify-between select-none
-            ${isMobile ? 'rounded-t-3xl' : 'rounded-t-2xl cursor-grab active:cursor-grabbing'}
+            ${isMobile ? 'rounded-t-3xl' : (isFullscreen ? 'rounded-t-none' : 'rounded-t-2xl cursor-grab active:cursor-grabbing')}
           `}>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -263,12 +290,22 @@ export default function AIChatWidget() {
                 </p>
               </div>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)} 
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center">
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors mr-2"
+                aria-pressed={isFullscreen}
+                title={isFullscreen ? 'Réduire' : 'Agrandir'}
+              >
+                {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              </button>
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Sélecteur de discipline (optionnel) */}

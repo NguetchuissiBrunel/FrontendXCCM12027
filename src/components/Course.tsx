@@ -499,7 +499,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                   className="bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center"
                   type="button"
                 >
-                  <Award className="h-5 w-5 mr-2" />
+                  <Award className="h-7 w-7 mr-2" />
                   Obtenir votre certification
                 </button>
                 <button

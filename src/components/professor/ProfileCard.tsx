@@ -1,7 +1,7 @@
 // components/professor/ProfileCard.tsx
 'use client';
 import { useState } from 'react';
-import { Users, Award, Clock } from 'lucide-react';
+import { Users, Award, Clock, Pencil, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
 
@@ -61,7 +61,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           photoUrl: editedProfessor.photoUrl || defaultAvatar,
         };
 
-        console.log('🚀 [ProfileCard] Envoi de la mise à jour au backend...', {
+        console.log('[ProfileCard] Envoi de la mise à jour au backend...', {
           userId: editedProfessor.id,
           payload: updatePayload
         });
@@ -71,10 +71,10 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
           updatePayload
         );
 
-        console.log('📥 [ProfileCard] Réponse du backend reçue:', response);
+        console.log('[ProfileCard] Réponse du backend reçue:', response);
 
         if (!response.success) {
-          console.error('❌ [ProfileCard] Échec de la mise à jour du profil:', response);
+          console.error('[ProfileCard] Échec de la mise à jour du profil:', response);
           throw new Error('Failed to update profile');
         }
 
@@ -120,7 +120,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
         photoUrl: localUrl
       }));
 
-      console.log('📸 [ProfileCard] Photo sélectionnée, preview locale activée');
+      console.log('[ProfileCard] Photo sélectionnée, preview locale activée');
 
       // Import dynamically
       const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
@@ -128,17 +128,17 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
       // Validate file
       const validation = CloudinaryService.validateFile(file);
       if (!validation.valid) {
-        console.warn('⚠️ [ProfileCard] Validation de fichier échouée:', validation.error);
+        console.warn('[ProfileCard] Validation de fichier échouée:', validation.error);
         toast.error(validation.error || 'Fichier invalide');
         return;
       }
 
       // 2. Upload to Cloudinary in the background
-      console.log('⏳ [ProfileCard] Lancement de l\'upload Cloudinary...');
+      console.log('[ProfileCard] Lancement de l\'upload Cloudinary...');
       const url = await CloudinaryService.uploadImage(file, { folder: 'profiles' });
 
       // 3. Update with the real Cloudinary URL
-      console.log('✅ [ProfileCard] Upload terminé, mise à jour de l\'URL d\'édition:', url);
+      console.log('[ProfileCard] Upload terminé, mise à jour de l\'URL d\'édition:', url);
       setEditedProfessor(prev => ({
         ...prev,
         photoUrl: url
@@ -175,9 +175,9 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
         {!isEditing ? (
           <button
             onClick={handleEdit}
-            className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
+            className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg flex items-center gap-2"
           >
-            ✏️ Modifier
+            <Pencil size={20} /> Modifier
           </button>
         ) : (
           <div className="flex gap-3">
@@ -192,7 +192,13 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
               disabled={isSaving}
               className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
             >
-              {isSaving ? 'Enregistrement...' : '💾 Enregistrer'}
+              {isSaving ? (
+                'Enregistrement...'
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Save size={20} /> Enregistrer
+                </span>
+              )}
             </button>
           </div>
         )}
@@ -235,8 +241,6 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
             </div>
 
             <div className="text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400">No. Enseignant</p>
-              <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.id}</p>
 
               {/* Editable Name */}
               {isEditing ? (

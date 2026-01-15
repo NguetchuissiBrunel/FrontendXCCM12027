@@ -43,6 +43,7 @@ export default function AIChatWidget() {
       setIsMobile(mobile);
       if (!mobile) {
         setPosition({ x: window.innerWidth - 380, y: window.innerHeight - 520 });
+        setButtonPosition({ x: window.innerWidth - 70, y: window.innerHeight - 70 });
       }
     };
 
@@ -77,7 +78,10 @@ export default function AIChatWidget() {
 
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
+  const [isButtonDragging, setIsButtonDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const buttonDragOffset = useRef({ x: 0, y: 0 });
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
@@ -100,21 +104,35 @@ export default function AIChatWidget() {
     }
   };
 
+  const handleButtonMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    setIsButtonDragging(true);
+    buttonDragOffset.current = { x: e.clientX - buttonPosition.x, y: e.clientY - buttonPosition.y };
+  };
+
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging && !isMobile) {
       const newX = Math.max(10, Math.min(e.clientX - dragOffset.current.x, window.innerWidth - 370));
       const newY = Math.max(10, Math.min(e.clientY - dragOffset.current.y, window.innerHeight - 490));
       setPosition({ x: newX, y: newY });
     }
-  }, [isDragging, isMobile]);
+    if (isButtonDragging && !isMobile) {
+      const newX = Math.max(10, Math.min(e.clientX - buttonDragOffset.current.x, window.innerWidth - 70));
+      const newY = Math.max(10, Math.min(e.clientY - buttonDragOffset.current.y, window.innerHeight - 70));
+      setButtonPosition({ x: newX, y: newY });
+    }
+  }, [isDragging, isButtonDragging, isMobile]);
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging || isButtonDragging) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', () => setIsDragging(false));
+      window.addEventListener('mouseup', () => {
+        setIsDragging(false);
+        setIsButtonDragging(false);
+      });
     }
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [isDragging, handleMouseMove]);
+  }, [isDragging, isButtonDragging, handleMouseMove]);
 
   const toggleFullscreen = () => {
     if (!isFullscreen) {
@@ -253,9 +271,9 @@ export default function AIChatWidget() {
 
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
-      {/* Bouton - Toujours visible en bas à droite */}
-      
+      {/* Bouton flottant draggable */}
       <motion.button
+        onMouseDown={handleButtonMouseDown}
         onClick={() => setIsOpen(!isOpen)}
         animate={{
           y: [0, -10, 0], 
@@ -267,7 +285,14 @@ export default function AIChatWidget() {
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="pointer-events-auto fixed bottom-5 right-5  w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white dark:border-gray-800 hover:bg-purple-700"
+        className="pointer-events-auto fixed w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white dark:border-gray-800 hover:bg-purple-700 cursor-grab active:cursor-grabbing"
+        style={{
+          left: `${buttonPosition.x}px`,
+          top: `${buttonPosition.y}px`,
+          right: 'auto',
+          bottom: 'auto',
+          cursor: isButtonDragging ? 'grabbing' : 'grab'
+        }}
       >
         {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
       </motion.button>

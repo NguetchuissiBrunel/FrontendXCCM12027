@@ -1,7 +1,8 @@
 // components/professor/ProfileCard.tsx
 'use client';
 import { useState } from 'react';
-import { Users, Award, Clock, Pencil, Save } from 'lucide-react';
+import { FaSave, FaPen} from 'react-icons/fa';
+import { Users, Award, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
 
@@ -177,7 +178,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
             onClick={handleEdit}
             className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg flex items-center gap-2"
           >
-            <Pencil size={20} /> Modifier
+            <FaPen size={20} /> Modifier
           </button>
         ) : (
           <div className="flex gap-3">
@@ -196,7 +197,7 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
                 'Enregistrement...'
               ) : (
                 <span className="flex items-center gap-2">
-                  <Save size={20} /> Enregistrer
+                  <FaSave size={20} /> Enregistrer
                 </span>
               )}
             </button>

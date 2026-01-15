@@ -225,9 +225,9 @@ export default function AIChatWidget() {
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="pointer-events-auto fixed bottom-5 right-5  w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white dark:border-gray-800 hover:bg-purple-700"
+        className="pointer-events-auto fixed bottom-5 left-5  w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white dark:border-gray-800 hover:bg-purple-700"
       >
-        {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
+        {isOpen ? <X size={28} /> : <Bot size={28} />}
       </motion.button>
       {isOpen && (
         <div

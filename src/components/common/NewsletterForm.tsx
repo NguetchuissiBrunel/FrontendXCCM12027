@@ -16,7 +16,6 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setMessage({ type: 'error', text: 'Veuillez entrer une adresse email valide' });
       return;
@@ -50,7 +49,6 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
       } else if (error.status === 429) {
         errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
       }
-
       setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);

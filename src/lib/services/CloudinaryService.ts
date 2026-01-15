@@ -75,7 +75,7 @@ export async function uploadImageToCloudinary(
 
     if (!cloudName || !uploadPreset) {
         throw new Error(
-            'Configuration Cloudinary manquante. Veuillez configurer CLOUDINARY_CLOUD_NAME et CLOUDINARY_UPLOAD_PRESET dans vos variables d\'environnement.'
+            'Configuration Cloudinary manquante. Veuillez configurer NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME et NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET dans vos variables d\'environnement.'
         );
     }
 

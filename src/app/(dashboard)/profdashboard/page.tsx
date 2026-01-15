@@ -144,7 +144,7 @@ export default function ProfessorDashboard() {
     : user.email.split('@')[0];
 
   const professor = {
-    id: user.email,
+    id: user.id || user.email,
     name: displayName,
     city: user.city || 'Non spécifiée',
     university: user.university || 'Non spécifiée',
@@ -153,7 +153,7 @@ export default function ProfessorDashboard() {
     totalStudents: compositions.reduce((acc, c) => acc + c.participants, 0),
     participationRate: 92,
     publications: compositions.length,
-    photoUrl: '/images/prof.jpeg',
+    photoUrl: user.photoUrl || '/images/prof.jpeg',
     performanceDistribution: [
       { range: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
       { range: 'Bien', value: 30, color: 'bg-purple-400' },

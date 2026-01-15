@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Users, Award, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { OpenAPI } from '@/lib/core/OpenAPI';
+import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
 
 interface Professor {
   id: string;
@@ -50,27 +50,39 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
       if (currentUser) {
         const userData = JSON.parse(currentUser);
 
-        const updatedUser = {
-          ...userData,
+        // Clean update body: only send allowed fields to the API
+        const updatePayload = {
           firstName: editedProfessor.name.split(' ')[0],
           lastName: editedProfessor.name.split(' ').slice(1).join(' '),
           city: editedProfessor.city,
           university: editedProfessor.university,
           grade: editedProfessor.grade,
           certification: editedProfessor.certification,
-          photoUrl: editedProfessor.photoUrl ? editedProfessor.photoUrl : defaultAvatar,
+          photoUrl: editedProfessor.photoUrl || defaultAvatar,
         };
 
-        const response = await fetch(`${OpenAPI.BASE}/users/${editedProfessor.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updatedUser),
+        console.log('🚀 [ProfileCard] Envoi de la mise à jour au backend...', {
+          userId: editedProfessor.id,
+          payload: updatePayload
         });
 
-        if (!response.ok) throw new Error('Failed to update profile');
+        const response = await GestionDesUtilisateursService.updateUser1(
+          editedProfessor.id,
+          updatePayload
+        );
 
+        console.log('📥 [ProfileCard] Réponse du backend reçue:', response);
+
+        if (!response.success) {
+          console.error('❌ [ProfileCard] Échec de la mise à jour du profil:', response);
+          throw new Error('Failed to update profile');
+        }
+
+        // Update local session with all data
+        const updatedUser = {
+          ...userData,
+          ...updatePayload,
+        };
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
 
         setIsEditing(false);
@@ -101,25 +113,38 @@ export default function ProfileCard({ professor, onUpdate }: ProfileCardProps) {
     if (!file) return;
 
     try {
+      // 1. Show local preview immediately
+      const localUrl = URL.createObjectURL(file);
+      setEditedProfessor(prev => ({
+        ...prev,
+        photoUrl: localUrl
+      }));
+
+      console.log('📸 [ProfileCard] Photo sélectionnée, preview locale activée');
+
       // Import dynamically
       const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
 
       // Validate file
       const validation = CloudinaryService.validateFile(file);
       if (!validation.valid) {
+        console.warn('⚠️ [ProfileCard] Validation de fichier échouée:', validation.error);
         toast.error(validation.error || 'Fichier invalide');
         return;
       }
 
-      // Upload to Cloudinary
+      // 2. Upload to Cloudinary in the background
+      console.log('⏳ [ProfileCard] Lancement de l\'upload Cloudinary...');
       const url = await CloudinaryService.uploadImage(file, { folder: 'profiles' });
 
-      setEditedProfessor({
-        ...editedProfessor,
+      // 3. Update with the real Cloudinary URL
+      console.log('✅ [ProfileCard] Upload terminé, mise à jour de l\'URL d\'édition:', url);
+      setEditedProfessor(prev => ({
+        ...prev,
         photoUrl: url
-      });
+      }));
 
-      toast.success('Photo mise à jour avec succès !');
+      toast.success('Photo téléchargée avec succès !');
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
       toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');

@@ -10,7 +10,8 @@ import { CourseResponse } from '@/lib/models/CourseResponse';
 import CreateCourseModal from '@/components/create-course/page';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { toast } from 'react-hot-toast';
-
+import { StatsControllerService } from '@/lib/services/StatsControllerService';
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface User {
   id: string;
@@ -36,18 +37,66 @@ interface Teacher {
   university?: string;
 }
 
-import { useLoading } from '@/contexts/LoadingContext';
+interface CourseStats {
+  courseId: number;
+  courseTitle: string;
+  courseCategory: string;
+  totalEnrolled: number;
+  activeStudents: number;
+  participationRate: number;
+  averageProgress: number;
+  completedStudents: number;
+  totalExercises: number;
+  exerciseStats: Array<{
+    exerciseId: number;
+    title: string;
+    submissionCount: number;
+    averageScore: number;
+    minScore: number;
+    maxScore: number;
+    maxPossibleScore: number;
+  }>;
+  performanceDistribution: {
+    excellent: number;
+    good: number;
+    average: number;
+    poor: number;
+    total: number;
+  };
+}
+
+// Fonction utilitaire pour parser l'ID du cours
+function parseCourseId(id: number | string | undefined): number {
+  if (typeof id === 'number') {
+    return id;
+  }
+  if (typeof id === 'string') {
+    const parsed = parseInt(id, 10);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
 
 export default function ProfessorDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [compositions, setCompositions] = useState<Composition[]>([]);
+  const [coursesStats, setCoursesStats] = useState<CourseStats[]>([]);
+  const [overallStats, setOverallStats] = useState({
+    totalStudents: 0,
+    activeStudents: 0,
+    participationRate: 0,
+    publications: 0,
+    totalExercises: 0,
+    averageProgress: 0,
+    completedStudents: 0,
+    pendingSubmissions: 0
+  });
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
-
 
   useEffect(() => {
     if (authLoading || loading) {
@@ -56,6 +105,197 @@ export default function ProfessorDashboard() {
       stopLoading();
     }
   }, [authLoading, loading, startLoading, stopLoading]);
+
+  // Fonction pour calculer les statistiques globales
+  const calculateOverallStats = (stats: CourseStats[]) => {
+    if (stats.length === 0) return {
+      totalStudents: 0,
+      activeStudents: 0,
+      participationRate: 0,
+      publications: 0,
+      totalExercises: 0,
+      averageProgress: 0,
+      completedStudents: 0,
+      pendingSubmissions: 0
+    };
+
+    const totalStudents = stats.reduce((acc, stat) => acc + stat.totalEnrolled, 0);
+    const activeStudents = stats.reduce((acc, stat) => acc + stat.activeStudents, 0);
+    const totalExercises = stats.reduce((acc, stat) => acc + stat.totalExercises, 0);
+    const completedStudents = stats.reduce((acc, stat) => acc + stat.completedStudents, 0);
+    
+    const participationRate = stats.length > 0 
+      ? stats.reduce((acc, stat) => acc + stat.participationRate, 0) / stats.length
+      : 0;
+    
+    const averageProgress = stats.length > 0
+      ? stats.reduce((acc, stat) => acc + stat.averageProgress, 0) / stats.length
+      : 0;
+
+    return {
+      totalStudents,
+      activeStudents,
+      participationRate: Math.round(participationRate),
+      publications: stats.length,
+      totalExercises,
+      averageProgress: Math.round(averageProgress),
+      completedStudents,
+      pendingSubmissions: 0
+    };
+  };
+
+  // Fonction pour formater la distribution des performances
+  const formatPerformanceDistribution = (stats: CourseStats[]) => {
+    if (stats.length === 0) {
+      return [
+        { range: 'Excellent', value: 0, color: 'bg-purple-600 dark:bg-purple-500' },
+        { range: 'Bien', value: 0, color: 'bg-purple-400' },
+        { range: 'Passable', value: 0, color: 'bg-purple-300 dark:bg-purple-400' },
+        { range: 'Faible', value: 0, color: 'bg-purple-200 dark:bg-purple-300' },
+      ];
+    }
+
+    const totalDistribution = {
+      excellent: 0,
+      good: 0,
+      average: 0,
+      poor: 0,
+      total: 0
+    };
+
+    stats.forEach(stat => {
+      totalDistribution.excellent += stat.performanceDistribution.excellent;
+      totalDistribution.good += stat.performanceDistribution.good;
+      totalDistribution.average += stat.performanceDistribution.average;
+      totalDistribution.poor += stat.performanceDistribution.poor;
+      totalDistribution.total += stat.performanceDistribution.total;
+    });
+
+    const totalStudents = totalDistribution.total || 1;
+
+    return [
+      { 
+        range: 'Excellent', 
+        value: Math.round((totalDistribution.excellent / totalStudents) * 100) || 0, 
+        color: 'bg-purple-600 dark:bg-purple-500' 
+      },
+      { 
+        range: 'Bien', 
+        value: Math.round((totalDistribution.good / totalStudents) * 100) || 0, 
+        color: 'bg-purple-400' 
+      },
+      { 
+        range: 'Passable', 
+        value: Math.round((totalDistribution.average / totalStudents) * 100) || 0, 
+        color: 'bg-purple-300 dark:bg-purple-400' 
+      },
+      { 
+        range: 'Faible', 
+        value: Math.round((totalDistribution.poor / totalStudents) * 100) || 0, 
+        color: 'bg-purple-200 dark:bg-purple-300' 
+      },
+    ];
+  };
+
+  const loadDashboardData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      console.log('Chargement des données pour l\'utilisateur:', user.id);
+
+      // 1. Fetch courses (compositions) pour cet enseignant
+      const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
+      console.log('Cours récupérés:', coursesResponse.data);
+      
+      if (coursesResponse.data) {
+        const courses = coursesResponse.data as CourseResponse[];
+        
+        // 2. Fetch les statistiques pour tous les cours
+        const statsResponse = await StatsControllerService.getTeacherCoursesStats();
+        console.log('Statistiques récupérées:', statsResponse.data);
+        
+        if (statsResponse.data) {
+          const coursesStatsData = statsResponse.data;
+          setCoursesStats(coursesStatsData);
+
+          // Calculer les statistiques globales
+          const overall = calculateOverallStats(coursesStatsData);
+          console.log('Statistiques globales calculées:', overall);
+          setOverallStats(overall);
+
+          // Mapper les compositions avec les données réelles
+          const mappedCompositions: Composition[] = courses.map((course: CourseResponse) => {
+            const courseIdNum = parseCourseId(course.id);
+            
+            const courseStat = coursesStatsData.find(s => s.courseId === courseIdNum);
+            
+            if (!courseStat) {
+              console.log(`Pas de stats pour le cours ${course.id} (${course.title})`);
+              return {
+                id: course.id?.toString() || Math.random().toString(),
+                title: course.title || 'Sans titre',
+                class: course.category || 'Non spécifiée',
+                participants: 0,
+                likes: 0,
+                downloads: 0,
+                status: course.status || 'DRAFT'
+              };
+            }
+            
+            let totalLikes = 0;
+            let totalDownloads = 0;
+            
+            if (courseStat.exerciseStats) {
+              totalLikes = courseStat.exerciseStats.reduce((sum, ex) => sum + (ex.submissionCount || 0), 0);
+              totalDownloads = courseStat.exerciseStats.reduce((sum, ex) => sum + (ex.maxScore || 0), 0);
+            }
+            
+            return {
+              id: course.id?.toString() || Math.random().toString(),
+              title: course.title || 'Sans titre',
+              class: course.category || 'Non spécifiée',
+              participants: courseStat.totalEnrolled || 0,
+              likes: totalLikes,
+              downloads: totalDownloads,
+              status: course.status || 'DRAFT'
+            };
+          });
+          
+          console.log('Compositions mappées:', mappedCompositions);
+          setCompositions(mappedCompositions);
+        } else {
+          console.log('Aucune statistique disponible');
+          const mappedCompositions: Composition[] = courses.map((course: CourseResponse) => ({
+            id: course.id?.toString() || Math.random().toString(),
+            title: course.title || 'Sans titre',
+            class: course.category || 'Non spécifiée',
+            participants: 0,
+            likes: 0,
+            downloads: 0,
+            status: course.status || 'DRAFT'
+          }));
+          setCompositions(mappedCompositions);
+        }
+      } else {
+        console.log('Aucun cours trouvé pour cet enseignant');
+        setCompositions([]);
+      }
+
+      // 3. Fetch other teachers (optionnel)
+      setTeachers([]);
+
+      // 4. Fetch pending inscriptions count
+      const pendingData = await EnrollmentService.getPendingEnrollments();
+      setPendingInscriptionsCount(pendingData.length);
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des données du tableau de bord:', error);
+      toast.error('Erreur de chargement des données');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -67,42 +307,6 @@ export default function ProfessorDashboard() {
       router.push('/etudashboard');
       return;
     }
-
-    const loadDashboardData = async () => {
-      if (!user) return;
-
-      try {
-        setLoading(true);
-
-        // 1. Fetch courses (compositions) for this teacher
-        const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
-        if (coursesResponse.data) {
-          const mappedCompositions: Composition[] = coursesResponse.data.map((c: CourseResponse) => ({
-            id: c.id?.toString() || Math.random().toString(),
-            title: c.title || 'Sans titre',
-            class: c.category || 'Non spécifiée',
-            participants: Math.floor(Math.random() * 50), // Mock data as backend might not have this yet
-            likes: 0,
-            downloads: 0,
-            status: c.status as any
-          }));
-          setCompositions(mappedCompositions);
-        }
-
-        // 2. Fetch other teachers (optional feature, if API exists)
-        setTeachers([]);
-
-        // 3. Fetch pending inscriptions count
-        const pendingData = await EnrollmentService.getPendingEnrollments();
-        setPendingInscriptionsCount(pendingData.length);
-
-
-      } catch (error) {
-        console.error('Erreur lors du chargement des données du tableau de bord:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
     if (user) {
       loadDashboardData();
@@ -150,16 +354,16 @@ export default function ProfessorDashboard() {
     university: user.university || 'Non spécifiée',
     grade: user.grade || 'Enseignant',
     certification: user.certification || 'Enseignement',
-    totalStudents: compositions.reduce((acc, c) => acc + c.participants, 0),
-    participationRate: 92,
-    publications: compositions.length,
+    totalStudents: overallStats.totalStudents,
+    activeStudents: overallStats.activeStudents,
+    participationRate: overallStats.participationRate,
+    publications: overallStats.publications,
     photoUrl: user.photoUrl || '/images/prof.jpeg',
-    performanceDistribution: [
-      { range: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
-      { range: 'Bien', value: 30, color: 'bg-purple-400' },
-      { range: 'Passable', value: 20, color: 'bg-purple-300 dark:bg-purple-400' },
-      { range: 'Faible', value: 15, color: 'bg-purple-200 dark:bg-purple-300' },
-    ]
+    performanceDistribution: formatPerformanceDistribution(coursesStats),
+    averageProgress: overallStats.averageProgress,
+    totalExercises: overallStats.totalExercises,
+    completedStudents: overallStats.completedStudents,
+    pendingSubmissions: overallStats.pendingSubmissions
   };
 
   const teachersList = teachers.map(t => ({
@@ -174,14 +378,12 @@ export default function ProfessorDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-      {/* Modale de création de cours */}
       <CreateCourseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateCourseSubmit}
       />
 
-      {/* Top Section with Welcome */}
       <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="max-w-3xl">
           <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-400 mb-3">
@@ -208,18 +410,13 @@ export default function ProfessorDashboard() {
                 </span>
               )}
             </button>
-
-
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 pb-8 space-y-8">
-        {/* Profile Card */}
-        <ProfileCard professor={professor} />
+        <ProfileCard professor={professor} coursesStats={coursesStats} />
 
-        {/* Compositions Card */}
         {compositions.length > 0 ? (
           <CompositionsCard
             compositions={compositions}
@@ -247,7 +444,6 @@ export default function ProfessorDashboard() {
               Vous n'avez pas encore créé de cours.
             </p>
           </div>
-
         )}
       </div>
     </div>

@@ -117,8 +117,8 @@ export interface CreateExerciseRequest {
     options?: string[];
     correctAnswer?: string;
   }>;
-  status?: 'DRAFT' | 'PUBLISHED';
-}
+  status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED'; // Ajoutez 'CLOSED' ici
+  }
 
 export interface UpdateExerciseRequest {
   title?: string;

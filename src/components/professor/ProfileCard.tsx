@@ -1,7 +1,8 @@
 // components/professor/ProfileCard.tsx
 'use client';
 import { useState } from 'react';
-import { Users, Award, Clock, TrendingUp, BarChart, Activity } from 'lucide-react';
+import { Users, Award, Clock, Activity, BarChart, TrendingUp } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { OpenAPI } from '@/lib/core/OpenAPI';
 
 interface Professor {
@@ -24,39 +25,24 @@ interface Professor {
   averageProgress: number;
   totalExercises: number;
   completedStudents: number;
-  coursesStats?: Array<{
-    courseId: number;
-    courseTitle: string;
-    courseCategory: string;
-    totalEnrolled: number;
-    activeStudents: number;
-    participationRate: number;
-    averageProgress: number;
-    completedStudents: number;
-    totalExercises: number;
-    performanceDistribution: {
-      excellent: number;
-      good: number;
-      average: number;
-      poor: number;
-      total: number;
-    };
-  }>;
+  pendingSubmissions?: number;
+}
+
+interface CourseStat {
+  courseId: number;
+  courseTitle: string;
+  courseCategory: string;
+  totalEnrolled: number;
+  activeStudents: number;
+  participationRate: number;
+  averageProgress: number;
+  completedStudents: number;
+  totalExercises: number;
 }
 
 interface ProfileCardProps {
   professor: Professor;
-  coursesStats?: Array<{
-    courseId: number;
-    courseTitle: string;
-    courseCategory: string;
-    totalEnrolled: number;
-    activeStudents: number;
-    participationRate: number;
-    averageProgress: number;
-    completedStudents: number;
-    totalExercises: number;
-  }>;
+  coursesStats?: CourseStat[];
   onUpdate?: (updatedProfessor: Professor) => void;
 }
 
@@ -94,13 +80,15 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
           photoUrl: editedProfessor.photoUrl ? editedProfessor.photoUrl : defaultAvatar,
         };
 
-        await fetch(`${OpenAPI.BASE}/users/${editedProfessor.id}`, {
+        const response = await fetch(`${OpenAPI.BASE}/users/${editedProfessor.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(updatedUser),
         });
+
+        if (!response.ok) throw new Error('Failed to update profile');
 
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
 
@@ -110,11 +98,11 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
           onUpdate(editedProfessor);
         }
 
-        alert('Profil mis à jour avec succès !');
+        toast.success('Profil mis à jour avec succès !');
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du profil');
+      toast.error('Erreur lors de la sauvegarde du profil');
     } finally {
       setIsSaving(false);
     }
@@ -127,28 +115,33 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
     });
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide');
+    if (!file) return;
+
+    try {
+      // Import dynamically
+      const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+
+      // Validate file
+      const validation = CloudinaryService.validateFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error || 'Fichier invalide');
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        alert("L'image ne doit pas dépasser 5MB");
-        return;
-      }
+      // Upload to Cloudinary
+      const url = await CloudinaryService.uploadImage(file, { folder: 'profiles' });
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setEditedProfessor({
-          ...editedProfessor,
-          photoUrl: base64String
-        });
-      };
-      reader.readAsDataURL(file);
+      setEditedProfessor({
+        ...editedProfessor,
+        photoUrl: url
+      });
+
+      toast.success('Photo mise à jour avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');
     }
   };
 

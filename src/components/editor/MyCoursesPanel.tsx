@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaTrash, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
 import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
+import ConfirmModal from '../ui/ConfirmModal';
+import { toast } from 'react-hot-toast';
 
 interface MyCoursesPanelProps {
   onClose: () => void;
@@ -14,6 +16,15 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: number | null }>({
+    isOpen: false,
+    id: null
+  });
+  const [statusConfirm, setStatusConfirm] = useState<{ isOpen: boolean; id: number | null; status: string | undefined }>({
+    isOpen: false,
+    id: null,
+    status: undefined
+  });
 
   const fetchCourses = async () => {
     if (!user) return;
@@ -36,14 +47,13 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
   }, [user]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Voulez-vous vraiment supprimer ce cours ?')) return;
-
     try {
       await CourseControllerService.deleteCourse(id);
       setCourses(prev => prev.filter(c => c.id !== id));
+      toast.success("Cours supprimé avec succès.");
     } catch (error) {
       console.error("Erreur lors de la suppression du cours:", error);
-      alert("Impossible de supprimer le cours sur le serveur.");
+      toast.error("Impossible de supprimer le cours.");
     }
   };
 
@@ -54,9 +64,10 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
       setCourses(prev => prev.map(c =>
         c.id === id ? { ...c, status: newStatus as any } : c
       ));
+      toast.success(newStatus === 'PUBLISHED' ? "Cours publié !" : "Cours repassé en brouillon.");
     } catch (error) {
       console.error("Erreur lors du changement de statut:", error);
-      alert("Impossible de modifier le statut du cours.");
+      toast.error("Impossible de modifier le statut.");
     }
   };
 
@@ -88,6 +99,33 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-800">
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={() => {
+          if (deleteConfirm.id !== null) handleDelete(deleteConfirm.id);
+          setDeleteConfirm({ isOpen: false, id: null });
+        }}
+        title="Supprimer le cours"
+        message="Voulez-vous vraiment supprimer ce cours ? Cette action est irréversible."
+        confirmText="Supprimer"
+        type="danger"
+      />
+      <ConfirmModal
+        isOpen={statusConfirm.isOpen}
+        onClose={() => setStatusConfirm({ isOpen: false, id: null, status: undefined })}
+        onConfirm={() => {
+          if (statusConfirm.id !== null) handleTogglePublish(statusConfirm.id, statusConfirm.status);
+          setStatusConfirm({ isOpen: false, id: null, status: undefined });
+        }}
+        title={statusConfirm.status === 'PUBLISHED' ? 'Dépublier le cours' : 'Publier le cours'}
+        message={statusConfirm.status === 'PUBLISHED'
+          ? 'Voulez-vous repasser ce cours en brouillon ? Il ne sera plus visible par les étudiants.'
+          : 'Voulez-vous publier ce cours ? Il deviendra visible par tous les étudiants.'
+        }
+        confirmText={statusConfirm.status === 'PUBLISHED' ? 'Dépublier' : 'Publier'}
+        type={statusConfirm.status === 'PUBLISHED' ? 'warning' : 'info'}
+      />
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Mes Cours</h2>
@@ -150,7 +188,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                         <FaEye className="text-sm text-blue-600 dark:text-blue-400" />
                       </button>
                       <button
-                        onClick={() => course.id && handleTogglePublish(course.id, course.status)}
+                        onClick={() => course.id && setStatusConfirm({ isOpen: true, id: course.id, status: course.status })}
                         className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
                         title={course.status === 'PUBLISHED' ? 'Dépublier' : 'Publier'}
                       >
@@ -161,7 +199,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                         )}
                       </button>
                       <button
-                        onClick={() => course.id && handleDelete(course.id)}
+                        onClick={() => course.id && setDeleteConfirm({ isOpen: true, id: course.id })}
                         className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                         title="Supprimer"
                       >
@@ -174,7 +212,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

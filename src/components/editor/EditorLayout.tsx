@@ -21,7 +21,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Editor } from '@tiptap/react';
-import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
   FaInfo,
@@ -47,9 +48,13 @@ import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
 import { ExerciseService } from '@/lib/services/ExerciseService';
-import type { Exercise, Submission } from '@/types/exercise';
+import type { Exercise as ExerciseType, Submission } from '@/types/exercise';
+import EditorEntranceModal from './EditorEntranceModal';
+import CreateCourseModal from '@/components/create-course/page';
+
 
 interface EditorLayoutProps {
   children?: React.ReactNode;
@@ -78,15 +83,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // State for course title and current course ID
   const [courseTitle, setCourseTitle] = useState<string>("Nouveau cours");
   const [courseCategory, setCourseCategory] = useState<string>("Informatique");
+  const [customCategory, setCustomCategory] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
   const [isLoadingCourse, setIsLoadingCourse] = useState(false);
 
   // Exercise management states
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [exercises, setExercises] = useState<ExerciseType[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [editingExercise, setEditingExercise] = useState<ExerciseType | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<ExerciseType | null>(null);
   const [exerciseLoading, setExerciseLoading] = useState(false);
   const [gradingLoading, setGradingLoading] = useState(false);
   const [exerciseStats, setExerciseStats] = useState({
@@ -99,6 +105,33 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+
+  // Modal state for save/publish confirmation
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    type: 'save' | 'publish' | null;
+  }>({ isOpen: false, type: null });
+
+  const [isEntranceModalOpen, setIsEntranceModalOpen] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+
+  // Handle initialization from query params
+  useEffect(() => {
+    const isNew = searchParams.get('new') === 'true';
+    if (isNew) {
+      const title = searchParams.get('title');
+      const category = searchParams.get('category');
+      const description = searchParams.get('description');
+
+      if (title) setCourseTitle(title);
+      if (category) setCourseCategory(category);
+      if (description) setCourseDescription(description);
+
+      setIsEntranceModalOpen(false);
+    }
+  }, [searchParams]);
 
   // Extract TOC from editor in real-time
   const tocItems = useTOC(editorInstance, 300);
@@ -152,6 +185,101 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     const pendingGrading = submissions.filter(s => !s.graded).length;
     
     setExerciseStats({ total, published, pendingGrading });
+  };
+
+  // ---------- Exercise handlers (create / edit / save / delete / grade) ----------
+  const handleCreateExercise = () => {
+    if (!currentCourseId) {
+      toast.error('Créez ou chargez un cours avant de créer un exercice.');
+      return;
+    }
+
+    const newExercise: ExerciseType = {
+      id: 0,
+      courseId: currentCourseId,
+      title: '',
+      description: '',
+      maxScore: 10,
+      dueDate: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      status: 'DRAFT'
+    } as ExerciseType;
+
+    setEditingExercise(newExercise);
+  };
+
+  const handleEditExercise = (exercise: ExerciseType) => {
+    setEditingExercise(exercise);
+  };
+
+  const handleSaveExercise = async (exercise: ExerciseType | null) => {
+    if (!exercise) return;
+    try {
+      setExerciseLoading(true);
+
+      if (exercise.id && exercise.id > 0) {
+        await ExerciseService.updateExercise(exercise.id, {
+          title: exercise.title,
+          description: exercise.description,
+          maxScore: exercise.maxScore,
+          dueDate: exercise.dueDate,
+          status: exercise.status
+        });
+        toast.success('Exercice mis à jour');
+      } else {
+        if (!currentCourseId) throw new Error('Course ID manquant');
+        await ExerciseService.createExercise(currentCourseId, {
+          courseId: currentCourseId,
+          title: exercise.title,
+          description: exercise.description,
+          maxScore: exercise.maxScore,
+          dueDate: exercise.dueDate,
+          status: exercise.status
+        });
+        toast.success('Exercice créé');
+      }
+
+      setEditingExercise(null);
+      await loadExercises();
+      calculateExerciseStats();
+    } catch (error) {
+      console.error('Erreur saving exercise', error);
+      toast.error('Erreur lors de l\'enregistrement de l\'exercice');
+    } finally {
+      setExerciseLoading(false);
+    }
+  };
+
+  const handleDeleteExercise = async (exerciseId: number) => {
+    if (!confirm('Voulez-vous vraiment supprimer cet exercice ?')) return;
+    try {
+      setExerciseLoading(true);
+      await ExerciseService.deleteExercise(exerciseId);
+      toast.success('Exercice supprimé');
+      await loadExercises();
+      calculateExerciseStats();
+    } catch (error) {
+      console.error('Erreur suppression exercice', error);
+      toast.error('Impossible de supprimer l\'exercice');
+    } finally {
+      setExerciseLoading(false);
+    }
+  };
+
+  const handleGradeSubmission = async (submissionId: number, score: number, feedback?: string) => {
+    try {
+      setGradingLoading(true);
+      await ExerciseService.gradeSubmission(submissionId, { score, feedback });
+      toast.success('Soumission notée');
+      if (selectedExercise?.id) await loadSubmissions(selectedExercise.id);
+      await loadExercises();
+      calculateExerciseStats();
+    } catch (error) {
+      console.error('Erreur notation', error);
+      toast.error('Échec de la notation');
+    } finally {
+      setGradingLoading(false);
+    }
   };
 
   // Handle TOC item click - scroll to node
@@ -304,6 +432,32 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     }
   };
 
+  const triggerSaveConfirm = (isPublish: boolean) => {
+    setConfirmConfig({ isOpen: true, type: isPublish ? 'publish' : 'save' });
+  };
+
+  const handleConfirmedAction = () => {
+    if (confirmConfig.type === 'publish') {
+      handleSave(true);
+    } else if (confirmConfig.type === 'save') {
+      handleSave(false);
+    }
+    setConfirmConfig({ isOpen: false, type: null });
+  };
+
+  const handleCreateCourse = (data: { title: string; category: string; description: string }) => {
+    setCourseTitle(data.title);
+    setCourseCategory(data.category);
+    setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(data.category) ? "" : data.category);
+    setCourseDescription(data.description);
+    setCurrentCourseId(null);
+    if (editorInstance) {
+      editorInstance.commands.setContent('');
+    }
+    setIsCreateModalOpen(false);
+    toast.success("Nouveau cours initialisé !");
+  };
+
   /**
    * Handle editor content change
    */
@@ -320,69 +474,42 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     }, 2000); // 2 seconds debounce
   };
 
-  // Handle exercise actions
-  const handleCreateExercise = () => {
-    setEditingExercise({
-      id: 0,
-      courseId: currentCourseId!,
-      title: '',
-      description: '',
-      maxScore: 20,
-      dueDate: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      status: 'DRAFT',
-      questions: []
-    });
-  };
-
-  const handleEditExercise = (exercise: Exercise) => {
-    setEditingExercise(exercise);
-  };
-
-  const handleDeleteExercise = async (exerciseId: number) => {
-    if (confirm('Supprimer cet exercice ?')) {
-      try {
-        await ExerciseService.deleteExercise(exerciseId);
-        toast.success('Exercice supprimé');
-        loadExercises();
-      } catch (error) {
-        toast.error('Erreur de suppression');
-      }
-    }
-  };
-
-  const handleSaveExercise = async (exercise: Exercise) => {
-    try {
-      if (exercise.id) {
-        // Update existing exercise
-        await ExerciseService.updateExercise(exercise.id, exercise);
-        toast.success('Exercice mis à jour');
-      } else {
-        // Create new exercise
-        await ExerciseService.createExercise(currentCourseId!, exercise);
-        toast.success('Exercice créé');
-      }
-      setEditingExercise(null);
-      loadExercises();
-    } catch (error) {
-      toast.error('Erreur de sauvegarde');
-    }
-  };
-
-  const handleGradeSubmission = async (submissionId: number, score: number, feedback: string) => {
-    try {
-      await ExerciseService.gradeSubmission(submissionId, { score, feedback });
-      toast.success('Soumission notée');
-      if (selectedExercise) {
-        loadSubmissions(selectedExercise.id);
-      }
-    } catch (error) {
-      toast.error('Erreur de notation');
-    }
-  };
-
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+      {/* Entrance Modal */}
+      <EditorEntranceModal
+        isOpen={isEntranceModalOpen}
+        onClose={() => setIsEntranceModalOpen(false)}
+        onCreateNew={() => {
+          setIsEntranceModalOpen(false);
+          setIsCreateModalOpen(true);
+        }}
+        onModifyExisting={() => {
+          setIsEntranceModalOpen(false);
+          setActivePanel('author'); // Open 'Mes Cours' panel
+        }}
+      />
+
+      {/* Course Creation Modal */}
+      <CreateCourseModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateCourse}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false, type: null })}
+        onConfirm={handleConfirmedAction}
+        title={confirmConfig.type === 'publish' ? 'Publier le cours' : 'Sauvegarder le cours'}
+        message={confirmConfig.type === 'publish'
+          ? 'Êtes-vous sûr de vouloir publier ce cours ? Il sera visible par tous les étudiants.'
+          : 'Voulez-vous enregistrer les modifications actuelles ?'
+        }
+        confirmText={confirmConfig.type === 'publish' ? 'Publier maintenant' : 'Enregistrer'}
+        type={confirmConfig.type === 'publish' ? 'info' : 'warning'}
+      />
       {/* Navbar at the top */}
       <nav className="h-16 flex-none z-10">
         <Navbar />
@@ -470,8 +597,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     </label>
                     <select
                       className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
-                      value={courseCategory}
-                      onChange={(e) => setCourseCategory(e.target.value)}
+                      value={["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) ? courseCategory : "Autre"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Autre") {
+                          setCourseCategory("Autre");
+                          setCustomCategory("");
+                        } else {
+                          setCourseCategory(val);
+                        }
+                      }}
                     >
                       <option value="Informatique">Informatique</option>
                       <option value="Mathématiques">Mathématiques</option>
@@ -480,6 +615,25 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       <option value="Autre">Autre</option>
                     </select>
                   </div>
+
+                  {!["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) && (
+                    <div className="animate-in slide-in-from-top-1 duration-200">
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                        Nom de la catégorie
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Saisissez une catégorie..."
+                        className="w-full text-sm py-2 px-3 border-b-2 border-purple-400 bg-purple-50/30 dark:bg-purple-900/10 outline-none focus:border-purple-600 transition-colors"
+                        value={courseCategory === "Autre" ? customCategory : courseCategory}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomCategory(val);
+                          setCourseCategory(val || "Autre");
+                        }}
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
@@ -507,7 +661,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
                   <div className="pt-2">
                     <button
-                      onClick={() => handleSave(false)}
+                      onClick={() => triggerSaveConfirm(false)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
                     >
                       <FaSave /> Sauvegarder les infos
@@ -538,20 +692,19 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
             {/* PANEL 4: Mes Cours */}
             {activePanel === 'author' && (
-              <div className="h-full">
-                <MyCoursesPanel
-                  onClose={() => setActivePanel(null)}
-                  onLoadCourse={(content, courseId, title, category, description) => {
-                    if (editorInstance) {
-                      editorInstance.commands.setContent(content);
-                      setCurrentCourseId(Number(courseId));
-                      setCourseTitle(title);
-                      setCourseCategory(category);
-                      setCourseDescription(description);
-                    }
-                  }}
-                />
-              </div>
+              <MyCoursesPanel
+                onClose={() => setActivePanel(null)}
+                onLoadCourse={(content, courseId, title, category, description) => {
+                  if (editorInstance) {
+                    editorInstance.commands.setContent(content);
+                    setCurrentCourseId(Number(courseId));
+                    setCourseTitle(title);
+                    setCourseCategory(category);
+                    setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(category) ? "" : category);
+                    setCourseDescription(description);
+                  }
+                }}
+              />
             )}
 
             {/* PANEL 5: Travaux Dirigés */}
@@ -1027,14 +1180,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
             {/* Bottom action buttons */}
             <button
-              onClick={() => handleSave(false)}
+              onClick={() => triggerSaveConfirm(false)}
               className="flex h-12 w-12 items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Sauvegarder"
             >
               <FaSave className="text-xl" />
             </button>
             <button
-              onClick={() => handleSave(true)}
+              onClick={() => triggerSaveConfirm(true)}
               className="flex h-12 w-12 items-center justify-center rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors"
               title="Publier"
             >

@@ -45,7 +45,7 @@ const contacts = [
   },
   {
     title: 'Direction academique',
-    name: 'Dr. Bernabe BATCHAKUI',
+    name: 'Pr. Bernabe BATCHAKUI',
     email: 'bernabe.batchakui@enspy.ucac-icam.cm',
   },
 ];

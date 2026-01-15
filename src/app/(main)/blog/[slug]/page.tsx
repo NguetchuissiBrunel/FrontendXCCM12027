@@ -174,8 +174,15 @@ function getArticle(slug: string) {
   return articles.find((article) => article.slug === slug);
 }
 
-export default function BlogArticlePage({ params }: { params: { slug: string } }) {
-  const article = getArticle(params.slug);
+// ✅ Make the component async and await params
+export default async function BlogArticlePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  // ✅ Await the params promise
+  const { slug } = await params;
+  const article = getArticle(slug);
 
   if (!article) {
     notFound();

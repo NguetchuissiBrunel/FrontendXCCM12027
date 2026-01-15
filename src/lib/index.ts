@@ -78,3 +78,4 @@ export { ExercicesService } from './services/ExercicesService';
 export { GestionDesUtilisateursService } from './services/GestionDesUtilisateursService';
 export { PublicServicesService } from './services/PublicServicesService';
 export { RootControllerService } from './services/RootControllerService';
+export { AdminService } from './services/AdminService';

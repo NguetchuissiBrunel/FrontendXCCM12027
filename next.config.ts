@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // 1. optimizeFonts is no longer a top-level key in recent versions.
   // Next.js handles font optimization automatically via next/font.
   // If you must disable it, it usually lives under 'experimental' or is managed in Layout.
-  
+
   // 2. Handling build errors
   typescript: {
     ignoreBuildErrors: true,
@@ -21,6 +21,17 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
+      },
+    ],
+  },
+
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
       },
     ],
   },

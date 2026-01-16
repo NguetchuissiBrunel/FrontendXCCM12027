@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ExerciseService } from '@/lib/services/ExerciseService';
+import { ExercicesService } from '@/lib/services/ExercicesService';
 import type { Exercise, Question } from '@/types/exercise';
 import { ArrowLeft, Clock, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -24,12 +24,14 @@ export default function SubmitExercisePage() {
   
   const loadExercise = async () => {
     try {
-      const data = await ExerciseService.getExerciseById(exerciseId);
-      setExercise(data);
+      const response = await ExercicesService.getExerciseDetails(exerciseId);
+      const payload = (response as any).data ?? response;
+      const ex = payload?.exercise ?? payload;
+      setExercise(ex);
       
-      if (data.questions) {
+      if (ex?.questions) {
         const initialAnswers: Record<number, string> = {};
-        data.questions.forEach((q: Question) => {
+        ex.questions.forEach((q: Question) => {
           initialAnswers[q.id] = '';
         });
         setAnswers(initialAnswers);
@@ -67,7 +69,9 @@ export default function SubmitExercisePage() {
         answer
       }));
       
-      await ExerciseService.submitExercise(exerciseId, { answers: formattedAnswers });
+      // Le type généré peut différer ; caster en any pour contourner l'erreur TS
+      const payload: any = { answers: formattedAnswers };
+      await ExercicesService.submitExercise(exerciseId, payload);
       
       toast.success('Exercice soumis avec succès !');
       router.push('/etudashboard/submissions');

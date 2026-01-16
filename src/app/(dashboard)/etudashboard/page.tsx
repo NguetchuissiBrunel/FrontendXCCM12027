@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { BookOpen, FileText, Award, Clock } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
-import { ExerciseService } from '@/lib/services/ExerciseService';
+import { ExercicesService } from '@/lib/services/ExercicesService';
 import { Submission } from '@/types/exercise'; // ou le chemin correct
 interface User {
   id: string;
@@ -91,7 +91,8 @@ export default function StudentHome() {
   const loadExercisesAndSubmissions = async (enrollments: any[]) => {
     try {
       // Charger les soumissions de l'étudiant
-      const mySubmissions = await ExerciseService.getMySubmissions();
+      const mySubmissionsResp = await ExercicesService.getMySubmissions();
+      const mySubmissions = (mySubmissionsResp as any)?.data || [];
       setSubmissions(mySubmissions);
       
       // Charger les exercices en attente
@@ -99,14 +100,15 @@ export default function StudentHome() {
       
       for (const enrollment of enrollments) {
         if (enrollment.status === 'APPROVED' && enrollment.courseId) {
-          try {
-            const exercises = await ExerciseService.getCourseExercises(enrollment.courseId);
-            
+            try {
+            const resp = await ExercicesService.getExercisesForCourse(enrollment.courseId);
+            const exercises = (resp as any)?.data || [];
+
             // Filtrer les exercices non soumis ou dont la date d'échéance n'est pas passée
             const now = new Date();
-            const pendingForCourse = exercises.filter(exercise => {
+            const pendingForCourse = exercises.filter((exercise: any) => {
               const dueDate = new Date(exercise.dueDate);
-              const alreadySubmitted = mySubmissions.some(s => s.exerciseId === exercise.id);
+              const alreadySubmitted = mySubmissions.some((s: any) => s.exerciseId === exercise.id);
               return !alreadySubmitted && dueDate > now;
             });
             

@@ -2,7 +2,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ExerciseService } from '@/lib/services/ExerciseService';  // Si alias configuré
+import { ExercicesService } from '@/lib/services/ExercicesService';
+import { EnseignantService } from '@/lib/services/EnseignantService';  // Pour les opérations enseignants
 import { Submission, Exercise } from '@/types/exercise';
 import { toast } from 'react-hot-toast';
 import { FaCheck, FaStar, FaComment, FaDownload } from 'react-icons/fa';
@@ -28,11 +29,14 @@ export const GradingInterface: React.FC<GradingInterfaceProps> = ({ exerciseId }
   const loadData = async () => {
     try {
       setLoading(true);
-      const [exerciseData, submissionsData] = await Promise.all([
-        ExerciseService.getExerciseById(exerciseId),
-        ExerciseService.getExerciseSubmissions(exerciseId)
+      const [exerciseResp, submissionsResp] = await Promise.all([
+        ExercicesService.getExerciseDetails(exerciseId),
+        EnseignantService.getSubmissions(exerciseId)
       ]);
-      
+
+      const exerciseData = (exerciseResp as any)?.data || null;
+      const submissionsData = (submissionsResp as any)?.data || [];
+
       setExercise(exerciseData);
       setSubmissions(submissionsData);
       
@@ -55,7 +59,7 @@ export const GradingInterface: React.FC<GradingInterfaceProps> = ({ exerciseId }
     if (!selectedSubmission) return;
 
     try {
-      await ExerciseService.gradeSubmission(selectedSubmission.id, {
+      await EnseignantService.gradeSubmission(selectedSubmission.id, {
         score: gradingData.score,
         feedback: gradingData.feedback
       });

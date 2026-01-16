@@ -1,4 +1,4 @@
-// app/(dashboard)/profdashboard/page.tsx - Version finale adaptée
+// app/(dashboard)/profdashboard/page.tsx - Version finale avec les deux boutons
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,13 +6,14 @@ import ProfileCard from '@/components/professor/ProfileCard';
 import CompositionsCard, { Composition } from '@/components/professor/CompositionsCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { CourseResponse } from '@/lib/models/CourseResponse';
 import CreateCourseModal from '@/components/create-course/page';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { useLoading } from '@/contexts/LoadingContext';
-import { ExerciseService } from '@/lib/services/ExerciseService';
+import { ExercicesService } from '@/lib/services/ExercicesService';
+import { EnseignantService } from '@/lib/services/EnseignantService';
 import { StatsControllerService, CourseStatsResponse } from '@/lib/services/StatsControllerService';
 import toast from 'react-hot-toast';
+import { BookOpen, X, FileText, FolderOpen } from 'lucide-react';
 
 // Définir les interfaces pour les statistiques
 interface Course {
@@ -114,6 +115,7 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCourseSelectionModalOpen, setIsCourseSelectionModalOpen] = useState(false);
   const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
 
   useEffect(() => {
@@ -176,14 +178,20 @@ export default function ProfessorDashboard() {
         if (courseId > 0) {
           try {
             // Récupérer les exercices du cours
-            const exercises = await ExerciseService.getTeacherCourseExercises(courseId);
+            const resp = await ExercicesService.getExercisesForCourse(courseId);
+            const exercises = (resp as any)?.data || [];
             totalExercisesCount += exercises.length;
             
-            // Pour chaque exercice, compter les soumissions en attente
-            for (const exercise of exercises) {
-              const submissions = await ExerciseService.getExerciseSubmissions(exercise.id);
-              const pending = submissions.filter(s => !s.graded).length;
-              totalPending += pending;
+            // Pour chaque exercice, compter les soumissions en attente (enseignant endpoint)
+            for (const ex of exercises) {
+              try {
+                const submissionsResp = await EnseignantService.getSubmissions(ex.id);
+                const submissions = (submissionsResp as any)?.data || [];
+                const pending = submissions.filter((s: any) => !s.graded).length;
+                totalPending += pending;
+              } catch (err) {
+                console.error('Erreur chargement soumissions:', err);
+              }
             }
           } catch (error) {
             console.error(`Erreur chargement exercices cours ${courseId}:`, error);
@@ -321,6 +329,17 @@ export default function ProfessorDashboard() {
     
     // Redirection immédiate vers l'éditeur
     router.push(`/editor?${params.toString()}`);
+  };
+
+  // Fonction pour ouvrir la modale de sélection de cours
+  const openCourseSelectionModal = () => {
+    setIsCourseSelectionModalOpen(true);
+  };
+
+  // Fonction pour sélectionner un cours
+  const handleCourseSelect = (courseId: string) => {
+    setIsCourseSelectionModalOpen(false);
+    router.push(`/profdashboard/exercises/${courseId}`);
   };
 
   const loadDashboardData = async () => {
@@ -512,6 +531,68 @@ export default function ProfessorDashboard() {
         onSubmit={handleCreateCourseSubmit}
       />
 
+      {/* Modale de sélection de cours */}
+      {isCourseSelectionModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-purple-700 dark:text-purple-400">
+                Sélectionnez un cours
+              </h3>
+              <button
+                onClick={() => setIsCourseSelectionModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X size={20} className="text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Choisissez le cours pour lequel vous souhaitez gérer les exercices :
+            </p>
+            
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+              {compositions.map((course) => (
+                <button
+                  key={course.id}
+                  onClick={() => handleCourseSelect(course.id)}
+                  className="w-full text-left p-3 rounded-lg border border-purple-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors flex items-start gap-3"
+                >
+                  <BookOpen size={20} className="text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                      {course.title}
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {course.class}
+                      </span>
+                      <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                        {course.participants} participants
+                      </span>
+                    </div>
+                    {course.courseStats?.totalExercises && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {course.courseStats.totalExercises} exercice(s)
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setIsCourseSelectionModalOpen(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Section with Welcome */}
       <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="max-w-3xl">
@@ -540,22 +621,34 @@ export default function ProfessorDashboard() {
               )}
             </button>
             
-            {/* Bouton pour gérer les exercices */}
+            {/* Bouton 1: Vue d'ensemble de TOUS les exercices */}
             <button
               onClick={() => {
                 if (compositions.length > 0) {
-                  router.push(`/profdashboard/exercises/${compositions[0].id}`);
+                  router.push('/profdashboard/exercises');
                 } else {
                   toast.error("Créez d'abord un cours pour gérer les exercices");
                 }
               }}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              Gérer les exercices
+              <FileText size={20} />
+              Tous les exercices
+            </button>
+            
+            {/* Bouton 2: Sélectionner un cours spécifique */}
+            <button
+              onClick={() => {
+                if (compositions.length > 0) {
+                  openCourseSelectionModal();
+                } else {
+                  toast.error("Créez d'abord un cours pour gérer les exercices");
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              <FolderOpen size={20} />
+              Créer un exercice
             </button>
             
             {/* Notification des soumissions en attente */}

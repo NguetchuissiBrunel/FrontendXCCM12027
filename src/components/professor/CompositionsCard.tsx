@@ -139,20 +139,6 @@ export default function CompositionsCard({ compositions, onDelete, onCreateClick
               } étudiants
             </div>
             
-            {onManageExercises && (
-              <button
-                onClick={() => {
-                  // Rediriger vers le premier cours pour gérer les exercices
-                  if (compositions.length > 0) {
-                    onManageExercises(compositions[0].id);
-                  }
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
-              >
-                <FileText size={18} />
-                Gérer tous les exercices
-              </button>
-            )}
           </div>
         </div>
       )}

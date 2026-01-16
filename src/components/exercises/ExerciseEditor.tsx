@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ExerciseService } from '@/lib/services/ExerciseService';
+import { EnseignantService } from '@/lib/services/EnseignantService';
 import { Exercise, Question } from '@/types/exercise';
 import { toast } from 'react-hot-toast';
 import { FaPlus, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
@@ -87,22 +87,44 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
 
       let savedExercise;
       if (isEditMode && exercise?.id) {
-        // Pour l'édition: UpdateExerciseRequest n'inclut pas 'id' dans le body
-        savedExercise = await ExerciseService.updateExercise(exercise.id, {
-          ...exerciseData,
-          // N'incluez pas 'id' ici car il est déjà dans l'URL/paramètre
+        savedExercise = await EnseignantService.updateExercise(exercise.id, {
+          title: exerciseData.title,
+          description: exerciseData.description,
+          maxScore: exerciseData.maxScore,
+          dueDate: exerciseData.dueDate,
         });
         toast.success('Exercice mis à jour');
       } else {
-        // Pour la création: CreateExerciseRequest
-        savedExercise = await ExerciseService.createExercise(courseId, {
-          ...exerciseData,
-          status: exerciseData.status || 'DRAFT' // Valeur par défaut
+        // NOTE: ExerciseCreateRequest (generated) does NOT include courseId in the body
+        savedExercise = await EnseignantService.createExercise(courseId, {
+          title: exerciseData.title,
+          description: exerciseData.description,
+          maxScore: exerciseData.maxScore,
+          dueDate: exerciseData.dueDate,
         });
         toast.success('Exercice créé');
       }
 
-      onSave(savedExercise);
+      // The generated service returns an ApiResponseExerciseResponse; extract `data` and map to our `Exercise` type
+      const apiData = (savedExercise as any)?.data;
+      if (!apiData) {
+        toast.error('Réponse inattendue du serveur');
+        return;
+      }
+
+      const mappedExercise: Exercise = {
+        id: apiData.id ?? 0,
+        courseId: apiData.courseId ?? courseId,
+        title: apiData.title ?? (exerciseData.title || ''),
+        description: apiData.description ?? (exerciseData.description || ''),
+        maxScore: apiData.maxScore ?? (exerciseData.maxScore || 0),
+        dueDate: apiData.dueDate ?? (exerciseData.dueDate || ''),
+        createdAt: apiData.createdAt ?? new Date().toISOString(),
+        status: (formData.status as 'DRAFT' | 'PUBLISHED' | 'CLOSED') || 'DRAFT',
+        questions: questions,
+      };
+
+      onSave(mappedExercise);
     } catch (error) {
       toast.error('Erreur lors de la sauvegarde');
       console.error(error);

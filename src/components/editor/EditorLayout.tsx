@@ -50,7 +50,8 @@ import { ChevronLeft, ChevronRight, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
-import { ExerciseService } from '@/lib/services/ExerciseService';
+import { ExercicesService } from '@/lib/services/ExercicesService';
+import { EnseignantService } from '@/lib/services/EnseignantService';
 import type { Exercise as ExerciseType, Submission } from '@/types/exercise';
 import EditorEntranceModal from './EditorEntranceModal';
 import CreateCourseModal from '@/components/create-course/page';
@@ -156,8 +157,19 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     
     try {
       setExerciseLoading(true);
-      const exercisesData = await ExerciseService.getCourseExercises(currentCourseId);
-      setExercises(exercisesData || []);
+      const resp = await ExercicesService.getExercisesForCourse(currentCourseId);
+      const list = (resp as any)?.data || [];
+      const mapped = list.map((e: any) => ({
+        id: e.id ?? 0,
+        courseId: e.courseId ?? currentCourseId,
+        title: e.title ?? '',
+        description: e.description ?? '',
+        maxScore: e.maxScore ?? 0,
+        dueDate: e.dueDate ?? '',
+        createdAt: e.createdAt ?? new Date().toISOString(),
+        status: (e.status as any) || 'DRAFT'
+      }));
+      setExercises(mapped);
     } catch (error) {
       console.error('Error loading exercises:', error);
       toast.error('Erreur de chargement des exercices');
@@ -169,8 +181,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const loadSubmissions = async (exerciseId: number) => {
     try {
       setGradingLoading(true);
-      const submissionsData = await ExerciseService.getExerciseSubmissions(exerciseId);
-      setSubmissions(submissionsData || []);
+      const resp = await EnseignantService.getSubmissions(exerciseId);
+      const subs = (resp as any)?.data || [];
+      setSubmissions(subs);
     } catch (error) {
       console.error('Error loading submissions:', error);
       toast.error('Erreur de chargement des soumissions');
@@ -218,23 +231,20 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       setExerciseLoading(true);
 
       if (exercise.id && exercise.id > 0) {
-        await ExerciseService.updateExercise(exercise.id, {
+        await EnseignantService.updateExercise(exercise.id, {
           title: exercise.title,
           description: exercise.description,
           maxScore: exercise.maxScore,
           dueDate: exercise.dueDate,
-          status: exercise.status
         });
         toast.success('Exercice mis à jour');
       } else {
         if (!currentCourseId) throw new Error('Course ID manquant');
-        await ExerciseService.createExercise(currentCourseId, {
-          courseId: currentCourseId,
+        await EnseignantService.createExercise(currentCourseId, {
           title: exercise.title,
           description: exercise.description,
           maxScore: exercise.maxScore,
           dueDate: exercise.dueDate,
-          status: exercise.status
         });
         toast.success('Exercice créé');
       }
@@ -254,7 +264,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     if (!confirm('Voulez-vous vraiment supprimer cet exercice ?')) return;
     try {
       setExerciseLoading(true);
-      await ExerciseService.deleteExercise(exerciseId);
+      await EnseignantService.deleteExercise(exerciseId);
       toast.success('Exercice supprimé');
       await loadExercises();
       calculateExerciseStats();
@@ -269,7 +279,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const handleGradeSubmission = async (submissionId: number, score: number, feedback?: string) => {
     try {
       setGradingLoading(true);
-      await ExerciseService.gradeSubmission(submissionId, { score, feedback });
+      await EnseignantService.gradeSubmission(submissionId, { score, feedback });
       toast.success('Soumission notée');
       if (selectedExercise?.id) await loadSubmissions(selectedExercise.id);
       await loadExercises();

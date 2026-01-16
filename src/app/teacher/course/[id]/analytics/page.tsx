@@ -780,7 +780,7 @@ export default function CourseAnalyticsPage() {
         {/* Actions */}
         <div className="flex flex-wrap justify-center gap-4 mt-8">
           <button
-            onClick={() => window.open(`/course/${courseId}`, '_blank')}
+            onClick={() => window.open(`/courses/${courseId}`, '_blank')}
             className="flex items-center gap-2 px-6 py-3 bg-purple-600 dark:bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors"
           >
             <Eye size={20} />

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ExerciseService } from '@/lib/services/ExerciseService';
+import { ExercicesService } from '@/lib/services/ExercicesService';
 import { GradingInterface } from '@/components/exercises/GradingInterface';
 import { ArrowLeft } from 'lucide-react';
 
@@ -22,8 +22,10 @@ export default function ExerciseSubmissionsPage() {
   
   const loadExercise = async () => {
     try {
-      const data = await ExerciseService.getTeacherExerciseById(exerciseId);
-      setExercise(data);
+      const response = await ExercicesService.getExerciseDetails(exerciseId);
+      // l'openapi-gen wrappe souvent la réponse dans .data
+      const payload = (response as any).data ?? response;
+      setExercise(payload?.exercise ?? payload);
     } catch (error) {
       console.error('Erreur chargement exercice:', error);
     } finally {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaTrash, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaSpinner,FaPaperPlane ,FaBook} from 'react-icons/fa';
 import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
@@ -185,7 +185,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                         className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
                         title="Charger dans l'éditeur"
                       >
-                        <FaEye className="text-sm text-blue-600 dark:text-blue-400" />
+                        <FaBook className="text-sm text-blue-600 dark:text-blue-400" />
                       </button>
                       <button
                         onClick={() => course.id && setStatusConfirm({ isOpen: true, id: course.id, status: course.status })}
@@ -193,9 +193,9 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                         title={course.status === 'PUBLISHED' ? 'Dépublier' : 'Publier'}
                       >
                         {course.status === 'PUBLISHED' ? (
-                          <FaEyeSlash className="text-sm text-gray-600 dark:text-gray-400" />
+                          <FaPaperPlane className="text-sm text-gray-600 dark:text-gray-400" />
                         ) : (
-                          <FaEye className="text-sm text-green-600 dark:text-green-400" />
+                          <FaPaperPlane className="text-sm text-green-600 dark:text-green-400" />
                         )}
                       </button>
                       <button

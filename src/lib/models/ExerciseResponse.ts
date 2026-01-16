@@ -12,6 +12,7 @@ export type ExerciseResponse = {
     description?: string;
     maxScore?: number;
     dueDate?: string;
+    content?: string;
     createdAt?: string;
 };
 

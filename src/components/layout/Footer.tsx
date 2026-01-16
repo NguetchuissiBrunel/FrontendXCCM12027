@@ -24,12 +24,12 @@ const Footer = () => {
           <div className="space-y-6 md:col-span-2 lg:col-span-1 lg:border-r lg:border-gray-700 lg:pr-6 xl:pr-8">
             <Link href="/" className="flex items-center">
               <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
-                <Image 
-                  src="/images/Capture.png" 
-                  alt="Logo XCCM" 
-                  width={80} 
-                  height={80} 
-                  className="rounded-full object-cover" 
+                <Image
+                  src="/images/Capture.png"
+                  alt="Logo XCCM"
+                  width={80}
+                  height={80}
+                  className="rounded-full object-cover"
                 />
               </div>
               <span className="text-2xl font-bold tracking-tight">XCCM1</span>
@@ -65,23 +65,23 @@ const Footer = () => {
                 <li><Link href="/space_coll" className="text-sm text-gray-400 hover:text-white transition-colors">Espaces Collaboratifs</Link></li>
                 <li><Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Bibliothèque de Contenu</Link></li>
                 <li>
-                   <Link 
-                    href="/pricing" 
+                  <Link
+                    href="/pricing"
                     className="text-sm text-gray-400 hover:text-purple-300 transition-colors"
                   >
                     Tarification
                   </Link>
-                </li>              
-               </ul>
+                </li>
+              </ul>
             </div>
 
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Entreprise</h3>
               <ul className="mt-4 space-y-3">
                 <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">À Propos</Link></li>
-                <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Carrières (Jobs)</Link></li>
-                <li><Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">Presse</Link></li>
-                <li><Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors">Partenaires</Link></li>
+                <li><Link href="/carriere" className="text-sm text-gray-400 hover:text-white transition-colors">Carrières (Jobs)</Link></li>
+                <li><Link href="/presse" className="text-sm text-gray-400 hover:text-white transition-colors">Presse</Link></li>
+                <li><Link href="/partenaires" className="text-sm text-gray-400 hover:text-white transition-colors">Partenaires</Link></li>
               </ul>
             </div>
 
@@ -89,8 +89,8 @@ const Footer = () => {
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase">Ressources</h3>
               <ul className="mt-4 space-y-3">
                 <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">Centre d'Aide</Link></li>
-                <li><Link href="/aide" className="text-sm text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
-                <li><Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">Blog & Guides</Link></li>
+                <li><Link href="/faq" className="text-sm text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
+                <li><Link href="/blog" className="text-sm text-gray-400 hover:text-white transition-colors">Blog & Guides</Link></li>
                 <li><Link href="/support" className="text-sm text-gray-400 hover:text-white transition-colors">Support Technique</Link></li>
               </ul>
             </div>
@@ -104,9 +104,20 @@ const Footer = () => {
             <p className="text-sm text-gray-400 mb-6 max-w-md">
               Recevez les dernières nouvelles, mises à jour et offres spéciales directement dans votre boîte de réception.
             </p>
-            
-            {/* Utilisation du composant NewsletterForm */}
-            <NewsletterForm />
+            <form className="flex flex-col space-y-4">
+              <input
+                type="email"
+                placeholder="Votre adresse email"
+                aria-label="Adresse email pour la newsletter"
+                className="w-full min-w-0 appearance-none rounded-lg border border-transparent bg-gray-700 dark:bg-gray-800 py-3 px-4 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-colors shadow-inner"
+              />
+              <button
+                type="submit"
+                className="w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white py-3 px-6 rounded-lg transition-colors font-medium shadow-md text-sm"
+              >
+                S'abonner
+              </button>
+            </form>
           </div>
         </div>
 

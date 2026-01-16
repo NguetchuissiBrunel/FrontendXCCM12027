@@ -1,4 +1,4 @@
-// app/(dashboard)/profdashboard/page.tsx - Version finale avec les deux boutons
+// app/(dashboard)/profdashboard/page.tsx - Version corrigée avec boutons améliorés
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
 import { StatsControllerService, CourseStatsResponse } from '@/lib/services/StatsControllerService';
 import toast from 'react-hot-toast';
-import { BookOpen, X, FileText, FolderOpen } from 'lucide-react';
+import { BookOpen, X, FileText, FolderOpen, Plus, ChevronRight, Upload } from 'lucide-react';
 
 // Définir les interfaces pour les statistiques
 interface Course {
@@ -548,7 +548,7 @@ export default function ProfessorDashboard() {
             </div>
             
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Choisissez le cours pour lequel vous souhaitez gérer les exercices :
+              Choisissez le cours pour lequel vous souhaitez créer un exercice :
             </p>
             
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -605,9 +605,10 @@ export default function ProfessorDashboard() {
         </div>
         <div>
           <div className="flex items-center gap-4 flex-wrap">
+            {/* Bouton Gérer les inscriptions */}
             <button
               onClick={() => router.push('/teacher/inscriptions')}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+              className="relative flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -621,37 +622,7 @@ export default function ProfessorDashboard() {
               )}
             </button>
             
-            {/* Bouton 1: Vue d'ensemble de TOUS les exercices */}
-            <button
-              onClick={() => {
-                if (compositions.length > 0) {
-                  router.push('/profdashboard/exercises');
-                } else {
-                  toast.error("Créez d'abord un cours pour gérer les exercices");
-                }
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-            >
-              <FileText size={20} />
-              Tous les exercices
-            </button>
-            
-            {/* Bouton 2: Sélectionner un cours spécifique */}
-            <button
-              onClick={() => {
-                if (compositions.length > 0) {
-                  openCourseSelectionModal();
-                } else {
-                  toast.error("Créez d'abord un cours pour gérer les exercices");
-                }
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
-            >
-              <FolderOpen size={20} />
-              Créer un exercice
-            </button>
-            
-            {/* Notification des soumissions en attente */}
+            {/* Bouton Corriger */}
             {overallStats.pendingSubmissions > 0 && (
               <button
                 onClick={() => {
@@ -662,9 +633,9 @@ export default function ProfessorDashboard() {
                     router.push(`/profdashboard/exercises/${courseWithPending.id}/grading`);
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition relative"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-md hover:shadow-lg relative"
               >
-                <span className="absolute -top-2 -right-2 bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                <span className="absolute -top-2 -right-2 bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md">
                   {overallStats.pendingSubmissions}
                 </span>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -674,7 +645,6 @@ export default function ProfessorDashboard() {
                 Corriger ({overallStats.pendingSubmissions})
               </button>
             )}
-            
           </div>
         </div>
       </div>
@@ -686,6 +656,130 @@ export default function ProfessorDashboard() {
           professor={professor} 
           coursesStats={coursesStats}
         />
+
+        {/* Actions rapides pour les exercices sous le profil - VERSION AMÉLIORÉE */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+            <span className="flex items-center gap-2">
+              <Upload className="text-purple-600 dark:text-purple-400" size={22} />
+              Actions rapides sur les exercices
+            </span>
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Bouton Tous les exercices - VERSION AMÉLIORÉE */}
+            <button
+              onClick={() => {
+                if (compositions.length > 0) {
+                  router.push('/profdashboard/exercises');
+                } else {
+                  toast.error("Créez d'abord un cours pour gérer les exercices");
+                }
+              }}
+              className="group relative bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-6 border-2 border-blue-300/50 dark:border-blue-700/50 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 overflow-hidden"
+            >
+              {/* Effet de fond au survol */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+              
+              {/* Contenu */}
+              <div className="relative flex items-start gap-4">
+                {/* Icône améliorée */}
+                <div className="flex-shrink-0 p-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                  <FileText size={24} className="text-white" />
+                </div>
+                
+                {/* Texte */}
+                <div className="flex-1 text-left">
+                  <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 mb-1">
+                    Tous les exercices
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    Consultez, modifiez et gérez tous vos exercices
+                  </p>
+                  
+                  {/* Statistiques */}
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
+                      {exercisesStats.totalExercises} exercices
+                    </div>
+                    <div className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
+                      {overallStats.pendingSubmissions} à corriger
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Flèche d'action */}
+                <ChevronRight className="flex-shrink-0 text-blue-500 dark:text-blue-400 group-hover:translate-x-1 transition-transform duration-200" size={20} />
+              </div>
+              
+              {/* Indicateur cliquable */}
+              <div className="absolute bottom-2 right-2 text-xs text-blue-600 dark:text-blue-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                Cliquer pour ouvrir →
+              </div>
+            </button>
+
+            {/* Bouton Créer un exercice - VERSION AMÉLIORÉE */}
+            <button
+              onClick={() => {
+                if (compositions.length > 0) {
+                  openCourseSelectionModal();
+                } else {
+                  toast.error("Créez d'abord un cours pour gérer les exercices");
+                }
+              }}
+              className="group relative bg-gradient-to-r from-green-500/10 to-green-600/10 dark:from-green-900/30 dark:to-green-800/30 rounded-xl p-6 border-2 border-green-300/50 dark:border-green-700/50 hover:border-green-400 dark:hover:border-green-500 hover:shadow-lg transition-all duration-300 overflow-hidden"
+            >
+              {/* Effet de fond au survol */}
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+              
+              {/* Contenu */}
+              <div className="relative flex items-start gap-4">
+                {/* Icône améliorée */}
+                <div className="flex-shrink-0 p-3 rounded-lg bg-gradient-to-r from-green-500 to-green-600 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                  <Plus size={24} className="text-white" />
+                </div>
+                
+                {/* Texte */}
+                <div className="flex-1 text-left">
+                  <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 mb-1">
+                    Créer un exercice
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    Ajoutez un nouvel exercice à un de vos cours
+                  </p>
+                  
+                  {/* Statistiques */}
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full">
+                      {compositions.length} cours disponibles
+                    </div>
+                    <div className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full">
+                      Nouveau
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Flèche d'action */}
+                <ChevronRight className="flex-shrink-0 text-green-500 dark:text-green-400 group-hover:translate-x-1 transition-transform duration-200" size={20} />
+              </div>
+              
+              {/* Indicateur cliquable */}
+              <div className="absolute bottom-2 right-2 text-xs text-green-600 dark:text-green-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                Cliquer pour commencer →
+              </div>
+            </button>
+          </div>
+          
+          {/* Ligne informative */}
+          <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              <span className="inline-flex items-center gap-1">
+                <BookOpen size={14} />
+                Pour créer un exercice, vous devez d'abord sélectionner un cours
+              </span>
+            </p>
+          </div>
+        </div>
 
         {/* Compositions Card */}
         {compositions.length > 0 ? (
@@ -704,7 +798,7 @@ export default function ProfessorDashboard() {
             }}
           />
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
               Mes Compositions
             </h2>
@@ -715,11 +809,9 @@ export default function ProfessorDashboard() {
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition mx-auto"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+              <Plus size={20} />
               Créer un cours
             </button>
           </div>

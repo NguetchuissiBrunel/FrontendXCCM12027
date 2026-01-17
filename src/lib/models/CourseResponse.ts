@@ -18,6 +18,9 @@ export type CourseResponse = {
     content?: Record<string, Record<string, any>>;
     coverImage?: string;
     photoUrl?: string;
+    viewCount?: number;
+    likeCount?: number;
+    downloadCount?: number;
 };
 export namespace CourseResponse {
     export enum status {

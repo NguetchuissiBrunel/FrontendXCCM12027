@@ -17,18 +17,6 @@ export default function AllExercisesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fonction utilitaire pour parser l'ID du cours
-  const parseCourseId = (id: number | string | undefined): number => {
-    if (typeof id === 'number') {
-      return id;
-    }
-    if (typeof id === 'string') {
-      const parsed = parseInt(id, 10);
-      return isNaN(parsed) ? 0 : parsed;
-    }
-    return 0;
-  };
-
   useEffect(() => {
     if (!user) return;
 
@@ -45,8 +33,8 @@ export default function AllExercisesPage() {
         const allExercises: any[] = [];
         
         for (const course of coursesData) {
-          const courseId = parseCourseId(course.id);
-          if (courseId === 0) continue; // Skip si ID invalide
+          const courseId = course.id;
+          if (!courseId) continue; // Skip si ID invalide
           
           try {
             const exercisesResponse = await ExercicesService.getExercisesForCourse(courseId);
@@ -86,14 +74,14 @@ export default function AllExercisesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="mb-8">
@@ -111,47 +99,6 @@ export default function AllExercisesPage() {
           <p className="text-gray-600 dark:text-gray-300">
             Vue d'ensemble de tous les exercices de tous vos cours
           </p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-purple-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Cours</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{courses.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-purple-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Exercices</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{exercises.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-purple-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                <Users className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Cours actifs</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                  {courses.filter(c => c.status === 'PUBLISHED').length}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Recherche et filtres */}
@@ -226,12 +173,21 @@ export default function AllExercisesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
+                      {/* CORRECTION : Le bouton "Gérer" doit rediriger vers la page du cours */}
                       <button
-                        onClick={() => router.push(`/profdashboard/exercises/${exercise.courseId}`)}
-                        className="px-4 py-2 text-sm rounded-lg bg-purple-600 text-white hover:bg-purple-700"
-                      >
-                        Gérer
-                      </button>
+  onClick={() => {
+    if (exercise.id && exercise.courseId) {
+      // Rediriger vers la page de gestion de l'exercice spécifique
+      router.push(`/profdashboard/exercises/${exercise.courseId}/view/${exercise.id}`);
+    } else {
+      // Fallback : rediriger vers les exercices du cours
+      router.push(`/profdashboard/exercises/${exercise.courseId}`);
+    }
+  }}
+  className="px-4 py-2 text-sm rounded-lg bg-purple-600 text-white hover:bg-purple-700"
+>
+  Gérer
+</button>
                     </div>
                   </div>
                 </div>

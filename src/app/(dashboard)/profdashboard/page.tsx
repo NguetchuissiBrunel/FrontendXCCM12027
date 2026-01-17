@@ -11,7 +11,7 @@ import { EnrollmentService } from '@/utils/enrollmentService';
 import { useLoading } from '@/contexts/LoadingContext';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
-import { StatsControllerService, CourseStatsResponse } from '@/lib/services/StatsControllerService';
+import type { TeacherCourseStatsResponse } from '@/lib/models/TeacherCourseStatsResponse';
 import toast from 'react-hot-toast';
 import { BookOpen, X, FileText, FolderOpen, Plus, ChevronRight, Upload } from 'lucide-react';
 
@@ -360,11 +360,11 @@ export default function ProfessorDashboard() {
         const pendingSubmissions = await calculateExercisesStats(courses);
         
         // 3. Fetch les statistiques pour tous les cours
-        const statsResponse = await StatsControllerService.getTeacherCoursesStats();
+        const statsResponse = await EnseignantService.getAllCoursesStatistics();
         console.log('Statistiques récupérées:', statsResponse.data);
         
         if (statsResponse.data) {
-          const coursesStatsData = statsResponse.data as CourseStatsResponse[];
+          const coursesStatsData = statsResponse.data as TeacherCourseStatsResponse[];
           const convertedStats: CourseStats[] = coursesStatsData.map(stat => ({
             ...stat,
             exerciseStats: stat.exerciseStats || []

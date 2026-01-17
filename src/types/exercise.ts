@@ -21,6 +21,7 @@ export interface Exercise {
   createdAt: string;
   updatedAt?: string;
   status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED';
+  content?: string; // ← NOUVEAU : pour stocker le HTML/JSON sérialisé
   questions?: Question[];
   // Statistiques additionnelles (pour le dashboard)
   submissionsCount?: number;
@@ -362,4 +363,13 @@ export interface StudentExerciseProgress {
   submittedAt?: string;
   graded: boolean;
   feedback?: string;
+}
+
+// Ajouter une interface pour la requête backend
+export interface BackendExerciseRequest {
+  title: string;
+  description: string;
+  maxScore: number;
+  dueDate?: string;
+  content: string; // HTML sérialisé depuis les questions
 }

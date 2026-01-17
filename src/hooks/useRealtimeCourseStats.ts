@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { StatsControllerService, CourseStatsResponse } from '@/lib/services/StatsControllerService';
+import { EnseignantService } from '@/lib/services/EnseignantService';
+import type { TeacherCourseStatsResponse } from '@/lib/models/TeacherCourseStatsResponse';
 
 export function useRealtimeCourseStats(courseId: number, interval = 30000) {
-  const [stats, setStats] = useState<CourseStatsResponse | null>(null);
+  const [stats, setStats] = useState<TeacherCourseStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -10,7 +11,7 @@ export function useRealtimeCourseStats(courseId: number, interval = 30000) {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const response = await StatsControllerService.getCourseStats(courseId);
+      const response = await EnseignantService.getCourseStatistics(courseId);
       
       if (response.data) {
         setStats(response.data);

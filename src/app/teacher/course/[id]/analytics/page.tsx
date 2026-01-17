@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { StatsControllerService, CourseStatsResponse } from '@/lib/services/StatsControllerService';
+import { EnseignantService } from '@/lib/services/EnseignantService';
+import type { TeacherCourseStatsResponse } from '@/lib/models/TeacherCourseStatsResponse';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { useLoading } from '@/contexts/LoadingContext';
 import { 
@@ -26,7 +27,7 @@ import {
   TrendingDown
 } from 'lucide-react';
 
-interface RealTimeStats extends CourseStatsResponse {
+interface RealTimeStats extends TeacherCourseStatsResponse {
   lastUpdated: string;
   isLoading: boolean;
   error?: string;
@@ -75,7 +76,7 @@ export default function CourseAnalyticsPage() {
       }
 
       // Charger les statistiques
-      const response = await StatsControllerService.getCourseStats(courseIdNum);
+      const response = await EnseignantService.getCourseStatistics(courseIdNum);
       
       if (response.data) {
         setCourseStats({

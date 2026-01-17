@@ -10,7 +10,7 @@ import { CourseResponse } from '@/lib/models/CourseResponse';
 import CreateCourseModal from '@/components/create-course/page';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { toast } from 'react-hot-toast';
-import { StatsControllerService } from '@/lib/services/StatsControllerService';
+//import { StatsControllerService } from '@/lib/services/StatsControllerService';
 import { useLoading } from '@/contexts/LoadingContext';
 
 interface User {

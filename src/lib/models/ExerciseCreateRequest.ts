@@ -7,6 +7,6 @@ export type ExerciseCreateRequest = {
     description?: string;
     maxScore?: number;
     dueDate?: string;
-    content?: string;
+    content?: Record<string, Record<string, any>>;
 };
 

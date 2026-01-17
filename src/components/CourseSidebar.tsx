@@ -14,7 +14,6 @@ import {
   List,
   Target
 } from 'lucide-react';
-import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
 import { CourseData, Section, Chapter, Paragraph } from '@/types/course';
 
 interface SearchResult {
@@ -32,6 +31,7 @@ interface CourseSidebarProps {
   setCurrentChapterIndex: (index: number) => void;
   setCurrentParagraphIndex: (index: number) => void;
   setShowExercise: (show: boolean) => void;
+  onDownloadRequest: () => void;
 }
 
 const CourseSidebar: React.FC<CourseSidebarProps> = ({
@@ -42,7 +42,8 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   setCurrentSectionIndex,
   setCurrentChapterIndex,
   setCurrentParagraphIndex,
-  setShowExercise
+  setShowExercise,
+  onDownloadRequest
 }) => {
   const [expandedParts, setExpandedParts] = useState<{ [key: number]: boolean }>({});
   const [expandedChapters, setExpandedChapters] = useState<{ [key: string]: boolean }>({});
@@ -195,9 +196,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   };
 
   const handleDownloadClick = () => {
-    downloadCourseAsPDF(courseData, 'p').catch((error) => {
-      console.error('Erreur lors du téléchargement:', error);
-    });
+    onDownloadRequest();
   };
 
   return (
@@ -362,11 +361,11 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
       <div className="p-2 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={handleDownloadClick}
-          className="fixed bottom-4 left-20 bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 shadow-lg transition-all hover:shadow-xl"
+          className="fixed bottom-6 left-30 bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 shadow-lg transition-all hover:shadow-xl"
           title="Télécharger le cours"
           type="button"
         >
-          <Download className="h-5 w-5" />
+          <Download className="h-7 w-7" />
         </button>
       </div>
     </aside>

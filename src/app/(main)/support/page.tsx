@@ -1,6 +1,8 @@
 // src/app/support-technique/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -110,7 +112,7 @@ export default function SupportTechniquePage() {
 
   const filteredFAQs = faqItems.filter(item => {
     const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.answer.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -128,11 +130,11 @@ export default function SupportTechniquePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simulation d'envoi
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    alert('Votre message a été envoyé ! Notre équipe vous répondra dans les 24 heures.');
+
+    toast.success('Votre message a été envoyé ! Notre équipe vous répondra dans les 24 heures.');
     setFormData({
       name: '',
       email: '',
@@ -191,8 +193,8 @@ export default function SupportTechniquePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Actions Bar */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Link 
-            href="#faq" 
+          <Link
+            href="#faq"
             className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 text-center hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300 border border-gray-100 dark:border-gray-800 group"
           >
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/30 transition-colors">
@@ -204,8 +206,8 @@ export default function SupportTechniquePage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Questions fréquentes</p>
           </Link>
 
-          <Link 
-            href="#contact" 
+          <Link
+            href="#contact"
             className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 text-center hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300 border border-gray-100 dark:border-gray-800 group"
           >
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/30 transition-colors">
@@ -217,8 +219,8 @@ export default function SupportTechniquePage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Formulaire de contact</p>
           </Link>
 
-          <Link 
-            href="#tickets" 
+          <Link
+            href="#tickets"
             className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 text-center hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300 border border-gray-100 dark:border-gray-800 group"
           >
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/30 transition-colors">
@@ -281,8 +283,8 @@ export default function SupportTechniquePage() {
                     key={category.id}
                     onClick={() => setActiveCategory(category.id)}
                     className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeCategory === category.id
-                        ? 'bg-purple-600 text-white dark:bg-purple-700'
-                        : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      ? 'bg-purple-600 text-white dark:bg-purple-700'
+                      : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                   >
                     {category.label}
@@ -325,7 +327,7 @@ export default function SupportTechniquePage() {
                         </svg>
                       </div>
                     </button>
-                    
+
                     {expandedFAQ === item.id && (
                       <div className="px-6 pb-4">
                         <div className="pl-11 border-l-2 border-purple-200 dark:border-purple-800">
@@ -360,7 +362,7 @@ export default function SupportTechniquePage() {
             {/* Contact Form */}
             <section id="contact" className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Formulaire de Contact</h2>
-              
+
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 border border-gray-100 dark:border-gray-800">
                 <form onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -378,7 +380,7 @@ export default function SupportTechniquePage() {
                         placeholder="Votre nom"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Email *
@@ -410,7 +412,7 @@ export default function SupportTechniquePage() {
                         placeholder="Sujet de votre demande"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Catégorie *
@@ -444,8 +446,8 @@ export default function SupportTechniquePage() {
                         <label
                           key={level.value}
                           className={`flex items-center space-x-2 px-4 py-2 border rounded-lg cursor-pointer transition-colors ${formData.urgency === level.value
-                              ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-600 dark:border-purple-500'
-                              : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-600 dark:border-purple-500'
+                            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                         >
                           <input
@@ -521,29 +523,29 @@ export default function SupportTechniquePage() {
                     Voir tout
                   </Link>
                 </div>
-                
+
                 <div className="space-y-4">
                   {userTickets.map((ticket) => (
                     <div key={ticket.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900 dark:text-white">{ticket.title}</h4>
                         <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(ticket.priority)}`}>
-                          {ticket.priority === 'urgent' ? 'Urgent' : 
-                           ticket.priority === 'high' ? 'Haute' :
-                           ticket.priority === 'medium' ? 'Moyenne' : 'Basse'}
+                          {ticket.priority === 'urgent' ? 'Urgent' :
+                            ticket.priority === 'high' ? 'Haute' :
+                              ticket.priority === 'medium' ? 'Moyenne' : 'Basse'}
                         </span>
                       </div>
-                      
+
                       <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
                         <span>{ticket.id}</span>
                         <span>{ticket.date}</span>
                       </div>
-                      
+
                       <div className="flex justify-between items-center">
                         <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(ticket.status)}`}>
                           {ticket.status === 'open' ? 'Ouvert' :
-                           ticket.status === 'in-progress' ? 'En cours' :
-                           ticket.status === 'resolved' ? 'Résolu' : 'Fermé'}
+                            ticket.status === 'in-progress' ? 'En cours' :
+                              ticket.status === 'resolved' ? 'Résolu' : 'Fermé'}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           Dernière mise à jour : {ticket.lastUpdate}
@@ -552,7 +554,7 @@ export default function SupportTechniquePage() {
                     </div>
                   ))}
                 </div>
-                
+
                 <button className="w-full mt-6 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-700 transition-colors flex items-center justify-center space-x-2">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -566,7 +568,7 @@ export default function SupportTechniquePage() {
             <section>
               <div className="bg-gradient-to-br from-purple-600 to-indigo-600 dark:from-purple-700 dark:to-indigo-700 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6">
                 <h3 className="text-lg font-bold text-white mb-6">Informations de contact</h3>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -580,7 +582,7 @@ export default function SupportTechniquePage() {
                       <p className="text-purple-200 text-xs">Lun-Ven 9h-18h</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -593,7 +595,7 @@ export default function SupportTechniquePage() {
                       <p className="text-purple-200 text-xs">Réponse sous 24h</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -608,7 +610,7 @@ export default function SupportTechniquePage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-6 pt-6 border-t border-white/20">
                   <h4 className="font-medium text-white mb-3">Heures d'ouverture</h4>
                   <div className="space-y-2 text-sm text-purple-100">
@@ -633,7 +635,7 @@ export default function SupportTechniquePage() {
             <section>
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 border border-gray-100 dark:border-gray-800">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Ressources utiles</h3>
-                
+
                 <div className="space-y-4">
                   <Link href="/documentation" className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
                     <div className="flex items-center space-x-3">
@@ -650,7 +652,7 @@ export default function SupportTechniquePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </Link>
-                  
+
                   <Link href="/tutoriels" className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-900/40 transition-colors">
@@ -667,7 +669,7 @@ export default function SupportTechniquePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </Link>
-                  
+
                   <Link href="/blog" className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center group-hover:bg-orange-200 dark:group-hover:bg-orange-900/40 transition-colors">
@@ -683,7 +685,7 @@ export default function SupportTechniquePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </Link>
-                  
+
                   <Link href="/community" className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/40 transition-colors">

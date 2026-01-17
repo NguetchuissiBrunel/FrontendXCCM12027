@@ -2,29 +2,38 @@ import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from '@/typ
 import { extractTOC } from './extractTOC';
 
 /**
- * Transforme le contenu JSON Tiptap en un objet CourseData structuré
- * compatible avec le visualiseur de cours et le générateur PDF.
+ * Transforms Tiptap JSON content into a structured CourseData object
+ * compatible with the Course viewer and PDF generator.
  */
+
+export const extractTextFromContent = (content: any): string => {
+    if (!content) return '';
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+        return content.map((node: any) => {
+            if (node.type === 'text') return node.text;
+            if (node.content) return extractTextFromContent(node.content);
+            return '';
+        }).join(' ');
+    }
+    if (content.type === 'doc' && content.content) return extractTextFromContent(content.content);
+    if (content.content) return extractTextFromContent(content.content);
+    return '';
+};
+
 export function transformTiptapToCourseData(apiCourse: any): CourseData {
-    // Gestion de la structure imbriquée de l'API (cas de l'ID 2 vs ID 33)
-    let contentJSON = apiCourse.content;
+    const contentJSON = typeof apiCourse.content === 'string'
+        ? JSON.parse(apiCourse.content)
+        : apiCourse.content;
 
-    // Si content contient un champ content (double imbrication), on descend d'un niveau
-    if (contentJSON && contentJSON.content && contentJSON.content.type === 'doc') {
-        contentJSON = contentJSON.content;
-    }
-    // Si c'est une chaîne de caractères (JSON stringifié)
-    else if (typeof contentJSON === 'string') {
-        try {
-            const parsed = JSON.parse(contentJSON);
-            contentJSON = parsed.content && parsed.content.type === 'doc' ? parsed.content : parsed;
-        } catch (e) {
-            console.error("Erreur parse contentJSON", e);
-        }
+    // 1. Extract the hierarchy (TOC) from the Tiptap JSON
+    let toc: TableOfContentsItem[] = [];
+    try {
+        toc = extractTOC(contentJSON);
+    } catch (error) {
+        console.error("Error extracting TOC from course content:", error);
     }
 
-    // 1. Extraire la hiérarchie (TOC) depuis le JSON Tiptap
-    const toc = extractTOC(contentJSON);
 
     /**
      * Helper pour extraire le texte brut d'un nœud Tiptap de manière récursive
@@ -67,7 +76,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
 
                             const para: Paragraph = {
                                 title: grandChild.title,
-                                content: textContent,
+                                content: grandChild.content || [],
                                 notions: grandChild.type === 'notion' ? [grandChild.title] : [],
                                 exercise: (grandChild.type === 'exercise')
                                     ? { questions: [] }
@@ -81,7 +90,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                 else if (child.type === 'paragraph') {
                     section.paragraphs!.push({
                         title: child.title,
-                        content: getRawText(child.content),
+                        content: child.content || [],
                         notions: []
                     });
                 }
@@ -100,12 +109,11 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
         likes: apiCourse.likes || 0,
         downloads: apiCourse.downloads || 0,
         author: {
-            // Gestion des deux formats d'auteur (firstName/lastName vs name)
-            name: apiCourse.author?.name
-                ? apiCourse.author.name
-                : (apiCourse.author?.firstName ? `${apiCourse.author.firstName} ${apiCourse.author.lastName}` : "Auteur inconnu"),
-            image: apiCourse.author?.image || apiCourse.author?.photoUrl || "/images/prof.jpeg",
-            designation: apiCourse.author?.designation || "Enseignant"
+            name: apiCourse.author
+                ? (apiCourse.author.name || `${apiCourse.author.firstName || ''} ${apiCourse.author.lastName || ''}`.trim() || "Auteur inconnu")
+                : "Auteur inconnu",
+            image: apiCourse.author?.image || apiCourse.author?.photoUrl || "",
+            designation: apiCourse.author?.designation
         },
         introduction: apiCourse.description || "",
         conclusion: "",

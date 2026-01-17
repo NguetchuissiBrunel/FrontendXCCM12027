@@ -6,6 +6,16 @@ export type CourseUpdateRequest = {
     title?: string;
     category?: string;
     description?: string;
+    status?: CourseUpdateRequest.status;
     content?: Record<string, Record<string, any>>;
+    coverImage?: string;
+    photoUrl?: string;
 };
+export namespace CourseUpdateRequest {
+    export enum status {
+        DRAFT = 'DRAFT',
+        PUBLISHED = 'PUBLISHED',
+        ARCHIVED = 'ARCHIVED',
+    }
+}
 

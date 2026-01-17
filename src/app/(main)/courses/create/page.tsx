@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
     BookOpen,
     Plus,
@@ -13,13 +14,18 @@ import {
     ChevronRight,
     Image as ImageIcon,
     CheckCircle,
-    Eye
+    Eye,
+    Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { useRouter } from 'next/navigation';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
-// Types locaux pour le formulaire (basés sur src/types/course.ts mais adaptés pour l'édition)
+// Types locaux pour le formulaire
 interface LocalParagraph {
-    id: string; // Pour la gestion de clé React
+    id: string;
     title: string;
     content: string;
     notions: string[];
@@ -35,7 +41,7 @@ interface LocalSection {
     id: string;
     title: string;
     chapters: LocalChapter[];
-    paragraphs: LocalParagraph[]; // Pour supporter les sections sans chapitres
+    paragraphs: LocalParagraph[];
 }
 
 interface CourseFormState {
@@ -65,6 +71,11 @@ export default function CreateCoursePage() {
     const [activeTab, setActiveTab] = useState<'basics' | 'curriculum' | 'preview'>('basics');
     const [formData, setFormData] = useState<CourseFormState>(initialFormState);
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
+    const { user } = useAuth();
+    const router = useRouter();
 
     // Handlers pour les champs de base
     const handleBasicChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -109,11 +120,17 @@ export default function CreateCoursePage() {
     };
 
     const removeSection = (id: string) => {
-        if (confirm('Êtes-vous sûr de vouloir supprimer cette section ?')) {
+        setSectionToDelete(id);
+    };
+
+    const confirmRemoveSection = () => {
+        if (sectionToDelete) {
             setFormData(prev => ({
                 ...prev,
-                sections: prev.sections.filter(s => s.id !== id)
+                sections: prev.sections.filter(s => s.id !== sectionToDelete)
             }));
+            setSectionToDelete(null);
+            toast.success('Section supprimée');
         }
     };
 
@@ -121,7 +138,7 @@ export default function CreateCoursePage() {
         setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
-    // Handlers pour les Chapitres
+    // Chapitres
     const addChapter = (sectionId: string) => {
         const newChapter: LocalChapter = {
             id: Date.now().toString(),
@@ -166,8 +183,7 @@ export default function CreateCoursePage() {
         }));
     };
 
-    // Handlers pour les Paragraphes (dans les chapitres pour simplifier l'exemple, ou direct dans section)
-    // Pour cet exemple, on gère l'ajout dans les chapitres principalement
+    // Paragraphes
     const addParagraph = (sectionId: string, chapterId: string) => {
         const newParagraph: LocalParagraph = {
             id: Date.now().toString(),
@@ -218,14 +234,75 @@ export default function CreateCoursePage() {
         }));
     };
 
-    // Submit Mock
-    const handleSubmit = () => {
-        console.log('Course Data Submitted:', formData);
-        alert('Cours sauvegardé (simulation) ! Vérifiez la console pour les données JSON.');
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingImage(true);
+        try {
+            const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+            const validation = CloudinaryService.validateFile(file);
+            if (!validation.valid) {
+                toast.error(validation.error || 'Fichier invalide');
+                return;
+            }
+
+            const url = await CloudinaryService.uploadImage(file, { folder: 'courses' });
+            setFormData(prev => ({ ...prev, image: url }));
+            toast.success('Image uploadée avec succès');
+        } catch (error) {
+            console.error('Erreur lors de l\'upload:', error);
+            toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload');
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (!user?.id) {
+            toast.error('Vous devez être connecté pour créer un cours');
+            return;
+        }
+
+        if (!formData.title || !formData.description) {
+            toast.error('Veuillez remplir au moins le titre et la description');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const content = JSON.stringify({
+                sections: formData.sections
+            });
+
+            await CourseControllerService.createCourse(user.id, {
+                title: formData.title,
+                category: formData.category,
+                description: formData.description,
+                content: content as any
+            });
+
+            toast.success('Cours créé avec succès !');
+            router.push('/profdashboard');
+        } catch (error) {
+            console.error('Erreur lors de la création:', error);
+            toast.error('Erreur lors de la création du cours');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-12 px-4">
+            <ConfirmModal
+                isOpen={!!sectionToDelete}
+                onClose={() => setSectionToDelete(null)}
+                onConfirm={confirmRemoveSection}
+                title="Supprimer la section"
+                message="Êtes-vous sûr de vouloir supprimer cette section ? Tout son contenu sera perdu."
+                confirmText="Supprimer"
+                type="danger"
+            />
             <div className="max-w-6xl mx-auto">
                 <header className="mb-8 flex justify-between items-center">
                     <div>
@@ -234,14 +311,14 @@ export default function CreateCoursePage() {
                     </div>
                     <button
                         onClick={handleSubmit}
-                        className="flex items-center px-6 py-3 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition"
+                        disabled={isSubmitting}
+                        className="flex items-center px-6 py-3 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save className="w-5 h-5 mr-2" />
-                        Sauvegarder
+                        {isSubmitting ? 'Enregistrement...' : 'Sauvegarder'}
                     </button>
                 </header>
 
-                {/* Tabs */}
                 <div className="flex space-x-4 mb-8 border-b border-gray-200 dark:border-gray-700">
                     {[
                         { id: 'basics', label: 'Infos de base', icon: Layout },
@@ -252,8 +329,8 @@ export default function CreateCoursePage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`flex items-center px-6 py-3 font-medium transition-colors border-b-2 ${activeTab === tab.id
-                                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
                                 }`}
                         >
                             <tab.icon className="w-4 h-4 mr-2" />
@@ -262,10 +339,7 @@ export default function CreateCoursePage() {
                     ))}
                 </div>
 
-                {/* Content */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden min-h-[500px]">
-
-                    {/* BASICS TAB */}
                     {activeTab === 'basics' && (
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
@@ -300,19 +374,29 @@ export default function CreateCoursePage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image de couverture (URL)</label>
-                                    <div className="flex">
-                                        <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500">
-                                            <ImageIcon className="w-5 h-5" />
-                                        </span>
-                                        <input
-                                            type="text"
-                                            name="image"
-                                            value={formData.image}
-                                            onChange={handleBasicChange}
-                                            className="flex-1 px-4 py-3 rounded-r-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none"
-                                            placeholder="https://..."
-                                        />
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image de couverture</label>
+                                    <div className="flex gap-4">
+                                        {formData.image && (
+                                            <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-purple-200">
+                                                <img src={formData.image} alt="Cover" className="w-full h-full object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-purple-500 transition">
+                                                <Upload className="w-5 h-5 mr-2 text-gray-500" />
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                    {isUploadingImage ? 'Upload en cours...' : 'Choisir une image'}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                                                    onChange={handleImageUpload}
+                                                    disabled={isUploadingImage}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                            <p className="text-xs text-gray-500 mt-2">JPG, PNG, WEBP (Max 5MB)</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -360,7 +444,6 @@ export default function CreateCoursePage() {
                         </motion.div>
                     )}
 
-                    {/* CURRICULUM TAB */}
                     {activeTab === 'curriculum' && (
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
@@ -369,7 +452,6 @@ export default function CreateCoursePage() {
                         >
                             {formData.sections.map((section, sIdx) => (
                                 <div key={section.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                                    {/* Section Header */}
                                     <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                                         <div className="flex items-center flex-1 gap-4">
                                             <button onClick={() => toggleSection(section.id)}>
@@ -402,7 +484,6 @@ export default function CreateCoursePage() {
                                         </div>
                                     </div>
 
-                                    {/* Section Content */}
                                     <AnimatePresence>
                                         {expandedSections[section.id] && (
                                             <motion.div
@@ -447,7 +528,6 @@ export default function CreateCoursePage() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Paragraphs */}
                                                         <div className="space-y-3">
                                                             {chapter.paragraphs.map((para, pIdx) => (
                                                                 <div key={para.id} className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-purple-200 transition-colors">
@@ -486,7 +566,6 @@ export default function CreateCoursePage() {
                         </motion.div>
                     )}
 
-                    {/* PREVIEW TAB */}
                     {activeTab === 'preview' && (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -542,7 +621,6 @@ export default function CreateCoursePage() {
                             </div>
                         </motion.div>
                     )}
-
                 </div>
             </div>
         </div>

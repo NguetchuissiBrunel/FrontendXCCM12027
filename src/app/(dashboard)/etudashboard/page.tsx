@@ -92,7 +92,7 @@ export default function StudentHome() {
     try {
       // Charger les soumissions de l'étudiant
       const mySubmissionsResp = await ExercicesService.getMySubmissions();
-      const mySubmissions = (mySubmissionsResp as any)?.data || [];
+      const mySubmissions = (((mySubmissionsResp as any)?.data) || []) as Submission[];
       setSubmissions(mySubmissions);
       
       // Charger les exercices en attente
@@ -102,17 +102,17 @@ export default function StudentHome() {
         if (enrollment.status === 'APPROVED' && enrollment.courseId) {
             try {
             const resp = await ExercicesService.getExercisesForCourse(enrollment.courseId);
-            const exercises = (resp as any)?.data || [];
+            const exercises = (((resp as any)?.data) || []) as Exercise[];
 
             // Filtrer les exercices non soumis ou dont la date d'échéance n'est pas passée
             const now = new Date();
-            const pendingForCourse = exercises.filter((exercise: any) => {
+            const pendingForCourse = exercises.filter((exercise: Exercise) => {
               const dueDate = new Date(exercise.dueDate);
-              const alreadySubmitted = mySubmissions.some((s: any) => s.exerciseId === exercise.id);
+              const alreadySubmitted = mySubmissions.some((s: Submission) => s.exerciseId === exercise.id);
               return !alreadySubmitted && dueDate > now;
             });
-            
-            pending.push(...pendingForCourse.map(ex => ({
+
+            pending.push(...pendingForCourse.map((ex: Exercise) => ({
               ...ex,
               courseTitle: enrollment.courseTitle || `Cours #${enrollment.courseId}`
             })));
@@ -125,9 +125,9 @@ export default function StudentHome() {
       setPendingExercises(pending);
       
       // Calculer les statistiques
-      const gradedSubmissions = mySubmissions.filter(s => s.graded);
+      const gradedSubmissions = mySubmissions.filter((s: Submission) => s.graded) as Submission[];
       const averageScore = gradedSubmissions.length > 0
-        ? gradedSubmissions.reduce((sum, s) => sum + (s.score / s.maxScore * 100), 0) / gradedSubmissions.length
+        ? gradedSubmissions.reduce((sum: number, s: Submission) => sum + (s.score / s.maxScore * 100), 0) / gradedSubmissions.length
         : 0;
       
       setStats({

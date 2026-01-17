@@ -1,5 +1,5 @@
 import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from '@/types/course';
-import { extractTOC, TableOfContentsItem } from './extractTOC';
+import { extractTOC } from './extractTOC';
 
 /**
  * Transforms Tiptap JSON content into a structured CourseData object
@@ -35,42 +35,23 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
     }
 
 
-    // 2. Map TOC to Section/Chapter/Paragraph structure
-    // The extractTOC returns a tree of TableOfContentsItem
-    // Level 0: Course (usually only one, but we check)
-    // Level 1: Section
-    // Level 2: Chapter
-    // Level 3: Paragraph
+    /**
+     * Helper pour extraire le texte brut d'un nœud Tiptap de manière récursive
+     */
+    const getRawText = (nodes: any[] | any): string => {
+        if (!nodes) return '';
+        if (!Array.isArray(nodes)) nodes = [nodes];
+
+        return nodes.map((node: any) => {
+            if (node.type === 'text') return node.text;
+            if (node.content) return getRawText(node.content);
+            return '';
+        }).join(' ').trim();
+    };
 
     const sections: Section[] = [];
 
-    // Helper to parse content JSON string back to readable text (simple version)
-    const getRawText = (contentStr?: string): string => {
-        if (!contentStr) return '';
-        try {
-            const content = JSON.parse(contentStr);
-            if (Array.isArray(content)) {
-                return content.map(node => {
-                    if (node.type === 'text') return node.text;
-                    if (node.content) return getRawText(JSON.stringify(node.content));
-                    return '';
-                }).join(' ');
-            }
-            return '';
-        } catch {
-            return '';
-        }
-    };
-
-    // Helper to extract questions from an exercise node
-    const extractQuestions = (node: any): ExerciseQuestion[] => {
-        // This depends on how the exercise node stores its data.
-        // Based on extractTOC, exercise items are at level 5.
-        // We might need to look into the node content or attrs.
-        return []; // Placeholder for now, will refine if needed
-    };
-
-    // Traverse the TOC tree
+    // 2. Parcourir l'arbre TOC pour construire la structure Sections > Chapters > Paragraphs
     toc.forEach(item => {
         if (item.type === 'section') {
             const section: Section = {
@@ -87,19 +68,26 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                     };
 
                     child.children.forEach(grandChild => {
-                        if (grandChild.type === 'paragraph' || grandChild.type === 'notion' || grandChild.type === 'exercise') {
+                        // On traite les paragraphes, les notions et les exercices
+                        if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice', 'chapter', 'chapitre'].includes(grandChild.type)) {
+
+                            // Pour une "notion", le texte est souvent dans son propre content
+                            const textContent = getRawText(grandChild.content);
+
                             const para: Paragraph = {
                                 title: grandChild.title,
                                 content: grandChild.content || [],
                                 notions: grandChild.type === 'notion' ? [grandChild.title] : [],
-                                exercise: grandChild.type === 'exercise' ? { questions: [] } : undefined
+                                exercise: (grandChild.type === 'exercise')
+                                    ? { questions: [] }
+                                    : undefined
                             };
                             chapter.paragraphs.push(para);
                         }
                     });
                     section.chapters!.push(chapter);
-                } else if (child.type === 'paragraph') {
-                    // Paragraph directly under section
+                }
+                else if (child.type === 'paragraph') {
                     section.paragraphs!.push({
                         title: child.title,
                         content: child.content || [],
@@ -111,11 +99,12 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
         }
     });
 
+    // 3. Retourner l'objet final formaté
     return {
         id: apiCourse.id || 0,
         title: apiCourse.title || "Titre non disponible",
         category: apiCourse.category || "Formation",
-        image: apiCourse.coverImage || apiCourse.image || "",
+        image: apiCourse.coverImage || apiCourse.image || "/images/Capture2.png",
         views: apiCourse.views || 0,
         likes: apiCourse.likes || 0,
         downloads: apiCourse.downloads || 0,
@@ -126,9 +115,9 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
             image: apiCourse.author?.image || apiCourse.author?.photoUrl || "",
             designation: apiCourse.author?.designation
         },
-        conclusion: apiCourse.description || "", // Use description as conclusion if not available
-        learningObjectives: [], // Could be extracted if we have a specific tag
-        sections: sections,
-        introduction: apiCourse.description,
+        introduction: apiCourse.description || "",
+        conclusion: "",
+        learningObjectives: [],
+        sections: sections
     };
 }

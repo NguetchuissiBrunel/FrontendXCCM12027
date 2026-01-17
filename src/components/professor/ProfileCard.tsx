@@ -1,12 +1,13 @@
 // components/professor/ProfileCard.tsx
 'use client';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { FaSave, FaPen } from 'react-icons/fa';
 import { Users, Award, Clock, Activity, BarChart, TrendingUp } from 'lucide-react';
+import { FaPen, FaSave } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
 
-interface Professor {
+export interface Professor {
   id: string;
   name: string;
   city: string;
@@ -14,6 +15,7 @@ interface Professor {
   grade: string;
   certification: string;
   totalStudents: number;
+  activeStudents: number;
   participationRate: number;
   publications: number;
   photoUrl?: string;
@@ -28,7 +30,7 @@ interface Professor {
   pendingSubmissions?: number;
 }
 
-interface CourseStat {
+export interface CourseStat {
   courseId: number;
   courseTitle: string;
   courseCategory: string;
@@ -47,6 +49,7 @@ interface ProfileCardProps {
 }
 
 export default function ProfileCard({ professor, coursesStats, onUpdate }: ProfileCardProps) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedProfessor, setEditedProfessor] = useState<Professor>(professor);
@@ -178,6 +181,11 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
         name: newName.trim()
       });
     }
+  };
+
+  // Fonction pour gérer la navigation vers les détails du cours
+  const handleViewCourseDetails = (courseId: number) => {
+    router.push(`teacher/course/${courseId}/analytics`);
   };
 
   return (
@@ -391,7 +399,9 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                   {editedProfessor.participationRate}%
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  taux moyen de tous les cours
+                  {editedProfessor.activeStudents > 0 
+                    ? `${editedProfessor.activeStudents} étudiants actifs`
+                    : 'aucun étudiant actif'}
                 </p>
               </div>
 
@@ -440,7 +450,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
               </div>
             </div>
 
-            {/* Completion Stats */}
+            {/* Additional Completion Stats */}
             <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-900/30">
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -472,11 +482,12 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
               </div>
             </div>
 
-            {/* Performance Distribution */}
+            {/* Performance Distribution - Seulement si on a des données */}
             {(editedProfessor.performanceDistribution.some(item => item.value > 0) || editedProfessor.publications > 0) && (
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-8 border border-purple-200 dark:border-purple-900/30">
                 <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Distribution des performances des étudiants</h3>
 
+                {/* Chart */}
                 <div className="flex justify-center mb-8">
                   <div className="relative w-48 h-48">
                     <svg className="w-48 h-48 -rotate-90" viewBox="0 0 100 100">
@@ -486,10 +497,11 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                         const strokeDasharray = `${(item.value * circumference) / 100} ${circumference}`;
                         const strokeDashoffset = `-${(previousValues * circumference) / 100}`;
                         
-                        let strokeColor = '#7c3aed';
-                        if (item.range === 'Bien') strokeColor = '#a78bfa';
-                        if (item.range === 'Passable') strokeColor = '#c4b5fd';
-                        if (item.range === 'Faible') strokeColor = '#ddd6fe';
+                        // Déterminer la couleur basée sur la plage
+                        let strokeColor = '#7c3aed'; // Couleur par défaut purple-600
+                        if (item.range === 'Bien') strokeColor = '#a78bfa'; // purple-400
+                        if (item.range === 'Passable') strokeColor = '#c4b5fd'; // purple-300
+                        if (item.range === 'Faible') strokeColor = '#ddd6fe'; // purple-200
                         
                         return (
                           <circle
@@ -516,6 +528,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                   </div>
                 </div>
 
+                {/* Legend */}
                 <div className="grid grid-cols-2 gap-4">
                   {editedProfessor.performanceDistribution.map((item, index) => (
                     <div key={index} className="flex items-center gap-3">
@@ -530,6 +543,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
               </div>
             )}
 
+            {/* Message si aucune donnée */}
             {editedProfessor.publications === 0 && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-900/30">
                 <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400 mb-3">
@@ -562,13 +576,13 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
           
           {coursesStats && coursesStats.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {coursesStats.map((course) => (
-                <div key={course.courseId} className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-900/30 hover:border-purple-300 dark:hover:border-purple-500 transition-colors">
+              {coursesStats.map((courseItem) => (
+                <div key={courseItem.courseId} className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-900/30 hover:border-purple-300 dark:hover:border-purple-500 transition-colors">
                   <h4 className="font-bold text-gray-800 dark:text-white mb-4 text-lg truncate">
-                    {course.courseTitle}
+                    {courseItem.courseTitle}
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    {course.courseCategory}
+                    {courseItem.courseCategory}
                   </p>
                   
                   <div className="space-y-4">
@@ -576,13 +590,13 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                       <div className="bg-white dark:bg-gray-700 p-3 rounded-lg">
                         <p className="text-xs text-gray-500 dark:text-gray-400">Inscrits</p>
                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                          {course.totalEnrolled}
+                          {courseItem.totalEnrolled}
                         </p>
                       </div>
                       <div className="bg-white dark:bg-gray-700 p-3 rounded-lg">
                         <p className="text-xs text-gray-500 dark:text-gray-400">Actifs</p>
                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                          {course.activeStudents}
+                          {courseItem.activeStudents}
                         </p>
                       </div>
                     </div>
@@ -591,13 +605,13 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Participation</span>
                         <span className="font-semibold text-purple-600 dark:text-purple-400">
-                          {course.participationRate}%
+                          {courseItem.participationRate}%
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div 
                           className="bg-purple-600 dark:bg-purple-500 h-2 rounded-full transition-all duration-500" 
-                          style={{ width: `${course.participationRate}%` }}
+                          style={{ width: `${courseItem.participationRate}%` }}
                         ></div>
                       </div>
                     </div>
@@ -606,13 +620,13 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Progression</span>
                         <span className="font-semibold text-green-600 dark:text-green-400">
-                          {course.averageProgress}%
+                          {courseItem.averageProgress}%
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div 
                           className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all duration-500" 
-                          style={{ width: `${course.averageProgress}%` }}
+                          style={{ width: `${courseItem.averageProgress}%` }}
                         ></div>
                       </div>
                     </div>
@@ -621,24 +635,31 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                       <div className="text-center">
                         <p className="text-gray-500 dark:text-gray-400">Terminés</p>
                         <p className="font-bold text-gray-800 dark:text-white">
-                          {course.completedStudents}
+                          {courseItem.completedStudents}
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-gray-500 dark:text-gray-400">Exercices</p>
                         <p className="font-bold text-gray-800 dark:text-white">
-                          {course.totalExercises}
+                          {courseItem.totalExercises}
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-gray-500 dark:text-gray-400">Taux</p>
                         <p className="font-bold text-gray-800 dark:text-white">
-                          {course.totalEnrolled > 0 
-                            ? `${Math.round((course.completedStudents / course.totalEnrolled) * 100)}%`
+                          {courseItem.totalEnrolled > 0 
+                            ? `${Math.round((courseItem.completedStudents / courseItem.totalEnrolled) * 100)}%`
                             : '0%'}
                         </p>
                       </div>
                     </div>
+
+                    <button
+                      onClick={() => handleViewCourseDetails(courseItem.courseId)}
+                      className="w-full mt-4 px-4 py-2 bg-purple-600 dark:bg-purple-500 text-white text-sm rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors"
+                    >
+                      Voir les détails complets
+                    </button>
                   </div>
                 </div>
               ))}

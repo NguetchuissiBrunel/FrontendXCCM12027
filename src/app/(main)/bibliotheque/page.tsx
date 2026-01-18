@@ -5,13 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCourses } from '@/hooks/useCourses';
 import { useLoading } from "@/contexts/LoadingContext";
-import { 
-  Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  BookOpen, 
-  Download, 
-  Eye, 
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  Download,
+  Eye,
   Heart,
   Layout,
   BookUp,
@@ -20,7 +20,7 @@ import {
   Share2
 } from "lucide-react";
 import { transformTiptapToCourseData } from "@/utils/courseTransformer";
-import { toast } from "react-hot-toast"; 
+import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 
 // --- COMPOSANTS AUXILIAIRES ---
@@ -46,8 +46,8 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
           Comment souhaitez-vous mettre en page votre document pour l'exportation ?
         </p>
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <button 
-            onClick={() => onSelect('p')} 
+          <button
+            onClick={() => onSelect('p')}
             className="p-4 border-2 border-purple-50 dark:border-purple-900/20 rounded-xl hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all flex flex-col items-center group"
           >
             <div className="w-12 h-16 border-2 border-purple-200 dark:border-purple-700 rounded mb-2 flex items-center justify-center group-hover:border-purple-400">
@@ -55,8 +55,8 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
             </div>
             <span className="font-bold text-sm text-gray-700 dark:text-gray-300">Portrait</span>
           </button>
-          <button 
-            onClick={() => onSelect('l')} 
+          <button
+            onClick={() => onSelect('l')}
             className="p-4 border-2 border-purple-50 dark:border-purple-900/20 rounded-xl hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all flex flex-col items-center group"
           >
             <div className="w-16 h-12 border-2 border-purple-200 dark:border-purple-700 rounded mb-2 flex items-center justify-center group-hover:border-purple-400">
@@ -140,10 +140,10 @@ const Bibliotheque = () => {
       const fullCourse = await fetchCourse(selectedCourseId);
       if (!fullCourse) throw new Error("Données introuvables");
       const courseData = transformTiptapToCourseData(fullCourse);
-      
+
       // Ici vous appellerez votre fonction de génération PDF :
       // await downloadCourseAsPDF(courseData, orientation); 
-      
+
       toast.success("Document prêt !", { id: downloadToast });
     } catch (err) {
       toast.error("Échec du téléchargement", { id: downloadToast });
@@ -195,7 +195,7 @@ const Bibliotheque = () => {
       <div className="container mx-auto px-4 py-8">
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 text-red-700 p-4 rounded-xl mb-8 flex items-center">
-             <span>{error}</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -206,14 +206,14 @@ const Bibliotheque = () => {
           ) : (
             currentCourses.map((course) => (
               <div key={course.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-purple-50 dark:border-purple-900/20 flex flex-col overflow-hidden group">
-                
+
                 {/* Image du cours avec badge */}
                 <div className="relative h-52 overflow-hidden">
-                  <Image 
-                    src={course.image || '/images/Capture2.png'} 
-                    alt={course.title} 
-                    fill 
-                    className="object-cover group-hover:scale-110 transition-transform duration-500" 
+                  <Image
+                    src={course.photoUrl || course.image || '/images/Capture2.png'}
+                    alt={course.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute top-3 left-3">
                     <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-purple-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase shadow-sm">
@@ -238,11 +238,11 @@ const Bibliotheque = () => {
                   {/* Auteur */}
                   <div className="flex items-center mb-4">
                     <div className="relative w-9 h-9 mr-3">
-                      <Image 
-                        src={course.author?.image || '/images/prof.jpeg'} 
-                        alt="Author" 
-                        fill 
-                        className="rounded-full object-cover border-2 border-purple-100 dark:border-purple-900/50" 
+                      <Image
+                        src={course.author?.image || '/images/prof.jpeg'}
+                        alt="Author"
+                        fill
+                        className="rounded-full object-cover border-2 border-purple-100 dark:border-purple-900/50"
                       />
                     </div>
                     <div>
@@ -266,11 +266,11 @@ const Bibliotheque = () => {
 
                   {/* Bouton d'action principal */}
                   <div className="mt-auto">
-                    <EnrollmentButton 
-                      courseId={course.id} 
-                      size="md" 
-                      variant="primary" 
-                      fullWidth 
+                    <EnrollmentButton
+                      courseId={course.id}
+                      size="md"
+                      variant="primary"
+                      fullWidth
                     />
                   </div>
                 </div>
@@ -283,29 +283,28 @@ const Bibliotheque = () => {
         {!loading && totalPages > 1 && (
           <div className="flex flex-col items-center gap-4 mt-8">
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 className="p-2 rounded-lg bg-white dark:bg-gray-800 border disabled:opacity-30 hover:bg-purple-50"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i + 1}
                   onClick={() => handlePageChange(i + 1)}
-                  className={`w-10 h-10 rounded-lg font-bold transition-all ${
-                    currentPage === i + 1 
-                      ? 'bg-purple-600 text-white shadow-lg' 
+                  className={`w-10 h-10 rounded-lg font-bold transition-all ${currentPage === i + 1
+                      ? 'bg-purple-600 text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-600 hover:bg-purple-50'
-                  }`}
+                    }`}
                 >
                   {i + 1}
                 </button>
               ))}
 
-              <button 
+              <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-lg bg-white dark:bg-gray-800 border disabled:opacity-30 hover:bg-purple-50"
@@ -327,10 +326,10 @@ const Bibliotheque = () => {
       </div>
 
       {/* Modal d'orientation PDF */}
-      <OrientationSelector 
-        isOpen={showOrientation} 
-        onSelect={handleSelectOrientation} 
-        onClose={() => setShowOrientation(false)} 
+      <OrientationSelector
+        isOpen={showOrientation}
+        onSelect={handleSelectOrientation}
+        onClose={() => setShowOrientation(false)}
       />
     </div>
   );

@@ -23,6 +23,7 @@ export interface Course {
     };
     content?: string;
     coverImage?: string | null;
+    photoUrl?: string | null;
     views?: number;
     likes?: number;
     downloads?: number;

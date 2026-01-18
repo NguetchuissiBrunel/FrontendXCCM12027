@@ -279,6 +279,7 @@ export default function CreateCoursePage() {
                 title: formData.title,
                 category: formData.category,
                 description: formData.description,
+                photoUrl: formData.image,
                 content: content as any
             });
 

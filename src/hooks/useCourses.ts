@@ -192,14 +192,11 @@ export function useCourse(courseId: number) {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Attendre que l'authentification soit initialisée
     const { isAuthenticated, loading: authLoading } = useAuth();
+    const { incrementLike: globalIncrementLike, incrementDownload: globalIncrementDownload } = useCourses();
 
     useEffect(() => {
-        // Si l'auth est encore en cours de chargement, on attend
         if (authLoading) return;
-
-        // Si l'utilisateur n'est pas authentifié, on ne fait pas d'appel API pour éviter l'erreur Forbidden
         if (!isAuthenticated) {
             setLoading(false);
             return;
@@ -215,17 +212,15 @@ export function useCourse(courseId: number) {
 
                 if (enrichedResponse && enrichedResponse.success && enrichedResponse.data) {
                     const enrichedData = enrichedResponse.data;
-
-                    // Find the course in the full list to get the content
-                    // (The enriched endpoint doesn't seem to return the content body)
-                    const fullCourse = allResponse?.data?.find((c: any) => c.id === courseId);
+                    const fullCourse = allResponse?.data?.find((c: any) => String(c.id) === String(courseId));
 
                     setCourse({
                         ...enrichedData,
-                        content: fullCourse?.content || enrichedData.content
+                        content: fullCourse?.content || enrichedData.content,
+                        viewCount: fullCourse?.viewCount ?? enrichedData.viewCount ?? 0,
+                        likeCount: fullCourse?.likeCount ?? enrichedData.likeCount ?? 0,
+                        downloadCount: fullCourse?.downloadCount ?? enrichedData.downloadCount ?? 0,
                     } as Course);
-                } else {
-                    console.warn('⚠️ Échec du chargement du cours:', enrichedResponse);
                 }
             } catch (err) {
                 console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
@@ -238,6 +233,8 @@ export function useCourse(courseId: number) {
         const incrementView = async () => {
             try {
                 await CourseControllerService.incrementViewCount(courseId);
+                // On pourrait aussi mettre à jour l'état local ici si on veut voir +1 immédiatement
+                setCourse(prev => prev ? { ...prev, viewCount: (prev.viewCount || 0) + 1 } : prev);
             } catch (err) {
                 console.error(`❌ Erreur lors de l'incrémentation des vues pour le cours ${courseId}:`, err);
             }
@@ -249,5 +246,37 @@ export function useCourse(courseId: number) {
         }
     }, [courseId, authLoading, isAuthenticated]);
 
-    return { course, loading: loading || authLoading, error };
+    const incrementLike = async (id: number) => {
+        try {
+            // Optimistic update locally
+            setCourse(prev => prev && String(prev.id) === String(id)
+                ? { ...prev, likeCount: (prev.likeCount || 0) + 1 }
+                : prev
+            );
+            await globalIncrementLike(id);
+        } catch (err) {
+            console.error("Error incrementing like:", err);
+        }
+    };
+
+    const incrementDownload = async (id: number) => {
+        try {
+            // Optimistic update locally
+            setCourse(prev => prev && String(prev.id) === String(id)
+                ? { ...prev, downloadCount: (prev.downloadCount || 0) + 1 }
+                : prev
+            );
+            await globalIncrementDownload(id);
+        } catch (err) {
+            console.error("Error incrementing download:", err);
+        }
+    };
+
+    return {
+        course,
+        loading: loading || authLoading,
+        error,
+        incrementLike,
+        incrementDownload
+    };
 }

@@ -1,5 +1,6 @@
 import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from '@/types/course';
 import { extractTOC } from './extractTOC';
+import { TableOfContentsItem } from '@/types/editor.types';
 
 /**
  * Transforms Tiptap JSON content into a structured CourseData object
@@ -105,9 +106,9 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
         title: apiCourse.title || "Titre non disponible",
         category: apiCourse.category || "Formation",
         image: apiCourse.coverImage || apiCourse.image || "/images/Capture2.png",
-        views: apiCourse.views || 0,
-        likes: apiCourse.likes || 0,
-        downloads: apiCourse.downloads || 0,
+        viewCount: apiCourse.viewCount || 0,
+        likeCount: apiCourse.likeCount || 0,
+        downloadCount: apiCourse.downloadCount || 0,
         author: {
             name: apiCourse.author
                 ? (apiCourse.author.name || `${apiCourse.author.firstName || ''} ${apiCourse.author.lastName || ''}`.trim() || "Auteur inconnu")

@@ -1,5 +1,4 @@
-import { Trash2, Edit, Layout, CheckCircle, Clock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Trash2, Layout, CheckCircle, Clock, FileText } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
 
@@ -11,16 +10,22 @@ export interface Composition {
   likes: number;
   downloads: number;
   status?: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
+  // optional aggregated stats (may come from server or be fetched lazily)
+  courseStats?: {
+    totalExercises?: number;
+    totalEnrolled?: number;
+  };
 }
 
 interface CompositionsCardProps {
   compositions: Composition[];
   onDelete: (id: string) => void;
   onCreateClick?: () => void;
+  onManageExercises?: (courseId: string) => void;
+  getCourseStats?: (id: string) => { totalExercises?: number; totalEnrolled?: number } | undefined;
 }
 
-export default function CompositionsCard({ compositions, onDelete, onCreateClick }: CompositionsCardProps) {
-  const router = useRouter();
+export default function CompositionsCard({ compositions, onDelete, onCreateClick, onManageExercises, getCourseStats }: CompositionsCardProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({
     isOpen: false,
     id: null
@@ -115,6 +120,28 @@ export default function CompositionsCard({ compositions, onDelete, onCreateClick
           </div>
         ))}
       </div>
+
+      {/* Section d'actions globales */}
+      {compositions.length > 0 && (
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Total : {compositions.length} cours • {
+                compositions.reduce((total, comp) => {
+                  const stats = comp.courseStats || (getCourseStats ? getCourseStats(comp.id) : undefined);
+                  return total + (stats?.totalExercises || 0);
+                }, 0)
+              } exercices • {
+                compositions.reduce((total, comp) => {
+                  const stats = comp.courseStats || (getCourseStats ? getCourseStats(comp.id) : undefined);
+                  return total + (stats?.totalEnrolled ?? comp.participants);
+                }, 0)
+              } étudiants
+            </div>
+            
+          </div>
+        </div>
+      )}
     </div>
   );
 }

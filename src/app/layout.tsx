@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
 };
 
+// Force la version desktop sr mobile
+
+export const viewport = {
+	width: 1280, 
+	initialScale:0.7,
+};
+
 // Force le rendu dynamique pour éviter que Next.js n'essaie de 
 // pré-générer des pages nécessitant des données privées au build
 export const dynamic = 'force-dynamic';

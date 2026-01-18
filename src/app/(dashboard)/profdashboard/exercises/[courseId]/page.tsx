@@ -1,532 +1,520 @@
 // src/app/(dashboard)/profdashboard/exercises/[courseId]/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ExercicesService } from '@/lib/services/ExercicesService';
-import { EnseignantService } from '@/lib/services/EnseignantService';
+import { ExerciseService } from '@/lib3/services/ExerciseService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import type { Exercise } from '@/types/exercise';
+import { toast } from 'react-hot-toast';
 import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Download,
-  BarChart3,
+  FaClipboardList, 
+  FaUsers, 
+  FaChartLine,
+  FaPlus,
+  FaArrowLeft,
+  FaEdit,
+  FaEye,
+  FaTrash,
+  FaClock,
+  FaGraduationCap,
+  FaExclamationTriangle,
+  FaCheckCircle
+} from 'react-icons/fa';
+import { 
   Calendar,
-  FileText,
   Users,
-  ArrowLeft,
-  BookOpen,
+  Award,
+  BarChart3,
+  FileText,
+  ChevronRight,
+  Download,
   Filter,
   Search,
-  Clock,
-  Award,
-  MoreVertical
+  PlusCircle
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-
-// Interface locale étendue avec les propriétés supplémentaires
-interface LocalExercise extends Exercise {
-  pendingCount?: number;
-  difficulty?: string;
-  duration?: number;
-}
+import Link from 'next/link';
 
 export default function CourseExercisesPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = parseInt(params.courseId as string);
   
-  const [exercises, setExercises] = useState<LocalExercise[]>([]);
+  const [courseInfo, setCourseInfo] = useState({
+    title: `Cours #${courseId}`,
+    description: 'Chargement...',
+    category: '',
+    studentCount: 0,
+    viewCount: 0,
+    likeCount: 0
+  });
+  
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
-  const [courseInfo, setCourseInfo] = useState<{
-    title: string;
-    category?: string;
-    description?: string;
-    status?: string;
-  } | null>(null);
-  
-  // États pour les filtres
-  const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'closed'>('all');
-  const [search, setSearch] = useState('');
-  const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
   useEffect(() => {
-    loadExercises();
     loadCourseInfo();
+    loadExercises();
   }, [courseId]);
-  
-  const loadExercises = async () => {
-    try {
-      setLoading(true);
-      const resp = await ExercicesService.getExercisesForCourse(courseId);
-      const list = (resp as any)?.data || [];
-      // Map Api ExerciseResponse -> local Exercise shape with defaults
-      const mapped: LocalExercise[] = list.map((e: any) => ({
-        id: e.id ?? 0,
-        courseId: e.courseId ?? courseId,
-        title: e.title ?? '',
-        description: e.description ?? '',
-        maxScore: e.maxScore ?? 0,
-        dueDate: e.dueDate ?? '',
-        createdAt: e.createdAt ?? new Date().toISOString(),
-        status: (e.status as any) || 'DRAFT',
-        submissionsCount: e.submissionsCount ?? 0,
-        pendingCount: e.pendingCount ?? 0,
-        difficulty: e.difficulty || 'medium',
-        duration: e.duration || 0,
-      }));
-      setExercises(mapped);
-    } catch (error) {
-      console.error('Erreur chargement exercices:', error);
-      toast.error('Erreur lors du chargement des exercices');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+
   const loadCourseInfo = async () => {
     try {
-      // Essayer de récupérer les infos du cours depuis l'API
-      // Si l'API n'existe pas, on peut essayer d'autres méthodes
-      const response = await CourseControllerService.getAuthorCourses('current');
-      const courses = response.data as any[];
-      const currentCourse = courses?.find(c => c.id === courseId);
-      
-      if (currentCourse) {
+      const response = await CourseControllerService.getEnrichedCourse(courseId);
+      if (response.data) {
+        const courseData = response.data as any;
         setCourseInfo({
-          title: currentCourse.title || `Cours #${courseId}`,
-          category: currentCourse.category || 'Non spécifié',
-          description: currentCourse.description,
-          status: currentCourse.status
-        });
-      } else {
-        // Fallback si on ne trouve pas le cours
-        setCourseInfo({
-          title: `Cours #${courseId}`,
-          category: 'Non spécifié'
+          title: courseData.title || `Cours #${courseId}`,
+          description: courseData.description || 'Description du cours',
+          category: courseData.category || '',
+          studentCount: courseData.studentCount || 25,
+          viewCount: courseData.viewCount || 0,
+          likeCount: courseData.likeCount || 0
         });
       }
     } catch (error) {
       console.error('Erreur chargement infos cours:', error);
-      // Fallback
-      setCourseInfo({
-        title: `Cours #${courseId}`,
-        category: 'Non spécifié'
-      });
+      toast.error('Impossible de charger les informations du cours');
     }
   };
-  
-  const handleCreateExercise = () => {
-    router.push(`/profdashboard/exercises/${courseId}/create`);
+
+  const loadExercises = async () => {
+    try {
+      setLoading(true);
+      const exercisesData = await ExerciseService.getExercisesForCourse(courseId);
+      setExercises(exercisesData);
+    } catch (error) {
+      console.error('Erreur chargement exercices:', error);
+      toast.error('Impossible de charger les exercices');
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const handleEditExercise = (exerciseId: number) => {
-    router.push(`/profdashboard/exercises/${courseId}/update/${exerciseId}`);
-  };
-  
-  const handleViewSubmissions = (exerciseId: number) => {
-    router.push(`/profdashboard/exercises/${courseId}/submissions/${exerciseId}`);
-  };
-  
-  const handleDeleteExercise = async (exerciseId: number) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet exercice ?')) {
-      try {
-        await EnseignantService.deleteExercise(exerciseId);
+
+  const handleDeleteExercise = async (exerciseId: number, exerciseTitle: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'exercice "${exerciseTitle}" ?`)) {
+      return;
+    }
+    
+    try {
+      const success = await ExerciseService.deleteExercise(exerciseId);
+      if (success) {
         toast.success('Exercice supprimé avec succès');
         loadExercises(); // Recharger la liste
-      } catch (error) {
-        console.error('Erreur suppression exercice:', error);
+      } else {
         toast.error('Erreur lors de la suppression');
       }
+    } catch (error: any) {
+      console.error('Erreur suppression:', error);
+      toast.error(error.message || 'Erreur lors de la suppression');
     }
   };
-  
-  const handlePublishExercise = async (exerciseId: number) => {
+
+  const handleDuplicateExercise = async (exerciseId: number) => {
     try {
-      await EnseignantService.updateExercise(exerciseId, { status: 'PUBLISHED' } as any);
-      toast.success('Exercice publié');
-      loadExercises();
-    } catch (error) {
-      console.error('Erreur publication:', error);
-      toast.error('Erreur lors de la publication');
+      toast.loading('Duplication en cours...');
+      const result = await ExerciseService.duplicateExercise(exerciseId, courseId);
+      
+      toast.dismiss();
+      
+      if (result.success) {
+        toast.success('Exercice dupliqué avec succès');
+        loadExercises(); // Recharger la liste
+      } else {
+        toast.error(result.message || 'Erreur lors de la duplication');
+      }
+    } catch (error: any) {
+      toast.dismiss();
+      console.error('Erreur duplication:', error);
+      toast.error(error.message || 'Erreur lors de la duplication');
     }
   };
-  
-  const handleCloseExercise = async (exerciseId: number) => {
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Non définie';
+    
     try {
-      await EnseignantService.updateExercise(exerciseId, { status: 'CLOSED' } as any);
-      toast.success('Exercice fermé');
-      loadExercises();
-    } catch (error) {
-      console.error('Erreur fermeture:', error);
-      toast.error('Erreur lors de la fermeture');
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Date invalide';
     }
   };
-  
+
+  const getStatusColor = (status: 'PUBLISHED' | 'CLOSED') => {
+    return status === 'PUBLISHED' 
+      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+  };
+
+  const getStatusText = (status: 'PUBLISHED' | 'CLOSED') => {
+    return status === 'PUBLISHED' ? 'Publié' : 'Fermé';
+  };
+
   // Filtrer les exercices
   const filteredExercises = exercises.filter(exercise => {
-    // Filtre par statut
-    if (filter !== 'all' && exercise.status?.toLowerCase() !== filter) {
-      return false;
-    }
-    
     // Filtre par recherche
-    if (search && !exercise.title.toLowerCase().includes(search.toLowerCase())) {
-      return false;
-    }
+    const matchesSearch = searchTerm === '' || 
+      exercise.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      exercise.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return true;
+    // Filtre par statut
+    const matchesStatus = filterStatus === 'all' || 
+      exercise.status === filterStatus.toUpperCase();
+    
+    return matchesSearch && matchesStatus;
   });
-  
+
   // Calculer les statistiques
-  const totalSubmissions = exercises.reduce((sum, e) => sum + (e.submissionsCount || 0), 0);
-  const totalPending = exercises.reduce((sum, e) => sum + (e.pendingCount || 0), 0);
-  const publishedCount = exercises.filter(e => e.status === 'PUBLISHED').length;
-  const draftCount = exercises.filter(e => e.status === 'DRAFT').length;
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des exercices...</p>
-        </div>
-      </div>
-    );
-  }
-  
+  const stats = {
+    totalExercises: exercises.length,
+    publishedExercises: exercises.filter(e => e.status === 'PUBLISHED').length,
+    closedExercises: exercises.filter(e => e.status === 'CLOSED').length,
+    totalSubmissions: exercises.reduce((sum, e) => sum + (e.submissionsCount || 0), 0),
+    averageScore: exercises.length > 0 
+      ? Math.round(exercises.reduce((sum, e) => sum + (e.averageScore || 0), 0) / exercises.length * 10) / 10
+      : 0
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-12">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* En-tête avec navigation */}
-        <div className="mb-8 pt-4">
-          <button
-            onClick={() => router.push('/profdashboard')}
-            className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors mb-6"
-          >
-            <ArrowLeft size={20} />
-            Retour au dashboard
-          </button>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Navigation */}
+        <div className="mb-8">
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <Link 
+              href="/profdashboard" 
+              className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight size={16} className="mx-2" />
+            <Link 
+              href="/profdashboard/exercises" 
+              className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Exercices
+            </Link>
+            <ChevronRight size={16} className="mx-2" />
+            <span className="text-gray-800 dark:text-gray-200 font-medium">
+              {courseInfo.title}
+            </span>
+          </div>
           
-          {/* En-tête principal avec infos du cours */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm dark:shadow-gray-900/30 border border-purple-100 dark:border-gray-700">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/20 rounded-xl">
-                  <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-                    {courseInfo?.title || `Cours #${courseId}`}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-                        {courseInfo?.category || 'Non catégorisé'}
-                      </span>
-                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                        {exercises.length} exercices
-                      </span>
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => router.push('/profdashboard/exercises')}
+              className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+            >
+              <FaArrowLeft size={18} />
+              Retour aux cours
+            </button>
+            
+          </div>
+        </div>
+
+        {/* En-tête du cours */}
+        <div className="mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                  {courseInfo.title}
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {courseInfo.description}
+                </p>
+                
+                {/* Statistiques rapides */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-blue-500" />
+                      <div>
+                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                          {stats.totalExercises}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Exercices
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm">
-                      {courseInfo?.description || 'Gérez les exercices de ce cours'}
-                    </p>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <Users className="w-5 h-5 text-orange-500" />
+                      <div>
+                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                          {stats.totalSubmissions}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Soumissions
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <Award className="w-5 h-5 text-purple-500" />
+                      <div>
+                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                          {stats.averageScore || '--'}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Moyenne
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="w-5 h-5 text-green-500" />
+                      <div>
+                        <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                          {courseInfo.studentCount}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Étudiants
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <button
-                onClick={handleCreateExercise}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 text-sm"
-              >
-                <Plus size={18} />
-                Nouvel exercice
-              </button>
+              {courseInfo.category && (
+                <div className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 rounded-full text-sm font-medium self-start">
+                  {courseInfo.category}
+                </div>
+              )}
             </div>
           </div>
         </div>
-        
-        {/* Statistiques rapides */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-r from-white to-purple-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-purple-100 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <div className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                  {exercises.length}
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Exercices
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-r from-white to-green-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-green-100 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <div className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                  {publishedCount}
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Publiés
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-r from-white to-yellow-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-yellow-100 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                <Eye className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <div>
-                <div className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                  {draftCount}
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Brouillons
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-r from-white to-blue-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-blue-100 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <div className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                  {totalSubmissions}
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Soumissions
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
+
         {/* Barre de recherche et filtres */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-6 shadow-sm dark:shadow-gray-900/30 border border-purple-100 dark:border-gray-700">
-          <div className="flex flex-col md:flex-row gap-3">
-            {/* Barre de recherche */}
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Rechercher un exercice..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
             </div>
             
-            {/* Filtres par statut */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              {[
-                { value: 'all', label: 'Tous', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
-                { value: 'published', label: 'Publiés', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-                { value: 'draft', label: 'Brouillons', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-                { value: 'closed', label: 'Fermés', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400' }
-              ].map(({ value, label, color }) => (
-                <button
-                  key={value}
-                  onClick={() => setFilter(value as any)}
-                  className={`px-3 py-1.5 rounded-lg transition-all duration-200 text-sm ${
-                    filter === value
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-sm'
-                      : `${color} hover:opacity-90`
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex gap-2">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="published">Publiés</option>
+                <option value="closed">Fermés</option>
+              </select>
+              
+              <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <Filter size={18} />
+              </button>
             </div>
           </div>
         </div>
-        
+
         {/* Liste des exercices */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/30 border border-purple-100 dark:border-gray-700 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-white dark:from-gray-800 dark:to-gray-900">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">
-                {filteredExercises.length} exercice(s) trouvé(s)
-              </h2>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                {totalPending > 0 && (
-                  <span className="text-red-500 dark:text-red-400 font-medium">
-                    {totalPending} en attente
-                  </span>
-                )}
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                  Exercices du cours
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  {filteredExercises.length} exercice{filteredExercises.length !== 1 ? 's' : ''} trouvé{filteredExercises.length !== 1 ? 's' : ''}
+                </p>
               </div>
+              
+              <Link
+                href={`/profdashboard/exercises/${courseId}/create`}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
+              >
+                <FaPlus size={16} />
+                Créer un exercice
+              </Link>
             </div>
           </div>
           
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredExercises.length === 0 ? (
-              <div className="p-8 text-center">
-                <FileText className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-                <h3 className="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {exercises.length === 0 ? 'Aucun exercice créé' : 'Aucun résultat'}
+          <div className="p-6">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des exercices...</p>
+              </div>
+            ) : filteredExercises.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  <FileText className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Aucun exercice trouvé
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
                   {exercises.length === 0 
-                    ? 'Créez votre premier exercice pour ce cours.'
-                    : 'Modifiez vos critères de recherche.'
+                    ? 'Ce cours ne contient pas encore d\'exercices. Créez votre premier exercice !'
+                    : 'Aucun exercice ne correspond à vos critères de recherche.'
                   }
                 </p>
-                {exercises.length === 0 && (
-                  <button
-                    onClick={handleCreateExercise}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200"
-                  >
-                    Créer un exercice
-                  </button>
-                )}
+                <Link
+                  href={`/profdashboard/exercises/${courseId}/create`}
+                  className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium inline-flex items-center gap-2"
+                >
+                  <FaPlus size={16} />
+                  Créer un exercice
+                </Link>
               </div>
             ) : (
-              filteredExercises.map((exercise) => {
-                const pendingCount = exercise.pendingCount || 0;
-                const duration = exercise.duration || 0;
-                
-                return (
-                  <div key={exercise.id} className="p-4 hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      {/* Informations de l'exercice */}
+              <div className="space-y-4">
+                {filteredExercises.map((exercise) => (
+                  <div 
+                    key={exercise.id} 
+                    className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                            {exercise.title}
-                          </h3>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            exercise.status === 'PUBLISHED' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                              : exercise.status === 'DRAFT'
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
-                          }`}>
-                            {exercise.status === 'PUBLISHED' ? 'Publié' : 
-                             exercise.status === 'DRAFT' ? 'Brouillon' : 'Fermé'}
-                          </span>
-                        </div>
-                        
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-1">
-                          {exercise.description || 'Aucune description'}
-                        </p>
-                        
-                        {/* Métadonnées */}
-                        <div className="flex flex-wrap gap-3 text-xs">
-                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                            <Calendar size={12} className="text-purple-500" />
-                            <span>{exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Pas d\'échéance'}</span>
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                            <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
-                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                            <Award size={12} className="text-blue-500" />
-                            <span>{exercise.maxScore} pts</span>
-                          </div>
-                          {duration > 0 && (
-                            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                              <Clock size={12} className="text-emerald-500" />
-                              <span>{duration} min</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-1">
+                              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                                {exercise.title}
+                              </h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(exercise.status)}`}>
+                                {getStatusText(exercise.status)}
+                              </span>
                             </div>
-                          )}
-                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                            <Users size={12} className="text-orange-500" />
-                            <span>
-                              {exercise.submissionsCount || 0}
-                              {pendingCount > 0 && (
-                                <span className="text-red-500 dark:text-red-400 ml-1">
-                                  ({pendingCount})
-                                </span>
-                              )}
-                            </span>
+                            
+                            {exercise.description && (
+                              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                                {exercise.description}
+                              </p>
+                            )}
+                            
+                            <div className="flex flex-wrap gap-3 text-sm">
+                              <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                                <Calendar size={14} />
+                                <span>Échéance: {formatDate(exercise.dueDate)}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                                <Award size={14} />
+                                <span>{exercise.maxScore} points</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                                <Users size={14} />
+                                <span>{exercise.submissionsCount || 0} soumissions</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                                <FaGraduationCap size={14} />
+                                <span>{exercise.questions?.length || 0} questions</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Actions - Petits boutons */}
-                      <div className="flex items-center gap-1">
-                        {/* Bouton principal - Voir soumissions */}
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => handleViewSubmissions(exercise.id)}
-                          title="Voir les soumissions"
-                          className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
+                          onClick={() => handleDuplicateExercise(exercise.id)}
+                          className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Dupliquer"
                         >
-                          <Eye size={16} />
+                          <FaPlus size={16} />
                         </button>
                         
-                        {/* Bouton modifier */}
-                        <button
-                          onClick={() => handleEditExercise(exercise.id)}
+                        <Link
+                          href={`/profdashboard/exercises/${courseId}/view/${exercise.id}`}
+                          className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                          title="Voir"
+                        >
+                          <FaEye size={16} />
+                        </Link>
+                        
+                        <Link
+                          href={`/profdashboard/exercises/${courseId}/edit/${exercise.id}`}
+                          className="p-2 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                           title="Modifier"
-                          className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800/40 transition-colors"
                         >
-                          <Edit size={16} />
-                        </button>
+                          <FaEdit size={16} />
+                        </Link>
                         
-                        {/* Bouton spécifique selon le statut */}
-                        {exercise.status === 'DRAFT' && (
-                          <button
-                            onClick={() => handlePublishExercise(exercise.id)}
-                            title="Publier"
-                            className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/40 transition-colors"
-                          >
-                            <Download size={16} />
-                          </button>
-                        )}
-                        
-                        {exercise.status === 'PUBLISHED' && (
-                          <button
-                            onClick={() => handleCloseExercise(exercise.id)}
-                            title="Fermer"
-                            className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs px-2 py-1"
-                          >
-                            Fermer
-                          </button>
-                        )}
-                        
-                        {/* Bouton supprimer */}
                         <button
-                          onClick={() => handleDeleteExercise(exercise.id)}
+                          onClick={() => handleDeleteExercise(exercise.id, exercise.title)}
+                          className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           title="Supprimer"
-                          className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/40 transition-colors"
                         >
-                          <Trash2 size={16} />
+                          <FaTrash size={16} />
                         </button>
                       </div>
                     </div>
                   </div>
-                );
-              })
+                ))}
+              </div>
             )}
           </div>
         </div>
-        
-        {/* Note informative */}
-        {exercises.length > 0 && (
-          <div className="mt-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 border border-purple-200 dark:border-purple-700/30">
-              <BarChart3 size={14} className="text-purple-600 dark:text-purple-400" />
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                <span className="font-medium text-purple-600 dark:text-purple-400">Statistiques :</span> 
-                {' '}{totalSubmissions} soumissions • {totalPending} en attente
-              </p>
+
+        {/* Actions supplémentaires */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 dark:bg-blue-800/30 rounded-lg">
+                <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                Statistiques avancées
+              </h3>
             </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Consultez des analyses détaillées sur les performances des étudiants et la progression du cours
+            </p>
+            <button 
+              onClick={() => router.push(`/profdashboard/analytics/${courseId}`)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Voir les analyses
+            </button>
           </div>
-        )}
+          
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-2xl border border-green-200 dark:border-green-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-100 dark:bg-green-800/30 rounded-lg">
+                <Download className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                Export des données
+              </h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Exportez les résultats des exercices au format CSV ou Excel pour analyse externe
+            </p>
+            <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              Exporter les données
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

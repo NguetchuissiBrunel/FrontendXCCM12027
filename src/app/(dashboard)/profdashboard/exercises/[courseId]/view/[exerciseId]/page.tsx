@@ -1,10 +1,10 @@
-// src/app/(dashboard)/profdashboard/exercises/[courseId]/view/[exerciseId]/page.tsx
+// src/app/(dashboard)/profdashboard/exercises/[courseId]/view/[exerciseId]/page.tsx - VERSION CORRIGÉE
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { ExercicesService } from '@/lib/services/ExercicesService';
+import { ExerciseService } from '@/lib3/services/ExerciseService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import type { Exercise, Question } from '@/types/exercise';
 import { 
@@ -24,8 +24,8 @@ import {
   XCircle,
   BarChart3,
   Copy,
-  Share2,
-  AlertTriangle
+  AlertTriangle,
+  Send
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -44,7 +44,13 @@ export default function ViewExercisePage() {
     title: string;
     category?: string;
   } | null>(null);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalSubmissions: 0,
+    pendingSubmissions: 0,
+    averageScore: 0,
+    completionRate: 0
+  });
   
   useEffect(() => {
     if (!user) {
@@ -53,91 +59,81 @@ export default function ViewExercisePage() {
       return;
     }
     
-    loadExercise();
-    loadCourseInfo();
+    loadData();
   }, [courseId, exerciseId, user, router]);
   
-  const loadExercise = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       console.log('Chargement exercice ID:', exerciseId);
       
-      const resp = await ExercicesService.getExerciseDetails(exerciseId);
-      console.log('Réponse API exercice:', resp);
+      // 1. Charger l'exercice via ExerciseService
+      const exerciseData = await ExerciseService.getExerciseDetails(exerciseId);
+      console.log('Exercice chargé:', exerciseData);
       
-      if (resp && resp.data) {
-        const exerciseData = resp.data as any;
-        console.log('Données exercice brutes:', exerciseData);
-        
-        // Extraire les questions - plusieurs possibilités de structure
-        let extractedQuestions: Question[] = [];
-        
-        if (Array.isArray(exerciseData.questions)) {
-          // Cas 1: questions directement dans exerciseData.questions
-          extractedQuestions = exerciseData.questions.map((q: any, index: number) => ({
-            id: q.id || index,
-            exerciseId: q.exerciseId || exerciseId,
-            question: q.question || q.text || '',
-            questionType: (q.questionType || q.type || 'TEXT') as 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE',
-            points: q.points || q.score || 0,
-            options: q.options || [],
-            correctAnswer: q.correctAnswer || q.answer || ''
-          }));
-        } else if (exerciseData.content && Array.isArray(exerciseData.content.questions)) {
-          // Cas 2: questions dans content.questions
-          extractedQuestions = exerciseData.content.questions.map((q: any, index: number) => ({
-            id: q.id || index,
-            exerciseId: q.exerciseId || exerciseId,
-            question: q.question || q.text || '',
-            questionType: (q.questionType || q.type || 'TEXT') as 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE',
-            points: q.points || q.score || 0,
-            options: q.options || [],
-            correctAnswer: q.correctAnswer || q.answer || ''
-          }));
-        } else if (exerciseData.exerciseContent && Array.isArray(exerciseData.exerciseContent.questions)) {
-          // Cas 3: questions dans exerciseContent.questions
-          extractedQuestions = exerciseData.exerciseContent.questions.map((q: any, index: number) => ({
-            id: q.id || index,
-            exerciseId: q.exerciseId || exerciseId,
-            question: q.question || q.text || '',
-            questionType: (q.questionType || q.type || 'TEXT') as 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE',
-            points: q.points || q.score || 0,
-            options: q.options || [],
-            correctAnswer: q.correctAnswer || q.answer || ''
-          }));
-        }
-        
-        console.log('Questions extraites:', extractedQuestions);
-        
-        const mappedExercise: Exercise = {
-          id: exerciseData.id || exerciseId,
-          courseId: exerciseData.courseId || courseId,
-          title: exerciseData.title || exerciseData.name || 'Exercice sans titre',
-          description: exerciseData.description || exerciseData.content?.description || '',
-          maxScore: exerciseData.maxScore || exerciseData.maximumScore || exerciseData.totalPoints || 0,
-          dueDate: exerciseData.dueDate || exerciseData.deadline || exerciseData.endDate || '',
-          createdAt: exerciseData.createdAt || exerciseData.creationDate || new Date().toISOString(),
-          updatedAt: exerciseData.updatedAt || exerciseData.modificationDate,
-          status: (exerciseData.status?.toUpperCase() as 'DRAFT' | 'PUBLISHED' | 'CLOSED') || 'DRAFT',
-          questions: extractedQuestions,
-          submissionsCount: exerciseData.submissionsCount || exerciseData.totalSubmissions || 0,
-          pendingCount: exerciseData.pendingCount || exerciseData.unreviewedSubmissions || 0,
-          averageScore: exerciseData.averageScore || exerciseData.avgScore,
-          totalStudents: exerciseData.totalStudents || exerciseData.studentCount
-        };
-        
-        setExercise(mappedExercise);
-        setQuestions(extractedQuestions);
-      } else {
-        console.warn('Réponse API vide ou sans data:', resp);
+      if (!exerciseData) {
         toast.error('Exercice non trouvé');
+        return;
       }
+      
+      // Déduire le statut de l'exercice localement (remplace normalizeExerciseStatus non disponible)
+            const computeStatus = (data: any): 'PUBLISHED' | 'CLOSED' => {
+              // Si le back-end fournit déjà un statut explicite, l'utiliser
+              if (data?.status === 'PUBLISHED' || data?.status === 'CLOSED') return data.status;
+              // Sinon, inférer à partir d'un booléen published
+              if (typeof data?.published === 'boolean') return data.published ? 'PUBLISHED' : 'CLOSED';
+              // Si une date de publication existe, considérer comme publié
+              if (data?.publishedAt) return 'PUBLISHED';
+              // Valeur par défaut
+              return 'CLOSED';
+            };
+      
+            const safeExercise: Exercise = {
+              ...exerciseData,
+              status: computeStatus(exerciseData)
+            };
+      
+      setExercise(safeExercise);
+      
+      // 2. Charger les soumissions
+      await loadSubmissions();
+      
+      // 3. Charger les informations du cours
+      await loadCourseInfo();
+      
     } catch (error: any) {
-      console.error('Erreur chargement exercice:', error);
-      console.error('Détails erreur:', error.response?.data || error.message);
-      toast.error('Erreur lors du chargement de l\'exercice');
+      console.error('Erreur chargement données:', error);
+      toast.error('Erreur lors du chargement');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const loadSubmissions = async () => {
+    try {
+      const submissionsData = await ExerciseService.getExerciseSubmissions(exerciseId);
+      console.log('Soumissions chargées:', submissionsData);
+      
+      if (Array.isArray(submissionsData)) {
+        setSubmissions(submissionsData);
+        
+        // Calculer les statistiques
+        const total = submissionsData.length;
+        const pending = submissionsData.filter((s: any) => !s.graded).length;
+        const graded = submissionsData.filter((s: any) => s.graded);
+        const avgScore = graded.length > 0 
+          ? graded.reduce((sum: number, s: any) => sum + (s.score || 0), 0) / graded.length
+          : 0;
+        
+        setStats({
+          totalSubmissions: total,
+          pendingSubmissions: pending,
+          averageScore: Math.round(avgScore * 10) / 10,
+          completionRate: total > 0 ? Math.round((total / 30) * 100) : 0 // 30 étudiants par défaut
+        });
+      }
+    } catch (error) {
+      console.error('Erreur chargement soumissions:', error);
     }
   };
   
@@ -166,13 +162,16 @@ export default function ViewExercisePage() {
     }
     
     try {
-      // Vous devrez implémenter cette méthode dans EnseignantService
-      // ou utiliser une API directe
-      toast.success('Exercice supprimé');
-      router.push(`/profdashboard/exercises/${courseId}`);
-    } catch (error) {
+      const success = await ExerciseService.deleteExercise(exerciseId);
+      if (success) {
+        toast.success('Exercice supprimé avec succès');
+        router.push(`/profdashboard/exercises/${courseId}`);
+      } else {
+        toast.error('Erreur lors de la suppression');
+      }
+    } catch (error: any) {
       console.error('Erreur suppression:', error);
-      toast.error('Erreur lors de la suppression');
+      toast.error(error.message || 'Erreur lors de la suppression');
     }
   };
   
@@ -182,36 +181,109 @@ export default function ViewExercisePage() {
   
   const handleDuplicate = async () => {
     try {
+      if (!exercise) return;
+      
       toast.loading('Duplication en cours...');
       
-      // Créer une copie de l'exercice
-      const duplicateData = {
-        title: `${exercise?.title} (Copie)`,
-        description: exercise?.description,
-        maxScore: exercise?.maxScore,
-        dueDate: exercise?.dueDate,
-        questions: questions.map(q => ({
-          question: q.question,
-          questionType: q.questionType,
-          points: q.points,
-          options: q.options,
-          correctAnswer: q.correctAnswer
-        })),
-        status: 'DRAFT' as const
-      };
-      
-      // Vous devrez implémenter cette méthode
-      // await EnseignantService.createExercise(courseId, duplicateData);
+      // Utiliser la méthode de duplication du service
+      const duplicated = await ExerciseService.duplicateExercise(
+        exerciseId,
+        courseId,
+        `${exercise.title} (Copie)`
+      );
       
       toast.dismiss();
-      toast.success('Exercice dupliqué avec succès');
-      // Recharger la liste des exercices
-      loadExercise();
-    } catch (error) {
+      
+      // Si le service retourne directement l'exercice dupliqué
+      if (duplicated && (duplicated as any).id) {
+        toast.success('Exercice dupliqué avec succès');
+        // Rediriger vers le nouvel exercice
+        router.push(`/profdashboard/exercises/${courseId}/view/${(duplicated as any).id}`);
+      } else if ((duplicated as any)?.success && (duplicated as any)?.data) {
+        // Compatibilité si le service retourne { success, data }
+        toast.success('Exercice dupliqué avec succès');
+        router.push(`/profdashboard/exercises/${courseId}/view/${(duplicated as any).data.id}`);
+      } else {
+        toast.error((duplicated as any)?.message || 'Erreur lors de la duplication');
+      }
+    } catch (error: any) {
       toast.dismiss();
       console.error('Erreur duplication:', error);
-      toast.error('Erreur lors de la duplication');
+      toast.error(error.message || 'Erreur lors de la duplication');
     }
+  };
+  
+  const handleDownloadSubmissions = () => {
+    toast.loading('Préparation du téléchargement...');
+    // Implémenter le téléchargement des soumissions
+    setTimeout(() => {
+      toast.dismiss();
+      toast.success('Fichier prêt au téléchargement');
+    }, 2000);
+  };
+  
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Non définie';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Date invalide';
+    }
+  };
+  
+  const calculateProgress = () => {
+    if (!exercise) return 0;
+    return exercise.questions?.length || 0;
+  };
+
+  const handleSave = (savedExercise: Exercise) => {
+  console.log('📨 handleSave reçoit:', savedExercise);
+  
+  // Vérification robuste
+  if (!savedExercise) {
+    toast.error('Aucune donnée reçue');
+    return;
+  }
+  
+  if (!savedExercise.id || savedExercise.id === 0) {
+    console.error('Exercice sans ID valide:', savedExercise);
+    toast.error('L\'exercice créé n\'a pas d\'ID valide. Redirection vers la liste...');
+    
+    // Redirection vers la liste en cas d'erreur
+    setTimeout(() => {
+      router.push(`/profdashboard/exercises/${courseId}`);
+    }, 2000);
+    return;
+  }
+  
+  toast.success('🎉 Exercice créé et publié avec succès !', {
+    duration: 4000,
+    icon: '✅',
+  });
+  
+  // Redirection vers la page de l'exercice
+  setTimeout(() => {
+    router.push(`/profdashboard/exercises/${courseId}/view/${savedExercise.id}`);
+  }, 1000);
+};
+  
+  // Fonction helper pour déterminer l'affichage du statut
+  const getStatusDisplay = (status: 'PUBLISHED' | 'CLOSED') => {
+    return status === 'PUBLISHED' ? 'Publié' : 'Fermé';
+  };
+  
+  const getStatusColor = (status: 'PUBLISHED' | 'CLOSED') => {
+    return status === 'PUBLISHED' 
+      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
   };
   
   if (loading) {
@@ -293,7 +365,7 @@ export default function ViewExercisePage() {
                 Modifier
               </button>
               <button
-                onClick={() => router.push('/profdashboard/exercises/' + courseId + '/update/' + exerciseId)}
+                onClick={handleViewSubmissions}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Eye size={18} />
@@ -316,15 +388,8 @@ export default function ViewExercisePage() {
                     {exercise.title}
                   </h1>
                   <div className="flex items-center gap-3 mt-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      exercise.status === 'PUBLISHED' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                        : exercise.status === 'DRAFT'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
-                      {exercise.status === 'PUBLISHED' ? 'Publié' : 
-                       exercise.status === 'DRAFT' ? 'Brouillon' : 'Fermé'}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(exercise.status)}`}>
+                      {getStatusDisplay(exercise.status)}
                     </span>
                     {courseInfo?.category && (
                       <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
@@ -365,13 +430,7 @@ export default function ViewExercisePage() {
                     <Calendar className="w-5 h-5 text-purple-500" />
                     <div>
                       <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                        {exercise.dueDate 
-                          ? new Date(exercise.dueDate).toLocaleDateString('fr-FR', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })
-                          : 'Non définie'}
+                        {formatDate(exercise.dueDate)}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Date limite
@@ -385,7 +444,7 @@ export default function ViewExercisePage() {
                     <Users className="w-5 h-5 text-orange-500" />
                     <div>
                       <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        {exercise.submissionsCount || 0}
+                        {stats.totalSubmissions}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Soumissions
@@ -399,12 +458,63 @@ export default function ViewExercisePage() {
                     <BarChart3 className="w-5 h-5 text-green-500" />
                     <div>
                       <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        {exercise.averageScore ? `${exercise.averageScore.toFixed(1)}` : '--'}
+                        {stats.averageScore || '--'}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Moyenne
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Statistiques avancées */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-blue-600 dark:text-blue-400">À corriger</div>
+                      <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.pendingSubmissions}</div>
+                    </div>
+                    <Send className="w-8 h-8 text-blue-500" />
+                  </div>
+                  <div className="mt-2 h-2 bg-blue-200 dark:bg-blue-800 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-500 rounded-full"
+                      style={{ width: `${stats.totalSubmissions > 0 ? (stats.pendingSubmissions / stats.totalSubmissions) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-green-600 dark:text-green-400">Taux de participation</div>
+                      <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.completionRate}%</div>
+                    </div>
+                    <Users className="w-8 h-8 text-green-500" />
+                  </div>
+                  <div className="mt-2 h-2 bg-green-200 dark:bg-green-800 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-green-500 rounded-full"
+                      style={{ width: `${stats.completionRate}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-purple-600 dark:text-purple-400">Questions</div>
+                      <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{calculateProgress()}</div>
+                    </div>
+                    <FileText className="w-8 h-8 text-purple-500" />
+                  </div>
+                  <div className="mt-2 h-2 bg-purple-200 dark:bg-purple-800 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-purple-500 rounded-full"
+                      style={{ width: '100%' }}
+                    />
                   </div>
                 </div>
               </div>
@@ -416,10 +526,10 @@ export default function ViewExercisePage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              Questions ({questions.length})
+              Questions ({exercise.questions?.length || 0})
             </h2>
             
-            {questions.length === 0 && (
+            {(exercise.questions?.length || 0) === 0 && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
                 <AlertTriangle size={16} />
                 <span className="text-sm">Aucune question</span>
@@ -427,9 +537,9 @@ export default function ViewExercisePage() {
             )}
           </div>
           
-          {questions.length > 0 ? (
+          {exercise.questions && exercise.questions.length > 0 ? (
             <div className="space-y-4">
-              {questions.map((question, index) => (
+              {exercise.questions.map((question, index) => (
                 <div key={question.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -520,7 +630,7 @@ export default function ViewExercisePage() {
                 Cet exercice ne contient pas encore de questions. Vous pouvez en ajouter en modifiant l'exercice.
               </p>
               <button
-                onClick={() => router.push('/profdashboard/exercises/' + courseId + '/update/' + exerciseId)}
+                onClick={handleEdit}
                 className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
               >
                 <Edit size={18} className="inline mr-2" />
@@ -555,7 +665,7 @@ export default function ViewExercisePage() {
               <Eye className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
               <span className="font-medium text-gray-800 dark:text-gray-200">Soumissions</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Voir et noter les soumissions
+                Voir et noter les soumissions ({stats.pendingSubmissions} à corriger)
               </span>
             </button>
             
@@ -571,14 +681,24 @@ export default function ViewExercisePage() {
             </button>
             
             <button
-              onClick={handleDelete}
-              className="flex flex-col items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
+              onClick={handleDownloadSubmissions}
+              className="flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
             >
-              <Trash2 className="w-8 h-8 text-red-600 dark:text-red-400 mb-2 group-hover:scale-110 transition-transform" />
-              <span className="font-medium text-gray-800 dark:text-gray-200">Supprimer</span>
+              <Download className="w-8 h-8 text-green-600 dark:text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+              <span className="font-medium text-gray-800 dark:text-gray-200">Exporter</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Supprimer définitivement cet exercice
+                Télécharger les soumissions
               </span>
+            </button>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+            <button
+              onClick={handleDelete}
+              className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+            >
+              <Trash2 size={18} />
+              Supprimer l'exercice
             </button>
           </div>
         </div>

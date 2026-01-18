@@ -24,9 +24,9 @@ export interface Course {
     content?: string;
     coverImage?: string | null;
     photoUrl?: string | null;
-    views?: number;
-    likes?: number;
-    downloads?: number;
+    viewCount?: number;
+    likeCount?: number;
+    downloadCount?: number;
 }
 
 interface UseCoursesReturn {
@@ -36,6 +36,9 @@ interface UseCoursesReturn {
     fetchAllCourses: () => Promise<void>;
     fetchCourse: (courseId: number) => Promise<Course | null>;
     refetch: () => Promise<void>;
+    incrementView: (courseId: number) => Promise<void>;
+    incrementLike: (courseId: number) => Promise<void>;
+    incrementDownload: (courseId: number) => Promise<void>;
 }
 
 /**
@@ -93,6 +96,68 @@ export function useCourses(): UseCoursesReturn {
     }, []);
 
     /**
+     * Incrémente le compteur de vues d'un cours
+     */
+    const incrementView = useCallback(async (courseId: number) => {
+        try {
+            // Optimistic update
+            setCourses(prev => prev.map(course =>
+                course.id === courseId
+                    ? { ...course, viewCount: (course.viewCount || 0) + 1 }
+                    : course
+            ));
+
+            await CourseControllerService.incrementViewCount(courseId);
+        } catch (err) {
+            console.error(`❌ Erreur lors de l'incrémentation des vues pour le cours ${courseId}:`, err);
+            // Revert optimistic update on error
+            await fetchAllCourses();
+        }
+    }, [fetchAllCourses]);
+
+    /**
+     * Incrémente le compteur de likes d'un cours
+     */
+    const incrementLike = useCallback(async (courseId: number) => {
+        try {
+            // Optimistic update
+            setCourses(prev => prev.map(course =>
+                course.id === courseId
+                    ? { ...course, likeCount: (course.likeCount || 0) + 1 }
+                    : course
+            ));
+
+            await CourseControllerService.incrementLikeCount(courseId);
+        } catch (err) {
+            console.error(`❌ Erreur lors de l'incrémentation des likes pour le cours ${courseId}:`, err);
+            // Revert optimistic update on error
+            await fetchAllCourses();
+            throw err;
+        }
+    }, [fetchAllCourses]);
+
+    /**
+     * Incrémente le compteur de téléchargements d'un cours
+     */
+    const incrementDownload = useCallback(async (courseId: number) => {
+        try {
+            // Optimistic update
+            setCourses(prev => prev.map(course =>
+                course.id === courseId
+                    ? { ...course, downloadCount: (course.downloadCount || 0) + 1 }
+                    : course
+            ));
+
+            await CourseControllerService.incrementDownloadCount(courseId);
+        } catch (err) {
+            console.error(`❌ Erreur lors de l'incrémentation des téléchargements pour le cours ${courseId}:`, err);
+            // Revert optimistic update on error
+            await fetchAllCourses();
+            throw err;
+        }
+    }, [fetchAllCourses]);
+
+    /**
      * Recharge tous les cours
      */
     const refetch = useCallback(async () => {
@@ -111,13 +176,16 @@ export function useCourses(): UseCoursesReturn {
         fetchAllCourses,
         fetchCourse,
         refetch,
+        incrementView,
+        incrementLike,
+        incrementDownload,
     };
 }
 
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * Hook pour récupérer un cours spécifique
+ * Hook pour récupérer un cours spécifique et incrémenter le nombre de vues
  */
 export function useCourse(courseId: number) {
     const [course, setCourse] = useState<Course | null>(null);
@@ -167,8 +235,17 @@ export function useCourse(courseId: number) {
             }
         };
 
+        const incrementView = async () => {
+            try {
+                await CourseControllerService.incrementViewCount(courseId);
+            } catch (err) {
+                console.error(`❌ Erreur lors de l'incrémentation des vues pour le cours ${courseId}:`, err);
+            }
+        };
+
         if (courseId) {
             loadCourse();
+            incrementView();
         }
     }, [courseId, authLoading, isAuthenticated]);
 

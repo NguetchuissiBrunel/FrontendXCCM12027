@@ -97,7 +97,7 @@ const CourseCardSkeleton = () => (
 const Bibliotheque = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const { courses, loading, error, fetchCourse } = useCourses();
+  const { courses, loading, error, fetchCourse, incrementLike, incrementDownload } = useCourses();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [showOrientation, setShowOrientation] = useState(false);
@@ -127,6 +127,15 @@ const Bibliotheque = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleLikeClick = async (id: number) => {
+    try {
+      await incrementLike(id);
+      toast.success("Cours ajouté à vos favoris !");
+    } catch (err) {
+      toast.error("Impossible d'aimer ce cours");
+    }
+  };
+
   const handleDownloadClick = (id: number) => {
     setSelectedCourseId(id);
     setShowOrientation(true);
@@ -137,6 +146,9 @@ const Bibliotheque = () => {
     setShowOrientation(false);
     const downloadToast = toast.loading("Génération de votre ressource...");
     try {
+      // Increment download count
+      await incrementDownload(selectedCourseId);
+
       const fullCourse = await fetchCourse(selectedCourseId);
       if (!fullCourse) throw new Error("Données introuvables");
       const courseData = transformTiptapToCourseData(fullCourse);
@@ -254,12 +266,12 @@ const Bibliotheque = () => {
                   {/* Statistiques (Likes, Views, Downloads) */}
                   <div className="flex justify-between items-center px-1 py-3 border-t border-gray-100 dark:border-gray-700 mb-4">
                     <div className="flex items-center text-gray-500 text-xs gap-4">
-                      <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {formatNumber(course.views)}</span>
-                      <button className="flex items-center gap-1.5 hover:text-red-500 transition-colors">
-                        <Heart className="w-4 h-4" /> {formatNumber(course.likes)}
+                      <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {formatNumber(course.viewCount)}</span>
+                      <button onClick={() => handleLikeClick(course.id)} className="flex items-center gap-1.5 hover:text-red-500 transition-colors">
+                        <Heart className="w-4 h-4" /> {formatNumber(course.likeCount)}
                       </button>
                       <button onClick={() => handleDownloadClick(course.id)} className="flex items-center gap-1.5 hover:text-purple-600 transition-colors">
-                        <Download className="w-4 h-4" /> {formatNumber(course.downloads)}
+                        <Download className="w-4 h-4" /> {formatNumber(course.downloadCount)}
                       </button>
                     </div>
                   </div>
@@ -296,8 +308,8 @@ const Bibliotheque = () => {
                   key={i + 1}
                   onClick={() => handlePageChange(i + 1)}
                   className={`w-10 h-10 rounded-lg font-bold transition-all ${currentPage === i + 1
-                      ? 'bg-purple-600 text-white shadow-lg'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 hover:bg-purple-50'
+                    ? 'bg-purple-600 text-white shadow-lg'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 hover:bg-purple-50'
                     }`}
                 >
                   {i + 1}

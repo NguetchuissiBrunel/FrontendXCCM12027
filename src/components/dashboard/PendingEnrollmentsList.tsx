@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function PendingEnrollmentsList() {
     const { user } = useAuth();
@@ -16,6 +17,15 @@ export default function PendingEnrollmentsList() {
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [studentNames, setStudentNames] = useState<Record<string, string>>({});
     const [courseTitles, setCourseTitles] = useState<Record<number, string>>({});
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+    useEffect(() => {
+        if (loading) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [loading, startLoading, stopLoading]);
 
     useEffect(() => {
         fetchPendingEnrollments();
@@ -43,7 +53,7 @@ export default function PendingEnrollmentsList() {
         // Charger les noms des étudiants
         studentIds.forEach(async (id) => {
             try {
-                const response = await GestionDesUtilisateursService.getStudentById(id);
+                const response = await GestionDesUtilisateursService.getStudentById1(id);
                 if (response.data) {
                     const name = `Étudiant ${response.data.firstName || ''} ${response.data.lastName || ''}`.trim() || `Étudiant #${id}`;
                     setStudentNames(prev => ({ ...prev, [id]: name }));
@@ -86,12 +96,8 @@ export default function PendingEnrollmentsList() {
     // Si l'utilisateur n'est pas un prof, ne rien afficher (sécurité côté client)
     if (user?.role !== 'teacher') return null;
 
-    if (loading) {
-        return (
-            <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-            </div>
-        );
+    if (loading || globalLoading) {
+        return null;
     }
 
     if (enrollments.length === 0) {

@@ -8,6 +8,7 @@ import { CourseControllerService } from '@/lib/services/CourseControllerService'
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { BookOpen, FileText, Users, ArrowLeft, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function AllExercisesPage() {
   const router = useRouter();
@@ -16,6 +17,15 @@ export default function AllExercisesPage() {
   const [exercises, setExercises] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   // Fonction utilitaire pour parser l'ID du cours
   const parseCourseId = (id: number | string | undefined): number => {
@@ -35,7 +45,7 @@ export default function AllExercisesPage() {
     const loadAllExercises = async () => {
       try {
         setLoading(true);
-        
+
         // 1. Récupérer tous les cours du professeur
         const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
         const coursesData = coursesResponse.data || [];
@@ -43,15 +53,15 @@ export default function AllExercisesPage() {
 
         // 2. Pour chaque cours, récupérer les exercices
         const allExercises: any[] = [];
-        
+
         for (const course of coursesData) {
           const courseId = parseCourseId(course.id);
           if (courseId === 0) continue; // Skip si ID invalide
-          
+
           try {
             const exercisesResponse = await ExercicesService.getExercisesForCourse(courseId);
             const courseExercises = exercisesResponse.data || [];
-            
+
             // Ajouter les métadonnées du cours à chaque exercice
             const exercisesWithCourse = courseExercises.map((exercise: any) => ({
               ...exercise,
@@ -59,14 +69,14 @@ export default function AllExercisesPage() {
               courseId: courseId,
               courseCategory: course.category || 'Non catégorisé'
             }));
-            
+
             allExercises.push(...exercisesWithCourse);
           } catch (error) {
             console.error(`Erreur chargement exercices cours ${courseId}:`, error);
             toast.error(`Erreur chargement exercices pour le cours: ${course.title}`);
           }
         }
-        
+
         setExercises(allExercises);
       } catch (error) {
         console.error('Erreur chargement des exercices:', error);
@@ -84,12 +94,8 @@ export default function AllExercisesPage() {
     exercise.courseTitle?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
+  if (loading || globalLoading) {
+    return null;
   }
 
   return (
@@ -104,7 +110,7 @@ export default function AllExercisesPage() {
             <ArrowLeft size={20} />
             Retour au dashboard
           </button>
-          
+
           <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-2">
             Tous mes exercices
           </h1>
@@ -126,7 +132,7 @@ export default function AllExercisesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-purple-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -138,7 +144,7 @@ export default function AllExercisesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-purple-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
@@ -181,7 +187,7 @@ export default function AllExercisesPage() {
               {filteredExercises.length} exercice(s) trouvé(s)
             </h2>
           </div>
-          
+
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredExercises.length === 0 ? (
               <div className="p-8 text-center">

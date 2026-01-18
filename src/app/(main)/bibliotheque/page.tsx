@@ -22,6 +22,7 @@ import {
 import { transformTiptapToCourseData } from "@/utils/courseTransformer";
 import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
+import confetti from 'canvas-confetti';
 
 // --- COMPOSANTS AUXILIAIRES ---
 
@@ -81,17 +82,6 @@ const StarRating = ({ rating = 5 }: { rating: number }) => (
   </div>
 );
 
-const CourseCardSkeleton = () => (
-  <div className="bg-purple-50 dark:bg-purple-900/10 rounded-xl p-4 h-[500px] flex flex-col animate-pulse">
-    <div className="w-full h-48 mb-4 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-    <div className="space-y-3 flex-grow">
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-    </div>
-  </div>
-);
-
 // --- COMPOSANT PRINCIPAL ---
 
 const Bibliotheque = () => {
@@ -130,6 +120,15 @@ const Bibliotheque = () => {
   const handleLikeClick = async (id: number) => {
     try {
       await incrementLike(id);
+
+      // Wow factor: Confetti!
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.8 },
+        colors: ['#8B5CF6', '#EC4899', '#3B82F6']
+      });
+
       toast.success("Cours ajouté à vos favoris !");
     } catch (err) {
       toast.error("Impossible d'aimer ce cours");
@@ -214,7 +213,7 @@ const Bibliotheque = () => {
         {/* Grille des cours */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {loading ? (
-            [...Array(6)].map((_, i) => <CourseCardSkeleton key={i} />)
+            null
           ) : (
             currentCourses.map((course) => (
               <div key={course.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-purple-50 dark:border-purple-900/20 flex flex-col overflow-hidden group">

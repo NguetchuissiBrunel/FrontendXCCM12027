@@ -6,6 +6,7 @@ import { ExerciseService } from '@/lib/services/ExerciseService';
 import { Exercise, Question } from '@/types/exercise';
 import { toast } from 'react-hot-toast';
 import { FaPlus, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface ExerciseEditorProps {
   courseId: number;
@@ -24,7 +25,7 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
     maxScore: 20,
     dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   });
-  
+
   const [questions, setQuestions] = useState<Question[]>([
     {
       id: Date.now(),
@@ -37,6 +38,15 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
   ]);
 
   const [loading, setLoading] = useState(false);
+  const { startLoading, stopLoading } = useLoading();
+
+  React.useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   const addQuestion = () => {
     setQuestions([...questions, {
@@ -68,7 +78,7 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       // Validation
       const trimmedTitle = formData.title.trim();
       if (!trimmedTitle) {
@@ -99,7 +109,7 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
 
       toast.success('✅ Exercice créé et publié !');
       onSave(result.data);
-      
+
     } catch (error: any) {
       toast.error(error.message || 'Erreur création exercice');
       console.error(error);
@@ -113,7 +123,7 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
       <h2 className="text-2xl font-bold mb-6 text-indigo-600">
         ✨ Nouvel Exercice (Publication Automatique)
       </h2>
-      
+
       {/* Bandeau d'information */}
       <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
         <div className="flex items-center">
@@ -320,10 +330,7 @@ export const ExerciseEditor: React.FC<ExerciseEditorProps> = ({
                    flex items-center gap-2 transition-colors disabled:opacity-50"
         >
           {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Création en cours...
-            </>
+            'Chargement...'
           ) : (
             <>
               <FaSave /> Créer et publier l'exercice

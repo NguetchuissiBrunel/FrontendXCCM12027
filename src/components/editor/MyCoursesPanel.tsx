@@ -6,6 +6,7 @@ import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { toast } from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface MyCoursesPanelProps {
   onClose: () => void;
@@ -16,6 +17,15 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: number | null }>({
     isOpen: false,
     id: null
@@ -140,11 +150,8 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
 
       {/* Course List */}
       <div className="flex-1 overflow-y-auto p-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center mt-12 text-gray-500 dark:text-gray-400">
-            <FaSpinner className="animate-spin text-2xl mb-2" />
-            <p className="text-sm">Chargement de vos cours...</p>
-          </div>
+        {loading || globalLoading ? (
+          null
         ) : courses.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-8">
             Aucun cours sauvegardé pour le moment.

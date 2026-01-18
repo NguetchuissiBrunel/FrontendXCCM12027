@@ -94,7 +94,7 @@ export class GestionDesUtilisateursService {
      * @returns ApiResponseStudentResponse OK
      * @throws ApiError
      */
-    public static getStudentById(
+    public static getStudentById1(
         id: string,
     ): CancelablePromise<ApiResponseStudentResponse> {
         return __request(OpenAPI, {

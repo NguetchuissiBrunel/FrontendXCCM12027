@@ -2,13 +2,15 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaTrash, FaSearch, FaUserShield, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from 'react-icons/fa';
-import { AdminService, RegisterRequest, User } from '@/lib';
+import { AdminService } from '@/lib/services/AdminService';
+import { RegisterRequest } from '@/lib';
+import type { User } from '@/types/user';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLoading } from '@/contexts/LoadingContext';
 
 function AdminsList() {
     const [admins, setAdmins] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,6 +18,9 @@ function AdminsList() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+    // Plus besoin du useEffect local
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -39,19 +44,19 @@ function AdminsList() {
     }, [searchParams, router]);
 
     const fetchAdmins = async () => {
-        setLoading(true);
+        startLoading();
         try {
             const res = await AdminService.getAllUsers();
             // Filter only admins
             const allUsers = res.data || [];
-            const adminUsers = allUsers.filter(u => u.role === User.role.ADMIN);
+            const adminUsers = allUsers.filter(u => u.role === 'ADMIN');
             setAdmins(adminUsers);
         } catch (error) {
             console.error("Error fetching admins:", error);
             toast.error("Impossible de charger la liste des administrateurs");
             setAdmins([]);
         } finally {
-            setLoading(false);
+            stopLoading();
         }
     };
 
@@ -163,14 +168,8 @@ function AdminsList() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {loading ? (
-                            Array(3).fill(0).map((_, i) => (
-                                <tr key={i} className="animate-pulse">
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-40"></div></td>
-                                    <td className="px-6 py-4"></td>
-                                </tr>
-                            ))
+                        {globalLoading && admins.length === 0 ? (
+                            null
                         ) : filteredAdmins.length === 0 ? (
                             <tr>
                                 <td colSpan={3} className="px-6 py-8 text-center text-slate-500">Aucun administrateur trouvé</td>

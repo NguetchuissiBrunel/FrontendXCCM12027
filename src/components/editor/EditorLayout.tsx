@@ -48,6 +48,7 @@ import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLoading } from '@/contexts/LoadingContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
 import { ExercicesService } from '@/lib/services/ExercicesService';
@@ -108,6 +109,15 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  useEffect(() => {
+    if (isLoadingCourse || exerciseLoading || gradingLoading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [isLoadingCourse, exerciseLoading, gradingLoading, startLoading, stopLoading]);
 
   // Modal state for save/publish confirmation
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -903,10 +913,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       </button>
 
                       {exerciseLoading ? (
-                        <div className="text-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                          <p className="text-sm text-gray-500 mt-2">Chargement...</p>
-                        </div>
+                        null
                       ) : exercises.length === 0 ? (
                         <div className="text-center py-8">
                           <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />
@@ -1013,10 +1020,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                             </div>
 
                             {gradingLoading ? (
-                              <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                                <p className="text-sm text-gray-500 mt-2">Chargement des soumissions...</p>
-                              </div>
+                              null
                             ) : submissions.length === 0 ? (
                               <div className="text-center py-8">
                                 <FaList className="text-4xl text-gray-400 mx-auto mb-4" />
@@ -1098,9 +1102,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                           </p>
 
                           {exerciseLoading ? (
-                            <div className="text-center py-4">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                            </div>
+                            null
                           ) : exercises.length === 0 ? (
                             <div className="text-center py-8">
                               <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />

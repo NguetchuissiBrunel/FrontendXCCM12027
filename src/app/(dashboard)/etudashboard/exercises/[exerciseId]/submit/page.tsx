@@ -7,28 +7,29 @@ import { ExercicesService } from '@/lib/services/ExercicesService';
 import type { Exercise, Question } from '@/types/exercise';
 import { ArrowLeft, Clock, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function SubmitExercisePage() {
   const params = useParams();
   const router = useRouter();
   const exerciseId = parseInt(params.exerciseId as string);
-  
+
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
   useEffect(() => {
     loadExercise();
   }, [exerciseId]);
-  
+
   const loadExercise = async () => {
+    startLoading();
     try {
       const response = await ExercicesService.getExerciseDetails(exerciseId);
       const payload = (response as any).data ?? response;
       const ex = payload?.exercise ?? payload;
       setExercise(ex);
-      
+
       if (ex?.questions) {
         const initialAnswers: Record<number, string> = {};
         ex.questions.forEach((q: Question) => {
@@ -40,60 +41,53 @@ export default function SubmitExercisePage() {
       console.error('Erreur chargement exercice:', error);
       toast.error('Impossible de charger l\'exercice');
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
-  
+
   const handleAnswerChange = (questionId: number, value: string) => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: value
     }));
   };
-  
+
   const handleSubmit = async () => {
     if (!exercise) return;
-    
+
     // Validation
     const unanswered = Object.entries(answers).filter(([_, value]) => !value.trim());
     if (unanswered.length > 0) {
       toast.error(`Veuillez répondre à toutes les questions (${unanswered.length} non répondues)`);
       return;
     }
-    
+
     try {
-      setSubmitting(true);
-      
+      startLoading();
+
       const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
         questionId: parseInt(questionId),
         answer
       }));
-      
+
       // Le type généré peut différer ; caster en any pour contourner l'erreur TS
       const payload: any = { answers: formattedAnswers };
       await ExercicesService.submitExercise(exerciseId, payload);
-      
+
       toast.success('Exercice soumis avec succès !');
       router.push('/etudashboard/submissions');
     } catch (error) {
       console.error('Erreur soumission:', error);
       toast.error('Erreur lors de la soumission');
     } finally {
-      setSubmitting(false);
+      stopLoading();
     }
   };
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de l'exercice...</p>
-        </div>
-      </div>
-    );
+
+  if (globalLoading && !exercise) {
+    return null;
   }
-  
+
   if (!exercise) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
@@ -109,7 +103,7 @@ export default function SubmitExercisePage() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
       <div className="max-w-4xl mx-auto px-4">
@@ -122,7 +116,7 @@ export default function SubmitExercisePage() {
             <ArrowLeft size={20} />
             Retour au dashboard
           </button>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-purple-200 dark:border-gray-700">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
               {exercise.title}
@@ -130,7 +124,7 @@ export default function SubmitExercisePage() {
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               {exercise.description}
             </p>
-            
+
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                 <Clock size={16} />
@@ -143,7 +137,7 @@ export default function SubmitExercisePage() {
             </div>
           </div>
         </div>
-        
+
         {/* Questions */}
         <div className="space-y-6 mb-8">
           {exercise.questions?.map((question, index) => (
@@ -156,7 +150,7 @@ export default function SubmitExercisePage() {
                   <p className="text-gray-700 dark:text-gray-300">{question.question}</p>
                 </div>
               </div>
-              
+
               {/* Champs de réponse selon le type */}
               {question.questionType === 'TEXT' && (
                 <textarea
@@ -166,7 +160,7 @@ export default function SubmitExercisePage() {
                   placeholder="Votre réponse..."
                 />
               )}
-              
+
               {question.questionType === 'MULTIPLE_CHOICE' && question.options && (
                 <div className="space-y-2">
                   {question.options.map((option, optIndex) => (
@@ -184,7 +178,7 @@ export default function SubmitExercisePage() {
                   ))}
                 </div>
               )}
-              
+
               {question.questionType === 'CODE' && (
                 <textarea
                   value={answers[question.id] || ''}
@@ -197,7 +191,7 @@ export default function SubmitExercisePage() {
             </div>
           ))}
         </div>
-        
+
         {/* Bouton de soumission */}
         <div className="sticky bottom-6 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
           <div className="flex justify-between items-center">
@@ -206,10 +200,10 @@ export default function SubmitExercisePage() {
             </div>
             <button
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={globalLoading}
               className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
             >
-              {submitting ? 'Soumission en cours...' : 'Soumettre l\'exercice'}
+              {globalLoading ? 'Soumission en cours...' : 'Soumettre l\'exercice'}
             </button>
           </div>
         </div>

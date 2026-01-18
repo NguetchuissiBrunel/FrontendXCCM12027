@@ -6,6 +6,7 @@ import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
 import type { Exercise, Question } from '@/types/exercise';
 import { toast } from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function UpdateExercisePage() {
   const params = useParams();
@@ -17,6 +18,15 @@ export default function UpdateExercisePage() {
   const [saving, setSaving] = useState(false);
   const [exercise, setExercise] = useState<Partial<Exercise> | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   useEffect(() => {
     if (!exerciseId) return;
@@ -85,7 +95,7 @@ export default function UpdateExercisePage() {
     }
   };
 
-  if (loading) return <div className="p-8">Chargement de l'exercice...</div>;
+  if (loading || globalLoading) return null;
   if (!exercise) return <div className="p-8">Exercice introuvable.</div>;
 
   return (

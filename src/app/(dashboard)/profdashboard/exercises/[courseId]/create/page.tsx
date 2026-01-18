@@ -5,18 +5,22 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ExerciseEditor } from '@/components/exercises/ExerciseEditor';
 import { ArrowLeft, Lightbulb, Target, BarChart3, BookOpen } from 'lucide-react';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function CreateExercisePage() {
   const params = useParams();
   const router = useRouter();
   const courseId = parseInt(params.courseId as string);
   const [courseTitle, setCourseTitle] = useState('Mon Cours');
-  
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  // Plus besoin de ce useEffect local
+
   const handleSave = (exercise: any) => {
     // Rediriger vers la liste des exercices après création
     router.push(`/profdashboard/exercises/${courseId}`);
   };
-  
+
   const handleCancel = () => {
     router.push(`/profdashboard/exercises/${courseId}`);
   };
@@ -36,14 +40,16 @@ export default function CreateExercisePage() {
         console.error('Erreur parsing courses:', error);
       }
     }
-    
+
     // Option 2: Si vous avez une autre méthode pour récupérer le cours
     // Vous pouvez utiliser l'une de ces méthodes selon votre API :
     // - CourseControllerService.getCourses() puis filtrer
     // - CourseControllerService.getAuthorCourses(userId)
     // - Ou passer le titre via props/state depuis la page précédente
   }, [courseId]);
-  
+
+  if (globalLoading && courseTitle === 'Mon Cours') return null;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12">
       <div className="max-w-6xl mx-auto px-6">
@@ -70,7 +76,7 @@ export default function CreateExercisePage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Badge du cours */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700/30">
@@ -175,7 +181,7 @@ export default function CreateExercisePage() {
               </div>
             </div>
           </div>
-          
+
           {/* Contenu de l'éditeur avec fond atténué */}
           <div className="p-6 bg-gray-50/50 dark:bg-gray-900/30">
             <ExerciseEditor
@@ -184,12 +190,12 @@ export default function CreateExercisePage() {
               onCancel={handleCancel}
             />
           </div>
-          
+
           {/* Footer de l'éditeur */}
           <div className="px-8 py-5 border-t border-gray-200 dark:border-gray-700 bg-gray-100/50 dark:bg-gray-800/50">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium text-purple-600 dark:text-purple-400">Important :</span> 
+                <span className="font-medium text-purple-600 dark:text-purple-400">Important :</span>
                 {' '}L'exercice sera visible pour les étudiants après validation
               </p>
               <div className="flex items-center gap-3">
@@ -206,13 +212,13 @@ export default function CreateExercisePage() {
             </div>
           </div>
         </div>
-        
+
         {/* Note d'information */}
         <div className="mt-8 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 border border-purple-200 dark:border-purple-700/30">
             <Lightbulb size={16} className="text-purple-600 dark:text-purple-400" />
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              <span className="font-medium text-purple-600 dark:text-purple-400">Astuce :</span> 
+              <span className="font-medium text-purple-600 dark:text-purple-400">Astuce :</span>
               {' '}Vous pourrez modifier l'exercice à tout moment après sa création
             </p>
           </div>

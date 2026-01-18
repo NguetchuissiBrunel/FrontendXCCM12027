@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import { PublicServicesService } from '@/lib/services/PublicServicesService';
 import type { ContactRequest } from '@/lib/models/ContactRequest';
+import { useLoading } from '@/contexts/LoadingContext';
+import { useEffect } from 'react';
 import { Send, User, Mail, MessageSquare } from 'lucide-react';
 
 interface ContactFormProps {
@@ -17,9 +19,18 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
     message: '',
     subject: '' // Ajoutez ce champ si votre ContactRequest l'inclut
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const { startLoading, stopLoading } = useLoading();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -31,13 +42,13 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.name || !formData.email || !formData.message) {
       setMessage({ type: 'error', text: 'Veuillez remplir tous les champs obligatoires' });
       return;
     }
-    
+
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
       setMessage({ type: 'error', text: 'Veuillez entrer une adresse email valide' });
       return;
@@ -48,12 +59,12 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
 
     try {
       await PublicServicesService.contactUs(formData);
-      
-      setMessage({ 
-        type: 'success', 
-        text: 'Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.' 
+
+      setMessage({
+        type: 'success',
+        text: 'Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.'
       });
-      
+
       // Réinitialiser le formulaire
       setFormData({
         name: '',
@@ -61,14 +72,14 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
         message: '',
         subject: ''
       });
-      
+
       // Effacer le message après 5 secondes
       setTimeout(() => setMessage(null), 5000);
     } catch (error: any) {
       console.error('Erreur lors de l\'envoi du message:', error);
-      
+
       let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
-      
+
       if (error.status === 400) {
         errorMessage = 'Données invalides. Vérifiez les informations saisies.';
       } else if (error.status === 429) {
@@ -76,7 +87,7 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
       } else if (error.status === 500) {
         errorMessage = 'Erreur serveur. Notre équipe a été notifiée.';
       }
-      
+
       setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
@@ -88,14 +99,13 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
       <h3 className="text-2xl font-bold text-purple-900 dark:text-purple-400 mb-6">
         Contactez-nous directement
       </h3>
-      
+
       {/* Messages de feedback */}
       {message && (
-        <div className={`mb-6 rounded-lg p-4 ${
-          message.type === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' 
+        <div className={`mb-6 rounded-lg p-4 ${message.type === 'success'
+            ? 'bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
             : 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
-        }`}>
+          }`}>
           <div className="flex items-start">
             {message.type === 'success' ? (
               <svg className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -126,7 +136,7 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
               required
             />
           </div>
-          
+
           <div className="relative">
             <Mail className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
             <input
@@ -171,21 +181,14 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
           />
         </div>
 
-        <button 
+        <button
           type="submit"
           disabled={loading}
-          className={`w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-            loading ? 'animate-pulse' : ''
-          }`}
+          className={`w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'animate-pulse' : ''
+            }`}
         >
           {loading ? (
-            <>
-              <svg className="animate-spin h-5 w-5 mr-2 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Envoi en cours...
-            </>
+            "Envoi..."
           ) : (
             <>
               <Send className="w-5 h-5" />

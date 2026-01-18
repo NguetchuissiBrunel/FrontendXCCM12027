@@ -11,8 +11,10 @@ import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/typ
 import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLoading } from '@/contexts/LoadingContext';
 import Link from 'next/link';
 import CourseContentRenderer from './CourseContentRenderer';
+import confetti from 'canvas-confetti';
 
 
 interface CourseProps {
@@ -43,6 +45,15 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     submitted: false,
   });
   const [showOrientationSelector, setShowOrientationSelector] = useState<boolean>(false);
+  const { startLoading, stopLoading } = useLoading();
+
+  useEffect(() => {
+    if (pdfGenerating || docxGenerating || isLiking) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [pdfGenerating, docxGenerating, isLiking, startLoading, stopLoading]);
 
   // Helper functions to safely access data
   const getCurrentSection = (): Section | null => {
@@ -133,6 +144,15 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     setIsLiking(true);
     try {
       await incrementLike(courseData.id);
+
+      // Wow factor: Confetti!
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#8B5CF6', '#EC4899', '#3B82F6']
+      });
+
       toast.success("Cours ajouté à vos favoris !");
     } catch (error) {
       console.error("Error liking course:", error);

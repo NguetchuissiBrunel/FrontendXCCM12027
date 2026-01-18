@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaCheckCircle, FaTimesCircle, FaClock, FaChartBar, FaUserGraduate, FaBook, FaUser } from 'react-icons/fa';
-import { AdminService } from '@/lib';
+import { AdminService } from '@/lib/services/AdminService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { useLoading } from '@/contexts/LoadingContext';
 
 const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
     <motion.div
@@ -25,7 +26,6 @@ const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
 
 export default function AdminEnrollmentsPage() {
     const [enrollments, setEnrollments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [stats, setStats] = useState({
@@ -34,13 +34,16 @@ export default function AdminEnrollmentsPage() {
         approved: 0,
         rejected: 0,
     });
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+    // Plus besoin du useEffect local
 
     useEffect(() => {
         fetchEnrollments();
     }, []);
 
     const fetchEnrollments = async () => {
-        setLoading(true);
+        startLoading();
         try {
             const res = await AdminService.getAllEnrollments();
             // L'API retourne { data: [...] } d'après votre AdminService refactorisé
@@ -59,7 +62,7 @@ export default function AdminEnrollmentsPage() {
             toast.error("Erreur lors de la récupération des inscriptions");
             setEnrollments([]);
         } finally {
-            setLoading(false);
+            stopLoading();
         }
     };
 
@@ -171,28 +174,28 @@ export default function AdminEnrollmentsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <StatsCard
                     title="Total Enrollements"
-                    value={loading ? "..." : stats.total}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.total}
                     icon={<FaChartBar size={24} />}
                     color="bg-purple-600"
                     subtitle="Toutes les demandes"
                 />
                 <StatsCard
                     title="En Attente"
-                    value={loading ? "..." : stats.pending}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.pending}
                     icon={<FaClock size={24} />}
                     color="bg-orange-600"
                     subtitle="À valider"
                 />
                 <StatsCard
                     title="Approuvés"
-                    value={loading ? "..." : stats.approved}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.approved}
                     icon={<FaCheckCircle size={24} />}
                     color="bg-green-600"
                     subtitle="Validés"
                 />
                 <StatsCard
                     title="Rejetés"
-                    value={loading ? "..." : stats.rejected}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.rejected}
                     icon={<FaTimesCircle size={24} />}
                     color="bg-red-600"
                     subtitle="Refusés"
@@ -228,11 +231,8 @@ export default function AdminEnrollmentsPage() {
             </div>
 
             {/* Table/Content */}
-            {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-                    <p className="text-slate-500 dark:text-slate-400 mt-4">Chargement des enrollements...</p>
-                </div>
+            {globalLoading && enrollments.length === 0 ? (
+                null
             ) : filteredEnrollments.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <FaUserGraduate className="mx-auto text-slate-300 dark:text-slate-700 mb-4" size={48} />

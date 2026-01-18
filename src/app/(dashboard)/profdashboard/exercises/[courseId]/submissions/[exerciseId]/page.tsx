@@ -6,20 +6,30 @@ import { useParams, useRouter } from 'next/navigation';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { GradingInterface } from '@/components/exercises/GradingInterface';
 import { ArrowLeft } from 'lucide-react';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function ExerciseSubmissionsPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = parseInt(params.courseId as string);
   const exerciseId = parseInt(params.exerciseId as string);
-  
+
   const [exercise, setExercise] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
+
   useEffect(() => {
     loadExercise();
   }, [exerciseId]);
-  
+
   const loadExercise = async () => {
     try {
       const response = await ExercicesService.getExerciseDetails(exerciseId);
@@ -32,18 +42,11 @@ export default function ExerciseSubmissionsPage() {
       setLoading(false);
     }
   };
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement...</p>
-        </div>
-      </div>
-    );
+
+  if (loading || globalLoading) {
+    return null;
   }
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
       <div className="max-w-7xl mx-auto px-4">
@@ -55,7 +58,7 @@ export default function ExerciseSubmissionsPage() {
             <ArrowLeft size={20} />
             Retour aux exercices
           </button>
-          
+
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Correction des soumissions
           </h1>
@@ -63,7 +66,7 @@ export default function ExerciseSubmissionsPage() {
             {exercise?.title}
           </p>
         </div>
-        
+
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <GradingInterface exerciseId={exerciseId} />
         </div>

@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt, FaUserGraduate } from 'react-icons/fa';
-import { AdminService } from '@/lib';
+import { AdminService } from '@/lib/services/AdminService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { useLoading } from '@/contexts/LoadingContext';
 
 const StatsCard = ({ title, value, icon, color }: any) => (
     <motion.div
@@ -24,7 +25,6 @@ const StatsCard = ({ title, value, icon, color }: any) => (
 
 export default function AdminCoursesPage() {
     const [courses, setCourses] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [stats, setStats] = useState({
         total: 0,
@@ -32,13 +32,16 @@ export default function AdminCoursesPage() {
         draft: 0,
         archived: 0,
     });
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+    // Plus besoin du useEffect local
 
     useEffect(() => {
         fetchCourses();
     }, []);
 
     const fetchCourses = async () => {
-        setLoading(true);
+        startLoading();
         try {
             const [res, enrollRes] = await Promise.all([
                 AdminService.getAllCourses(),
@@ -71,7 +74,7 @@ export default function AdminCoursesPage() {
             toast.error("Erreur lors de la récupération des cours");
             setCourses([]);
         } finally {
-            setLoading(false);
+            stopLoading();
         }
     };
 
@@ -143,13 +146,13 @@ export default function AdminCoursesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <StatsCard
                     title="Total Cours"
-                    value={loading ? "..." : stats.total}
+                    value={globalLoading && courses.length === 0 ? "..." : stats.total}
                     icon={<FaBook size={20} />}
                     color="bg-purple-600"
                 />
                 <StatsCard
                     title="Cours Actifs"
-                    value={loading ? "..." : stats.active}
+                    value={globalLoading && courses.length === 0 ? "..." : stats.active}
                     icon={<FaCheckCircle size={20} />}
                     color="bg-green-600"
                 />
@@ -166,11 +169,8 @@ export default function AdminCoursesPage() {
                 />
             </div>
 
-            {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-                    <p className="text-slate-500 dark:text-slate-400 mt-4">Chargement des cours...</p>
-                </div>
+            {globalLoading && courses.length === 0 ? (
+                null
             ) : filteredCourses.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <FaBook className="mx-auto text-slate-300 dark:text-slate-700 mb-4" size={48} />

@@ -7,11 +7,11 @@ import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import type { Exercise } from '@/types/exercise';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
   Download,
   BarChart3,
   Calendar,
@@ -26,6 +26,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 // Interface locale étendue avec les propriétés supplémentaires
 interface LocalExercise extends Exercise {
@@ -38,29 +39,31 @@ export default function CourseExercisesPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = parseInt(params.courseId as string);
-  
+
   const [exercises, setExercises] = useState<LocalExercise[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  // Plus besoin du useEffect local
   const [courseInfo, setCourseInfo] = useState<{
     title: string;
     category?: string;
     description?: string;
     status?: string;
   } | null>(null);
-  
+
   // États pour les filtres
   const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'closed'>('all');
   const [search, setSearch] = useState('');
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
-  
+
   useEffect(() => {
     loadExercises();
     loadCourseInfo();
   }, [courseId]);
-  
+
   const loadExercises = async () => {
     try {
-      setLoading(true);
+      startLoading();
       const resp = await ExercicesService.getExercisesForCourse(courseId);
       const list = (resp as any)?.data || [];
       // Map Api ExerciseResponse -> local Exercise shape with defaults
@@ -83,10 +86,10 @@ export default function CourseExercisesPage() {
       console.error('Erreur chargement exercices:', error);
       toast.error('Erreur lors du chargement des exercices');
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
-  
+
   const loadCourseInfo = async () => {
     try {
       // Essayer de récupérer les infos du cours depuis l'API
@@ -94,7 +97,7 @@ export default function CourseExercisesPage() {
       const response = await CourseControllerService.getAuthorCourses('current');
       const courses = response.data as any[];
       const currentCourse = courses?.find(c => c.id === courseId);
-      
+
       if (currentCourse) {
         setCourseInfo({
           title: currentCourse.title || `Cours #${courseId}`,
@@ -118,19 +121,19 @@ export default function CourseExercisesPage() {
       });
     }
   };
-  
+
   const handleCreateExercise = () => {
     router.push(`/profdashboard/exercises/${courseId}/create`);
   };
-  
+
   const handleEditExercise = (exerciseId: number) => {
     router.push(`/profdashboard/exercises/${courseId}/update/${exerciseId}`);
   };
-  
+
   const handleViewSubmissions = (exerciseId: number) => {
     router.push(`/profdashboard/exercises/${courseId}/submissions/${exerciseId}`);
   };
-  
+
   const handleDeleteExercise = async (exerciseId: number) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet exercice ?')) {
       try {
@@ -143,7 +146,7 @@ export default function CourseExercisesPage() {
       }
     }
   };
-  
+
   const handlePublishExercise = async (exerciseId: number) => {
     try {
       await EnseignantService.updateExercise(exerciseId, { status: 'PUBLISHED' } as any);
@@ -154,7 +157,7 @@ export default function CourseExercisesPage() {
       toast.error('Erreur lors de la publication');
     }
   };
-  
+
   const handleCloseExercise = async (exerciseId: number) => {
     try {
       await EnseignantService.updateExercise(exerciseId, { status: 'CLOSED' } as any);
@@ -165,39 +168,32 @@ export default function CourseExercisesPage() {
       toast.error('Erreur lors de la fermeture');
     }
   };
-  
+
   // Filtrer les exercices
   const filteredExercises = exercises.filter(exercise => {
     // Filtre par statut
     if (filter !== 'all' && exercise.status?.toLowerCase() !== filter) {
       return false;
     }
-    
+
     // Filtre par recherche
     if (search && !exercise.title.toLowerCase().includes(search.toLowerCase())) {
       return false;
     }
-    
+
     return true;
   });
-  
+
   // Calculer les statistiques
   const totalSubmissions = exercises.reduce((sum, e) => sum + (e.submissionsCount || 0), 0);
   const totalPending = exercises.reduce((sum, e) => sum + (e.pendingCount || 0), 0);
   const publishedCount = exercises.filter(e => e.status === 'PUBLISHED').length;
   const draftCount = exercises.filter(e => e.status === 'DRAFT').length;
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des exercices...</p>
-        </div>
-      </div>
-    );
+
+  if (globalLoading && exercises.length === 0) {
+    return null;
   }
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -210,7 +206,7 @@ export default function CourseExercisesPage() {
             <ArrowLeft size={20} />
             Retour au dashboard
           </button>
-          
+
           {/* En-tête principal avec infos du cours */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm dark:shadow-gray-900/30 border border-purple-100 dark:border-gray-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -237,7 +233,7 @@ export default function CourseExercisesPage() {
                   </div>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleCreateExercise}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 text-sm"
@@ -248,7 +244,7 @@ export default function CourseExercisesPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Statistiques rapides */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gradient-to-r from-white to-purple-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-purple-100 dark:border-gray-700">
@@ -266,7 +262,7 @@ export default function CourseExercisesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-r from-white to-green-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-green-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -282,7 +278,7 @@ export default function CourseExercisesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-r from-white to-yellow-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-yellow-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
@@ -298,7 +294,7 @@ export default function CourseExercisesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-r from-white to-blue-50 dark:from-gray-800 dark:to-gray-800/80 rounded-xl p-4 border border-blue-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -315,7 +311,7 @@ export default function CourseExercisesPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Barre de recherche et filtres */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-6 shadow-sm dark:shadow-gray-900/30 border border-purple-100 dark:border-gray-700">
           <div className="flex flex-col md:flex-row gap-3">
@@ -332,7 +328,7 @@ export default function CourseExercisesPage() {
                 />
               </div>
             </div>
-            
+
             {/* Filtres par statut */}
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -345,11 +341,10 @@ export default function CourseExercisesPage() {
                 <button
                   key={value}
                   onClick={() => setFilter(value as any)}
-                  className={`px-3 py-1.5 rounded-lg transition-all duration-200 text-sm ${
-                    filter === value
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-sm'
-                      : `${color} hover:opacity-90`
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg transition-all duration-200 text-sm ${filter === value
+                    ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-sm'
+                    : `${color} hover:opacity-90`
+                    }`}
                 >
                   {label}
                 </button>
@@ -357,7 +352,7 @@ export default function CourseExercisesPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Liste des exercices */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/30 border border-purple-100 dark:border-gray-700 overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-white dark:from-gray-800 dark:to-gray-900">
@@ -374,7 +369,7 @@ export default function CourseExercisesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredExercises.length === 0 ? (
               <div className="p-8 text-center">
@@ -383,7 +378,7 @@ export default function CourseExercisesPage() {
                   {exercises.length === 0 ? 'Aucun exercice créé' : 'Aucun résultat'}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                  {exercises.length === 0 
+                  {exercises.length === 0
                     ? 'Créez votre premier exercice pour ce cours.'
                     : 'Modifiez vos critères de recherche.'
                   }
@@ -401,7 +396,7 @@ export default function CourseExercisesPage() {
               filteredExercises.map((exercise) => {
                 const pendingCount = exercise.pendingCount || 0;
                 const duration = exercise.duration || 0;
-                
+
                 return (
                   <div key={exercise.id} className="p-4 hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -411,22 +406,21 @@ export default function CourseExercisesPage() {
                           <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
                             {exercise.title}
                           </h3>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            exercise.status === 'PUBLISHED' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                              : exercise.status === 'DRAFT'
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${exercise.status === 'PUBLISHED'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : exercise.status === 'DRAFT'
                               ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
-                          }`}>
-                            {exercise.status === 'PUBLISHED' ? 'Publié' : 
-                             exercise.status === 'DRAFT' ? 'Brouillon' : 'Fermé'}
+                            }`}>
+                            {exercise.status === 'PUBLISHED' ? 'Publié' :
+                              exercise.status === 'DRAFT' ? 'Brouillon' : 'Fermé'}
                           </span>
                         </div>
-                        
+
                         <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-1">
                           {exercise.description || 'Aucune description'}
                         </p>
-                        
+
                         {/* Métadonnées */}
                         <div className="flex flex-wrap gap-3 text-xs">
                           <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
@@ -456,7 +450,7 @@ export default function CourseExercisesPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Actions - Petits boutons */}
                       <div className="flex items-center gap-1">
                         {/* Bouton principal - Voir soumissions */}
@@ -467,7 +461,7 @@ export default function CourseExercisesPage() {
                         >
                           <Eye size={16} />
                         </button>
-                        
+
                         {/* Bouton modifier */}
                         <button
                           onClick={() => handleEditExercise(exercise.id)}
@@ -476,7 +470,7 @@ export default function CourseExercisesPage() {
                         >
                           <Edit size={16} />
                         </button>
-                        
+
                         {/* Bouton spécifique selon le statut */}
                         {exercise.status === 'DRAFT' && (
                           <button
@@ -487,7 +481,7 @@ export default function CourseExercisesPage() {
                             <Download size={16} />
                           </button>
                         )}
-                        
+
                         {exercise.status === 'PUBLISHED' && (
                           <button
                             onClick={() => handleCloseExercise(exercise.id)}
@@ -497,7 +491,7 @@ export default function CourseExercisesPage() {
                             Fermer
                           </button>
                         )}
-                        
+
                         {/* Bouton supprimer */}
                         <button
                           onClick={() => handleDeleteExercise(exercise.id)}
@@ -514,14 +508,14 @@ export default function CourseExercisesPage() {
             )}
           </div>
         </div>
-        
+
         {/* Note informative */}
         {exercises.length > 0 && (
           <div className="mt-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 border border-purple-200 dark:border-purple-700/30">
               <BarChart3 size={14} className="text-purple-600 dark:text-purple-400" />
               <p className="text-xs text-gray-600 dark:text-gray-300">
-                <span className="font-medium text-purple-600 dark:text-purple-400">Statistiques :</span> 
+                <span className="font-medium text-purple-600 dark:text-purple-400">Statistiques :</span>
                 {' '}{totalSubmissions} soumissions • {totalPending} en attente
               </p>
             </div>

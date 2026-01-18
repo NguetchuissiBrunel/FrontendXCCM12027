@@ -2,7 +2,8 @@
 
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, X, Info, HelpCircle } from 'lucide-react';
+import { AlertTriangle, X, Info, HelpCircle, Loader2 } from 'lucide-react';
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -27,6 +28,16 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     type = 'danger',
     isLoading = false
 }) => {
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+    // Sync local isLoading prop with global loading context
+    useEffect(() => {
+        if (isOpen && isLoading) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [isOpen, isLoading, startLoading, stopLoading]);
     // Handle ESC key
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -95,7 +106,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             <button
                                 onClick={onClose}
                                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                disabled={isLoading}
+                                disabled={globalLoading}
                             >
                                 <X size={20} />
                             </button>
@@ -112,21 +123,18 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         <div className="p-6 pt-2 flex items-center justify-end gap-3 bg-gray-50/50 dark:bg-gray-700/30 border-t border-gray-100 dark:border-gray-700">
                             <button
                                 onClick={onClose}
-                                disabled={isLoading}
+                                disabled={globalLoading}
                                 className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors disabled:opacity-50"
                             >
                                 {cancelText}
                             </button>
                             <button
                                 onClick={onConfirm}
-                                disabled={isLoading}
+                                disabled={globalLoading}
                                 className={`px-6 py-2 text-sm font-bold rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2 ${currentColors.button}`}
                             >
-                                {isLoading && (
-                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                                {globalLoading && (
+                                    <Loader2 className="animate-spin h-4 w-4 text-white" />
                                 )}
                                 {confirmText}
                             </button>

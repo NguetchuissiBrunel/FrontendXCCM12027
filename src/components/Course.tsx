@@ -8,6 +8,7 @@ import CourseSidebar from "@/components/CourseSidebar";
 import SmartNotes from "@/components/SmartNotes";
 import DownloadOptions from './DownloadOptions';
 import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/types/course";
+import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
@@ -16,9 +17,11 @@ import CourseContentRenderer from './CourseContentRenderer';
 
 interface CourseProps {
   courseData: CourseData;
+  incrementLike: (id: number) => Promise<void>;
+  incrementDownload: (id: number) => Promise<void>;
 }
 
-const Course: React.FC<CourseProps> = ({ courseData }) => {
+const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
   const { user } = useAuth();
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
@@ -97,22 +100,46 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
     setShowOrientationSelector(true);
   };
 
-  const handleOrientationSelect = (orientation: 'p' | 'l') => {
+  const handleOrientationSelect = async (orientation: 'p' | 'l') => {
     setPdfGenerating(true);
 
-    downloadCourseAsPDF(courseData, orientation)
-      .then(() => {
-        setPdfGenerating(false);
-        setShowDownloadModal(false);
-      })
-      .catch(() => setPdfGenerating(false));
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsPDF(courseData, orientation);
+      setPdfGenerating(false);
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error("Error generating PDF or incrementing count:", error);
+      setPdfGenerating(false);
+    }
   };
 
   const handleDownloadDocx = async () => {
     setDocxGenerating(true);
-    await downloadCourseAsDocx(courseData);
-    setDocxGenerating(false);
-    setShowDownloadModal(false);
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsDocx(courseData);
+      setDocxGenerating(false);
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error("Error generating DOCX or incrementing count:", error);
+      setDocxGenerating(false);
+    }
+  };
+
+  const [isLiking, setIsLiking] = useState(false);
+  const handleLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
+    try {
+      await incrementLike(courseData.id);
+      toast.success("Cours ajouté à vos favoris !");
+    } catch (error) {
+      console.error("Error liking course:", error);
+      toast.error("Impossible d'aimer ce cours");
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const isCurrentExerciseCompleted = (): boolean => {
@@ -286,9 +313,22 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
               <p className="text-xl text-purple-600 dark:text-purple-400 mb-4">{courseData.category}</p>
               <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400">
-                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.views} vues</span>
-                <span className="flex items-center"><ThumbsUp className="h-5 w-5 mr-2" /> {courseData.likes} likes</span>
-                <span className="flex items-center"><Download className="h-5 w-5 mr-2" /> {courseData.downloads} téléchargements</span>
+                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.viewCount} vues</span>
+                <button
+                  onClick={handleLike}
+                  disabled={isLiking}
+                  className="flex items-center hover:text-red-500 transition-colors cursor-pointer group"
+                >
+                  <ThumbsUp className={`h-5 w-5 mr-2 ${isLiking ? 'animate-pulse text-red-400' : 'group-hover:scale-110 transition-transform'}`} />
+                  {courseData.likeCount} likes
+                </button>
+                <button
+                  onClick={() => setShowDownloadModal(true)}
+                  className="flex items-center hover:text-purple-500 transition-colors cursor-pointer group"
+                >
+                  <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                  {courseData.downloadCount} téléchargements
+                </button>
               </div>
             </div>
           </div>
@@ -499,7 +539,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
                   className="bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center"
                   type="button"
                 >
-                  <Award className="h-5 w-5 mr-2" />
+                  <Award className="h-7 w-7 mr-2" />
                   Obtenir votre certification
                 </button>
                 <button

@@ -13,5 +13,8 @@ export type EnrollmentStatsResponse = {
     averageProgress?: number;
     completionRate?: number;
     recentEnrollments?: number;
+    pendingEnrollments?: number;
+    acceptedEnrollments?: number;
+    rejectedEnrollments?: number;
 };
 

@@ -70,6 +70,7 @@ export { UserDetailResponse } from './models/UserDetailResponse';
 export type { UserUpdateRequest } from './models/UserUpdateRequest';
 
 export { AdministrationService } from './services/AdministrationService';
+export { AdminService } from './AdminService';
 export { AuthControllerService } from './services/AuthControllerService';
 export { CourseControllerService } from './services/CourseControllerService';
 export { EnrollmentControllerService } from './services/EnrollmentControllerService';

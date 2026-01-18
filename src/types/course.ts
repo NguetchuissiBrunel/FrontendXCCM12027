@@ -36,9 +36,9 @@ export interface CourseData {
   title: string;
   category?: string; // Rendre optionnel
   image: string;
-  views: number;
-  likes: number;
-  downloads: number;
+  viewCount: number;
+  likeCount: number;
+  downloadCount: number;
   author: Author;
   conclusion: string;
   learningObjectives: string[];

@@ -5,10 +5,18 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import './globals.css';
 import { Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
+import FlottingCard from '@/components/assistantIa/FlottingCard';
 
 export const metadata: Metadata = {
   title: 'XCCM1 - Plateforme de création de contenu pédagogique',
   description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
+};
+
+// Force la version desktop sr mobile
+
+export const viewport = {
+	width: 1280, 
+	initialScale:0.7,
 };
 
 // Force le rendu dynamique pour éviter que Next.js n'essaie de 
@@ -37,6 +45,7 @@ export default function RootLayout({
               <AuthProvider>
                 {children}
               </AuthProvider>
+               <FlottingCard />
             </LoadingProvider>
             <Toaster position="top-right" />
           </main>

@@ -23,9 +23,10 @@ export interface Course {
     };
     content?: string;
     coverImage?: string | null;
-    views?: number;
-    likes?: number;
-    downloads?: number;
+    photoUrl?: string | null;
+    viewCount?: number;
+    likeCount?: number;
+    downloadCount?: number;
 }
 
 interface UseCoursesReturn {
@@ -35,6 +36,9 @@ interface UseCoursesReturn {
     fetchAllCourses: () => Promise<void>;
     fetchCourse: (courseId: number) => Promise<Course | null>;
     refetch: () => Promise<void>;
+    incrementView: (courseId: number) => Promise<void>;
+    incrementLike: (courseId: number) => Promise<void>;
+    incrementDownload: (courseId: number) => Promise<void>;
 }
 
 /**
@@ -92,6 +96,68 @@ export function useCourses(): UseCoursesReturn {
     }, []);
 
     /**
+     * Incrémente le compteur de vues d'un cours
+     */
+    const incrementView = useCallback(async (courseId: number) => {
+        try {
+            // Optimistic update
+            setCourses(prev => prev.map(course =>
+                course.id === courseId
+                    ? { ...course, viewCount: (course.viewCount || 0) + 1 }
+                    : course
+            ));
+
+            await CourseControllerService.incrementViewCount(courseId);
+        } catch (err) {
+            console.error(`❌ Erreur lors de l'incrémentation des vues pour le cours ${courseId}:`, err);
+            // Revert optimistic update on error
+            await fetchAllCourses();
+        }
+    }, [fetchAllCourses]);
+
+    /**
+     * Incrémente le compteur de likes d'un cours
+     */
+    const incrementLike = useCallback(async (courseId: number) => {
+        try {
+            // Optimistic update
+            setCourses(prev => prev.map(course =>
+                course.id === courseId
+                    ? { ...course, likeCount: (course.likeCount || 0) + 1 }
+                    : course
+            ));
+
+            await CourseControllerService.incrementLikeCount(courseId);
+        } catch (err) {
+            console.error(`❌ Erreur lors de l'incrémentation des likes pour le cours ${courseId}:`, err);
+            // Revert optimistic update on error
+            await fetchAllCourses();
+            throw err;
+        }
+    }, [fetchAllCourses]);
+
+    /**
+     * Incrémente le compteur de téléchargements d'un cours
+     */
+    const incrementDownload = useCallback(async (courseId: number) => {
+        try {
+            // Optimistic update
+            setCourses(prev => prev.map(course =>
+                course.id === courseId
+                    ? { ...course, downloadCount: (course.downloadCount || 0) + 1 }
+                    : course
+            ));
+
+            await CourseControllerService.incrementDownloadCount(courseId);
+        } catch (err) {
+            console.error(`❌ Erreur lors de l'incrémentation des téléchargements pour le cours ${courseId}:`, err);
+            // Revert optimistic update on error
+            await fetchAllCourses();
+            throw err;
+        }
+    }, [fetchAllCourses]);
+
+    /**
      * Recharge tous les cours
      */
     const refetch = useCallback(async () => {
@@ -110,27 +176,27 @@ export function useCourses(): UseCoursesReturn {
         fetchAllCourses,
         fetchCourse,
         refetch,
+        incrementView,
+        incrementLike,
+        incrementDownload,
     };
 }
 
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * Hook pour récupérer un cours spécifique
+ * Hook pour récupérer un cours spécifique et incrémenter le nombre de vues
  */
 export function useCourse(courseId: number) {
     const [course, setCourse] = useState<Course | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Attendre que l'authentification soit initialisée
     const { isAuthenticated, loading: authLoading } = useAuth();
+    const { incrementLike: globalIncrementLike, incrementDownload: globalIncrementDownload } = useCourses();
 
     useEffect(() => {
-        // Si l'auth est encore en cours de chargement, on attend
         if (authLoading) return;
-
-        // Si l'utilisateur n'est pas authentifié, on ne fait pas d'appel API pour éviter l'erreur Forbidden
         if (!isAuthenticated) {
             setLoading(false);
             return;
@@ -146,17 +212,15 @@ export function useCourse(courseId: number) {
 
                 if (enrichedResponse && enrichedResponse.success && enrichedResponse.data) {
                     const enrichedData = enrichedResponse.data;
-
-                    // Find the course in the full list to get the content
-                    // (The enriched endpoint doesn't seem to return the content body)
-                    const fullCourse = allResponse?.data?.find((c: any) => c.id === courseId);
+                    const fullCourse = allResponse?.data?.find((c: any) => String(c.id) === String(courseId));
 
                     setCourse({
                         ...enrichedData,
-                        content: fullCourse?.content || enrichedData.content
+                        content: fullCourse?.content || enrichedData.content,
+                        viewCount: fullCourse?.viewCount ?? enrichedData.viewCount ?? 0,
+                        likeCount: fullCourse?.likeCount ?? enrichedData.likeCount ?? 0,
+                        downloadCount: fullCourse?.downloadCount ?? enrichedData.downloadCount ?? 0,
                     } as Course);
-                } else {
-                    console.warn('⚠️ Échec du chargement du cours:', enrichedResponse);
                 }
             } catch (err) {
                 console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
@@ -166,10 +230,53 @@ export function useCourse(courseId: number) {
             }
         };
 
+        const incrementView = async () => {
+            try {
+                await CourseControllerService.incrementViewCount(courseId);
+                // On pourrait aussi mettre à jour l'état local ici si on veut voir +1 immédiatement
+                setCourse(prev => prev ? { ...prev, viewCount: (prev.viewCount || 0) + 1 } : prev);
+            } catch (err) {
+                console.error(`❌ Erreur lors de l'incrémentation des vues pour le cours ${courseId}:`, err);
+            }
+        };
+
         if (courseId) {
             loadCourse();
+            incrementView();
         }
     }, [courseId, authLoading, isAuthenticated]);
 
-    return { course, loading: loading || authLoading, error };
+    const incrementLike = async (id: number) => {
+        try {
+            // Optimistic update locally
+            setCourse(prev => prev && String(prev.id) === String(id)
+                ? { ...prev, likeCount: (prev.likeCount || 0) + 1 }
+                : prev
+            );
+            await globalIncrementLike(id);
+        } catch (err) {
+            console.error("Error incrementing like:", err);
+        }
+    };
+
+    const incrementDownload = async (id: number) => {
+        try {
+            // Optimistic update locally
+            setCourse(prev => prev && String(prev.id) === String(id)
+                ? { ...prev, downloadCount: (prev.downloadCount || 0) + 1 }
+                : prev
+            );
+            await globalIncrementDownload(id);
+        } catch (err) {
+            console.error("Error incrementing download:", err);
+        }
+    };
+
+    return {
+        course,
+        loading: loading || authLoading,
+        error,
+        incrementLike,
+        incrementDownload
+    };
 }

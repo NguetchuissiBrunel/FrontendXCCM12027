@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaTrash, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaSpinner, FaPaperPlane, FaBook } from 'react-icons/fa';
 import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 
 interface MyCoursesPanelProps {
   onClose: () => void;
-  onLoadCourse: (content: any, courseId: string, title: string, category: string, description: string) => void;
+  onLoadCourse: (content: any, courseId: string, title: string, category: string, description: string, photoUrl?: string) => void;
 }
 
 const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }) => {
@@ -77,7 +77,8 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
       String(course.id),
       course.title || "Sans titre",
       course.category || "Informatique",
-      course.description || ""
+      course.description || "",
+      course.photoUrl
     );
     onClose();
   };
@@ -161,7 +162,16 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                   key={course.id}
                   className="group rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow bg-gray-50 dark:bg-gray-700"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 justify-between">
+                    {(course.photoUrl || (course as any).coverImage) && (
+                      <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-600">
+                        <img
+                          src={course.photoUrl || (course as any).coverImage}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900 dark:text-white truncate pr-2">
                         {course.title || "Sans titre"}
@@ -185,7 +195,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                         className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
                         title="Charger dans l'éditeur"
                       >
-                        <FaEye className="text-sm text-blue-600 dark:text-blue-400" />
+                        <FaBook className="text-sm text-blue-600 dark:text-blue-400" />
                       </button>
                       <button
                         onClick={() => course.id && setStatusConfirm({ isOpen: true, id: course.id, status: course.status })}
@@ -193,9 +203,9 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                         title={course.status === 'PUBLISHED' ? 'Dépublier' : 'Publier'}
                       >
                         {course.status === 'PUBLISHED' ? (
-                          <FaEyeSlash className="text-sm text-gray-600 dark:text-gray-400" />
+                          <FaPaperPlane className="text-sm text-gray-600 dark:text-gray-400" />
                         ) : (
-                          <FaEye className="text-sm text-green-600 dark:text-green-400" />
+                          <FaPaperPlane className="text-sm text-green-600 dark:text-green-400" />
                         )}
                       </button>
                       <button

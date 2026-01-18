@@ -75,7 +75,7 @@ export async function uploadImageToCloudinary(
 
     if (!cloudName || !uploadPreset) {
         throw new Error(
-            'Configuration Cloudinary manquante. Veuillez configurer NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME et NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET dans vos variables d\'environnement.'
+            'Configuration Cloudinary manquante. Veuillez configurer CLOUDINARY_CLOUD_NAME et CLOUDINARY_UPLOAD_PRESET dans vos variables d\'environnement.'
         );
     }
 
@@ -90,6 +90,13 @@ export async function uploadImageToCloudinary(
     }
 
     try {
+        console.log('☁️ [CloudinaryService] Démarrage de l\'upload...', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            folder: config.folder
+        });
+
         // Upload to Cloudinary
         const response = await fetch(
             `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -101,6 +108,11 @@ export async function uploadImageToCloudinary(
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+            console.error('❌ [CloudinaryService] Échec de l\'upload HTTP:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorData
+            });
             throw new Error(
                 errorData.error?.message ||
                 `Échec de l'upload (${response.status})`
@@ -108,10 +120,12 @@ export async function uploadImageToCloudinary(
         }
 
         const data: CloudinaryUploadResponse = await response.json();
+        console.log('✅ [CloudinaryService] Upload réussi ! URL sécurisée:', data.secure_url);
 
         // Return secure URL
         return data.secure_url;
     } catch (error) {
+        console.error('❌ [CloudinaryService] Erreur lors de l\'upload:', error);
         if (error instanceof Error) {
             // Re-throw with user-friendly message
             if (error.message.includes('Failed to fetch')) {

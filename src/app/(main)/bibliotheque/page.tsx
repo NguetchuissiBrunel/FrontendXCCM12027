@@ -87,10 +87,11 @@ const StarRating = ({ rating = 5 }: { rating: number }) => (
 const Bibliotheque = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const { courses, loading, error, fetchCourse, incrementLike, incrementDownload } = useCourses();
+  const { courses, loading, error, fetchCourse, incrementLike, decrementLike, incrementDownload, toggleLike } = useCourses();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [showOrientation, setShowOrientation] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
 
   useEffect(() => {
     if (loading) startLoading();
@@ -101,13 +102,21 @@ const Bibliotheque = () => {
 
   const filteredCourses = useMemo(() => {
     if (!courses.length) return [];
-    return courses.filter(course =>
+    
+    let filtered = courses.filter(course =>
       course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (course.category && course.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (course.author?.name && course.author.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [courses, searchTerm]);
+    
+    // Filtre par favoris si activé
+    if (showFavorites) {
+      filtered = filtered.filter(course => course.isLiked);
+    }
+    
+    return filtered;
+  }, [courses, searchTerm, showFavorites]);
 
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
   const currentCourses = filteredCourses.slice((currentPage - 1) * coursesPerPage, currentPage * coursesPerPage);
@@ -117,21 +126,70 @@ const Bibliotheque = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleLikeClick = async (id: number) => {
+  // Option 1: Utiliser incrementLike/decrementLike avec vérification manuelle
+  const handleLikeClick = async (courseId: number) => {
     try {
-      await incrementLike(id);
-
-      // Wow factor: Confetti!
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.8 },
-        colors: ['#8B5CF6', '#EC4899', '#3B82F6']
-      });
-
-      toast.success("Cours ajouté à vos favoris !");
+      const course = courses.find(c => c.id === courseId);
+      const isCurrentlyLiked = course?.isLiked || false;
+      
+      if (isCurrentlyLiked) {
+        // Si déjà liké, on unlike
+        await decrementLike(courseId);
+        toast("Cours retiré de vos favoris", {
+          icon: '💔',
+          style: {
+            background: '#fef3c7',
+            color: '#92400e',
+          },
+        });
+      } else {
+        // Si pas liké, on like
+        await incrementLike(courseId);
+        
+        // Confetti seulement pour les nouveaux likes
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.8 },
+          colors: ['#8B5CF6', '#EC4899', '#3B82F6']
+        });
+        
+        toast.success("Cours ajouté à vos favoris !");
+      }
     } catch (err) {
-      toast.error("Impossible d'aimer ce cours");
+      toast.error("Impossible de mettre à jour le like");
+    }
+  };
+
+  // Option 2: Utiliser toggleLike si tu préfères (plus simple)
+  const handleToggleLike = async (courseId: number) => {
+    try {
+      
+        const course = courses.find(c => c.id === courseId);
+        const isCurrentlyLiked = course?.isLiked || false;
+        
+        if (isCurrentlyLiked) {
+          await decrementLike(courseId);
+          toast("Cours retiré de vos favoris", {
+            icon: '💔',
+            style: {
+              background: '#fef3c7',
+              color: '#92400e',
+            },
+          });
+        } else {
+          await incrementLike(courseId);
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.8 },
+            colors: ['#8B5CF6', '#EC4899', '#3B82F6']
+          });
+          toast.success("Cours ajouté à vos favoris !");
+        }
+      
+    } catch (err) {
+      toast.error("Impossible de mettre à jour le like");
     }
   };
 
@@ -187,18 +245,34 @@ const Bibliotheque = () => {
         </div>
       </div>
 
-      {/* Barre de recherche */}
+      {/* Barre de recherche et filtre */}
       <div className="container mx-auto px-4 -mt-8 relative z-20">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-8 border border-purple-100 dark:border-purple-900/30">
-          <div className="relative max-w-3xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600 h-6 w-6" />
-            <input
-              type="text"
-              placeholder="Rechercher un cours, un auteur, une catégorie..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-6 py-4 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-all shadow-inner"
-            />
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Barre de recherche */}
+            <div className="relative flex-grow">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600 h-6 w-6" />
+              <input
+                type="text"
+                placeholder="Rechercher un cours, un auteur, une catégorie..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-6 py-4 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-all shadow-inner"
+              />
+            </div>
+            
+            {/* Bouton filtre favoris */}
+            <button
+              onClick={() => setShowFavorites(!showFavorites)}
+              className={`flex items-center justify-center px-6 py-4 rounded-2xl font-medium transition-all ${
+                showFavorites 
+                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <Heart className={`w-5 h-5 mr-2 ${showFavorites ? 'fill-current' : ''}`} />
+              {showFavorites ? 'Tous les cours' : 'Mes favoris'}
+            </button>
           </div>
         </div>
       </div>
@@ -207,6 +281,24 @@ const Bibliotheque = () => {
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 text-red-700 p-4 rounded-xl mb-8 flex items-center">
             <span>{error}</span>
+          </div>
+        )}
+
+        {/* Info sur le filtre actif */}
+        {showFavorites && (
+          <div className="mb-8 flex items-center justify-between bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/30">
+            <div className="flex items-center">
+              <Heart className="w-5 h-5 text-red-500 mr-3 fill-current" />
+              <span className="text-red-700 dark:text-red-300 font-medium">
+                Affichage de vos cours favoris
+              </span>
+            </div>
+            <button
+              onClick={() => setShowFavorites(false)}
+              className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+            >
+              × Effacer le filtre
+            </button>
           </div>
         )}
 
@@ -231,6 +323,15 @@ const Bibliotheque = () => {
                       {course.category || 'Formation'}
                     </span>
                   </div>
+                  {/* Badge favori */}
+                  {course.isLiked && (
+                    <div className="absolute top-3 right-3">
+                      <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase shadow-sm flex items-center">
+                        <Heart className="w-3 h-3 mr-1 fill-current" />
+                        Favori
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-5 flex flex-col flex-grow">
@@ -266,10 +367,28 @@ const Bibliotheque = () => {
                   <div className="flex justify-between items-center px-1 py-3 border-t border-gray-100 dark:border-gray-700 mb-4">
                     <div className="flex items-center text-gray-500 text-xs gap-4">
                       <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {formatNumber(course.viewCount)}</span>
-                      <button onClick={() => handleLikeClick(course.id)} className="flex items-center gap-1.5 hover:text-red-500 transition-colors">
-                        <Heart className="w-4 h-4" /> {formatNumber(course.likeCount)}
+                      
+                      {/* Bouton Like avec état visuel */}
+                      <button 
+                        onClick={() => handleToggleLike(course.id)} 
+                        className={`flex items-center gap-1.5 transition-colors ${
+                          course.isLiked 
+                            ? 'text-red-500 hover:text-red-600' 
+                            : 'text-gray-500 hover:text-red-500'
+                        }`}
+                      >
+                        {course.isLiked ? (
+                          <Heart className="w-4 h-4 fill-current" strokeWidth={1.5} />
+                        ) : (
+                          <Heart className="w-4 h-4" strokeWidth={1.5} />
+                        )}
+                        {formatNumber(course.likeCount)}
                       </button>
-                      <button onClick={() => handleDownloadClick(course.id)} className="flex items-center gap-1.5 hover:text-purple-600 transition-colors">
+                      
+                      <button 
+                        onClick={() => handleDownloadClick(course.id)} 
+                        className="flex items-center gap-1.5 hover:text-purple-600 transition-colors"
+                      >
                         <Download className="w-4 h-4" /> {formatNumber(course.downloadCount)}
                       </button>
                     </div>
@@ -329,9 +448,23 @@ const Bibliotheque = () => {
         {/* Aucun résultat */}
         {!loading && filteredCourses.length === 0 && (
           <div className="text-center py-20 bg-white dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-            <BookOpen className="w-20 h-20 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Aucun résultat</h3>
-            <p className="text-gray-500 max-w-md mx-auto mt-2">Nous n'avons trouvé aucun cours correspondant à "{searchTerm}".</p>
+            {showFavorites ? (
+              <>
+                <Heart className="w-20 h-20 mx-auto text-red-300 mb-4" />
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Aucun favori</h3>
+                <p className="text-gray-500 max-w-md mx-auto mt-2">
+                  Vous n'avez pas encore ajouté de cours à vos favoris. Cliquez sur les cœurs pour en ajouter !
+                </p>
+              </>
+            ) : (
+              <>
+                <BookOpen className="w-20 h-20 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Aucun résultat</h3>
+                <p className="text-gray-500 max-w-md mx-auto mt-2">
+                  Nous n'avons trouvé aucun cours correspondant à "{searchTerm}".
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>

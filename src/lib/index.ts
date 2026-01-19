@@ -76,5 +76,6 @@ export { EnrollmentControllerService } from './services/EnrollmentControllerServ
 export { EnseignantService } from './services/EnseignantService';
 export { ExercicesService } from './services/ExercicesService';
 export { GestionDesUtilisateursService } from './services/GestionDesUtilisateursService';
+export { ImageUploadService } from './services/ImageUploadService';
 export { PublicServicesService } from './services/PublicServicesService';
 export { RootControllerService } from './services/RootControllerService';

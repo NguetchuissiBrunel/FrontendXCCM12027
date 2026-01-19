@@ -34,33 +34,63 @@ export class ExerciseApiWrapper {
   /**
    * Créer un exercice avec contenu
    */
-  static async createExerciseWithContent(
-    courseId: number,
-    data: {
-      title: string;
-      description: string;
-      maxScore: number;
-      dueDate?: string | null;
-      content: string;
-    }
-  ): Promise<ApiResponse<ExerciseApiData>> {
-    try {
-      const response = await __request(OpenAPI, {
-        method: 'POST',
-        url: `/api/v1/teacher/courses/${courseId}/exercises`,
-        body: data,
-        mediaType: 'application/json',
-      });
-      
-      // Type assertion pour gérer 'unknown'
-      return this.parseApiResponse<ExerciseApiData>(response);
-      
-    } catch (error) {
-      console.error('Erreur création exercice:', error);
-      throw this.formatError(error);
-    }
+  // Dans ExerciseApiWrapper.ts - méthode createExerciseWithContent
+// Dans ExerciseApiWrapper.ts
+// Dans ExerciseApiWrapper.ts - modifiez les signatures des méthodes
+static async createExerciseWithContent(
+  courseId: number,
+  data: {
+    title: string;
+    description: string;
+    maxScore: number;
+    dueDate?: string | null;
+    content: any;
   }
-  
+): Promise<ApiResponse<ExerciseApiData>> {
+  try {
+    console.log('=== API WRAPPER ===');
+    
+    // Préparer content comme objet
+    let contentObj: any;
+    if (typeof data.content === 'string') {
+      try {
+        contentObj = JSON.parse(data.content);
+      } catch {
+        contentObj = {};
+      }
+    } else if (typeof data.content === 'object') {
+      contentObj = data.content;
+    } else {
+      contentObj = {};
+    }
+    
+    const apiData = {
+      title: data.title,
+      description: data.description,
+      maxScore: data.maxScore,
+      dueDate: data.dueDate || null,
+      content: contentObj
+    };
+    
+    console.log('Données API:', JSON.stringify(apiData, null, 2));
+    
+    // Type assertion pour la réponse
+    const response = await __request(OpenAPI, {
+      method: 'POST',
+      url: `/api/v1/teacher/courses/${courseId}/exercises`,
+      body: apiData,
+      mediaType: 'application/json',
+    }) as any; // ⚠️ Assertion de type
+    
+    console.log('Réponse:', response);
+    
+    return this.parseApiResponse<ExerciseApiData>(response);
+    
+  } catch (error) {
+    console.error('Erreur wrapper:', error);
+    throw error;
+  }
+}
   /**
    * Récupérer le contenu d'un exercice
    */

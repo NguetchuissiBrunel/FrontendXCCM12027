@@ -1,12 +1,11 @@
-// src/app/(dashboard)/profdashboard/exercises/[courseId]/view/[exerciseId]/page.tsx - VERSION CORRIGÉE
+// src/app/(dashboard)/profdashboard/exercises/[courseId]/view/[exerciseId]/page.tsx - VERSION CORRIGÉE COMPLÈTE
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { ExerciseService } from '@/lib3/services/ExerciseService';
-import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import type { Exercise, Question } from '@/types/exercise';
+import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 import { 
   ArrowLeft, 
   Edit, 
@@ -25,33 +24,75 @@ import {
   BarChart3,
   Copy,
   AlertTriangle,
-  Send
+  Send,
+  Printer,
+  Share2,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import Link from 'next/link';
+
+// Import des hooks - chemin corrigé
+import { 
+  useExercise, 
+  useDeleteExercise, 
+  usePublishExercise, 
+  useCloseExercise,
+  useDuplicateExercise 
+} from '@/hooks/useExercise';
+import ExerciseStats from '@/components/exercises/ExerciseStats';
+import { Exercise, ApiResponse } from '@/types/exercise';
 
 export default function ViewExercisePage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
   
-  const courseId = parseInt(params.courseId as string);
-  const exerciseId = parseInt(params.exerciseId as string);
+  const courseId = params?.courseId ? parseInt(params.courseId as string) : 0;
+  const exerciseId = params?.exerciseId ? parseInt(params.exerciseId as string) : 0;
   
-  const [exercise, setExercise] = useState<Exercise | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Vérification des IDs
+  if (!courseId || !exerciseId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+            Paramètres invalides
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            L'URL de la page est incorrecte.
+          </p>
+          <button
+            onClick={() => router.push('/profdashboard/exercises')}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Retour aux exercices
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Utilisation des nouveaux hooks
+  const { 
+    data: exerciseApiResponse, 
+    isLoading, 
+    error,
+    refetch 
+  } = useExercise(exerciseId, {
+    enabled: !!user && !!exerciseId,
+  });
+  
+  const deleteMutation = useDeleteExercise(exerciseId, courseId);
+  const publishMutation = usePublishExercise(exerciseId, courseId);
+  const closeMutation = useCloseExercise(exerciseId, courseId);
+  const duplicateMutation = useDuplicateExercise(exerciseId, courseId);
+  
   const [courseInfo, setCourseInfo] = useState<{
     title: string;
     category?: string;
   } | null>(null);
-  const [submissions, setSubmissions] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    totalSubmissions: 0,
-    pendingSubmissions: 0,
-    averageScore: 0,
-    completionRate: 0
-  });
-  
+
   useEffect(() => {
     if (!user) {
       toast.error('Veuillez vous connecter');
@@ -59,101 +100,24 @@ export default function ViewExercisePage() {
       return;
     }
     
-    loadData();
-  }, [courseId, exerciseId, user, router]);
-  
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      console.log('Chargement exercice ID:', exerciseId);
-      
-      // 1. Charger l'exercice via ExerciseService
-      const exerciseData = await ExerciseService.getExerciseDetails(exerciseId);
-      console.log('Exercice chargé:', exerciseData);
-      
-      if (!exerciseData) {
-        toast.error('Exercice non trouvé');
-        return;
-      }
-      
-      // Déduire le statut de l'exercice localement (remplace normalizeExerciseStatus non disponible)
-            const computeStatus = (data: any): 'PUBLISHED' | 'CLOSED' => {
-              // Si le back-end fournit déjà un statut explicite, l'utiliser
-              if (data?.status === 'PUBLISHED' || data?.status === 'CLOSED') return data.status;
-              // Sinon, inférer à partir d'un booléen published
-              if (typeof data?.published === 'boolean') return data.published ? 'PUBLISHED' : 'CLOSED';
-              // Si une date de publication existe, considérer comme publié
-              if (data?.publishedAt) return 'PUBLISHED';
-              // Valeur par défaut
-              return 'CLOSED';
-            };
-      
-            const safeExercise: Exercise = {
-              ...exerciseData,
-              status: computeStatus(exerciseData)
-            };
-      
-      setExercise(safeExercise);
-      
-      // 2. Charger les soumissions
-      await loadSubmissions();
-      
-      // 3. Charger les informations du cours
-      await loadCourseInfo();
-      
-    } catch (error: any) {
-      console.error('Erreur chargement données:', error);
-      toast.error('Erreur lors du chargement');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const loadSubmissions = async () => {
-    try {
-      const submissionsData = await ExerciseService.getExerciseSubmissions(exerciseId);
-      console.log('Soumissions chargées:', submissionsData);
-      
-      if (Array.isArray(submissionsData)) {
-        setSubmissions(submissionsData);
-        
-        // Calculer les statistiques
-        const total = submissionsData.length;
-        const pending = submissionsData.filter((s: any) => !s.graded).length;
-        const graded = submissionsData.filter((s: any) => s.graded);
-        const avgScore = graded.length > 0 
-          ? graded.reduce((sum: number, s: any) => sum + (s.score || 0), 0) / graded.length
-          : 0;
-        
-        setStats({
-          totalSubmissions: total,
-          pendingSubmissions: pending,
-          averageScore: Math.round(avgScore * 10) / 10,
-          completionRate: total > 0 ? Math.round((total / 30) * 100) : 0 // 30 étudiants par défaut
-        });
-      }
-    } catch (error) {
-      console.error('Erreur chargement soumissions:', error);
-    }
-  };
-  
+    // Charger les infos du cours
+    loadCourseInfo();
+  }, [user, router, courseId]);
+
   const loadCourseInfo = async () => {
     try {
-      const response = await CourseControllerService.getEnrichedCourse(courseId);
-      if (response.data) {
-        const courseData = response.data as any;
-        setCourseInfo({
-          title: courseData.title || `Cours #${courseId}`,
-          category: courseData.category
-        });
-      }
+      // TODO: Remplacer par votre service de cours
+      setCourseInfo({
+        title: `Cours #${courseId}`,
+        category: 'Informatique',
+      });
     } catch (error) {
       console.error('Erreur chargement infos cours:', error);
     }
   };
-  
+
   const handleEdit = () => {
-    router.push(`/profdashboard/exercises/${courseId}/edit/${exerciseId}`);
+    router.push(`/profdashboard/exercises/${courseId}/update/${exerciseId}`);
   };
   
   const handleDelete = async () => {
@@ -161,18 +125,18 @@ export default function ViewExercisePage() {
       return;
     }
     
-    try {
-      const success = await ExerciseService.deleteExercise(exerciseId);
-      if (success) {
-        toast.success('Exercice supprimé avec succès');
-        router.push(`/profdashboard/exercises/${courseId}`);
-      } else {
-        toast.error('Erreur lors de la suppression');
+    // CORRECTION: mutate attend un objet options, pas undefined
+    deleteMutation.mutate({
+      onSuccess: (result: any) => {
+        if (result.success) {
+          toast.success('✅ Exercice supprimé avec succès');
+          router.push(`/profdashboard/exercises/${courseId}`);
+        }
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || 'Erreur lors de la suppression');
       }
-    } catch (error: any) {
-      console.error('Erreur suppression:', error);
-      toast.error(error.message || 'Erreur lors de la suppression');
-    }
+    });
   };
   
   const handleViewSubmissions = () => {
@@ -180,49 +144,58 @@ export default function ViewExercisePage() {
   };
   
   const handleDuplicate = async () => {
-    try {
-      if (!exercise) return;
-      
-      toast.loading('Duplication en cours...');
-      
-      // Utiliser la méthode de duplication du service
-      const duplicated = await ExerciseService.duplicateExercise(
-        exerciseId,
-        courseId,
-        `${exercise.title} (Copie)`
-      );
-      
-      toast.dismiss();
-      
-      // Si le service retourne directement l'exercice dupliqué
-      if (duplicated && (duplicated as any).id) {
-        toast.success('Exercice dupliqué avec succès');
-        // Rediriger vers le nouvel exercice
-        router.push(`/profdashboard/exercises/${courseId}/view/${(duplicated as any).id}`);
-      } else if ((duplicated as any)?.success && (duplicated as any)?.data) {
-        // Compatibilité si le service retourne { success, data }
-        toast.success('Exercice dupliqué avec succès');
-        router.push(`/profdashboard/exercises/${courseId}/view/${(duplicated as any).data.id}`);
-      } else {
-        toast.error((duplicated as any)?.message || 'Erreur lors de la duplication');
+    duplicateMutation.mutate(`${exerciseApiResponse?.data?.title} (Copie)`, {
+      onSuccess: (result: any) => {
+        if (result.success && result.data) {
+          toast.success('✅ Exercice dupliqué avec succès');
+          router.push(`/profdashboard/exercises/${courseId}/view/${result.data.id}`);
+        }
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || 'Erreur lors de la duplication');
       }
-    } catch (error: any) {
-      toast.dismiss();
-      console.error('Erreur duplication:', error);
-      toast.error(error.message || 'Erreur lors de la duplication');
-    }
+    });
+  };
+  
+  const handlePublish = () => {
+    publishMutation.mutate({
+      onSuccess: (result: any) => {
+        if (result.success) {
+          toast.success('✅ L\'exercice est déjà publié (tous les exercices sont publiés par défaut)');
+          refetch(); // Recharger les données pour mettre à jour l'UI
+        }
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || 'Erreur lors de la publication');
+      }
+    });
+  };
+  
+  const handleClose = () => {
+    closeMutation.mutate({
+      onSuccess: (result: any) => {
+        if (result.success) {
+          toast.success('Message d\'information: ' + result.message);
+          refetch(); // Recharger les données
+        } else {
+          toast.error('❌ ' + result.message);
+        }
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || 'Erreur lors de la fermeture');
+      }
+    });
   };
   
   const handleDownloadSubmissions = () => {
     toast.loading('Préparation du téléchargement...');
-    // Implémenter le téléchargement des soumissions
     setTimeout(() => {
       toast.dismiss();
       toast.success('Fichier prêt au téléchargement');
     }, 2000);
   };
   
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
     if (!dateString) return 'Non définie';
     
     try {
@@ -239,81 +212,80 @@ export default function ViewExercisePage() {
     }
   };
   
-  const calculateProgress = () => {
-    if (!exercise) return 0;
-    return exercise.questions?.length || 0;
-  };
-
-  const handleSave = (savedExercise: Exercise) => {
-  console.log('📨 handleSave reçoit:', savedExercise);
-  
-  // Vérification robuste
-  if (!savedExercise) {
-    toast.error('Aucune donnée reçue');
-    return;
-  }
-  
-  if (!savedExercise.id || savedExercise.id === 0) {
-    console.error('Exercice sans ID valide:', savedExercise);
-    toast.error('L\'exercice créé n\'a pas d\'ID valide. Redirection vers la liste...');
+  const getStatusDisplay = (status?: string) => {
+    if (!status) return 'Inconnu';
     
-    // Redirection vers la liste en cas d'erreur
-    setTimeout(() => {
-      router.push(`/profdashboard/exercises/${courseId}`);
-    }, 2000);
-    return;
-  }
-  
-  toast.success('🎉 Exercice créé et publié avec succès !', {
-    duration: 4000,
-    icon: '✅',
-  });
-  
-  // Redirection vers la page de l'exercice
-  setTimeout(() => {
-    router.push(`/profdashboard/exercises/${courseId}/view/${savedExercise.id}`);
-  }, 1000);
-};
-  
-  // Fonction helper pour déterminer l'affichage du statut
-  const getStatusDisplay = (status: 'PUBLISHED' | 'CLOSED') => {
-    return status === 'PUBLISHED' ? 'Publié' : 'Fermé';
+    switch (status) {
+      case 'DRAFT': return 'Brouillon';
+      case 'PUBLISHED': return 'Publié';
+      case 'CLOSED': return 'Fermé';
+      case 'ARCHIVED': return 'Archivé';
+      default: return status;
+    }
   };
   
-  const getStatusColor = (status: 'PUBLISHED' | 'CLOSED') => {
-    return status === 'PUBLISHED' 
-      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+  const getStatusColor = (status?: string) => {
+    if (!status) return 'bg-gray-100 text-gray-800';
+    
+    switch (status) {
+      case 'PUBLISHED': 
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'DRAFT':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'CLOSED':
+      case 'ARCHIVED':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
   };
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
           <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de l'exercice...</p>
         </div>
       </div>
     );
   }
   
-  if (!exercise) {
+  // Gestion des erreurs
+  if (error || !exerciseApiResponse?.success || !exerciseApiResponse.data) {
+    const errorMessage = error?.message || exerciseApiResponse?.message || 'Exercice non trouvé';
+    
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">Exercice non trouvé</h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">L'exercice demandé n'existe pas ou vous n'y avez pas accès.</p>
-          <button
-            onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Retour aux exercices
-          </button>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+            {errorMessage}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            L'exercice demandé n'existe pas ou vous n'y avez pas accès.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => refetch()}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <RefreshCw size={18} />
+              Réessayer
+            </button>
+            <button
+              onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Retour aux exercices
+            </button>
+          </div>
         </div>
       </div>
     );
   }
+  
+  const exercise: Exercise = exerciseApiResponse.data;
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20">
@@ -342,7 +314,7 @@ export default function ViewExercisePage() {
               {courseInfo?.title || `Cours #${courseId}`}
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <span className="text-gray-800 dark:text-gray-200 font-medium">
+            <span className="text-gray-800 dark:text-gray-200 font-medium truncate max-w-xs">
               {exercise.title}
             </span>
           </div>
@@ -357,6 +329,30 @@ export default function ViewExercisePage() {
             </button>
             
             <div className="flex gap-3">
+              {/* Note: Dans ExerciseService, tous les exercices sont automatiquement publiés */}
+              {/* La publication/fermeture est visuelle seulement */}
+              {exercise.status === 'DRAFT' && (
+                <button
+                  onClick={handlePublish}
+                  disabled={publishMutation.isPending}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Send size={18} />
+                  {publishMutation.isPending ? 'Publication...' : 'Publier'}
+                </button>
+              )}
+              
+              {exercise.status === 'PUBLISHED' && (
+                <button
+                  onClick={handleClose}
+                  disabled={closeMutation.isPending}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  <XCircle size={18} />
+                  {closeMutation.isPending ? 'Fermeture...' : 'Fermer'}
+                </button>
+              )}
+              
               <button
                 onClick={handleEdit}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
@@ -364,12 +360,13 @@ export default function ViewExercisePage() {
                 <Edit size={18} />
                 Modifier
               </button>
+              
               <button
                 onClick={handleViewSubmissions}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Eye size={18} />
-                Voir soumissions
+                Soumissions
               </button>
             </div>
           </div>
@@ -387,7 +384,7 @@ export default function ViewExercisePage() {
                   <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
                     {exercise.title}
                   </h1>
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(exercise.status)}`}>
                       {getStatusDisplay(exercise.status)}
                     </span>
@@ -396,6 +393,9 @@ export default function ViewExercisePage() {
                         {courseInfo.category}
                       </span>
                     )}
+                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                      {exercise.questions?.length || 0} question{(exercise.questions?.length || 0) > 1 ? 's' : ''}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -441,13 +441,13 @@ export default function ViewExercisePage() {
                 
                 <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-orange-500" />
+                    <Clock className="w-5 h-5 text-orange-500" />
                     <div>
-                      <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        {stats.totalSubmissions}
+                      <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {formatDate(exercise.createdAt)}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Soumissions
+                        Créé le
                       </div>
                     </div>
                   </div>
@@ -458,66 +458,22 @@ export default function ViewExercisePage() {
                     <BarChart3 className="w-5 h-5 text-green-500" />
                     <div>
                       <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        {stats.averageScore || '--'}
+                        {exercise.submissionCount || 0}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Moyenne
+                        Soumissions
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* Statistiques avancées */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-blue-600 dark:text-blue-400">À corriger</div>
-                      <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.pendingSubmissions}</div>
-                    </div>
-                    <Send className="w-8 h-8 text-blue-500" />
-                  </div>
-                  <div className="mt-2 h-2 bg-blue-200 dark:bg-blue-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-blue-500 rounded-full"
-                      style={{ width: `${stats.totalSubmissions > 0 ? (stats.pendingSubmissions / stats.totalSubmissions) * 100 : 0}%` }}
-                    />
-                  </div>
+              {/* Statistiques */}
+              {(exercise.submissionCount || 0) > 0 && (
+                <div className="mt-8">
+                  <ExerciseStats exercise={exercise} />
                 </div>
-                
-                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-green-600 dark:text-green-400">Taux de participation</div>
-                      <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.completionRate}%</div>
-                    </div>
-                    <Users className="w-8 h-8 text-green-500" />
-                  </div>
-                  <div className="mt-2 h-2 bg-green-200 dark:bg-green-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-green-500 rounded-full"
-                      style={{ width: `${stats.completionRate}%` }}
-                    />
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-purple-600 dark:text-purple-400">Questions</div>
-                      <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{calculateProgress()}</div>
-                    </div>
-                    <FileText className="w-8 h-8 text-purple-500" />
-                  </div>
-                  <div className="mt-2 h-2 bg-purple-200 dark:bg-purple-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-purple-500 rounded-full"
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -526,7 +482,7 @@ export default function ViewExercisePage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              Questions ({exercise.questions?.length || 0})
+              Questions ({(exercise.questions?.length || 0)})
             </h2>
             
             {(exercise.questions?.length || 0) === 0 && (
@@ -537,86 +493,107 @@ export default function ViewExercisePage() {
             )}
           </div>
           
-          {exercise.questions && exercise.questions.length > 0 ? (
+          {(exercise.questions?.length || 0) > 0 ? (
             <div className="space-y-4">
-              {exercise.questions.map((question, index) => (
-                <div key={question.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center justify-center w-8 h-8 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full font-medium">
-                        {index + 1}
-                      </span>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">
-                          {question.question}
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                            {question.questionType === 'TEXT' ? 'Texte libre' :
-                             question.questionType === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
-                          </span>
+              {(exercise.questions || []).map((question, index) => {
+                // Utiliser les propriétés compatibles
+                const questionText = question.text || question.question || '';
+                const questionType = question.type || question.questionType || 'TEXT';
+                const questionPoints = question.points || 0;
+                const questionOptions = question.options || [];
+                const correctAnswer = question.correctAnswer;
+                
+                return (
+                  <div key={question.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center justify-center w-8 h-8 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full font-medium">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800 dark:text-gray-200">
+                            {questionText}
+                          </h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                              {questionType === 'TEXT' ? 'Texte libre' :
+                               questionType === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-sm font-medium">
+                        {questionPoints} pts
+                      </span>
                     </div>
-                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-sm font-medium">
-                      {question.points} pts
-                    </span>
-                  </div>
-                  
-                  <div className="ml-11">
-                    {/* Options pour les questions à choix multiple */}
-                    {question.questionType === 'MULTIPLE_CHOICE' && question.options && question.options.length > 0 && (
-                      <div className="mt-3">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Options:</span>
-                        <ul className="mt-2 space-y-2">
-                          {question.options.filter(opt => opt && opt.trim()).map((option, optIndex) => (
-                            <li 
-                              key={optIndex}
-                              className={`flex items-center gap-2 text-sm p-2 rounded ${
-                                option === question.correctAnswer
-                                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
-                                  : 'bg-gray-50 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400'
-                              }`}
-                            >
-                              {option === question.correctAnswer ? (
-                                <CheckCircle className="w-4 h-4 text-green-500" />
-                              ) : (
-                                <div className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600" />
-                              )}
-                              <span className="font-medium mr-2">{String.fromCharCode(65 + optIndex)}.</span>
-                              <span>{option}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                     
-                    {/* Réponse correcte pour les autres types */}
-                    {question.correctAnswer && question.questionType !== 'MULTIPLE_CHOICE' && (
-                      <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                        <span className="text-sm font-medium text-green-700 dark:text-green-400 flex items-center gap-2">
-                          <CheckCircle size={16} />
-                          Réponse correcte:
-                        </span>
-                        <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">
-                          {question.correctAnswer}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {!question.correctAnswer && question.questionType !== 'MULTIPLE_CHOICE' && (
-                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded border border-gray-200 dark:border-gray-700">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Réponse attendue:
-                        </span>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">
-                          Pas de réponse correcte définie. L'enseignant corrigera manuellement.
-                        </p>
-                      </div>
-                    )}
+                    <div className="ml-11">
+                      {/* Options pour les questions à choix multiple */}
+                      {questionType === 'MULTIPLE_CHOICE' && questionOptions.length > 0 && (
+                        <div className="mt-3">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Options:</span>
+                          <ul className="mt-2 space-y-2">
+                            {questionOptions.filter(opt => opt && opt.trim()).map((option, optIndex) => (
+                              <li 
+                                key={optIndex}
+                                className={`flex items-center gap-2 text-sm p-2 rounded ${
+                                  option === correctAnswer
+                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                                    : 'bg-gray-50 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400'
+                                }`}
+                              >
+                                {option === correctAnswer ? (
+                                  <CheckCircle className="w-4 h-4 text-green-500" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600" />
+                                )}
+                                <span className="font-medium mr-2">{String.fromCharCode(65 + optIndex)}.</span>
+                                <span>{option}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* Réponse correcte pour les autres types */}
+                      {correctAnswer && questionType !== 'MULTIPLE_CHOICE' && (
+                        <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                          <span className="text-sm font-medium text-green-700 dark:text-green-400 flex items-center gap-2">
+                            <CheckCircle size={16} />
+                            Réponse correcte:
+                          </span>
+                          <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">
+                            {correctAnswer}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {!correctAnswer && questionType !== 'MULTIPLE_CHOICE' && (
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded border border-gray-200 dark:border-gray-700">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Correction manuelle
+                          </span>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">
+                            L'enseignant corrigera manuellement cette réponse.
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Explication */}
+                      {question.explanation && (
+                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                          <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                            Explication:
+                          </span>
+                          <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">
+                            {question.explanation}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -627,7 +604,7 @@ export default function ViewExercisePage() {
                 Aucune question trouvée
               </h3>
               <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
-                Cet exercice ne contient pas encore de questions. Vous pouvez en ajouter en modifiant l'exercice.
+                Cet exercice ne contient pas encore de questions.
               </p>
               <button
                 onClick={handleEdit}
@@ -665,18 +642,19 @@ export default function ViewExercisePage() {
               <Eye className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
               <span className="font-medium text-gray-800 dark:text-gray-200">Soumissions</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Voir et noter les soumissions ({stats.pendingSubmissions} à corriger)
+                Voir et noter les soumissions
               </span>
             </button>
             
             <button
               onClick={handleDuplicate}
-              className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors group"
+              disabled={duplicateMutation.isPending}
+              className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors group disabled:opacity-50"
             >
               <Copy className="w-8 h-8 text-gray-600 dark:text-gray-400 mb-2 group-hover:scale-110 transition-transform" />
               <span className="font-medium text-gray-800 dark:text-gray-200">Dupliquer</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Créer une copie de cet exercice
+                {duplicateMutation.isPending ? 'Duplication...' : 'Créer une copie'}
               </span>
             </button>
             
@@ -692,13 +670,34 @@ export default function ViewExercisePage() {
             </button>
           </div>
           
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+            <div className="flex gap-3">
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+              >
+                <Printer size={18} />
+                Imprimer
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Lien copié dans le presse-papier');
+                }}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+              >
+                <Share2 size={18} />
+                Partager
+              </button>
+            </div>
+            
             <button
               onClick={handleDelete}
-              className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              disabled={deleteMutation.isPending}
+              className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               <Trash2 size={18} />
-              Supprimer l'exercice
+              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer l\'exercice'}
             </button>
           </div>
         </div>

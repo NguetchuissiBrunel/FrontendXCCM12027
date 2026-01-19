@@ -13,6 +13,7 @@
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-select": "^2.2.6",
     "@react-pdf/renderer": "^4.3.1",
+    "@tanstack/react-query": "^5.90.19",
     "@tiptap/core": "^2.27.1",
     "@tiptap/extension-color": "^2.27.1",
     "@tiptap/extension-font-family": "^2.27.1",
@@ -42,10 +43,12 @@
     "react-icons": "^5.5.0",
     "react-select": "^5.10.2",
     "recharts": "^3.3.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tanstack/react-query-devtools": "^5.91.2",
     "@types/html-to-docx": "^1.8.0",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.19.24",

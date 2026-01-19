@@ -1,146 +1,257 @@
-// src/types/exercise.ts - VERSION FINALE
-export interface ApiResponse<T> {
-  code: number;
-  success: boolean;
-  message: string;
-  data: T;
-  errors?: Record<string, string>;
-  error?: string;
-  timestamp: string;
+// src/types/exercise.ts - VERSION COMPLÈTE ET CORRIGÉE
+// ============ TYPES FONDAMENTAUX ============
+export type QuestionType = 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
+
+export interface Question {
+  id: number;
+  exerciseId: number;
+  text: string;
+  type: QuestionType;
+  points: number;
+  options?: string[];
+  correctAnswer?: string;
+  explanation?: string;
+  order: number;
+  
+  // Propriétés pour compatibilité ascendante
+  question?: string;
+  questionType?: QuestionType;
+  studentAnswer?: string;
+  studentPoints?: number;
 }
 
-// ============ INTERFACES PRINCIPALES ============
 export interface Exercise {
+  // Données principales
   id: number;
   courseId: number;
   title: string;
   description: string;
   maxScore: number;
-  dueDate: string;
+  dueDate?: string;
+  
+  // Métadonnées
+  status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   createdAt: string;
   updatedAt?: string;
-  // AJOUTER CETTE LIGNE : status est maintenant une propriété obligatoire
-  status: 'DRAFT' | 'PUBLISHED' | 'CLOSED';
-  questions?: Question[];
-  content?: any;
+  publishedAt?: string;
   
-  // Statistiques additionnelles
-  submissionsCount?: number;
+  // Questions
+  questions: Question[];
+  
+  // Statistiques
+  submissionCount?: number;
   averageScore?: number;
-  totalStudents?: number;
-  gradedCount?: number;
-  pendingCount?: number;
+  completionRate?: number;
+  pendingGrading?: number;
   
-  // Pour l'étudiant
+  // Metadata technique
+  version: string;
+  
+  // Propriétés pour compatibilité ascendante
+  submissionsCount?: number;
+  totalStudents?: number;
   canSubmit?: boolean;
   alreadySubmitted?: boolean;
   studentScore?: number;
-  
-  // Informations additionnelles
-  courseTitle?: string;
-  courseCategory?: string;
-}
-
-export interface Question {
-  id: number;
-  exerciseId: number;
-  question: string;
-  questionType: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
-  points: number;
-  options?: string[];
-  correctAnswer?: string;
-  
-  // Pour l'étudiant
-  studentAnswer?: string;
-  studentPoints?: number;
-  
-  // Pour la soumission
-  answer?: string;
-}
-
-export interface Submission {
-  id: number;
-  exerciseId: number;
-  exerciseTitle: string;
-  studentId: string;
-  studentName: string;
-  score: number;
-  maxScore: number;
-  feedback?: string;
-  submissionUrl: string;
-  submittedAt: string;
-  graded: boolean;
-  answers?: Answer[];
-  courseId?: number;
-  courseTitle?: string;
-  studentEmail?: string;
-  studentAvatar?: string;
-}
-
-export interface Answer {
-  id: number;
-  submissionId: number;
-  questionId: number;
-  question?: string;
-  questionType?: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
-  answer: string;
-  points: number;
-  maxPoints: number;
   feedback?: string;
 }
 
-// ============ REQUÊTES ============
-
-export interface CreateExerciseRequest {
-  courseId: number;
-  title: string;
-  description?: string;
-  maxScore: number;
-  dueDate?: string;
-  questions?: Question[];
-}
-
-export interface UpdateExerciseRequest {
-  title?: string;
-  description?: string;
-  maxScore?: number;
-  dueDate?: string;
-  questions?: Question[];
-}
-
-export interface GradeSubmissionRequest {
-  score: number;
-  feedback?: string;
-  answers?: Array<{
-    questionId: number;
+// ============ TYPES POUR LE CONTENU ============
+export interface ExerciseContent {
+  version: string;
+  questions: Array<{
+    id: number;
+    text: string;
+    type: QuestionType;
     points: number;
-    feedback?: string;
+    options?: string[];
+    correctAnswer?: string | null;
+    explanation?: string;
+    studentAnswer?: string;
+    studentPoints?: number;
   }>;
+  metadata: {
+    status: string;
+    totalPoints: number;
+    questionCount: number;
+    types: QuestionType[];
+    createdAt: string;
+    updatedAt?: string;
+  };
 }
 
+// ============ DTOs POUR L'API ============
 export interface SubmitExerciseRequest {
   submissionUrl?: string;
-  answers?: Array<{
+  answers: Array<{
     questionId: number;
     answer: string;
   }>;
 }
 
-// ============ TYPES UTILITAIRES ============
-
-export type QuestionType = 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
-
-export interface ExerciseFormData {
+export interface CreateExerciseDto {
+  courseId: number;
   title: string;
   description: string;
   maxScore: number;
-  dueDate: string;
-  questions: Array<{
-    id?: number;
-    question: string;
-    questionType: QuestionType;
-    points: number;
-    options: string[];
-    correctAnswer?: string;
+  dueDate?: string;
+  questions: CreateQuestionDto[];
+  publishImmediately?: boolean;
+}
+
+export interface UpdateExerciseDto {
+  title?: string;
+  description?: string;
+  maxScore?: number;
+  dueDate?: string | null;
+  questions?: UpdateQuestionDto[];
+  status?: Exercise['status'];
+}
+
+export interface CreateQuestionDto {
+  text: string;
+  type: QuestionType;
+  points: number;
+  options?: string[];
+  correctAnswer?: string;
+  explanation?: string;
+  order?: number;
+}
+
+export interface UpdateQuestionDto extends Partial<CreateQuestionDto> {
+  id?: number;
+}
+
+// ============ TYPES POUR LES SOUMISSIONS ============
+export interface Submission {
+  id: number;
+  exerciseId: number;
+  studentId: string;
+  studentName: string;
+  studentEmail?: string;
+  
+  // Données de soumission
+  answers: SubmissionAnswer[];
+  submittedAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+  
+  // Notation
+  score?: number;
+  maxScore: number;
+  feedback?: string;
+  graded: boolean;
+  gradedAt?: string;
+  gradedBy?: string;
+  
+  // Metadata
+  timeSpent?: number;
+  lastModifiedAt?: string;
+  
+  // Propriétés pour compatibilité
+  submissionUrl?: string;
+  exerciseTitle?: string;
+}
+
+export interface SubmissionAnswer {
+  id: number;
+  questionId: number;
+  answer: string;
+  points?: number;
+  feedback?: string;
+  graderComment?: string;
+  autoGraded?: boolean;
+}
+
+// ============ TYPES ALIAS POUR COMPATIBILITÉ ============
+export type CreateExerciseInput = CreateExerciseDto;
+export type CreateQuestionInput = CreateQuestionDto;
+
+// ============ RÉPONSES API ============
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  errors?: Record<string, string[]>;
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    hasMore?: boolean;
+  };
+  timestamp: string;
+}
+
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
+// ============ TYPES POUR LES STATISTIQUES ============
+export interface ExerciseStats {
+  exerciseId: number;
+  title: string;
+  submissionCount: number;
+  averageScore: number;
+  minScore: number;
+  maxScore: number;
+  maxPossibleScore: number;
+  completionRate: number;
+  averageTimeSpent: number;
+  questionStats: QuestionStat[];
+  gradeDistribution: GradeDistribution[];
+}
+
+export interface ExerciseStatsDTO {
+  exerciseId?: number;
+  title?: string;
+  submissionCount?: number;
+  averageScore?: number;
+  minScore?: number;
+  maxScore?: number;
+  maxPossibleScore?: number;
+}
+
+export interface QuestionStat {
+  questionId: number;
+  text: string;
+  type: QuestionType;
+  averageScore: number;
+  correctRate: number;
+  commonWrongAnswers: Array<{
+    answer: string;
+    count: number;
   }>;
 }
+
+export interface GradeDistribution {
+  gradeRange: string;
+  count: number;
+  percentage: number;
+}
+
+// ============ TYPES POUR LA VALIDATION ============
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings?: string[];
+}
+
+// ============ CONSTANTES ============
+export const EXERCISE_STATUS = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  CLOSED: 'CLOSED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export const QUESTION_TYPES = {
+  TEXT: 'TEXT',
+  MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
+  CODE: 'CODE',
+} as const;

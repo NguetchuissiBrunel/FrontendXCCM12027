@@ -1,5 +1,5 @@
 // src/lib/services/CourseStatisticsService.ts - VERSION CORRIGÉE AVEC TYPES COMPATIBLES
-import { ExerciseService } from './ExerciseService';
+import { ExerciseService } from '../../lib3/services/ExerciseService';
 import { EnseignantService } from './EnseignantService';
 import { CourseControllerService } from './CourseControllerService';
 import type { TeacherCourseStatsResponse } from '@/lib/models/TeacherCourseStatsResponse';

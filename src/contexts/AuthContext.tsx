@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('userRole');
 
     // Rediriger vers la page de connexion appropriée
-    router.push(isAdmin ? '/admin/login' : '/login');
+    router.push(isAdmin ? '/admindashboard/login' : '/login');
   };
 
   // ==========================================

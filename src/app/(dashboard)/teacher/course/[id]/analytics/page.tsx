@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLoading } from '@/contexts/LoadingContext';
-import { CourseStatisticsService } from '@/lib/services/CourseStatisticsService';
+import { CourseStatisticsService } from '@/lib3/services/CourseStatisticsService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import {
   ArrowLeft,

@@ -15,6 +15,7 @@ import { useLoading } from '@/contexts/LoadingContext';
 import Link from 'next/link';
 import CourseContentRenderer from './CourseContentRenderer';
 import confetti from 'canvas-confetti';
+import TeacherLink from '@/components/TeacherLink';
 
 
 interface CourseProps {
@@ -324,6 +325,17 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         setShowExercise={setShowExercise}
         onDownloadRequest={() => setShowDownloadModal(true)}
       />
+      
+      {courseData.author?.id && (
+		  <div className="mb-3">
+			<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Par</p>
+			<TeacherLink
+			  teacherId={courseData.author.id}
+			  teacherName={courseData.author.name}
+			  teacherPhoto={courseData.author.image}
+			/>
+		  </div>
+		)}
 
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-20">

@@ -23,6 +23,7 @@ import { transformTiptapToCourseData } from "@/utils/courseTransformer";
 import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import confetti from 'canvas-confetti';
+import TeacherLink from '@/components/TeacherLink';
 
 // --- COMPOSANTS AUXILIAIRES ---
 
@@ -347,21 +348,18 @@ const Bibliotheque = () => {
                     {course.description}
                   </p>
 
-                  {/* Auteur */}
-                  <div className="flex items-center mb-4">
-                    <div className="relative w-9 h-9 mr-3">
-                      <Image
-                        src={course.author?.image || '/images/prof.jpeg'}
-                        alt="Author"
-                        fill
-                        className="rounded-full object-cover border-2 border-purple-100 dark:border-purple-900/50"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{course.author?.name}</p>
-                      <StarRating rating={5} />
-                    </div>
-                  </div>
+                  {/* Auteur - CLIQUABLE VERS PROFIL */}
+				  <div className="mb-4">
+					  <TeacherLink
+						  teacherId={course.author?.id || ''}
+						  teacherName={course.author?.name || 'Auteur inconnu'}
+						  teacherPhoto={course.author?.image}
+						  showAvatar={true}
+					  />
+					  <div className="mt-1 ml-10">
+						  <StarRating rating={5} />
+					  </div>
+			      </div>
 
                   {/* Statistiques (Likes, Views, Downloads) */}
                   <div className="flex justify-between items-center px-1 py-3 border-t border-gray-100 dark:border-gray-700 mb-4">

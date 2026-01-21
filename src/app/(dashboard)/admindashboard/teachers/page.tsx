@@ -2,12 +2,33 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate, FaEye, FaEyeSlash, FaUniversity, FaAward } from 'react-icons/fa';
-import { AdminService } from '@/lib/services/AdminService';
-import type { User } from '@/types/user';
+import { AdminService } from '@/lib/AdminService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLoading } from '@/contexts/LoadingContext';
 
+interface User {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    photoUrl?: string;
+    specialization?: string;
+    level?: string;
+    university?: string;
+    city?: string;
+    promotion?: string;
+    averageGrade?: string;
+    currentSemester?: string;
+    major?: string;
+    minor?: string;
+    interests?: string[];
+    subjects?: string[];
+    certification?: string;
+    activities?: string[];
+    grade?: string;
+}
 function TeachersList() {
     const [teachers, setTeachers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -47,7 +68,7 @@ function TeachersList() {
         startLoading();
         try {
             const res = await AdminService.getAllTeachers();
-            setTeachers(res.data || []);
+            setTeachers((res.data || []) as User[]);
         } catch (error) {
             console.error("Error fetching teachers:", error);
             toast.error("Erreur lors du chargement des enseignants");

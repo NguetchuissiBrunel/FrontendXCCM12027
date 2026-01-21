@@ -10,16 +10,17 @@ import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisat
 import toast from 'react-hot-toast';
 
 interface Teacher {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
   photoUrl?: string;
   city?: string;
   university?: string;
   grade?: string;
   certification?: string;
   subjects?: string[];
+  activities?: string[];
 }
 
 interface Course {
@@ -46,7 +47,7 @@ export default function TeacherProfilePage() {
   const router = useRouter();
   const teacherId = params.id as string;
   const { startLoading, stopLoading } = useLoading();
-  
+
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [stats, setStats] = useState<TeacherStats>({
@@ -74,24 +75,24 @@ export default function TeacherProfilePage() {
       console.log('📊 Chargement du profil enseignant:', teacherId);
 
       // Charger les infos de l'enseignant via GestionDesUtilisateursService
-      const teacherResponse = await GestionDesUtilisateursService.getUserById(teacherId);
-      
+      const teacherResponse = await GestionDesUtilisateursService.getTeacherById1(teacherId);
+
       if (!teacherResponse.success || !teacherResponse.data) {
         throw new Error('Enseignant non trouvé');
       }
 
       const teacherData = teacherResponse.data;
       console.log('✅ Données enseignant récupérées:', teacherData);
-      
+
       setTeacher(teacherData);
 
       // Charger les cours de l'enseignant via CourseControllerService
       const coursesResponse = await CourseControllerService.getAuthorCourses(teacherId);
-      
+
       if (coursesResponse.data) {
         const allCourses = coursesResponse.data as Course[];
         console.log(`📚 Cours trouvés: ${allCourses.length}`);
-        
+
         setCourses(allCourses);
 
         // Calculer les statistiques
@@ -204,7 +205,7 @@ export default function TeacherProfilePage() {
                 <GraduationCap className="w-6 h-6 text-purple-600" />
                 Informations
               </h2>
-              
+
               <div className="space-y-4">
                 {teacher.university && (
                   <div className="flex items-start gap-3">
@@ -323,11 +324,10 @@ export default function TeacherProfilePage() {
                     />
                     {course.status && (
                       <div className="absolute top-3 left-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm ${
-                          course.status === 'PUBLISHED'
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm ${course.status === 'PUBLISHED'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                          : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
+                          }`}>
                           {course.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
                         </span>
                       </div>

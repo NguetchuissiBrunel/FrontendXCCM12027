@@ -220,9 +220,6 @@ export default function ProfessorDashboard() {
         return;
       }
 
-      if (!confirm('Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.')) {
-        return;
-      }
 
       startLoading();
 

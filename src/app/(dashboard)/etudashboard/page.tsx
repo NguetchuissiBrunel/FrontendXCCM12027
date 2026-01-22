@@ -8,7 +8,7 @@ import { useLoading } from '@/contexts/LoadingContext';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { useCourses } from '@/hooks/useCourses';
 import { Submission } from '@/types/exercise'; // ou le chemin correct
-import { toast } from 'react-toastify';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface User {
   id: string;

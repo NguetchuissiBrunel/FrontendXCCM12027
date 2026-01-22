@@ -353,9 +353,9 @@ const handleSave = async () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePreview}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-blue-200 text-blue-600 rounded-lg hover:bg-blue-300 transition-colors flex items-center gap-2"
               >
-                <Eye size={18} />
+                <Eye size={18} className="text-blue-600 dark:text-blue-400" />
                 Aperçu étudiant
               </button>
               
@@ -371,82 +371,83 @@ const handleSave = async () => {
 
         {/* Bannière d'information */}
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                    <FileText className="w-8 h-8" />
+          {/*text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30*/}
+         <div className="border-purple-300 bg-gradient-to-br from-purple-50 to-white rounded-2xl p-6 shadow-lg">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-purple-100 border border-purple-200 rounded-xl">
+                  <FileText className="w-8 h-8 text-purple-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold mb-1 text-gray-800">
+                    Modifier l'exercice
+                  </h1>
+                  <p className="text-gray-600">
+                    {exercise.title}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      exercise.status === 'PUBLISHED' 
+                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                        : exercise.status === 'DRAFT'
+                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        : 'bg-red-100 text-red-800 border border-red-200'
+                    }`}>
+                      {exercise.status === 'PUBLISHED' ? 'Publié' :
+                        exercise.status === 'DRAFT' ? 'Brouillon' :
+                        'Fermé'}
+                    </div>
+                    {courseInfo?.category && (
+                      <div className="px-3 py-1 bg-purple-50 border border-purple-200 rounded-full text-sm text-purple-700">
+                        <BookOpen size={14} className="inline mr-1 text-purple-600" />
+                        {courseInfo.category}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div className="flex items-center gap-3 p-3 bg-white border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors">
+                  <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                    <Shield size={18} className="text-purple-600" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold mb-1">
-                      Modifier l'exercice
-                    </h1>
-                    <p className="text-blue-100">
-                      {exercise.title}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        exercise.status === 'PUBLISHED' 
-                          ? 'bg-green-500/20 text-green-200' 
-                          : exercise.status === 'DRAFT'
-                          ? 'bg-yellow-500/20 text-yellow-200'
-                          : 'bg-gray-500/20 text-gray-200'
-                      }`}>
-                        {exercise.status === 'PUBLISHED' ? 'Publié' :
-                         exercise.status === 'DRAFT' ? 'Brouillon' :
-                         'Fermé'}
-                      </div>
-                      {courseInfo?.category && (
-                        <div className="px-3 py-1 bg-white/20 rounded-full text-sm">
-                          <BookOpen size={14} className="inline mr-1" />
-                          {courseInfo.category}
-                        </div>
-                      )}
+                    <div className="text-sm font-medium text-gray-800">Statut préservé</div>
+                    <div className="text-xs text-gray-600">
+                      L'exercice reste {exercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
                     </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                    <div className="p-1.5 bg-white/20 rounded-lg">
-                      <Shield size={18} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">Statut préservé</div>
-                      <div className="text-xs text-blue-200">
-                        L'exercice reste {exercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
-                      </div>
+                <div className="flex items-center gap-3 p-3 bg-white border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors">
+                  <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                    <Clock size={18} className="text-purple-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-800">Échéance</div>
+                    <div className="text-xs text-gray-600">
+                      {exercise.dueDate ? 'Date limite définie' : 'Pas de date limite'}
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                    <div className="p-1.5 bg-white/20 rounded-lg">
-                      <Clock size={18} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">Échéance</div>
-                      <div className="text-xs text-blue-200">
-                        {exercise.dueDate ? 'Date limite définie' : 'Pas de date limite'}
-                      </div>
-                    </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-white border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors">
+                  <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                    <Users size={18} className="text-purple-600" />
                   </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                    <div className="p-1.5 bg-white/20 rounded-lg">
-                      <Users size={18} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">Soumissions</div>
-                      <div className="text-xs text-blue-200">
-                        {exercise.submissionCount || 0} soumission{exercise.submissionCount !== 1 ? 's' : ''}
-                      </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-800">Soumissions</div>
+                    <div className="text-xs text-gray-600">
+                      {exercise.submissionCount || 0} soumission{exercise.submissionCount !== 1 ? 's' : ''}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
         </div>
 
         {/* Alertes importantes */}

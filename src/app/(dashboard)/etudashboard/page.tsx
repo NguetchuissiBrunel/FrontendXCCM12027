@@ -6,7 +6,10 @@ import Sidebar from '@/components/Sidebar';
 import { BookOpen, FileText, Award, Clock } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
 import { ExercicesService } from '@/lib/services/ExercicesService';
+import { useCourses } from '@/hooks/useCourses';
 import { Submission } from '@/types/exercise'; // ou le chemin correct
+import { toast } from 'react-toastify';
+
 interface User {
   id: string;
   firstName: string;
@@ -56,15 +59,16 @@ export default function StudentHome() {
     pendingExercises: 0,
     completedExercises: 0
   });
+  const { courses: allCourses, loading: coursesLoading } = useCourses();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
+    if (loading || coursesLoading) {
       startLoading();
     } else {
       stopLoading();
     }
-  }, [loading, startLoading, stopLoading]);
+  }, [loading, coursesLoading, startLoading, stopLoading]);
 
   const loadStudentData = async (userData: User) => {
     try {
@@ -75,8 +79,9 @@ export default function StudentHome() {
         setEnrolledCourses(enrollments || []);
 
         // 2. Charger les soumissions et exercices pour chaque cours
-        if (enrollments && enrollments.length > 0) {
-          await loadExercisesAndSubmissions(enrollments);
+        const approvedEnrollments = (enrollments || []).filter(e => e.status === 'APPROVED');
+        if (approvedEnrollments.length > 0) {
+          await loadExercisesAndSubmissions(approvedEnrollments);
         }
       } catch (err) {
         console.error("Erreur chargement données:", err);
@@ -112,10 +117,13 @@ export default function StudentHome() {
               return !alreadySubmitted && dueDate > now;
             });
 
-            pending.push(...pendingForCourse.map((ex: Exercise) => ({
-              ...ex,
-              courseTitle: enrollment.courseTitle || `Cours #${enrollment.courseId}`
-            })));
+            pending.push(...pendingForCourse.map((ex: Exercise) => {
+              const courseDetail = allCourses.find(c => c.id === enrollment.courseId);
+              return {
+                ...ex,
+                courseTitle: courseDetail?.title || enrollment.courseTitle || `Cours #${enrollment.courseId}`
+              };
+            }));
           } catch (error) {
             console.error(`Erreur chargement exercices cours ${enrollment.courseId}:`, error);
           }
@@ -125,9 +133,9 @@ export default function StudentHome() {
       setPendingExercises(pending);
 
       // Calculer les statistiques
-      const gradedSubmissions = mySubmissions.filter((s: Submission) => s.graded) as Submission[];
+      const gradedSubmissions = mySubmissions.filter((s: Submission) => s.graded && typeof s.score === 'number') as (Submission & { score: number })[];
       const averageScore = gradedSubmissions.length > 0
-        ? gradedSubmissions.reduce((sum: number, s: Submission) => sum + (s.score / s.maxScore * 100), 0) / gradedSubmissions.length
+        ? gradedSubmissions.reduce((sum: number, s) => sum + (s.score / s.maxScore * 100), 0) / gradedSubmissions.length
         : 0;
 
       setStats({
@@ -180,6 +188,26 @@ export default function StudentHome() {
     console.log('Voir soumission:', submissionId);
   };
 
+  const handleUnenroll = async (enrollmentId: number) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir vous désinscrire de ce cours ?")) {
+      return;
+    }
+
+    try {
+      const { EnrollmentService } = await import('@/utils/enrollmentService');
+      await EnrollmentService.unenroll(enrollmentId);
+      toast.success("Désinscription réussie");
+
+      // Recharger les données
+      if (user) {
+        await loadStudentData(user);
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la désinscription:", error);
+      toast.error(error.message || "Erreur lors de la désinscription");
+    }
+  };
+
   if (loading || globalLoading) {
     return null;
   }
@@ -227,7 +255,7 @@ export default function StudentHome() {
                   <div className="text-sm text-gray-600 dark:text-gray-300">Soumissions</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
+                  <div className="text-2xl font-bold text-purple-600">
                     {stats.pendingExercises}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-300">Exercices en attente</div>
@@ -276,11 +304,11 @@ export default function StudentHome() {
                           {enrollment.status === 'APPROVED' ? 'Actif' : enrollment.status === 'PENDING' ? 'En attente' : enrollment.status}
                         </span>
                         <span className="text-xs text-gray-500">
-                          Cours #{enrollment.courseId}
+                          {allCourses.find(c => c.id === enrollment.courseId)?.category || 'Formation'}
                         </span>
                       </div>
                       <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2 line-clamp-1">
-                        Cours #{enrollment.courseId}
+                        {allCourses.find(c => c.id === enrollment.courseId)?.title || enrollment.courseTitle || `Cours #${enrollment.courseId}`}
                       </h3>
 
                       {enrollment.status === 'APPROVED' && (
@@ -311,16 +339,28 @@ export default function StudentHome() {
                         </div>
                       )}
 
-                      <button
-                        onClick={() => router.push(`/courses/${enrollment.courseId}`)}
-                        disabled={enrollment.status !== 'APPROVED'}
-                        className={`mt-4 w-full py-2 rounded-lg font-medium transition-colors ${enrollment.status === 'APPROVED'
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                      >
-                        {enrollment.status === 'APPROVED' ? 'Continuer' : 'En attente'}
-                      </button>
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => router.push(`/courses/${enrollment.courseId}`)}
+                          disabled={enrollment.status !== 'APPROVED'}
+                          className={`flex-1 py-2 rounded-lg font-medium transition-colors ${enrollment.status === 'APPROVED'
+                            ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                          {enrollment.status === 'APPROVED' ? 'Continuer' : 'En attente'}
+                        </button>
+
+                        <button
+                          onClick={() => handleUnenroll(enrollment.id)}
+                          className="px-3 py-2 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center justify-center"
+                          title="Se désinscrire"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -370,7 +410,7 @@ export default function StudentHome() {
                       </div>
                       <button
                         onClick={() => handleStartExercise(exercise.id)}
-                        className="mt-2 w-full py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                        className="mt-2 w-full py-1 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
                       >
                         Commencer
                       </button>
@@ -490,7 +530,7 @@ export default function StudentHome() {
                       router.push('/etudashboard/exercises');
                     }
                   }}
-                  className="w-full py-2 text-center bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  className="w-full py-2 text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
                   disabled={pendingExercises.length === 0}
                 >
                   {pendingExercises.length > 0 ?

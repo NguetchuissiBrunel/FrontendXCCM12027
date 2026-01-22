@@ -34,6 +34,10 @@ interface Course {
   likeCount?: number;
   downloadCount?: number;
   status?: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
+  author?: {
+    id?: string;
+    name?: string;
+  };
 }
 
 interface TeacherStats {
@@ -75,23 +79,35 @@ export default function TeacherProfilePage() {
       console.log('📊 Chargement du profil enseignant:', teacherId);
 
       // Charger les infos de l'enseignant via GestionDesUtilisateursService
-      const teacherResponse = await GestionDesUtilisateursService.getTeacherById1(teacherId);
+      // Utilisation de getAllTeachers1 + filtrage car getTeacherById1 retourne 401
+      const teachersResponse = await GestionDesUtilisateursService.getAllTeachers1();
 
-      if (!teacherResponse.success || !teacherResponse.data) {
+      if (!teachersResponse.data) {
+        throw new Error('Impossible de récupérer la liste des enseignants');
+      }
+
+      const allTeachers = teachersResponse.data as Teacher[];
+      const foundTeacher = allTeachers.find(t => t.id === teacherId);
+
+      if (!foundTeacher) {
         throw new Error('Enseignant non trouvé');
       }
 
-      const teacherData = teacherResponse.data;
-      console.log('✅ Données enseignant récupérées:', teacherData);
+      console.log('✅ Données enseignant récupérées:', foundTeacher);
 
-      setTeacher(teacherData);
+      setTeacher(foundTeacher);
 
       // Charger les cours de l'enseignant via CourseControllerService
-      const coursesResponse = await CourseControllerService.getAuthorCourses(teacherId);
+      // Utilisation de getAllCourses + filtrage car getAuthorCourses retourne 403
+      const coursesResponse = await CourseControllerService.getAllCourses();
 
       if (coursesResponse.data) {
-        const allCourses = coursesResponse.data as Course[];
-        console.log(`📚 Cours trouvés: ${allCourses.length}`);
+        let allCourses = coursesResponse.data as Course[];
+        console.log(`📚 Total cours récupérés: ${allCourses.length}`);
+
+        // Filtrer pour ne garder que les cours de cet enseignant
+        allCourses = allCourses.filter(course => course.author?.id === teacherId);
+        console.log(`👤 Cours de cet enseignant: ${allCourses.length}`);
 
         setCourses(allCourses);
 

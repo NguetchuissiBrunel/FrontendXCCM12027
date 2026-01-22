@@ -98,7 +98,7 @@ static async createExerciseWithContent(
     try {
       const response = await __request(OpenAPI, {
         method: 'GET',
-        url: `/api/v1/exercises/${exerciseId}/content`,
+        url: `/api/v1/exercises/${exerciseId}`,
       });
       
       const parsedResponse = this.parseApiResponse<{ content?: string }>(response);
@@ -124,7 +124,7 @@ static async createExerciseWithContent(
     try {
       const response = await __request(OpenAPI, {
         method: 'PUT',
-        url: `/api/v1/teacher/exercises/${exerciseId}/content`,
+        url: `/api/v1/teacher/exercises/${exerciseId}`,
         body: { content },
         mediaType: 'application/json',
       });

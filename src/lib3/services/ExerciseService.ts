@@ -578,7 +578,7 @@ static async updateExercise(
     if (data.questions !== undefined) {
       console.log('Mise à jour du contenu...');
       const content = this.serializeQuestions(data.questions);
-      console.log('Contenu généré (premiers 200 caractères):', content.substring(0, 200));
+      
       
       try {
         await ExerciseApiWrapper.updateExerciseContent(exerciseId, content);
@@ -695,8 +695,7 @@ static async updateExerciseDirect(
       const methods: Array<'PUT' | 'PATCH'> = ['PUT', 'PATCH'];
       // Essayer différentes URLs
       const possibleUrls = [
-        `/api/v1/teacher/exercises/${exerciseId}`,
-        `/api/v1/exercises/${exerciseId}`,
+        `/api/v1/teacher/exercises/${exerciseId}`
       ];
       
       let success = false;
@@ -755,12 +754,10 @@ static async updateExerciseDirect(
       }
       
       const content = this.serializeQuestions(data.questions);
-      console.log('🔧 Contenu généré (premiers 300 caractères):', content.substring(0, 300));
-      
       // Essayer différents endpoints pour le contenu
       const contentUrls = [
-        `/api/v1/teacher/exercises/${exerciseId}/content`,
-        `/api/v1/exercises/${exerciseId}/content`
+        `/api/v1/teacher/exercises/${exerciseId}`,
+       
       ];
       
       let contentSuccess = false;
@@ -888,7 +885,6 @@ static async updateExerciseDirect(
 /**
  * Version avec courseId pour les URLs qui en ont besoin
  */
-// Dans ExerciseService.ts - modifiez la méthode
 static async updateExerciseDirectWithCourse(
   exerciseId: number,
   courseId: number,
@@ -901,103 +897,70 @@ static async updateExerciseDirectWithCourse(
   }
 ): Promise<ApiResponse<Exercise>> {
   
-  console.log('🔧 === UPDATE EXERCISE DIRECT WITH COURSE ===');
-  console.log('🔧 Exercise ID:', exerciseId);
-  console.log('🔧 Course ID:', courseId);
+  console.log('🔧 === MISE À JOUR SIMPLIFIÉE ===');
   
   try {
-    // 1. Essayer d'abord la version sans courseId
-    const result = await this.updateExerciseDirect(exerciseId, data);
+    // 1. Préparer le payload
+    const requestBody: any = {};
     
-    // 2. Si échec, essayer avec courseId
-    if (!result.success) {
-      console.log('🔧 Essai avec URLs incluant courseId...');
-      
-      const updatePayload: any = {};
-      if (data.title !== undefined) updatePayload.title = data.title;
-      if (data.description !== undefined) updatePayload.description = data.description;
-      if (data.maxScore !== undefined) updatePayload.maxScore = data.maxScore;
-      if (data.dueDate !== undefined) updatePayload.dueDate = data.dueDate;
-      
-      if (Object.keys(updatePayload).length > 0) {
-        const courseSpecificUrls = [
-          `/api/v1/courses/${courseId}/exercises/${exerciseId}`,
-          `/api/v1/teacher/courses/${courseId}/exercises/${exerciseId}`
-        ];
-        
-        for (const url of courseSpecificUrls) {
-          try {
-            console.log(`🔧 Essai avec courseId: PUT ${url}`);
-            
-            await __request(OpenAPI, {
-              method: 'PUT' as const,
-              url: url,
-              body: updatePayload,
-              mediaType: 'application/json',
-            }) as any;
-            
-            console.log(`🔧 ✅ Réussite avec courseId: ${url}`);
-            break;
-          } catch (error: unknown) {
-            const err = error instanceof Error ? error : new Error(String(error));
-            console.log(`🔧 ❌ Échec avec courseId ${url}:`, err.message);
-          }
-        }
-      }
-      
-      // Mettre à jour le contenu si questions fournies
-      if (data.questions !== undefined) {
-        const contentObject = this.serializeQuestions(data.questions);
-        const contentString = this.serializeContentToString(contentObject);
-        
-        // CORRECTION : Ne pas appeler .substring sur un objet
-        console.log('🔧 Contenu pour courseId (taille):', contentString.length, 'caractères');
-        
-        try {
-          await __request(OpenAPI, {
-            method: 'PUT' as const,
-            url: `/api/v1/teacher/exercises/${exerciseId}/content`,
-            body: { content: contentString },
-            mediaType: 'application/json',
-          }) as any;
-          console.log('🔧 ✅ Contenu mis à jour avec courseId');
-        } catch (contentError: unknown) {
-          const err = contentError instanceof Error ? contentError : new Error(String(contentError));
-          console.log('🔧 ❌ Échec contenu avec courseId:', err.message);
-        }
-      }
-      
-      // Essayer de récupérer à nouveau
-      try {
-        const updatedExercise = await this.getExerciseDetails(exerciseId);
-        if (updatedExercise) {
-          return {
-            success: true,
-            message: '✅ Exercice mis à jour (avec courseId)',
-            data: updatedExercise,
-            timestamp: new Date().toISOString()
-          };
-        }
-      } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        console.log('🔧 Impossible de récupérer l\'exercice:', err);
-      }
+    if (data.title !== undefined) {
+      requestBody.title = data.title.trim();
     }
     
-    return result;
+    if (data.description !== undefined) {
+      requestBody.description = data.description;
+    }
     
-  } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error(String(error));
-    console.error('🔧 ❌ Échec update avec courseId:', err);
+    if (data.maxScore !== undefined) {
+      requestBody.maxScore = data.maxScore;
+    }
+    
+    if (data.dueDate !== undefined && data.dueDate.trim() !== '') {
+      requestBody.dueDate = data.dueDate;
+    }
+    
+    // 2. INCLURE LE CONTENT DANS LE MÊME PAYLOAD
+    if (data.questions !== undefined) {
+      const contentObject = this.serializeQuestions(data.questions);
+      requestBody.content = JSON.stringify(contentObject);
+      console.log('🔧 Content ajouté au payload principal');
+    }
+    
+    console.log('🔧 Payload final pour PUT:', requestBody);
+    
+    // 3. UN SEUL APPEL API
+    const response = await EnseignantService.updateExercise(
+      exerciseId,
+      requestBody
+    );
+    
+    console.log('🔧 ✅ Réponse API unique:', response);
+    
+    // 4. Retourner le résultat
+    if (response?.data) {
+      const exercise = await this.transformApiToFrontend(response.data);
+      
+      return {
+        success: true,
+        message: '✅ Exercice mis à jour avec succès',
+        data: exercise,
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    throw new Error('Réponse API invalide');
+    
+  } catch (error: any) {
+    console.error('🔧 ❌ Erreur:', error);
     
     return {
       success: false,
-      message: err.message || 'Erreur lors de la mise à jour',
+      message: error.message || 'Erreur lors de la mise à jour',
+      errors: { general: [error.message] },
       timestamp: new Date().toISOString()
     };
   }
 }
-  
   /**
    * Supprimer un exercice
    */

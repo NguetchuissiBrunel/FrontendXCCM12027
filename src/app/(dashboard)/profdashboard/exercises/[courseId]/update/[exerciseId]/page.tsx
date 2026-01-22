@@ -1,4 +1,3 @@
-// src/app/(dashboard)/profdashboard/exercises/[courseId]/edit/[exerciseId]/page.tsx - VERSION CORRIGÉE
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -32,6 +31,7 @@ import {
 import { useExercise, useUpdateExercise } from '@/hooks/useExercise';
 import { Exercise, Question, QuestionType, ApiResponse } from '@/types/exercise';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
+import { EnseignantService } from "@/lib/services/EnseignantService";
 
 export default function UpdateExercisePage() {
   const params = useParams();
@@ -69,18 +69,32 @@ export default function UpdateExercisePage() {
     if (exerciseApiResponse?.success && exerciseApiResponse.data) {
       const exerciseData = exerciseApiResponse.data;
       setExercise(exerciseData);
-      setQuestions(exerciseData.questions || []);
+      
+      // Normaliser les questions
+      const normalizedQuestions = (exerciseData.questions || []).map((q: any, index: number) => ({
+        id: q.id || `temp-${Date.now()}-${index}`,
+        exerciseId: exerciseId,
+        text: q.text || q.question || '',
+        question: q.question || q.text || '',
+        type: (q.type || q.questionType || 'TEXT') as QuestionType,
+        questionType: (q.questionType || q.type || 'TEXT') as QuestionType,
+        points: q.points || 1,
+        options: q.options || [],
+        correctAnswer: q.correctAnswer || '',
+        explanation: q.explanation || '',
+        order: q.order || index
+      }));
+      
+      setQuestions(normalizedQuestions);
     }
   }, [exerciseApiResponse]);
 
   useEffect(() => {
-    // Charger les infos du cours
     loadCourseInfo();
   }, [courseId]);
 
   const loadCourseInfo = async () => {
     try {
-      // TODO: Remplacer par votre service de cours
       setCourseInfo({
         title: `Cours #${courseId}`,
         category: 'Informatique',
@@ -118,7 +132,7 @@ export default function UpdateExercisePage() {
           }
           
           q.options?.forEach((opt, optIndex) => {
-            if (!opt.trim()) {
+            if (!opt?.trim()) {
               errors.push(`L'option ${optIndex + 1} de la question ${index + 1} est vide`);
             }
           });
@@ -127,7 +141,7 @@ export default function UpdateExercisePage() {
     }
 
     // Validation du score total
-    const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+    const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
     if (exercise && totalPoints > exercise.maxScore) {
       errors.push(`Total des points (${totalPoints}) dépasse le score maximum (${exercise.maxScore})`);
     }
@@ -136,7 +150,8 @@ export default function UpdateExercisePage() {
     return errors.length === 0;
   };
 
-  // Dans votre page edit/page.tsx, utilisez :
+  // Dans votre page.tsx, modifiez handleSave :
+
 const handleSave = async () => {
   if (!exercise) return;
   
@@ -146,36 +161,71 @@ const handleSave = async () => {
   }
 
   try {
-    console.log('=== SAVE WITH DIRECT METHOD ===');
+    console.log('=== SAUVEGARDE AVEC CONTENT OBJET ===');
     
-    const result = await ExerciseService.updateExerciseDirectWithCourse(
-      exerciseId,
-      courseId,
-      {
-        title: exercise.title,
-        description: exercise.description,
-        maxScore: exercise.maxScore,
-        dueDate: exercise.dueDate,
-        questions: questions
+    // 1. Préparer le content comme OBJET, pas string
+    const contentObject = {
+      version: '2.0',
+      questions: questions.map((q, index) => ({
+        id: q.id || Date.now() + index,
+        text: q.text || q.question || `Question ${index + 1}`,
+        type: q.type || 'TEXT',
+        points: q.points || 1,
+        options: q.options || [],
+        correctAnswer: q.correctAnswer || null,
+        explanation: q.explanation || '',
+        order: index
+      })),
+      metadata: {
+        status: 'PUBLISHED',
+        totalPoints: questions.reduce((sum, q) => sum + q.points, 0),
+        questionCount: questions.length,
+        createdAt: new Date().toISOString()
       }
+    };
+    
+    // 2. Préparer le payload - content est un OBJET
+    const payload: any = {
+      title: exercise.title.trim(),
+      description: exercise.description || '',
+      maxScore: exercise.maxScore,
+      content: contentObject  // ⚠️ OBJET, pas string !
+    };
+    
+    // Gérer dueDate
+    if (exercise.dueDate && exercise.dueDate.trim() !== '') {
+      payload.dueDate = exercise.dueDate;
+    }
+    
+    console.log('Payload envoyé:', payload);
+    console.log('Type de content:', typeof payload.content);
+    console.log('Content:', payload.content);
+    
+    // 3. Appel API
+    const response = await EnseignantService.updateExercise(
+      exerciseId,
+      payload
     );
     
-    console.log('Save result:', result);
+    console.log('Réponse complète:', response);
     
-    if (result.success) {
-      // CORRECTION : Utiliser un message par défaut si result.message est undefined
-      toast.success(result.message || '✅ Exercice mis à jour avec succès');
+    if (response?.success) {
+      toast.success('✅ Exercice mis à jour avec succès');
+      
+      // Rafraîchir les données
+      await refetch();
+      
+      // Rediriger
       setTimeout(() => {
         router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`);
       }, 1000);
     } else {
-      // CORRECTION : Utiliser un message par défaut
-      toast.error(result.message || '❌ Erreur lors de la mise à jour');
+      toast.error(response?.message || '❌ Erreur lors de la mise à jour');
     }
     
   } catch (error: any) {
-    console.error('Save error:', error);
-    toast.error(`❌ Erreur: ${error.message || 'Erreur inconnue'}`);
+    console.error('Erreur:', error);
+    toast.error(`❌ ${error.message || 'Erreur inconnue'}`);
   }
 };
   const handleCancel = () => {
@@ -193,7 +243,9 @@ const handleSave = async () => {
       id: Date.now(),
       exerciseId: exerciseId,
       text: '',
+      question: '',
       type,
+      questionType: type,
       points: 1,
       order: questions.length
     };
@@ -240,7 +292,12 @@ const handleSave = async () => {
     const question = newQuestions[questionIndex];
     
     if (question.options) {
-      question.options[optionIndex] = value;
+      const newOptions = [...question.options];
+      newOptions[optionIndex] = value;
+      newQuestions[questionIndex] = {
+        ...question,
+        options: newOptions
+      };
       setQuestions(newQuestions);
     }
   };
@@ -250,7 +307,11 @@ const handleSave = async () => {
     const question = newQuestions[questionIndex];
     
     if (question.options && question.options.length > 2) {
-      question.options = question.options.filter((_, i) => i !== optionIndex);
+      const newOptions = question.options.filter((_, i) => i !== optionIndex);
+      newQuestions[questionIndex] = {
+        ...question,
+        options: newOptions
+      };
       setQuestions(newQuestions);
     } else {
       toast.error('Une question à choix multiple doit avoir au moins 2 options');
@@ -258,7 +319,7 @@ const handleSave = async () => {
   };
 
   const calculateTotalPoints = () => {
-    return questions.reduce((sum, q) => sum + q.points, 0);
+    return questions.reduce((sum, q) => sum + (q.points || 0), 0);
   };
 
   if (isLoading) {
@@ -290,14 +351,14 @@ const handleSave = async () => {
               onClick={() => refetch()}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
-  
+              <Loader2 className="w-4 h-4" />
               Réessayer
             </button>
             <button
               onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            > 
-            <ArrowLeft size={18} />
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft size={18} />
               Retour aux exercices
             </button>
           </div>
@@ -359,9 +420,9 @@ const handleSave = async () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePreview}
-                className="px-4 py-2 bg-blue-200 text-blue-600 rounded-lg hover:bg-blue-300 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-blue-200 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-300 dark:hover:bg-blue-800 transition-colors flex items-center gap-2"
               >
-                <Eye size={18} className="text-blue-600 dark:text-blue-400" />
+                <Eye size={18} />
                 Aperçu étudiant
               </button>
               
@@ -377,83 +438,9 @@ const handleSave = async () => {
 
         {/* Bannière d'information */}
         <div className="mb-8">
-          {/*text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30*/}
-         <div className="border border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6">
-  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-    <div className="flex-1">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-purple-100 dark:bg-purple-900/50 border border-purple-200 dark:border-purple-700 rounded-xl">
-          <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold mb-1 text-gray-800 dark:text-gray-100">
-            Modifier l'exercice
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {exercise.title}
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              exercise.status === 'PUBLISHED' 
-                ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' 
-                : exercise.status === 'DRAFT'
-                ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800'
-                : 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
-            }`}>
-              {exercise.status === 'PUBLISHED' ? 'Publié' :
-                exercise.status === 'DRAFT' ? 'Brouillon' :
-                'Fermé'}
-            </div>
-            {courseInfo?.category && (
-              <div className="px-3 py-1 bg-purple-50 dark:bg-purple-900/50 border border-purple-200 dark:border-purple-700 rounded-full text-sm text-purple-700 dark:text-purple-300">
-                <BookOpen size={14} className="inline mr-1 text-purple-600 dark:text-purple-400" />
-                {courseInfo.category}
-              </div>
-            )}
+          <div className="border border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6">
+            {/* ... (votre bannière d'information ici) ... */}
           </div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
-          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/50 rounded-lg border border-purple-200 dark:border-purple-700">
-            <Shield size={18} className="text-purple-600 dark:text-purple-400" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Statut préservé</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              L'exercice reste {exercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
-          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/50 rounded-lg border border-purple-200 dark:border-purple-700">
-            <Clock size={18} className="text-purple-600 dark:text-purple-400" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Échéance</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              {exercise.dueDate ? 'Date limite définie' : 'Pas de date limite'}
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
-          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/50 rounded-lg border border-purple-200 dark:border-purple-700">
-            <Users size={18} className="text-purple-600 dark:text-purple-400" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Soumissions</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              {exercise.submissionCount || 0} soumission{exercise.submissionCount !== 1 ? 's' : ''}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
         </div>
 
         {/* Alertes importantes */}
@@ -519,7 +506,7 @@ const handleSave = async () => {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
                   <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                    {calculateTotalPoints()}/{exercise.maxScore} points
+                    {calculateTotalPoints()}/{exercise.maxScore || 20} points
                   </span>
                 </div>
               </div>
@@ -542,7 +529,7 @@ const handleSave = async () => {
                     type="text"
                     value={exercise.title}
                     onChange={(e) => setExercise({ ...exercise, title: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                     placeholder="Ex: Introduction à la programmation"
                   />
                 </div>
@@ -554,9 +541,9 @@ const handleSave = async () => {
                   <input
                     type="number"
                     min="1"
-                    value={exercise.maxScore}
-                    onChange={(e) => setExercise({ ...exercise, maxScore: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                    value={exercise.maxScore || 20}
+                    onChange={(e) => setExercise({ ...exercise, maxScore: parseInt(e.target.value) || 20 })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                   />
                 </div>
                 
@@ -567,7 +554,7 @@ const handleSave = async () => {
                   <textarea
                     value={exercise.description || ''}
                     onChange={(e) => setExercise({ ...exercise, description: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                     rows={3}
                     placeholder="Décrivez l'objectif de l'exercice..."
                   />
@@ -584,7 +571,7 @@ const handleSave = async () => {
                     type="datetime-local"
                     value={exercise.dueDate ? exercise.dueDate.slice(0, 16) : ''}
                     onChange={(e) => setExercise({ ...exercise, dueDate: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                   />
                 </div>
               </div>
@@ -602,15 +589,16 @@ const handleSave = async () => {
                   </p>
                 </div>
                 
-                <div className="flex gap-2">
+                {/* Bouton "Ajouter une question" en haut à droite */}
+                {/* {questions.length > 0 && (
                   <button
                     onClick={() => addQuestion('TEXT')}
-                   className="px-6 py-3 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-xl hover:from-purple-700 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-xl hover:from-purple-700 hover:to-emerald-700 transition-colors flex items-center gap-2"
+                  >
                     <Plus size={18} />
                     Ajouter une question
                   </button>
-                </div>
+                )} */}
               </div>
 
               {/* Liste des questions */}
@@ -626,14 +614,14 @@ const handleSave = async () => {
                     </p>
                     <button
                       onClick={() => addQuestion('TEXT')}
-                      className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
+                      className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-lg hover:from-purple-700 hover:to-emerald-700 transition-all"
                     >
                       Ajouter une question
                     </button>
                   </div>
                 ) : (
                   questions.map((question, index) => (
-                    <div key={question.id || index} className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+                    <div key={question.id} className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
                       {/* En-tête de la question */}
                       <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
@@ -644,7 +632,7 @@ const handleSave = async () => {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {question.type === 'TEXT' ? 'Texte libre' :
-                                 question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                                question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
                               </span>
                             </div>
                           </div>
@@ -657,7 +645,7 @@ const handleSave = async () => {
                                 min="1"
                                 value={question.points}
                                 onChange={(e) => updateQuestion(index, { points: parseInt(e.target.value) || 1 })}
-                                className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                                className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                               />
                             </div>
                             
@@ -665,6 +653,7 @@ const handleSave = async () => {
                               <button
                                 onClick={() => removeQuestion(index)}
                                 className="p-1.5 text-red-500 hover:text-red-700"
+                                title="Supprimer la question"
                               >
                                 <Trash2 size={18} />
                               </button>
@@ -686,7 +675,7 @@ const handleSave = async () => {
                               text: e.target.value,
                               question: e.target.value 
                             })}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                             rows={2}
                             placeholder="Posez votre question ici..."
                           />
@@ -703,7 +692,7 @@ const handleSave = async () => {
                               type: e.target.value as QuestionType,
                               questionType: e.target.value as QuestionType 
                             })}
-                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                           >
                             <option value="TEXT">Texte libre</option>
                             <option value="MULTIPLE_CHOICE">Choix multiple</option>
@@ -721,7 +710,7 @@ const handleSave = async () => {
                               <button
                                 type="button"
                                 onClick={() => addOption(index)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
                               >
                                 + Ajouter une option
                               </button>
@@ -737,13 +726,14 @@ const handleSave = async () => {
                                     type="text"
                                     value={option}
                                     onChange={(e) => updateOption(index, optIndex, e.target.value)}
-                                    className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                                    className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                                     placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
                                   />
                                   <button
                                     onClick={() => removeOption(index, optIndex)}
-                                    className="p-2 text-red-500 hover:text-red-700"
+                                    className="p-2 text-red-500 hover:text-red-700 disabled:opacity-30"
                                     disabled={!question.options || question.options.length <= 2}
+                                    title="Supprimer l'option"
                                   >
                                     <Trash2 size={18} />
                                   </button>
@@ -762,7 +752,7 @@ const handleSave = async () => {
                             <select
                               value={question.correctAnswer || ''}
                               onChange={(e) => updateQuestion(index, { correctAnswer: e.target.value })}
-                              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                             >
                               <option value="">Sélectionnez la réponse correcte</option>
                               {question.options.map((option, optIndex) => (
@@ -782,7 +772,7 @@ const handleSave = async () => {
                           <textarea
                             value={question.explanation || ''}
                             onChange={(e) => updateQuestion(index, { explanation: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                             rows={2}
                             placeholder="Expliquez la réponse ou donnez des indices..."
                           />
@@ -792,7 +782,21 @@ const handleSave = async () => {
                   ))
                 )}
               </div>
+              
+              {/* Bouton "Ajouter une question" en bas à droite (seulement s'il y a déjà des questions) */}
+              {questions.length > 0 && (
+                <div className="flex justify-end pt-4">
+                  <button
+                    onClick={() => addQuestion('TEXT')}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-xl hover:from-purple-700 hover:to-emerald-700 transition-colors flex items-center gap-2"
+                  >
+                    <Plus size={18} />
+                    Ajouter une question
+                  </button>
+                </div>
+              )}
             </div>
+           
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -809,8 +813,17 @@ const handleSave = async () => {
                 disabled={isUpdating || validationErrors.length > 0}
                 className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                <Save size={20} />
-                {isUpdating ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save size={20} />
+                    Enregistrer les modifications
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -818,76 +831,8 @@ const handleSave = async () => {
 
         {/* Notes importantes */}
         <div className="bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/50 dark:to-gray-900/50 rounded-2xl p-6 border border-purple-200 dark:border-purple-800 mb-12 shadow-sm">
-  <div className="flex items-center gap-2 mb-4">
-    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-      <AlertCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-    </div>
-    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-      Notes importantes
-    </h3>
-  </div>
-  
-  <div className="space-y-4">
-    <div className="flex items-start gap-3">
-      <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg mt-1 flex-shrink-0">
-        <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-      </div>
-      <div>
-        <h4 className="font-medium text-gray-700 dark:text-gray-300">Modifications des questions</h4>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Si vous modifiez des questions déjà notées, les scores existants pourraient devenir invalides.
-          Envisagez de créer une nouvelle version de l'exercice si de nombreuses modifications sont nécessaires.
-        </p>
-      </div>
-    </div>
-    
-    <div className="flex items-start gap-3">
-      <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg mt-1 flex-shrink-0">
-        <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
-      </div>
-      <div>
-        <h4 className="font-medium text-gray-700 dark:text-gray-300">Score maximum</h4>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Le total des points des questions ne doit pas dépasser le score maximum de l'exercice.
-          L'éditeur vous alertera en cas d'incohérence.
-        </p>
-      </div>
-    </div>
-    
-    <div className="flex items-start gap-3">
-      <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg mt-1 flex-shrink-0">
-        <Send className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-      </div>
-      <div>
-        <h4 className="font-medium text-gray-700 dark:text-gray-300">Publication automatique</h4>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Tous les exercices sont automatiquement publiés. 
-          Le statut 'PUBLISHED' est appliqué par défaut.
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  <div className="mt-6 pt-6 border-t border-purple-100 dark:border-purple-800">
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="text-sm text-purple-600 dark:text-purple-400">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4" />
-          <span>
-            Créé le {new Date(exercise.createdAt).toLocaleDateString('fr-FR')}
-            {exercise.updatedAt && exercise.updatedAt !== exercise.createdAt && (
-              <> • Modifié le {new Date(exercise.updatedAt).toLocaleDateString('fr-FR')}</>
-            )}
-          </span>
+          {/* ... (votre section notes importantes ici) ... */}
         </div>
-      </div>
-      <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300 font-medium px-3 py-2 bg-purple-50 dark:bg-purple-900/50 rounded-lg">
-        <Hash className="w-4 h-4" />
-        <span>ID: {exercise.id}</span>
-      </div>
-    </div>
-  </div>
-</div>
       </div>
     </div>
   );

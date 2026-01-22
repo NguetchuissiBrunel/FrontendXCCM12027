@@ -8,6 +8,7 @@ import { useLoading } from '@/contexts/LoadingContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Teacher {
   id?: string;
@@ -51,6 +52,7 @@ export default function TeacherProfilePage() {
   const router = useRouter();
   const teacherId = params.id as string;
   const { startLoading, stopLoading } = useLoading();
+  const { loading: authLoading } = useAuth();
 
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -63,8 +65,10 @@ export default function TeacherProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTeacherData();
-  }, [teacherId]);
+    if (!authLoading && teacherId) {
+      loadTeacherData();
+    }
+  }, [teacherId, authLoading]);
 
   useEffect(() => {
     if (loading) startLoading();
@@ -79,23 +83,17 @@ export default function TeacherProfilePage() {
       console.log('📊 Chargement du profil enseignant:', teacherId);
 
       // Charger les infos de l'enseignant via GestionDesUtilisateursService
-      // Utilisation de getAllTeachers1 + filtrage car getTeacherById1 retourne 401
-      const teachersResponse = await GestionDesUtilisateursService.getAllTeachers1();
+      // On utilise l'ID direct maintenant car on a attendu la restauration du token
+      const teacherResponse = await GestionDesUtilisateursService.getTeacherById1(teacherId);
 
-      if (!teachersResponse.data) {
-        throw new Error('Impossible de récupérer la liste des enseignants');
-      }
-
-      const allTeachers = teachersResponse.data as Teacher[];
-      const foundTeacher = allTeachers.find(t => t.id === teacherId);
-
-      if (!foundTeacher) {
+      if (!teacherResponse.success || !teacherResponse.data) {
         throw new Error('Enseignant non trouvé');
       }
 
-      console.log('✅ Données enseignant récupérées:', foundTeacher);
+      const teacherData = teacherResponse.data;
+      console.log('✅ Données enseignant récupérées:', teacherData);
 
-      setTeacher(foundTeacher);
+      setTeacher(teacherData as Teacher);
 
       // Charger les cours de l'enseignant via CourseControllerService
       // Utilisation de getAllCourses + filtrage car getAuthorCourses retourne 403

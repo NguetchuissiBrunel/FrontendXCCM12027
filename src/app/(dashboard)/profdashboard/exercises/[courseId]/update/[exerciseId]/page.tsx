@@ -20,7 +20,12 @@ import {
   Trash2,
   Save,
   X,
-  Award
+  Award,
+  Hash,
+  Calendar,
+  Send,
+  Target,
+  Edit
 } from 'lucide-react';
 
 // Import des hooks et services corrigés
@@ -285,13 +290,14 @@ const handleSave = async () => {
               onClick={() => refetch()}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
-              <ArrowLeft size={18} />
+  
               Réessayer
             </button>
             <button
               onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
+            > 
+            <ArrowLeft size={18} />
               Retour aux exercices
             </button>
           </div>
@@ -372,82 +378,82 @@ const handleSave = async () => {
         {/* Bannière d'information */}
         <div className="mb-8">
           {/*text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30*/}
-         <div className="border-purple-300 bg-gradient-to-br from-purple-50 to-white rounded-2xl p-6 shadow-lg">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-purple-100 border border-purple-200 rounded-xl">
-                  <FileText className="w-8 h-8 text-purple-600" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold mb-1 text-gray-800">
-                    Modifier l'exercice
-                  </h1>
-                  <p className="text-gray-600">
-                    {exercise.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      exercise.status === 'PUBLISHED' 
-                        ? 'bg-green-100 text-green-800 border border-green-200' 
-                        : exercise.status === 'DRAFT'
-                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                        : 'bg-red-100 text-red-800 border border-red-200'
-                    }`}>
-                      {exercise.status === 'PUBLISHED' ? 'Publié' :
-                        exercise.status === 'DRAFT' ? 'Brouillon' :
-                        'Fermé'}
-                    </div>
-                    {courseInfo?.category && (
-                      <div className="px-3 py-1 bg-purple-50 border border-purple-200 rounded-full text-sm text-purple-700">
-                        <BookOpen size={14} className="inline mr-1 text-purple-600" />
-                        {courseInfo.category}
-                      </div>
-                    )}
-                  </div>
-                </div>
+         <div className="border border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6">
+  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="flex-1">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-purple-100 dark:bg-purple-900/50 border border-purple-200 dark:border-purple-700 rounded-xl">
+          <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold mb-1 text-gray-800 dark:text-gray-100">
+            Modifier l'exercice
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            {exercise.title}
+          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+              exercise.status === 'PUBLISHED' 
+                ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' 
+                : exercise.status === 'DRAFT'
+                ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800'
+                : 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
+            }`}>
+              {exercise.status === 'PUBLISHED' ? 'Publié' :
+                exercise.status === 'DRAFT' ? 'Brouillon' :
+                'Fermé'}
+            </div>
+            {courseInfo?.category && (
+              <div className="px-3 py-1 bg-purple-50 dark:bg-purple-900/50 border border-purple-200 dark:border-purple-700 rounded-full text-sm text-purple-700 dark:text-purple-300">
+                <BookOpen size={14} className="inline mr-1 text-purple-600 dark:text-purple-400" />
+                {courseInfo.category}
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <div className="flex items-center gap-3 p-3 bg-white border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors">
-                  <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
-                    <Shield size={18} className="text-purple-600" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-800">Statut préservé</div>
-                    <div className="text-xs text-gray-600">
-                      L'exercice reste {exercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-white border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors">
-                  <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
-                    <Clock size={18} className="text-purple-600" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-800">Échéance</div>
-                    <div className="text-xs text-gray-600">
-                      {exercise.dueDate ? 'Date limite définie' : 'Pas de date limite'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-white border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors">
-                  <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
-                    <Users size={18} className="text-purple-600" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-800">Soumissions</div>
-                    <div className="text-xs text-gray-600">
-                      {exercise.submissionCount || 0} soumission{exercise.submissionCount !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
+          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/50 rounded-lg border border-purple-200 dark:border-purple-700">
+            <Shield size={18} className="text-purple-600 dark:text-purple-400" />
+          </div>
+          <div>
+            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Statut préservé</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              L'exercice reste {exercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
             </div>
           </div>
         </div>
+        
+        <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
+          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/50 rounded-lg border border-purple-200 dark:border-purple-700">
+            <Clock size={18} className="text-purple-600 dark:text-purple-400" />
+          </div>
+          <div>
+            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Échéance</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              {exercise.dueDate ? 'Date limite définie' : 'Pas de date limite'}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
+          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/50 rounded-lg border border-purple-200 dark:border-purple-700">
+            <Users size={18} className="text-purple-600 dark:text-purple-400" />
+          </div>
+          <div>
+            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Soumissions</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              {exercise.submissionCount || 0} soumission{exercise.submissionCount !== 1 ? 's' : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
         </div>
 
         {/* Alertes importantes */}
@@ -599,8 +605,8 @@ const handleSave = async () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => addQuestion('TEXT')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                  >
+                   className="px-6 py-3 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-xl hover:from-purple-700 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
                     <Plus size={18} />
                     Ajouter une question
                   </button>
@@ -811,60 +817,77 @@ const handleSave = async () => {
         </div>
 
         {/* Notes importantes */}
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/50 dark:to-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mb-12">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            📝 Notes importantes
-          </h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <h4 className="font-medium text-gray-700 dark:text-gray-300">Modifications des questions</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Si vous modifiez des questions déjà notées, les scores existants pourraient devenir invalides.
-                  Envisagez de créer une nouvelle version de l'exercice si de nombreuses modifications sont nécessaires.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <h4 className="font-medium text-gray-700 dark:text-gray-300">Score maximum</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Le total des points des questions ne doit pas dépasser le score maximum de l'exercice.
-                  L'éditeur vous alertera en cas d'incohérence.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <h4 className="font-medium text-gray-700 dark:text-gray-300">Publication automatique</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tous les exercices sont automatiquement publiés. 
-                  Le statut 'PUBLISHED' est appliqué par défaut.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Créé le {new Date(exercise.createdAt).toLocaleDateString('fr-FR')}
-                {exercise.updatedAt && exercise.updatedAt !== exercise.createdAt && (
-                  <> • Dernière modification le {new Date(exercise.updatedAt).toLocaleDateString('fr-FR')}</>
-                )}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                ID: {exercise.id}
-              </div>
-            </div>
-          </div>
+        <div className="bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/50 dark:to-gray-900/50 rounded-2xl p-6 border border-purple-200 dark:border-purple-800 mb-12 shadow-sm">
+  <div className="flex items-center gap-2 mb-4">
+    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+      <AlertCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+    </div>
+    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+      Notes importantes
+    </h3>
+  </div>
+  
+  <div className="space-y-4">
+    <div className="flex items-start gap-3">
+      <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg mt-1 flex-shrink-0">
+        <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+      </div>
+      <div>
+        <h4 className="font-medium text-gray-700 dark:text-gray-300">Modifications des questions</h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Si vous modifiez des questions déjà notées, les scores existants pourraient devenir invalides.
+          Envisagez de créer une nouvelle version de l'exercice si de nombreuses modifications sont nécessaires.
+        </p>
+      </div>
+    </div>
+    
+    <div className="flex items-start gap-3">
+      <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg mt-1 flex-shrink-0">
+        <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
+      </div>
+      <div>
+        <h4 className="font-medium text-gray-700 dark:text-gray-300">Score maximum</h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Le total des points des questions ne doit pas dépasser le score maximum de l'exercice.
+          L'éditeur vous alertera en cas d'incohérence.
+        </p>
+      </div>
+    </div>
+    
+    <div className="flex items-start gap-3">
+      <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg mt-1 flex-shrink-0">
+        <Send className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+      </div>
+      <div>
+        <h4 className="font-medium text-gray-700 dark:text-gray-300">Publication automatique</h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Tous les exercices sont automatiquement publiés. 
+          Le statut 'PUBLISHED' est appliqué par défaut.
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div className="mt-6 pt-6 border-t border-purple-100 dark:border-purple-800">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="text-sm text-purple-600 dark:text-purple-400">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4" />
+          <span>
+            Créé le {new Date(exercise.createdAt).toLocaleDateString('fr-FR')}
+            {exercise.updatedAt && exercise.updatedAt !== exercise.createdAt && (
+              <> • Modifié le {new Date(exercise.updatedAt).toLocaleDateString('fr-FR')}</>
+            )}
+          </span>
         </div>
+      </div>
+      <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300 font-medium px-3 py-2 bg-purple-50 dark:bg-purple-900/50 rounded-lg">
+        <Hash className="w-4 h-4" />
+        <span>ID: {exercise.id}</span>
+      </div>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   );

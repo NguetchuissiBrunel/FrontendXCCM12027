@@ -1,4 +1,3 @@
-// src/app/(dashboard)/profdashboard/exercises/[courseId]/edit/[exerciseId]/page.tsx - VERSION CORRIGÉE
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -20,7 +19,12 @@ import {
   Trash2,
   Save,
   X,
-  Award
+  Award,
+  Hash,
+  Calendar,
+  Send,
+  Target,
+  Edit
 } from 'lucide-react';
 
 // Import des hooks et services corrigés
@@ -62,13 +66,11 @@ export default function UpdateExercisePage() {
   }, [exercise]);
 
   useEffect(() => {
-    // Charger les infos du cours
     loadCourseInfo();
   }, [courseId]);
 
   const loadCourseInfo = async () => {
     try {
-      // TODO: Remplacer par votre service de cours
       setCourseInfo({
         title: `Cours #${courseId}`,
         category: 'Informatique',
@@ -106,7 +108,7 @@ export default function UpdateExercisePage() {
           }
           
           q.options?.forEach((opt, optIndex) => {
-            if (!opt.trim()) {
+            if (!opt?.trim()) {
               errors.push(`L'option ${optIndex + 1} de la question ${index + 1} est vide`);
             }
           });
@@ -248,7 +250,12 @@ export default function UpdateExercisePage() {
     const question = newQuestions[questionIndex];
     
     if (question.options) {
-      question.options[optionIndex] = value;
+      const newOptions = [...question.options];
+      newOptions[optionIndex] = value;
+      newQuestions[questionIndex] = {
+        ...question,
+        options: newOptions
+      };
       setQuestions(newQuestions);
     }
   };
@@ -258,7 +265,11 @@ export default function UpdateExercisePage() {
     const question = newQuestions[questionIndex];
     
     if (question.options && question.options.length > 2) {
-      question.options = question.options.filter((_, i) => i !== optionIndex);
+      const newOptions = question.options.filter((_, i) => i !== optionIndex);
+      newQuestions[questionIndex] = {
+        ...question,
+        options: newOptions
+      };
       setQuestions(newQuestions);
     } else {
       toast.error('Une question à choix multiple doit avoir au moins 2 options');
@@ -266,7 +277,7 @@ export default function UpdateExercisePage() {
   };
 
   const calculateTotalPoints = () => {
-    return questions.reduce((sum, q) => sum + q.points, 0);
+    return questions.reduce((sum, q) => sum + (q.points || 0), 0);
   };
 
   if (isLoading) {
@@ -298,13 +309,14 @@ export default function UpdateExercisePage() {
               onClick={() => window.location.reload()}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
-              <ArrowLeft size={18} />
+              <Loader2 className="w-4 h-4" />
               Réessayer
             </button>
             <button
               onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
             >
+              <ArrowLeft size={18} />
               Retour aux exercices
             </button>
           </div>
@@ -367,7 +379,7 @@ export default function UpdateExercisePage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePreview}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-blue-200 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-300 dark:hover:bg-blue-800 transition-colors flex items-center gap-2"
               >
                 <Eye size={18} />
                 Aperçu étudiant
@@ -609,15 +621,16 @@ export default function UpdateExercisePage() {
                   </p>
                 </div>
                 
-                <div className="flex gap-2">
+                {/* Bouton "Ajouter une question" en haut à droite */}
+                {/* {questions.length > 0 && (
                   <button
                     onClick={() => addQuestion('TEXT')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-xl hover:from-purple-700 hover:to-emerald-700 transition-colors flex items-center gap-2"
                   >
                     <Plus size={18} />
                     Ajouter une question
                   </button>
-                </div>
+                )} */}
               </div>
 
               {/* Liste des questions */}
@@ -633,14 +646,14 @@ export default function UpdateExercisePage() {
                     </p>
                     <button
                       onClick={() => addQuestion('TEXT')}
-                      className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
+                      className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-lg hover:from-purple-700 hover:to-emerald-700 transition-all"
                     >
                       Ajouter une question
                     </button>
                   </div>
                 ) : (
                   questions.map((question, index) => (
-                    <div key={question.id || index} className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+                    <div key={question.id} className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
                       {/* En-tête de la question */}
                       <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
@@ -651,7 +664,7 @@ export default function UpdateExercisePage() {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {question.type === 'TEXT' ? 'Texte libre' :
-                                 question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                                question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
                               </span>
                             </div>
                           </div>
@@ -664,7 +677,7 @@ export default function UpdateExercisePage() {
                                 min="1"
                                 value={question.points}
                                 onChange={(e) => updateQuestion(index, { points: parseInt(e.target.value) || 1 })}
-                                className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                                className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                               />
                             </div>
                             
@@ -672,6 +685,7 @@ export default function UpdateExercisePage() {
                               <button
                                 onClick={() => removeQuestion(index)}
                                 className="p-1.5 text-red-500 hover:text-red-700"
+                                title="Supprimer la question"
                               >
                                 <Trash2 size={18} />
                               </button>
@@ -692,7 +706,7 @@ export default function UpdateExercisePage() {
                             onChange={(e) => updateQuestion(index, { 
                               text: e.target.value // ✅ Mettez à jour 'text'
                             })}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                             rows={2}
                             placeholder="Posez votre question ici..."
                           />
@@ -708,7 +722,7 @@ export default function UpdateExercisePage() {
                             onChange={(e) => updateQuestion(index, { 
                               type: e.target.value as QuestionType // ✅ Mettez à jour 'type'
                             })}
-                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                           >
                             <option value="TEXT">Texte libre</option>
                             <option value="MULTIPLE_CHOICE">Choix multiple</option>
@@ -726,7 +740,7 @@ export default function UpdateExercisePage() {
                               <button
                                 type="button"
                                 onClick={() => addOption(index)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
                               >
                                 + Ajouter une option
                               </button>
@@ -742,13 +756,14 @@ export default function UpdateExercisePage() {
                                     type="text"
                                     value={option}
                                     onChange={(e) => updateOption(index, optIndex, e.target.value)}
-                                    className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                                    className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                                     placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
                                   />
                                   <button
                                     onClick={() => removeOption(index, optIndex)}
-                                    className="p-2 text-red-500 hover:text-red-700"
+                                    className="p-2 text-red-500 hover:text-red-700 disabled:opacity-30"
                                     disabled={!question.options || question.options.length <= 2}
+                                    title="Supprimer l'option"
                                   >
                                     <Trash2 size={18} />
                                   </button>
@@ -767,7 +782,7 @@ export default function UpdateExercisePage() {
                             <select
                               value={question.correctAnswer || ''}
                               onChange={(e) => updateQuestion(index, { correctAnswer: e.target.value })}
-                              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                             >
                               <option value="">Sélectionnez la réponse correcte</option>
                               {question.options.map((option, optIndex) => (
@@ -787,7 +802,7 @@ export default function UpdateExercisePage() {
                           <textarea
                             value={question.explanation || ''}
                             onChange={(e) => updateQuestion(index, { explanation: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                             rows={2}
                             placeholder="Expliquez la réponse ou donnez des indices..."
                           />
@@ -797,7 +812,21 @@ export default function UpdateExercisePage() {
                   ))
                 )}
               </div>
+              
+              {/* Bouton "Ajouter une question" en bas à droite (seulement s'il y a déjà des questions) */}
+              {questions.length > 0 && (
+                <div className="flex justify-end pt-4">
+                  <button
+                    onClick={() => addQuestion('TEXT')}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-emerald-600 text-white rounded-xl hover:from-purple-700 hover:to-emerald-700 transition-colors flex items-center gap-2"
+                  >
+                    <Plus size={18} />
+                    Ajouter une question
+                  </button>
+                </div>
+              )}
             </div>
+           
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -814,8 +843,17 @@ export default function UpdateExercisePage() {
                 disabled={isUpdating || validationErrors.length > 0}
                 className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                <Save size={20} />
-                {isUpdating ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save size={20} />
+                    Enregistrer les modifications
+                  </>
+                )}
               </button>
             </div>
           </div>

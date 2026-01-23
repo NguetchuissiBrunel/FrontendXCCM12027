@@ -2,13 +2,35 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate, FaEye, FaEyeSlash, FaUniversity, FaAward } from 'react-icons/fa';
-import { AdminService, User } from '@/lib';
+import { AdminService } from '@/lib/AdminService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLoading } from '@/contexts/LoadingContext';
 
+interface User {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    photoUrl?: string;
+    specialization?: string;
+    level?: string;
+    university?: string;
+    city?: string;
+    promotion?: string;
+    averageGrade?: string;
+    currentSemester?: string;
+    major?: string;
+    minor?: string;
+    interests?: string[];
+    subjects?: string[];
+    certification?: string;
+    activities?: string[];
+    grade?: string;
+}
 function TeachersList() {
     const [teachers, setTeachers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,6 +38,9 @@ function TeachersList() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+    // Plus besoin du useEffect local
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -40,16 +65,16 @@ function TeachersList() {
     }, [searchParams, router]);
 
     const fetchTeachers = async () => {
-        setLoading(true);
+        startLoading();
         try {
             const res = await AdminService.getAllTeachers();
-            setTeachers(res.data || []);
+            setTeachers((res.data || []) as User[]);
         } catch (error) {
             console.error("Error fetching teachers:", error);
             toast.error("Erreur lors du chargement des enseignants");
             setTeachers([]);
         } finally {
-            setLoading(false);
+            stopLoading();
         }
     };
 
@@ -166,15 +191,8 @@ function TeachersList() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {loading ? (
-                            Array(3).fill(0).map((_, i) => (
-                                <tr key={i} className="animate-pulse">
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-40"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32"></div></td>
-                                    <td className="px-6 py-4"></td>
-                                </tr>
-                            ))
+                        {globalLoading && teachers.length === 0 ? (
+                            null
                         ) : filteredTeachers.length === 0 ? (
                             <tr>
                                 <td colSpan={4} className="px-6 py-8 text-center text-slate-500">Aucun enseignant trouvé</td>

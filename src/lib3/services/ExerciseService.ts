@@ -742,59 +742,80 @@ static async updateExercise(
    * Soumettre un exercice (étudiant)
    */
   static async submitExercise(
-    exerciseId: number,
-    request: SubmitExerciseRequest
-  ): Promise<ApiResponse<Submission>> {
-    try {
-      // Préparer le contenu de soumission
-      const submissionContent = {
-        version: '2.0',
-        answers: (request.answers || []).map(answer => ({
-          questionId: answer.questionId,
-          answer: answer.answer,
-          submittedAt: new Date().toISOString()
-        })),
-        metadata: {
-          submittedAt: new Date().toISOString(),
-          exerciseId: exerciseId,
-          studentId: 'current-student' // À remplacer par l'ID réel
-        }
-      };
-      
-      const backendRequest = {
-        submissionUrl: request.submissionUrl || '',
-        content: JSON.stringify(submissionContent)
-      };
-      
-      const response = await ExercicesService.submitExercise(
+  exerciseId: number,
+  request: SubmitExerciseRequest
+): Promise<ApiResponse<Submission>> {
+  try {
+    // Préparer le contenu de soumission
+    const submissionContent = {
+      version: '2.0',
+      answers: (request.answers || []).map(answer => ({
+        questionId: answer.questionId,
+        answer: answer.answer,
+        submittedAt: new Date().toISOString()
+      })),
+      metadata: {
+        submittedAt: new Date().toISOString(),
+        exerciseId: exerciseId,
+        studentId: 'current-student' // À remplacer par l'ID réel
+      }
+    };
+    
+    // CORRECTION : Envoyer l'objet directement, pas une string JSON
+    const backendRequest = {
+      submissionUrl: request.submissionUrl || '',
+      content: submissionContent  // ✅ Pas de JSON.stringify()
+    };
+    
+    console.log('📤 Soumission exercice - Données envoyées:', {
+      exerciseId,
+      backendRequest,
+      contentType: typeof backendRequest.content
+    });
+    
+    const response = await ExercicesService.submitExercise(
+      exerciseId,
+      backendRequest
+    ) as unknown;
+    
+    console.log('📥 Réponse API soumission:', response);
+    
+    const parsedResponse = this.parseGeneratedResponse<Submission>(response);
+    
+    return {
+      success: parsedResponse.success || false,
+      message: parsedResponse.message || 'Soumission effectuée',
+      data: parsedResponse.data,
+      timestamp: parsedResponse.timestamp || new Date().toISOString()
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Erreur soumission exercice:', error);
+    console.error('Détails erreur:', {
+      message: error.message,
+      stack: error.stack,
+      requestData: {
         exerciseId,
-        backendRequest
-      ) as unknown;
-      
-      const parsedResponse = this.parseGeneratedResponse<Submission>(response);
-      
-      return {
-        success: parsedResponse.success || false,
-        message: parsedResponse.message || 'Soumission effectuée',
-        data: parsedResponse.data,
-        timestamp: parsedResponse.timestamp || new Date().toISOString()
-      };
-      
-    } catch (error: any) {
-      console.error('Erreur soumission exercice:', error);
-      return {
-        success: false,
-        message: error.message || 'Erreur lors de la soumission',
-        errors: { general: [error.message] },
-        timestamp: new Date().toISOString()
-      };
-    }
+        answers: request.answers
+      }
+    });
+    
+    return {
+      success: false,
+      message: error.message || 'Erreur lors de la soumission',
+      errors: { general: [error.message] },
+      timestamp: new Date().toISOString()
+    };
   }
+}
   
   /**
    * Récupérer les soumissions d'un exercice (enseignant)
    */
   /**
+ * Récupérer les soumissions d'un exercice (enseignant)
+ */
+/**
  * Récupérer les soumissions d'un exercice (enseignant)
  */
 static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
@@ -803,11 +824,21 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
     
     console.log('🔍 === DEBUG getExerciseSubmissions ===');
     console.log('Exercise ID:', exerciseId);
-    console.log('Number of submissions:', submissions?.length || 0);
+    console.log('Raw submissions from API:', submissions);
     
     if (!Array.isArray(submissions)) {
       console.warn('⚠️ submissions is not an array:', submissions);
       return [];
+    }
+    
+    // Récupérer les détails de l'exercice pour avoir les questions
+    let exerciseQuestions: any[] = [];
+    try {
+      const exercise = await this.getExerciseDetails(exerciseId);
+      exerciseQuestions = exercise?.questions || [];
+      console.log('✅ Exercise questions loaded:', exerciseQuestions.length);
+    } catch (error) {
+      console.warn('⚠️ Could not load exercise details:', error);
     }
     
     return submissions.map((sub: any, index: number): Submission => {
@@ -816,59 +847,39 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
         studentName: sub.studentName,
         content: sub.content,
         contentType: typeof sub.content,
-        hasContent: !!sub.content
+        hasContent: !!sub.content,
+        answers: sub.answers,
+        responses: sub.responses,
+        studentAnswers: sub.studentAnswers
       });
       
-      // Extraire les réponses du content
       let answers: SubmissionAnswer[] = [];
       
-      if (sub.content) {
+      // 1. Si answers existe directement
+      if (sub.answers && Array.isArray(sub.answers)) {
+        console.log('✅ Found answers in submission.answers');
+        answers = sub.answers.map((ans: any, ansIndex: number) => ({
+          id: ans.id || Date.now() + ansIndex,
+          questionId: ans.questionId || 0,
+          answer: ans.answer || '',
+          points: ans.points,
+          feedback: ans.feedback,
+          graderComment: ans.graderComment,
+          autoGraded: ans.autoGraded
+        }));
+      }
+      // 2. Si content existe
+      else if (sub.content) {
         try {
-          let parsedContent;
+          let parsedContent = sub.content;
           
-          // Si content est une chaîne JSON
           if (typeof sub.content === 'string') {
-            console.log('📝 Content is string, trying to parse JSON...');
             parsedContent = JSON.parse(sub.content);
-            console.log('✅ Content parsed successfully');
-          } else {
-            // Si content est déjà un objet
-            console.log('📝 Content is already object');
-            parsedContent = sub.content;
           }
           
-          console.log('📊 Parsed content structure:', parsedContent);
-          
-          // Essayer différents formats de réponses
           if (parsedContent.answers && Array.isArray(parsedContent.answers)) {
             console.log('✅ Found answers in content.answers');
-            answers = parsedContent.answers.map((ans: any, ansIndex: number) => {
-              const answer: SubmissionAnswer = {
-                id: ans.id || Date.now() + ansIndex,
-                questionId: ans.questionId || 0,
-                answer: ans.answer || '',
-                points: ans.points,
-                feedback: ans.feedback,
-                graderComment: ans.graderComment,
-                autoGraded: ans.autoGraded
-              };
-              console.log(`   Answer ${ansIndex + 1}:`, answer);
-              return answer;
-            });
-          } else if (parsedContent.responses && Array.isArray(parsedContent.responses)) {
-            console.log('✅ Found answers in content.responses');
-            answers = parsedContent.responses.map((resp: any, respIndex: number) => ({
-              id: resp.id || Date.now() + respIndex,
-              questionId: resp.questionId || 0,
-              answer: resp.answer || resp.response || '',
-              points: resp.points,
-              feedback: resp.feedback,
-              graderComment: resp.graderComment,
-              autoGraded: resp.autoGraded
-            }));
-          } else if (Array.isArray(parsedContent)) {
-            console.log('✅ Content is directly an array of answers');
-            answers = parsedContent.map((ans: any, ansIndex: number) => ({
+            answers = parsedContent.answers.map((ans: any, ansIndex: number) => ({
               id: ans.id || Date.now() + ansIndex,
               questionId: ans.questionId || 0,
               answer: ans.answer || '',
@@ -877,66 +888,36 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
               graderComment: ans.graderComment,
               autoGraded: ans.autoGraded
             }));
-          } else {
-            console.warn('⚠️ No answers found in content. Available keys:', Object.keys(parsedContent));
-            
-            // Essayer de trouver des réponses dans d'autres clés
-            for (const key in parsedContent) {
-              if (Array.isArray(parsedContent[key])) {
-                console.log(`🔍 Found array in key "${key}"`);
-                // Vérifier si c'est un tableau de réponses
-                const firstItem = parsedContent[key][0];
-                if (firstItem && (firstItem.questionId !== undefined || firstItem.answer !== undefined)) {
-                  console.log(`✅ Key "${key}" contains answers!`);
-                  answers = parsedContent[key].map((ans: any, ansIndex: number) => ({
-                    id: ans.id || Date.now() + ansIndex,
-                    questionId: ans.questionId || 0,
-                    answer: ans.answer || '',
-                    points: ans.points,
-                    feedback: ans.feedback,
-                    graderComment: ans.graderComment,
-                    autoGraded: ans.autoGraded
-                  }));
-                  break;
-                }
-              }
-            }
           }
-          
-        } catch (error: any) {
-          console.error('❌ Error parsing submission content:', error);
-          console.error('Content that failed:', sub.content);
-          
-          // Fallback: essayer d'extraire manuellement si c'est un format simple
-          if (typeof sub.content === 'string') {
-            // Essayer de voir s'il y a des indices dans la string
-            if (sub.content.includes('questionId') || sub.content.includes('answer')) {
-              console.log('🔍 Content string contains answer-related keywords');
-              // Essayer d'extraire avec regex simple
-              try {
-                const questionIdMatch = sub.content.match(/"questionId"\s*:\s*(\d+)/);
-                const answerMatch = sub.content.match(/"answer"\s*:\s*"([^"]*)"/);
-                
-                if (questionIdMatch && answerMatch) {
-                  answers = [{
-                    id: Date.now(),
-                    questionId: parseInt(questionIdMatch[1]),
-                    answer: answerMatch[1],
-                    points: undefined,
-                    feedback: undefined,
-                    graderComment: undefined,
-                    autoGraded: false
-                  }];
-                  console.log('✅ Extracted answer via regex:', answers[0]);
-                }
-              } catch (regexError) {
-                console.error('Regex extraction failed:', regexError);
-              }
-            }
-          }
+        } catch (error) {
+          console.error('❌ Error parsing content:', error);
         }
-      } else {
-        console.log('📭 No content in submission');
+      }
+      // 3. Si responses existe
+      else if (sub.responses && Array.isArray(sub.responses)) {
+        console.log('✅ Found answers in submission.responses');
+        answers = sub.responses.map((resp: any, respIndex: number) => ({
+          id: resp.id || Date.now() + respIndex,
+          questionId: resp.questionId || 0,
+          answer: resp.answer || resp.response || '',
+          points: resp.points,
+          feedback: resp.feedback,
+          graderComment: resp.graderComment,
+          autoGraded: resp.autoGraded
+        }));
+      }
+      // 4. Créer des réponses vides basées sur les questions de l'exercice
+      else if (exerciseQuestions.length > 0) {
+        console.log('⚠️ No answers found, creating empty answers from exercise questions');
+        answers = exerciseQuestions.map((question: any, qIndex: number) => ({
+          id: Date.now() + qIndex,
+          questionId: question.id || qIndex + 1,
+          answer: '',
+          points: undefined,
+          feedback: '',
+          graderComment: '',
+          autoGraded: false
+        }));
       }
       
       console.log(`📋 Final answers for submission ${index + 1}:`, answers.length, 'answers');

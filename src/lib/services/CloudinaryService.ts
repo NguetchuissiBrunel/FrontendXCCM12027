@@ -1,65 +1,159 @@
-import type { FileValidationResult, UploadConfig, CloudinaryUploadResponse } from '@/types/upload';
+/**
+ * Cloudinary Upload Service
+ * Handles direct uploads to Cloudinary from the frontend
+ */
 
-export class CloudinaryService {
-    /**
-     * Validate a file against accepted types and size
-     */
-    public static validateFile(file: File, config?: UploadConfig): FileValidationResult {
-        const maxSize = config?.maxSize ?? 5 * 1024 * 1024; // 5MB default
-        const accepted = config?.acceptedTypes ?? ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+import type {
+    CloudinaryUploadResponse,
+    FileValidationResult,
+    UploadConfig,
+    ACCEPTED_IMAGE_TYPES,
+    MAX_FILE_SIZE
+} from '@/types/upload';
 
-        if (!file) return { valid: false, error: 'No file provided' };
+/**
+ * Default configuration values
+ */
+const DEFAULT_CONFIG = {
+    maxSize: 5 * 1024 * 1024, // 5MB
+    acceptedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const
+};
 
-        if (!accepted.includes(file.type)) {
-            return { valid: false, error: 'Type de fichier non supporté' };
-        }
+/**
+ * Validate file before upload
+ */
+export function validateImageFile(
+    file: File,
+    config: UploadConfig = {}
+): FileValidationResult {
+    const maxSize = config.maxSize || DEFAULT_CONFIG.maxSize;
+    const acceptedTypes = config.acceptedTypes || DEFAULT_CONFIG.acceptedTypes;
 
-        if (file.size > maxSize) {
-            return { valid: false, error: `Le fichier dépasse la taille maximale (${Math.round(maxSize / 1024 / 1024)}Mo)` };
-        }
-
-        return { valid: true };
+    // Check file type
+    if (!acceptedTypes.includes(file.type as any)) {
+        return {
+            valid: false,
+            error: `Type de fichier non accepté. Formats autorisés : ${acceptedTypes
+                .map(t => t.split('/')[1].toUpperCase())
+                .join(', ')}`
+        };
     }
 
-    /**
-     * Upload a file to Cloudinary using unsigned preset configured in env
-     * Returns the secure URL string on success
-     */
-    public static async uploadImage(file: File, config?: UploadConfig): Promise<string> {
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-        const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    // Check file size
+    if (file.size > maxSize) {
+        const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
+        return {
+            valid: false,
+            error: `Le fichier est trop volumineux. Taille maximale : ${maxSizeMB}MB`
+        };
+    }
 
-        if (!cloudName || !preset) {
-            throw new Error('Cloudinary configuration missing (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME or NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET)');
-        }
+    return { valid: true };
+}
 
-        const url = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+/**
+ * Upload image to Cloudinary
+ * 
+ * @param file - The image file to upload
+ * @param config - Optional upload configuration
+ * @returns Promise resolving to the secure URL of the uploaded image
+ * @throws Error if upload fails or configuration is missing
+ */
+export async function uploadImageToCloudinary(
+    file: File,
+    config: UploadConfig = {}
+): Promise<string> {
+    // Validate file
+    const validation = validateImageFile(file, config);
+    if (!validation.valid) {
+        throw new Error(validation.error);
+    }
 
-        const form = new FormData();
-        form.append('file', file);
-        form.append('upload_preset', preset);
-        if (config?.folder) {
-            form.append('folder', config.folder);
-        }
+    // Get environment variables
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-        const res = await fetch(url, {
-            method: 'POST',
-            body: form,
+    if (!cloudName || !uploadPreset) {
+        throw new Error(
+            'Configuration Cloudinary manquante. Veuillez configurer CLOUDINARY_CLOUD_NAME et CLOUDINARY_UPLOAD_PRESET dans vos variables d\'environnement.'
+        );
+    }
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    // Optional folder configuration
+    if (config.folder) {
+        formData.append('folder', config.folder);
+    }
+
+    try {
+        console.log('☁️ [CloudinaryService] Démarrage de l\'upload...', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            folder: config.folder
         });
 
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Cloudinary upload failed: ${res.status} ${text}`);
+        // Upload to Cloudinary
+        const response = await fetch(
+            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+            {
+                method: 'POST',
+                body: formData,
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ [CloudinaryService] Échec de l\'upload HTTP:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorData
+            });
+            throw new Error(
+                errorData.error?.message ||
+                `Échec de l'upload (${response.status})`
+            );
         }
 
-        const data = (await res.json()) as CloudinaryUploadResponse;
+        const data: CloudinaryUploadResponse = await response.json();
+        console.log('✅ [CloudinaryService] Upload réussi ! URL sécurisée:', data.secure_url);
 
-        if (!data || !data.secure_url) {
-            throw new Error('Invalid response from Cloudinary');
-        }
-
+        // Return secure URL
         return data.secure_url;
+    } catch (error) {
+        console.error('❌ [CloudinaryService] Erreur lors de l\'upload:', error);
+        if (error instanceof Error) {
+            // Re-throw with user-friendly message
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error(
+                    'Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.'
+                );
+            }
+            throw error;
+        }
+        throw new Error('Une erreur inattendue s\'est produite lors de l\'upload.');
     }
 }
 
-export default CloudinaryService;
+/**
+ * Service class for Cloudinary operations
+ */
+export class CloudinaryService {
+    /**
+     * Upload an image file to Cloudinary
+     */
+    static async uploadImage(file: File, config?: UploadConfig): Promise<string> {
+        return uploadImageToCloudinary(file, config);
+    }
+
+    /**
+     * Validate an image file
+     */
+    static validateFile(file: File, config?: UploadConfig): FileValidationResult {
+        return validateImageFile(file, config);
+    }
+}

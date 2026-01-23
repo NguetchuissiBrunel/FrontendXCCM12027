@@ -8,17 +8,23 @@ import CourseSidebar from "@/components/CourseSidebar";
 import SmartNotes from "@/components/SmartNotes";
 import DownloadOptions from './DownloadOptions';
 import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/types/course";
+import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLoading } from '@/contexts/LoadingContext';
 import Link from 'next/link';
 import CourseContentRenderer from './CourseContentRenderer';
+import confetti from 'canvas-confetti';
+import TeacherLink from '@/components/TeacherLink';
 
 
 interface CourseProps {
   courseData: CourseData;
+  incrementLike: (id: number) => Promise<void>;
+  incrementDownload: (id: number) => Promise<void>;
 }
 
-const Course: React.FC<CourseProps> = ({ courseData }) => {
+const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
   const { user } = useAuth();
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
@@ -30,6 +36,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
   const [pdfGenerating, setPdfGenerating] = useState<boolean>(false);
   const [docxGenerating, setDocxGenerating] = useState<boolean>(false);
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
+  const [isLiking, setIsLiking] = useState<boolean>(false);
   const [evaluation, setEvaluation] = useState<{
     rating: number;
     feedback: string;
@@ -40,6 +47,15 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
     submitted: false,
   });
   const [showOrientationSelector, setShowOrientationSelector] = useState<boolean>(false);
+  const { startLoading, stopLoading } = useLoading();
+
+  useEffect(() => {
+    if (pdfGenerating || docxGenerating || isLiking) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [pdfGenerating, docxGenerating, isLiking, startLoading, stopLoading]);
 
   // Helper functions to safely access data
   const getCurrentSection = (): Section | null => {
@@ -97,22 +113,54 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
     setShowOrientationSelector(true);
   };
 
-  const handleOrientationSelect = (orientation: 'p' | 'l') => {
+  const handleOrientationSelect = async (orientation: 'p' | 'l') => {
     setPdfGenerating(true);
 
-    downloadCourseAsPDF(courseData, orientation)
-      .then(() => {
-        setPdfGenerating(false);
-        setShowDownloadModal(false);
-      })
-      .catch(() => setPdfGenerating(false));
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsPDF(courseData, orientation);
+      setPdfGenerating(false);
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error("Error generating PDF or incrementing count:", error);
+      setPdfGenerating(false);
+    }
   };
 
   const handleDownloadDocx = async () => {
     setDocxGenerating(true);
-    await downloadCourseAsDocx(courseData);
-    setDocxGenerating(false);
-    setShowDownloadModal(false);
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsDocx(courseData);
+      setDocxGenerating(false);
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error("Error generating DOCX or incrementing count:", error);
+      setDocxGenerating(false);
+    }
+  };
+
+  const handleLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
+    try {
+      await incrementLike(courseData.id);
+
+      // Wow factor: Confetti!
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#8B5CF6', '#EC4899', '#3B82F6']
+      });
+
+      toast.success("Cours ajouté à vos favoris !");
+    } catch (error) {
+      console.error("Error liking course:", error);
+      toast.error("Impossible d'aimer ce cours");
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const isCurrentExerciseCompleted = (): boolean => {
@@ -277,6 +325,17 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
         setShowExercise={setShowExercise}
         onDownloadRequest={() => setShowDownloadModal(true)}
       />
+      
+      {courseData.author?.id && (
+		  <div className="mb-3">
+			<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Par</p>
+			<TeacherLink
+			  teacherId={courseData.author.id}
+			  teacherName={courseData.author.name}
+			  teacherPhoto={courseData.author.image}
+			/>
+		  </div>
+		)}
 
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-20">
@@ -286,9 +345,22 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
               <p className="text-xl text-purple-600 dark:text-purple-400 mb-4">{courseData.category}</p>
               <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400">
-                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.views} vues</span>
-                <span className="flex items-center"><ThumbsUp className="h-5 w-5 mr-2" /> {courseData.likes} likes</span>
-                <span className="flex items-center"><Download className="h-5 w-5 mr-2" /> {courseData.downloads} téléchargements</span>
+                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.viewCount} vues</span>
+                <button
+                  onClick={handleLike}
+                  disabled={isLiking}
+                  className="flex items-center hover:text-red-500 transition-colors cursor-pointer group"
+                >
+                  <ThumbsUp className={`h-5 w-5 mr-2 ${isLiking ? 'animate-pulse text-red-400' : 'group-hover:scale-110 transition-transform'}`} />
+                  {courseData.likeCount} likes
+                </button>
+                <button
+                  onClick={() => setShowDownloadModal(true)}
+                  className="flex items-center hover:text-purple-500 transition-colors cursor-pointer group"
+                >
+                  <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                  {courseData.downloadCount} téléchargements
+                </button>
               </div>
             </div>
           </div>

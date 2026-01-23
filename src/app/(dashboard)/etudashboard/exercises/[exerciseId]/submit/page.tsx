@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useExercise, useSubmitExercise, useSubmissionPermission } from '@/hooks/useExercise';
 import { ArrowLeft, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function SubmitExercisePage() {
   const params = useParams();
@@ -94,7 +95,7 @@ export default function SubmitExercisePage() {
       toast.error(`Veuillez répondre aux questions : ${unansweredQuestions.join(', ')}`);
       return;
     }
-    
+
     try {
       // Préparer les réponses
       const formattedAnswers = Object.entries(answers)

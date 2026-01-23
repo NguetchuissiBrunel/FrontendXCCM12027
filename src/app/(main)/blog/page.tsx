@@ -1,29 +1,34 @@
+// src/app/(main)/blog/page.tsx - MIS À JOUR
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Clock, FileText, Sparkles, Users } from 'lucide-react';
+import NewsletterForm from '@/components/common/NewsletterForm';
 
-  const featuredPost = {
-  title: 'Structurer un cours en granules pedagogiques',
+const featuredPost = {
+  title: 'Structurer un cours en granules pédagogiques',
   excerpt:
-    "Un guide pratique pour transformer un contenu dense en modules clairs, reutilisables et faciles a partager.",
+    "Un guide pratique pour transformer un contenu dense en modules clairs, réutilisables et faciles à partager.",
   tag: 'Guide',
   date: '13 novembre 2025',
   readTime: '8 min',
-  author: 'Equipe XCCM1',
+  author: 'Équipe XCCM1',
   href: '/blog/structurer-un-cours',
 };
 
-  const posts = [
+const posts = [
   {
-    title: 'Bien demarrer avec XCCM1',
-    excerpt: 'Les bonnes pratiques pour creer vos premiers granules.',
+    title: 'Bien démarrer avec XCCM1',
+    excerpt: 'Les bonnes pratiques pour créer vos premiers granules.',
     tag: 'Tutoriel',
     date: '12 novembre 2025',
     readTime: '6 min',
     href: '/blog/bien-demarrer-xccm1',
   },
   {
-    title: 'Modeles de granules pour un cours de programmation',
-    excerpt: 'Exemples concrets pour structurer definitions, exemples et exercices.',
+    title: 'Modèles de granules pour un cours de programmation',
+    excerpt: 'Exemples concrets pour structurer définitions, exemples et exercices.',
     tag: 'Guide',
     date: '10 novembre 2025',
     readTime: '7 min',
@@ -31,7 +36,7 @@ import { ArrowRight, BookOpen, Clock, FileText, Sparkles, Users } from 'lucide-r
   },
   {
     title: 'Collaborer entre enseignants sur XCCM1',
-    excerpt: 'Synchroniser vos contenus et versionner les ressources pedagogiques.',
+    excerpt: 'Synchroniser vos contenus et versionner les ressources pédagogiques.',
     tag: 'Collaboration',
     date: '8 novembre 2025',
     readTime: '5 min',
@@ -39,24 +44,24 @@ import { ArrowRight, BookOpen, Clock, FileText, Sparkles, Users } from 'lucide-r
   },
   {
     title: 'Publier un cours: check-list rapide',
-    excerpt: 'Les etapes essentielles avant la mise en ligne.',
+    excerpt: 'Les étapes essentielles avant la mise en ligne.',
     tag: 'Checklist',
     date: '5 novembre 2025',
     readTime: '4 min',
     href: '/blog/checklist-publication',
   },
   {
-    title: 'Choisir le format d export (PDF, Word, Web)',
-    excerpt: 'Conseils pour adapter vos ressources aux besoins des etudiants.',
+    title: 'Choisir le format d\'export (PDF, Word, Web)',
+    excerpt: 'Conseils pour adapter vos ressources aux besoins des étudiants.',
     tag: 'Ressources',
     date: '2 novembre 2025',
     readTime: '6 min',
     href: '/blog/choisir-format-export',
   },
   {
-    title: 'Evaluer la comprehension avec des granules',
-    excerpt: 'Idees d exercices courts et progressifs pour mesurer les acquis.',
-    tag: 'Pedagogie',
+    title: 'Évaluer la compréhension avec des granules',
+    excerpt: 'Idées d\'exercices courts et progressifs pour mesurer les acquis.',
+    tag: 'Pédagogie',
     date: '30 octobre 2025',
     readTime: '7 min',
     href: '/blog/evaluer-comprehension',
@@ -65,10 +70,10 @@ import { ArrowRight, BookOpen, Clock, FileText, Sparkles, Users } from 'lucide-r
 
 const categories = [
   'Guides pratiques',
-  'Pedagogie',
+  'Pédagogie',
   'Export & formats',
   'Collaboration',
-  'Methodologie',
+  'Méthodologie',
 ];
 
 export default function BlogPage() {
@@ -89,13 +94,13 @@ export default function BlogPage() {
             Ressources pour enseigner autrement
           </h1>
           <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">
-            Des articles, guides et checklists pour creer des contenus pedagogiques clairs et
-            reutilisables avec XCCM1.
+            Des articles, guides et checklists pour créer des contenus pédagogiques clairs et
+            réutilisables avec XCCM1.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
               <BookOpen className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-              24 articles publies
+              24 articles publiés
             </span>
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
               <Users className="h-4 w-4 text-purple-600 dark:text-purple-300" />
@@ -103,28 +108,28 @@ export default function BlogPage() {
             </span>
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
               <Clock className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-              Derniere mise a jour: 13 novembre 2025
+              Dernière mise à jour: 13 novembre 2025
             </span>
           </div>
         </header>
 
         <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-            A retenir
+            À retenir
           </h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {[
               {
-                title: 'Guides operationnels',
-                desc: 'Des pas-a-pas pour chaque etape de creation de contenu.',
+                title: 'Guides opérationnels',
+                desc: 'Des pas-à-pas pour chaque étape de création de contenu.',
               },
               {
                 title: 'Exemples concrets',
-                desc: 'Modeles reutilisables issus des cours ENSPY.',
+                desc: 'Modèles réutilisables issus des cours ENSPY.',
               },
               {
-                title: 'Veille pedagogique',
-                desc: 'Bonnes pratiques pour structurer, evaluer et publier.',
+                title: 'Veille pédagogique',
+                desc: 'Bonnes pratiques pour structurer, évaluer et publier.',
               },
             ].map((item) => (
               <div
@@ -143,7 +148,7 @@ export default function BlogPage() {
             <section className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 to-white p-6 shadow-sm dark:border-purple-500/30 dark:from-purple-500/10 dark:to-slate-900">
               <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wide text-purple-700 dark:text-purple-300">
                 <span className="rounded-full bg-white px-2.5 py-1 shadow-sm dark:bg-slate-900">
-                  Article a la une
+                  Article à la une
                 </span>
                 <span>{featuredPost.tag}</span>
               </div>
@@ -217,7 +222,7 @@ export default function BlogPage() {
               <div className="rounded-2xl border border-purple-600 bg-slate-900 p-6 text-white shadow-md">
                 <h3 className="text-lg font-semibold">Espace enseignants</h3>
                 <p className="mt-2 text-sm text-slate-200">
-                  Accedez aux guides rapides et a la bibliotheque de modeles.
+                  Accédez aux guides rapides et à la bibliothèque de modèles.
                 </p>
                 <Link
                   href="/resources"
@@ -230,7 +235,7 @@ export default function BlogPage() {
 
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-                  Categories
+                  Catégories
                 </h3>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {categories.map((cat) => (
@@ -244,44 +249,108 @@ export default function BlogPage() {
                 </div>
               </div>
 
+              {/* Section Newsletter - CONNECTÉE À L'API */}
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-                  Newsletter pedagogique
-                </h3>
-                <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                  Recevez un resume mensuel des nouveaux guides et cas d usage.
-                </p>
-                <div className="mt-4 flex flex-col gap-3">
-                  <input
-                    type="email"
-                    placeholder="Votre e-mail ENSPY"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                  />
-                  <button className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-purple-700">
-                    S&apos;inscrire
-                  </button>
-                </div>
+                <NewsletterForm 
+                  title="Newsletter pédagogique"
+                  description="Recevez un résumé mensuel des nouveaux guides et cas d'usage directement dans votre boîte mail."
+                  compact={false}
+                  showPrivacyNote={true}
+                  className="h-full"
+                />
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-                  Guides recommandes
+                  Guides recommandés
                 </h3>
                 <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                  <Link href="/blog/granules-exemples" className="block hover:text-purple-600">
+                  <Link 
+                    href="/blog/granules-exemples" 
+                    className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+                  >
                     Exemples de granules par niveau
                   </Link>
-                  <Link href="/blog/qualite-contenu" className="block hover:text-purple-600">
-                    Checklist qualite des contenus
+                  <Link 
+                    href="/blog/qualite-contenu" 
+                    className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+                  >
+                    Checklist qualité des contenus
                   </Link>
-                  <Link href="/blog/export-pdf" className="block hover:text-purple-600">
+                  <Link 
+                    href="/blog/export-pdf" 
+                    className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+                  >
                     Optimiser un export PDF
                   </Link>
+                  <Link 
+                    href="/blog/collaboration-etudiants" 
+                    className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+                  >
+                    Faire collaborer les étudiants
+                  </Link>
+                  <Link 
+                    href="/blog/accessibilite" 
+                    className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+                  >
+                    Rendre son cours accessible
+                  </Link>
+                </div>
+              </div>
+
+              {/* Section Statistiques */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
+                  En chiffres
+                </h3>
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Lecteurs mensuels</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">1,200+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Cours créés</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">85+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Granules publiés</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">2,400+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Taux de satisfaction</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">94%</span>
+                  </div>
                 </div>
               </div>
             </div>
           </aside>
         </div>
+
+        {/* Section Call-to-Action en bas */}
+        <section className="mt-12 rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 to-purple-100 p-8 text-center dark:border-purple-500/30 dark:from-purple-900/20 dark:to-purple-800/20">
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            Prêt à créer votre premier cours ?
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-slate-600 dark:text-slate-300">
+            Rejoignez notre communauté d'enseignants innovants et commencez à créer des contenus pédagogiques interactifs dès aujourd'hui.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/editor"
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-purple-700"
+            >
+              <Sparkles className="h-4 w-4" />
+              Essayer l'éditeur
+            </Link>
+            <Link
+              href="/demo"
+              className="inline-flex items-center gap-2 rounded-xl border border-purple-600 bg-white px-6 py-3 text-sm font-semibold text-purple-600 transition hover:bg-purple-50 dark:border-purple-400 dark:bg-slate-900 dark:text-purple-300 dark:hover:bg-slate-800"
+            >
+              <BookOpen className="h-4 w-4" />
+              Voir tous les guides
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
   );

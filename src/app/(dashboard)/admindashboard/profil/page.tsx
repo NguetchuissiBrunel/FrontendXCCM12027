@@ -2,10 +2,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaUserShield, FaEnvelope, FaUser } from 'react-icons/fa';
-import { AdminService } from '@/lib';
+import { AdminService } from '@/lib/services/AdminService';
 import { Award, BookOpen, Clock } from 'lucide-react';
 import { OpenAPI } from '@/lib/core/OpenAPI';
 import toast, { Toaster } from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface AdminUser {
     id: string;
@@ -21,18 +22,20 @@ interface AdminUser {
 export default function AdminProfile() {
     const [user, setUser] = useState<AdminUser | null>(null);
     const [editedUser, setEditedUser] = useState<AdminUser | null>(null);
-    const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [stats, setStats] = useState({ totalUsers: 0 });
     const [statsLoading, setStatsLoading] = useState(true);
     const router = useRouter();
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+    // Plus besoin du useEffect synchronisé
 
     useEffect(() => {
+        startLoading();
         const currentUser = localStorage.getItem('currentUser');
 
         if (!currentUser) {
-            setLoading(false);
+            stopLoading();
             return;
         }
 
@@ -43,7 +46,7 @@ export default function AdminProfile() {
         } catch (error) {
             console.error('Erreur lors du chargement des données utilisateur:', error);
         } finally {
-            setLoading(false);
+            stopLoading();
         }
         fetchStats();
     }, [router]);
@@ -72,7 +75,7 @@ export default function AdminProfile() {
     const handleSave = async () => {
         if (!editedUser) return;
 
-        setIsSaving(true);
+        startLoading();
         try {
             // Try to update via backend API
             try {
@@ -112,7 +115,7 @@ export default function AdminProfile() {
             console.error('Erreur lors de la sauvegarde:', error);
             toast.error('Erreur lors de la sauvegarde du profil');
         } finally {
-            setIsSaving(false);
+            stopLoading();
         }
     };
 
@@ -150,15 +153,8 @@ export default function AdminProfile() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
-                </div>
-            </div>
-        );
+    if (globalLoading && !user) {
+        return null;
     }
 
     if (!user || !editedUser) {
@@ -205,10 +201,10 @@ export default function AdminProfile() {
                         </button>
                         <button
                             onClick={handleSave}
-                            disabled={isSaving}
+                            disabled={globalLoading}
                             className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
                         >
-                            {isSaving ? 'Enregistrement...' : '💾 Enregistrer'}
+                            {globalLoading ? 'Enregistrement...' : '💾 Enregistrer'}
                         </button>
                     </div>
                 )}

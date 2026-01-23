@@ -6,19 +6,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLoading } from '@/contexts/LoadingContext';
 import { CourseStatisticsService } from '@/lib3/services/CourseStatisticsService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { 
-  ArrowLeft, 
-  Users, 
-  BarChart, 
-  TrendingUp, 
-  Award, 
+import {
+  ArrowLeft,
+  Users,
+  BarChart,
+  TrendingUp,
+  Award,
   Activity,
-  RefreshCw, 
-  FileText, 
-  Calendar, 
+  RefreshCw,
+  FileText,
+  Calendar,
   Target,
-  CheckCircle, 
-  AlertCircle, 
+  CheckCircle,
+  AlertCircle,
   TrendingDown,
   Eye,
   Download,
@@ -59,8 +59,7 @@ export default function CourseAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const { startLoading, stopLoading } = useLoading();
-  
+
   const [stats, setStats] = useState<CourseStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +72,7 @@ export default function CourseAnalyticsPage() {
   const [downloadCount, setDownloadCount] = useState(0);
 
   const courseId = parseInt(params.id as string);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading(); // ← Ici
 
   // Charger les données
   const loadData = async () => {
@@ -91,7 +91,7 @@ export default function CourseAnalyticsPage() {
       try {
         console.log('📚 Chargement infos cours...');
         let courseData = null;
-        
+
         // Essayer d'abord le cours enrichi
         try {
           const enrichedResponse = await CourseControllerService.getEnrichedCourse(courseId);
@@ -101,13 +101,13 @@ export default function CourseAnalyticsPage() {
           }
         } catch (enrichedError) {
           console.warn('Cours enrichi non disponible, recherche dans tous les cours:', enrichedError);
-          
+
           // Fallback: chercher dans tous les cours
           const allCourses = await CourseControllerService.getAllCourses();
-          const course = allCourses.data?.find((c: any) => 
+          const course = allCourses.data?.find((c: any) =>
             parseInt(c.id || '0', 10) === courseId
           );
-          
+
           if (course) {
             courseData = course;
             console.log('✅ Cours trouvé dans liste complète');
@@ -123,16 +123,16 @@ export default function CourseAnalyticsPage() {
             console.log('ℹ️ Cours simulé créé');
           }
         }
-        
+
         setCourseInfo(courseData);
-        
+
         // Récupérer les métriques d'engagement
         if (courseData) {
           setViewCount(courseData.viewCount || Math.floor(Math.random() * 100) + 50);
           setLikeCount(courseData.likeCount || Math.floor(Math.random() * 50) + 10);
           setDownloadCount(courseData.downloadCount || Math.floor(Math.random() * 30) + 5);
         }
-        
+
       } catch (err: any) {
         console.warn('⚠️ Erreur chargement infos cours:', err.message);
         // Continuer même sans infos détaillées
@@ -141,11 +141,11 @@ export default function CourseAnalyticsPage() {
       // 2. Charger les statistiques
       console.log('📊 Chargement statistiques...');
       const statistics = await CourseStatisticsService.getCourseStatistics(courseId);
-      
+
       if (!statistics) {
         throw new Error('Aucune statistique retournée');
       }
-      
+
       setStats(statistics);
       setLastUpdate(new Date());
       console.log('✅ Statistiques chargées avec succès');
@@ -154,10 +154,10 @@ export default function CourseAnalyticsPage() {
       console.error('❌ Erreur chargement données:', err);
       console.error('Détails:', err.message);
       console.error('Stack:', err.stack);
-      
+
       const errorMessage = err.message || 'Erreur lors du chargement des statistiques';
       setError(errorMessage);
-      
+
       // Fournir des données par défaut pour continuer le développement
       console.log('🛠️ Utilisation données par défaut pour développement...');
       const defaultStats: CourseStats = {
@@ -208,10 +208,10 @@ export default function CourseAnalyticsPage() {
           total: 20
         }
       };
-      
+
       setStats(defaultStats);
       setLastUpdate(new Date());
-      
+
       // Info utilisateur
       if (!courseInfo) {
         setCourseInfo({
@@ -221,12 +221,12 @@ export default function CourseAnalyticsPage() {
           createdAt: new Date().toISOString()
         });
       }
-      
+
       // Métriques simulées
       setViewCount(Math.floor(Math.random() * 100) + 50);
       setLikeCount(Math.floor(Math.random() * 50) + 10);
       setDownloadCount(Math.floor(Math.random() * 30) + 5);
-      
+
     } finally {
       setLoading(false);
       stopLoading();
@@ -264,7 +264,7 @@ export default function CourseAnalyticsPage() {
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'À l\'instant';
     if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
     if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} h`;
@@ -288,31 +288,8 @@ export default function CourseAnalyticsPage() {
   };
 
   // États de chargement
-  if (loading && !stats) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-        <div className="max-w-7xl mx-auto px-8">
-          <button
-            onClick={() => router.push('/profdashboard')}
-            className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-8 hover:text-purple-700 dark:hover:text-purple-300"
-          >
-            <ArrowLeft size={20} />
-            Retour au dashboard
-          </button>
-          
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
-              ))}
-            </div>
-            <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl mb-6"></div>
-            <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
-          </div>
-        </div>
-      </div>
-    );
+  if (loading || globalLoading) {
+    return null;
   }
 
   if (error && !stats) {
@@ -326,7 +303,7 @@ export default function CourseAnalyticsPage() {
             <ArrowLeft size={20} />
             Retour au dashboard
           </button>
-          
+
           <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl p-8 border border-yellow-200 dark:border-yellow-900/30 text-center">
             <h2 className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-4">
               {error}
@@ -388,13 +365,13 @@ export default function CourseAnalyticsPage() {
               Statistiques du cours
             </h1>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span>Dernière mise à jour: {formatTimeAgo(lastUpdate)}</span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={loadData}
@@ -403,7 +380,7 @@ export default function CourseAnalyticsPage() {
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
-              
+
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
                   <input
@@ -436,7 +413,7 @@ export default function CourseAnalyticsPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Calendar className="w-4 h-4" />
@@ -452,7 +429,7 @@ export default function CourseAnalyticsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-col gap-2">
               <div className="text-right">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Dernière mise à jour</p>
@@ -540,7 +517,7 @@ export default function CourseAnalyticsPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg p-4">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                 <Heart className="text-red-600 dark:text-red-400" size={20} />
@@ -552,7 +529,7 @@ export default function CourseAnalyticsPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg p-4">
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                 <Download className="text-green-600 dark:text-green-400" size={20} />
@@ -573,7 +550,7 @@ export default function CourseAnalyticsPage() {
             <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
               Statistiques des Exercices ({exerciseStats.length})
             </h3>
-            
+
             <div className="space-y-6">
               {exerciseStats.map((exercise, index) => {
                 const submissionRate = totalStudents > 0
@@ -582,7 +559,7 @@ export default function CourseAnalyticsPage() {
                 const averagePercentage = exercise.maxPossibleScore > 0
                   ? (exercise.averageScore / exercise.maxPossibleScore) * 100
                   : 0;
-                
+
                 return (
                   <div key={exercise.exerciseId || index} className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
@@ -601,7 +578,7 @@ export default function CourseAnalyticsPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-wrap gap-3">
                         <div className={`px-4 py-2 rounded-lg font-semibold ${getGradeBgColor(exercise.averageScore, exercise.maxPossibleScore)} ${getGradeColor(exercise.averageScore, exercise.maxPossibleScore)}`}>
                           Moyenne: {exercise.averageScore}/{exercise.maxPossibleScore}
@@ -611,7 +588,7 @@ export default function CourseAnalyticsPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Soumissions</p>
@@ -619,21 +596,21 @@ export default function CourseAnalyticsPage() {
                           {exercise.submissionCount}
                         </p>
                       </div>
-                      
+
                       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Score Minimum</p>
                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
                           {exercise.minScore}
                         </p>
                       </div>
-                      
+
                       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Score Maximum</p>
                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
                           {exercise.maxScore}
                         </p>
                       </div>
-                      
+
                       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Taux de Réussite</p>
                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
@@ -654,7 +631,7 @@ export default function CourseAnalyticsPage() {
             <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
               Distribution des Performances
             </h3>
-            
+
             <div className="space-y-4">
               {[
                 { label: 'Excellent (≥80%)', value: performanceDistribution.excellent, color: 'bg-green-100 dark:bg-green-900/30', textColor: 'text-green-600 dark:text-green-400' },
@@ -665,7 +642,7 @@ export default function CourseAnalyticsPage() {
                 const percentage = performanceDistribution.total > 0
                   ? (item.value / performanceDistribution.total) * 100
                   : 0;
-                
+
                 return (
                   <div key={index} className="p-4 bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between mb-2">
@@ -683,7 +660,7 @@ export default function CourseAnalyticsPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-4">
-                        <div 
+                        <div
                           className={`h-2 rounded-full ${item.color.replace('bg-', 'bg-').replace('/30', '')} transition-all duration-1000`}
                           style={{ width: `${percentage}%` }}
                         ></div>

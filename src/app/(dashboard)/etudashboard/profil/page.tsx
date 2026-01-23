@@ -32,21 +32,14 @@ interface User {
 export default function StudentProfile() {
   const [user, setUser] = useState<User | null>(null);
   const [editedUser, setEditedUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    if (loading) {
-      startLoading();
-    } else {
-      stopLoading();
-    }
-  }, [loading, startLoading, stopLoading]);
+  // Plus besoin du useEffect synchronisé
 
   useEffect(() => {
+    startLoading();
     const currentUser = localStorage.getItem('currentUser');
 
     if (!currentUser) {
@@ -68,7 +61,7 @@ export default function StudentProfile() {
       console.error('Erreur lors du chargement des données utilisateur:', error);
       router.push('/login');
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   }, [router]);
 
@@ -84,7 +77,7 @@ export default function StudentProfile() {
   const handleSave = async () => {
     if (!editedUser) return;
 
-    setIsSaving(true);
+    startLoading();
     try {
       await fetch(`${OpenAPI.BASE}/users/${editedUser.id}`, {
         method: 'PUT',
@@ -104,7 +97,7 @@ export default function StudentProfile() {
       console.error('Erreur lors de la sauvegarde:', error);
       toast.error('Erreur lors de la sauvegarde du profil');
     } finally {
-      setIsSaving(false);
+      stopLoading();
     }
   };
 
@@ -142,15 +135,8 @@ export default function StudentProfile() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
-      </div>
-    );
+  if (globalLoading && !user) {
+    return null;
   }
 
   if (!user || !editedUser) return null;
@@ -195,10 +181,10 @@ export default function StudentProfile() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={globalLoading}
                 className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
               >
-                {isSaving ? 'Enregistrement...' : '💾 Enregistrer'}
+                {globalLoading ? 'Enregistrement...' : '💾 Enregistrer'}
               </button>
             </div>
           )}

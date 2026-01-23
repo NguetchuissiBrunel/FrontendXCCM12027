@@ -2,11 +2,6 @@
 import { ReactNode } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
 
-export const viewport = {
-    width: 1280,
-    initialScale: 0.8,
-};
-
 export default function AdminDashboardLayout({ children }: { children: ReactNode }) {
     return (
         <div className="flex bg-slate-50 dark:bg-slate-950 min-h-screen">

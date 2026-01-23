@@ -1,17 +1,36 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate } from 'react-icons/fa';
-import { AdminService, User } from '@/lib';
+import { FaTrash, FaSearch, FaChalkboardTeacher, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaBookOpen, FaUserGraduate, FaEye, FaEyeSlash, FaUniversity, FaAward } from 'react-icons/fa';
+import { AdminService } from '@/lib/AdminService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-
 import { useLoading } from '@/contexts/LoadingContext';
 
+interface User {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    photoUrl?: string;
+    specialization?: string;
+    level?: string;
+    university?: string;
+    city?: string;
+    promotion?: string;
+    averageGrade?: string;
+    currentSemester?: string;
+    major?: string;
+    minor?: string;
+    interests?: string[];
+    subjects?: string[];
+    certification?: string;
+    activities?: string[];
+    grade?: string;
+}
 function TeachersList() {
     const [teachers, setTeachers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
-    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,22 +38,21 @@ function TeachersList() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
 
-    useEffect(() => {
-        if (loading) {
-            startLoading();
-        } else {
-            stopLoading();
-        }
-    }, [loading, startLoading, stopLoading]);
+    // Plus besoin du useEffect local
 
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         email: '',
         password: '',
+        confirmPassword: '',
         subjects: '',
     });
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         fetchTeachers();
@@ -47,16 +65,16 @@ function TeachersList() {
     }, [searchParams, router]);
 
     const fetchTeachers = async () => {
-        setLoading(true);
+        startLoading();
         try {
             const res = await AdminService.getAllTeachers();
-            setTeachers(res.data || []);
+            setTeachers((res.data || []) as User[]);
         } catch (error) {
             console.error("Error fetching teachers:", error);
             toast.error("Erreur lors du chargement des enseignants");
             setTeachers([]);
         } finally {
-            setLoading(false);
+            stopLoading();
         }
     };
 
@@ -93,6 +111,12 @@ function TeachersList() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (formData.password !== formData.confirmPassword) {
+            toast.error("Les mots de passe ne correspondent pas");
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             // On envoie uniquement les propriétés connues par l'interface TeacherRegisterRequest
@@ -101,13 +125,19 @@ function TeachersList() {
                 lastName: formData.lastName,
                 email: formData.email,
                 password: formData.password,
+                confirmPassword: formData.confirmPassword,
                 // On transforme la chaîne de caractères en tableau pour le champ 'subjects'
-                subjects: formData.subjects ? formData.subjects.split(',').map(s => s.trim()) : []
+                subjects: formData.subjects ? formData.subjects.split(',').map(s => s.trim()) : [],
+                city: "",
+                university: "",
+                certification: "",
+                grade: "",
+                photoUrl: ""
             });
 
             toast.success("Enseignant ajouté avec succès");
             setIsModalOpen(false);
-            setFormData({ firstName: '', lastName: '', email: '', password: '', subjects: '' });
+            setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', subjects: '' });
 
             // Rafraîchissement des données
             setTimeout(() => fetchTeachers(), 500);
@@ -161,7 +191,7 @@ function TeachersList() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {loading || globalLoading ? (
+                        {globalLoading && teachers.length === 0 ? (
                             null
                         ) : filteredTeachers.length === 0 ? (
                             <tr>
@@ -285,13 +315,42 @@ function TeachersList() {
                                         <div className="relative">
                                             <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
-                                                type="password"
+                                                type={showPassword ? "text" : "password"}
                                                 required
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
+                                                className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
                                                 placeholder="••••••••"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors"
+                                            >
+                                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Confirmer mot de passe</label>
+                                        <div className="relative">
+                                            <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                required
+                                                value={formData.confirmPassword}
+                                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                                className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
+                                                placeholder="••••••••"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors"
+                                            >
+                                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                            </button>
                                         </div>
                                     </div>
 
@@ -365,6 +424,18 @@ function TeachersList() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
                                         <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prénom</label>
+                                            <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
+                                                {selectedUser.firstName}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nom</label>
+                                            <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
+                                                {selectedUser.lastName}
+                                            </p>
+                                        </div>
+                                        <div>
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
                                                 <FaEnvelope className="mr-2 text-slate-400" />
@@ -385,6 +456,20 @@ function TeachersList() {
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ville</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.city || 'Non spécifiée'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Université</label>
+                                            <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
+                                                <FaUniversity className="mr-2 text-slate-400" />
+                                                {selectedUser.university || 'Non spécifiée'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Grade</label>
+                                            <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
+                                                <FaAward className="mr-2 text-slate-400" />
+                                                {selectedUser.grade || 'Non spécifié'}
                                             </p>
                                         </div>
                                     </div>

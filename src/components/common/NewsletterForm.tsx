@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import { PublicServicesService, } from '@/lib/services/PublicServicesService';
 import { NewsletterRequest } from '@/lib/models/NewsletterRequest';
+import { useLoading } from '@/contexts/LoadingContext';
+import { useEffect } from 'react';
 
 interface NewsletterFormProps {
   className?: string;
@@ -13,6 +15,15 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const { startLoading, stopLoading } = useLoading();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,13 +90,7 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
             }`}
         >
           {loading ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin h-4 w-4 mr-2 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Inscription en cours...
-            </span>
+            "Inscription..."
           ) : (
             "S'abonner"
           )}
@@ -95,8 +100,8 @@ export default function NewsletterForm({ className = '' }: NewsletterFormProps) 
       {/* Messages de feedback */}
       {message && (
         <div className={`rounded-lg p-3 text-sm ${message.type === 'success'
-            ? 'bg-green-900/30 text-green-300 border border-green-800'
-            : 'bg-red-900/30 text-red-300 border border-red-800'
+          ? 'bg-green-900/30 text-green-300 border border-green-800'
+          : 'bg-red-900/30 text-red-300 border border-red-800'
           }`}>
           <div className="flex items-start">
             {message.type === 'success' ? (

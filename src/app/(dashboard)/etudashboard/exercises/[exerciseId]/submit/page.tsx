@@ -17,6 +17,7 @@ export default function SubmitExercisePage() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading(); 
   const [submitting, setSubmitting] = useState(false);
   const [answeredCount, setAnsweredCount] = useState(0);
   

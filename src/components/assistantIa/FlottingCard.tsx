@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, Loader2, Maximize2, Minimize2, Square } from 'lucide-react';
 import { ChatService } from '@/lib2/services/ChatService';
 import { CancelError } from '@/lib2/core/CancelablePromise';
-import { motion } from 'framer-motion'; 
-import { useLoading } from '@/contexts/LoadingContext';
+import { motion } from 'framer-motion';
+
 
 interface Message {
   role: 'assistant' | 'user';
@@ -30,9 +30,7 @@ export default function AIChatWidget() {
     }
   ]);
   const [input, setInput] = useState('');
-  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
   const [isLoading, setIsLoading] = useState(false);
-
 
   const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
   const [userName, setUserName] = useState<string>('');
@@ -162,14 +160,15 @@ export default function AIChatWidget() {
   }, [isFullscreen]);
 
   const handleStop = () => {
-    if (requestRef.current) {
+    if (requestRef.current && requestRef.current.cancel) {
       requestRef.current.cancel();
+      requestRef.current = null;
     }
   };
 
   const handleSend = async () => { 
     const trimmedInput = input.trim();
-    if (!trimmedInput || globalLoading) return;
+    if (!trimmedInput || isLoading) return;
 
     // Ajouter le message de l'utilisateur
     setMessages(prev => [...prev, { role: 'user', content: trimmedInput }]);
@@ -182,7 +181,7 @@ export default function AIChatWidget() {
       loading: true
     }]);
 
-    startLoading();
+    setIsLoading(true);
 
     try {
       // Appeler l'API via le service généré
@@ -197,6 +196,7 @@ export default function AIChatWidget() {
       });
       requestRef.current = request;
       const response = await request;
+      requestRef.current = null;
 
       // Remplacer le message de chargement par la réponse
       setMessages(prev => {
@@ -229,8 +229,12 @@ export default function AIChatWidget() {
       }
 
     } catch (error) {
-      console.error('Erreur API:', error);
-      
+      // Only log non-cancellation errors to console
+      if (!(error instanceof CancelError)) {
+        console.error('Erreur API:', error);
+      }
+
+      // Remplacer le message de chargement par un message d'erreur
       setMessages(prev => {
         const newMessages = [...prev];
         if (error instanceof CancelError) {
@@ -247,8 +251,8 @@ export default function AIChatWidget() {
         return newMessages;
       });
     } finally {
-      requestRef.current = null;
       setIsLoading(false);
+      requestRef.current = null;
     }
   };
 
@@ -276,6 +280,8 @@ export default function AIChatWidget() {
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
       {/* Bouton flottant draggable */}
+      {/* Bouton - Toujours visible en bas à droite */}
+
       <motion.button
         onMouseDown={handleButtonMouseDown}
         onClick={() => setIsOpen(!isOpen)}
@@ -289,6 +295,7 @@ export default function AIChatWidget() {
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
+        //bottom-5 left-5
         className="pointer-events-auto fixed w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white dark:border-gray-800 hover:bg-purple-700 cursor-grab active:cursor-grabbing"
         style={{
           left: `${buttonPosition.x}px`,
@@ -380,7 +387,7 @@ export default function AIChatWidget() {
                     ? 'bg-purple-600 text-white border-purple-500 rounded-2xl rounded-tr-none'
                     : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-purple-100 dark:border-gray-700 rounded-2xl rounded-tl-none'
                   }`}>
-                  {msg.loading || (globalLoading && idx === messages.length - 1 && msg.role === 'assistant' && !msg.content) ? (
+                  {msg.loading || (isLoading && idx === messages.length - 1 && msg.role === 'assistant' && !msg.content) ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>L'assistant réfléchit...</span>
@@ -442,11 +449,12 @@ export default function AIChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Posez votre question ici..."
-                disabled={globalLoading}
+                disabled={isLoading}
                 className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none text-sm dark:text-white disabled:opacity-50"
               />
               {isLoading ? (
                 <button 
+                  type="button"
                   onClick={handleStop}
                   className="bg-red-500 text-white p-3 rounded-2xl shadow-lg active:scale-95 hover:bg-red-600 transition-colors flex items-center justify-center"
                   title="Arrêter la réflexion"
@@ -455,6 +463,7 @@ export default function AIChatWidget() {
                 </button>
               ) : (
                 <button 
+                  type="button"
                   onClick={handleSend} 
                   disabled={!input.trim()}
                   className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors flex items-center justify-center"

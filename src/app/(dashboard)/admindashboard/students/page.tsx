@@ -2,8 +2,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaTrash, FaSearch, FaUserGraduate, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaUniversity, FaEye, FaEyeSlash } from 'react-icons/fa';
-import { AdminService } from '@/lib/services/AdminService';
-import type { User } from '@/types/user';
+import { AdministrationService as AdminService } from '@/lib/services/AdministrationService';
+import type { User } from '@/lib/models/User';
 import { AuthControllerService, RegisterRequest } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,7 +49,7 @@ function StudentsList() {
         startLoading();
         try {
             const res = await AdminService.getAllStudents();
-            setStudents(res.data || []);
+            setStudents((res.data || []) as any);
         } catch (error) {
             console.error("Error fetching students:", error);
             toast.error("Impossible de charger la liste des étudiants");
@@ -101,7 +101,7 @@ function StudentsList() {
         setIsSubmitting(true);
         try {
             // Suppression de 'role' car StudentRegisterRequest ne l'accepte pas
-            await AdminService.registerStudent({
+            await AdminService.createStudent({
                 email: formData.email,
                 password: formData.password,
                 confirmPassword: formData.confirmPassword, // Requis

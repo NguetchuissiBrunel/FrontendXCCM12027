@@ -59,7 +59,6 @@ export default function CourseAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const { startLoading, stopLoading } = useLoading();
 
   const [stats, setStats] = useState<CourseStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +72,7 @@ export default function CourseAnalyticsPage() {
   const [downloadCount, setDownloadCount] = useState(0);
 
   const courseId = parseInt(params.id as string);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading(); // ← Ici
 
   // Charger les données
   const loadData = async () => {

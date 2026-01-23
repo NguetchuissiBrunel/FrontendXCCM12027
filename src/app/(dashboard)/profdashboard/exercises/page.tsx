@@ -1,7 +1,7 @@
-// app/(dashboard)/profdashboard/exercises/page.tsx - Version corrigée
+// app/(dashboard)/profdashboard/exercises/page.tsx - VERSION AVEC RAFRAÎCHISSEMENT
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
@@ -17,7 +17,9 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  BarChart3
+  BarChart3,
+  RefreshCw,
+  PlusCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Exercise, Submission } from '@/types/exercise';
@@ -34,6 +36,7 @@ interface ExerciseWithStats extends Exercise {
     pending: number;
     total: number;
   };
+  lastUpdated: string; // Pour suivre les mises à jour
 }
 
 export default function AllExercisesPage() {
@@ -42,126 +45,237 @@ export default function AllExercisesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [exercises, setExercises] = useState<ExerciseWithStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'pending' | 'graded'>('all');
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  useEffect(() => {
+  // Fonction pour charger les exercices
+  const loadAllExercises = useCallback(async () => {
     if (!user) return;
 
-    const loadAllExercises = async () => {
-      try {
-        setLoading(true);
+    try {
+      setRefreshing(true);
 
-        // 1. Récupérer tous les cours du professeur
-        const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
-        const coursesData = coursesResponse.data || [];
-        setCourses(coursesData);
+      // 1. Récupérer tous les cours du professeur
+      const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
+      const coursesData = coursesResponse.data || [];
+      setCourses(coursesData);
 
-        // 2. Pour chaque cours, récupérer les exercices et leurs stats
-        const allExercises: ExerciseWithStats[] = [];
+      // 2. Pour chaque cours, récupérer les exercices et leurs stats
+      const allExercises: ExerciseWithStats[] = [];
+      
+      for (const course of coursesData) {
+        const courseId = course.id;
+        if (!courseId) continue;
         
-        for (const course of coursesData) {
-          const courseId = course.id;
-          if (!courseId) continue;
+        try {
+          const exercisesResponse = await ExercicesService.getExercisesForCourse(courseId);
+          const courseExercises = exercisesResponse.data || [];
           
-          try {
-            const exercisesResponse = await ExercicesService.getExercisesForCourse(courseId);
-            const courseExercises = exercisesResponse.data || [];
-            
-            // Pour chaque exercice, charger les statistiques de soumissions
-            for (const exerciseData of courseExercises) {
-              try {
-                // Vérifier que l'ID de l'exercice existe
-                const exerciseId = exerciseData.id;
-                if (!exerciseId || typeof exerciseId !== 'number') {
-                  console.warn(`Exercice sans ID valide dans le cours ${courseId}:`, exerciseData);
-                  continue;
-                }
-
-                // Obtenir l'exercice complet avec le service unifié
-                const fullExercise = await ExerciseService.getExerciseDetails(exerciseId);
-                if (!fullExercise) {
-                  console.warn(`Exercice ${exerciseId} non trouvé par le service unifié`);
-                  continue;
-                }
-
-                // Charger les soumissions pour cet exercice
-                let submissionStats = { graded: 0, pending: 0, total: 0 };
-                let averageScore = 0;
-                
-                try {
-                  const submissions = await ExerciseService.getExerciseSubmissions(exerciseId);
-                  
-                  const gradedSubmissions = submissions.filter((s: Submission) => s.graded);
-                  const pendingSubmissions = submissions.filter((s: Submission) => !s.graded);
-                  
-                  submissionStats = {
-                    graded: gradedSubmissions.length,
-                    pending: pendingSubmissions.length,
-                    total: submissions.length
-                  };
-                  
-                  // Calculer le score moyen
-                  if (gradedSubmissions.length > 0) {
-                    const totalScore = gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0);
-                    averageScore = Math.round((totalScore / gradedSubmissions.length) * 10) / 10;
-                  }
-                } catch (submissionError) {
-                  console.warn(`Erreur chargement soumissions exercice ${exerciseId}:`, submissionError);
-                }
-
-                const exerciseWithStats: ExerciseWithStats = {
-                  ...fullExercise,
-                  courseTitle: course.title || 'Sans titre',
-                  courseId: courseId,
-                  courseCategory: course.category || 'Non catégorisé',
-                  pendingSubmissions: submissionStats.pending,
-                  totalSubmissions: submissionStats.total,
-                  averageScore,
-                  submissionStats
-                };
-                
-                allExercises.push(exerciseWithStats);
-              } catch (exerciseError) {
-                console.error(`Erreur traitement exercice dans cours ${courseId}:`, exerciseError);
-                // Fallback: exercice sans stats
-                const fallbackExercise: ExerciseWithStats = {
-                  id: exerciseData.id || 0,
-                  courseId: courseId,
-                  title: exerciseData.title || 'Exercice sans titre',
-                  description: exerciseData.description || '',
-                  maxScore: exerciseData.maxScore || 0,
-                  status: 'PUBLISHED',
-                  createdAt: exerciseData.createdAt || new Date().toISOString(),
-                  questions: [],
-                  version: '1.0',
-                  courseTitle: course.title || 'Sans titre',
-                  courseCategory: course.category || 'Non catégorisé',
-                  pendingSubmissions: 0,
-                  totalSubmissions: 0,
-                  averageScore: 0,
-                  submissionStats: { graded: 0, pending: 0, total: 0 }
-                };
-                allExercises.push(fallbackExercise);
+          // Pour chaque exercice, charger les statistiques de soumissions
+          for (const exerciseData of courseExercises) {
+            try {
+              // Vérifier que l'ID de l'exercice existe
+              const exerciseId = exerciseData.id;
+              if (!exerciseId || typeof exerciseId !== 'number') {
+                console.warn(`Exercice sans ID valide dans le cours ${courseId}:`, exerciseData);
+                continue;
               }
+
+              // Obtenir l'exercice complet avec le service unifié
+              const fullExercise = await ExerciseService.getExerciseDetails(exerciseId);
+              if (!fullExercise) {
+                console.warn(`Exercice ${exerciseId} non trouvé par le service unifié`);
+                continue;
+              }
+
+              // Charger les soumissions pour cet exercice
+              let submissionStats = { graded: 0, pending: 0, total: 0 };
+              let averageScore = 0;
+              
+              try {
+                const submissions = await ExerciseService.getExerciseSubmissions(exerciseId);
+                
+                const gradedSubmissions = submissions.filter((s: Submission) => s.graded);
+                const pendingSubmissions = submissions.filter((s: Submission) => !s.graded);
+                
+                submissionStats = {
+                  graded: gradedSubmissions.length,
+                  pending: pendingSubmissions.length,
+                  total: submissions.length
+                };
+                
+                // Calculer le score moyen
+                if (gradedSubmissions.length > 0) {
+                  const totalScore = gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0);
+                  averageScore = Math.round((totalScore / gradedSubmissions.length) * 10) / 10;
+                }
+              } catch (submissionError) {
+                console.warn(`Erreur chargement soumissions exercice ${exerciseId}:`, submissionError);
+              }
+
+              const exerciseWithStats: ExerciseWithStats = {
+                ...fullExercise,
+                courseTitle: course.title || 'Sans titre',
+                courseId: courseId,
+                courseCategory: course.category || 'Non catégorisé',
+                pendingSubmissions: submissionStats.pending,
+                totalSubmissions: submissionStats.total,
+                averageScore,
+                submissionStats,
+                lastUpdated: new Date().toISOString() // Timestamp de mise à jour
+              };
+              
+              allExercises.push(exerciseWithStats);
+            } catch (exerciseError) {
+              console.error(`Erreur traitement exercice dans cours ${courseId}:`, exerciseError);
+              // Fallback: exercice sans stats
+              const fallbackExercise: ExerciseWithStats = {
+                id: exerciseData.id || 0,
+                courseId: courseId,
+                title: exerciseData.title || 'Exercice sans titre',
+                description: exerciseData.description || '',
+                maxScore: exerciseData.maxScore || 0,
+                status: 'PUBLISHED',
+                createdAt: exerciseData.createdAt || new Date().toISOString(),
+                questions: [],
+                version: '1.0',
+                courseTitle: course.title || 'Sans titre',
+                courseCategory: course.category || 'Non catégorisé',
+                pendingSubmissions: 0,
+                totalSubmissions: 0,
+                averageScore: 0,
+                submissionStats: { graded: 0, pending: 0, total: 0 },
+                lastUpdated: new Date().toISOString()
+              };
+              allExercises.push(fallbackExercise);
             }
-          } catch (error) {
-            console.error(`Erreur chargement exercices cours ${courseId}:`, error);
-            toast.error(`Erreur chargement exercices pour le cours: ${course.title}`);
           }
+        } catch (error) {
+          console.error(`Erreur chargement exercices cours ${courseId}:`, error);
+          toast.error(`Erreur chargement exercices pour le cours: ${course.title}`);
         }
-
-        setExercises(allExercises);
-      } catch (error) {
-        console.error('Erreur chargement des exercices:', error);
-        toast.error('Erreur de chargement des exercices');
-      } finally {
-        setLoading(false);
       }
-    };
 
-    loadAllExercises();
+      setExercises(allExercises);
+      setLastRefresh(new Date());
+      
+    } catch (error) {
+      console.error('Erreur chargement des exercices:', error);
+      toast.error('Erreur de chargement des exercices');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [user]);
+
+  // Chargement initial
+  useEffect(() => {
+    if (!user) return;
+    loadAllExercises();
+  }, [user, loadAllExercises]);
+
+  // Rafraîchissement automatique toutes les 30 secondes
+  useEffect(() => {
+    if (!user) return;
+    
+    const intervalId = setInterval(() => {
+      console.log('Auto-refresh des exercices...');
+      loadAllExercises();
+    }, 30000); // 30 secondes
+
+    return () => clearInterval(intervalId);
+  }, [user, loadAllExercises]);
+
+  // Rafraîchissement manuel
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadAllExercises();
+    toast.success('Liste des exercices actualisée');
+  };
+
+  // Mise à jour d'un exercice spécifique (à appeler après notation)
+  const updateExerciseStats = async (exerciseId: number) => {
+    try {
+      const exercise = exercises.find(ex => ex.id === exerciseId);
+      if (!exercise) return;
+
+      // Recharger les stats pour cet exercice
+      const submissions = await ExerciseService.getExerciseSubmissions(exerciseId);
+      
+      const gradedSubmissions = submissions.filter((s: Submission) => s.graded);
+      const pendingSubmissions = submissions.filter((s: Submission) => !s.graded);
+      
+      const submissionStats = {
+        graded: gradedSubmissions.length,
+        pending: pendingSubmissions.length,
+        total: submissions.length
+      };
+      
+      let averageScore = 0;
+      if (gradedSubmissions.length > 0) {
+        const totalScore = gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0);
+        averageScore = Math.round((totalScore / gradedSubmissions.length) * 10) / 10;
+      }
+
+      // Mettre à jour l'exercice dans la liste
+      setExercises(prev => prev.map(ex => 
+        ex.id === exerciseId 
+          ? { 
+              ...ex, 
+              pendingSubmissions: submissionStats.pending,
+              totalSubmissions: submissionStats.total,
+              averageScore,
+              submissionStats,
+              lastUpdated: new Date().toISOString()
+            } 
+          : ex
+      ));
+
+      toast.success('Statistiques mises à jour');
+      
+    } catch (error) {
+      console.error('Erreur mise à jour stats:', error);
+    }
+  };
+
+  // Gérer la navigation avec callback pour rafraîchir
+  const handleManageExercise = (exercise: ExerciseWithStats) => {
+    if (!exercise.id || !exercise.courseId) {
+      toast.error('Erreur: Exercice invalide');
+      return;
+    }
+    
+    // Stocker un callback pour la mise à jour
+    sessionStorage.setItem('refreshOnReturn', 'true');
+    sessionStorage.setItem('exerciseToUpdate', exercise.id.toString());
+    
+    // Rediriger vers la page de soumissions si il y en a
+    if (exercise.pendingSubmissions && exercise.pendingSubmissions > 0) {
+      router.push(`/profdashboard/exercises/${exercise.courseId}/submissions/${exercise.id}`);
+    } else {
+      router.push(`/profdashboard/exercises/${exercise.courseId}/view/${exercise.id}`);
+    }
+  };
+
+  // Vérifier si on doit rafraîchir au retour
+  useEffect(() => {
+    const shouldRefresh = sessionStorage.getItem('refreshOnReturn');
+    const exerciseIdToUpdate = sessionStorage.getItem('exerciseToUpdate');
+    
+    if (shouldRefresh === 'true') {
+      if (exerciseIdToUpdate) {
+        updateExerciseStats(parseInt(exerciseIdToUpdate));
+      } else {
+        loadAllExercises();
+      }
+      
+      // Nettoyer le sessionStorage
+      sessionStorage.removeItem('refreshOnReturn');
+      sessionStorage.removeItem('exerciseToUpdate');
+    }
+  }, [loadAllExercises]);
 
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = 
@@ -193,47 +307,16 @@ export default function AllExercisesPage() {
     return <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />;
   };
 
-  const handleManageExercise = (exercise: ExerciseWithStats) => {
-    // Vérifier que l'ID de l'exercice existe
-    if (!exercise.id || !exercise.courseId) {
-      toast.error('Erreur: Exercice invalide');
-      return;
-    }
+  const formatLastRefresh = () => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - lastRefresh.getTime()) / 1000);
     
-    // Rediriger vers la page de soumissions si il y en a
-    if (exercise.pendingSubmissions && exercise.pendingSubmissions > 0) {
-      router.push(`/profdashboard/exercises/${exercise.courseId}/submissions/${exercise.id}`);
-    } else {
-      // Ou vers la page de gestion de l'exercice
-      router.push(`/profdashboard/exercises/${exercise.courseId}/view/${exercise.id}`);
-    }
+    if (diffInSeconds < 60) return `Il y a ${diffInSeconds}s`;
+    if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)}min`;
+    return `Il y a ${Math.floor(diffInSeconds / 3600)}h`;
   };
 
-  const handleViewStats = (exerciseId?: number) => {
-    if (!exerciseId) {
-      toast.error('Erreur: ID d\'exercice invalide');
-      return;
-    }
-    router.push(`/profdashboard/exercises/${exerciseId}/stats`);
-  };
-
-  const handleEditExercise = (exercise: ExerciseWithStats) => {
-    if (!exercise.id || !exercise.courseId) {
-      toast.error('Erreur: Exercice invalide');
-      return;
-    }
-    router.push(`/profdashboard/exercises/${exercise.courseId}/view/${exercise.id}`);
-  };
-
-  const handleDuplicateExercise = (exercise: ExerciseWithStats) => {
-    if (!exercise.id || !exercise.courseId) {
-      toast.error('Erreur: Exercice invalide');
-      return;
-    }
-    router.push(`/profdashboard/exercises/${exercise.courseId}/view/${exercise.id}/duplicate`);
-  };
-
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
@@ -267,19 +350,32 @@ export default function AllExercisesPage() {
               </p>
             </div>
             
-            {/* Statistiques globales */}
-            <div className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-100 dark:border-gray-700">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                  {exercises.length}
+            <div className="flex items-center gap-4">
+              {/* Bouton rafraîchir */}
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Actualisation...' : 'Actualiser'}
+                <span className="text-xs text-gray-500">{formatLastRefresh()}</span>
+              </button>
+              
+              {/* Statistiques globales */}
+              <div className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-100 dark:border-gray-700">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                    {exercises.length}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Exercices</div>
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Exercices</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {exercises.reduce((sum, ex) => sum + (ex.pendingSubmissions || 0), 0)}
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {exercises.reduce((sum, ex) => sum + (ex.pendingSubmissions || 0), 0)}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">À corriger</div>
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">À corriger</div>
               </div>
             </div>
           </div>
@@ -361,8 +457,9 @@ export default function AllExercisesPage() {
                 {!searchTerm && exercises.length === 0 && (
                   <button
                     onClick={() => router.push('/profdashboard/courses/create')}
-                    className="mt-4 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                    className="mt-4 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
                   >
+                    <PlusCircle className="w-4 h-4" />
                     Créer votre premier cours
                   </button>
                 )}
@@ -370,7 +467,7 @@ export default function AllExercisesPage() {
             ) : (
               filteredExercises.map((exercise) => (
                 <div 
-                  key={exercise.id} 
+                  key={`${exercise.id}-${exercise.lastUpdated}`} 
                   className="p-6 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
                 >
                   <div className="flex items-start justify-between">
@@ -388,6 +485,13 @@ export default function AllExercisesPage() {
                           <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getBadgeColor(exercise.pendingSubmissions || 0)}`}>
                             {getExerciseStatusIcon(exercise.pendingSubmissions || 0)}
                             {exercise.pendingSubmissions} à corriger
+                          </span>
+                        )}
+                        
+                        {/* Indicateur de mise à jour récente */}
+                        {Date.now() - new Date(exercise.lastUpdated).getTime() < 60000 && ( // < 1 minute
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 animate-pulse">
+                            Récemment mis à jour
                           </span>
                         )}
                       </div>
@@ -493,7 +597,7 @@ export default function AllExercisesPage() {
                         
                         {(exercise.totalSubmissions || 0) > 0 && (
                           <button
-                            onClick={() => handleViewStats(exercise.id)}
+                            onClick={() => router.push(`/profdashboard/exercises/${exercise.courseId}/submissions/${exercise.id}`)}
                             className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
                           >
                             <BarChart3 className="w-4 h-4" />
@@ -505,13 +609,13 @@ export default function AllExercisesPage() {
                       {/* Actions secondaires */}
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleEditExercise(exercise)}
+                          onClick={() => router.push(`/profdashboard/exercises/${exercise.courseId}/view/${exercise.id}`)}
                           className="flex-1 px-3 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                           Éditer
                         </button>
                         <button
-                          onClick={() => handleDuplicateExercise(exercise)}
+                          onClick={() => router.push(`/profdashboard/exercises/${exercise.courseId}/duplicate/${exercise.id}`)}
                           className="flex-1 px-3 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                           Dupliquer
@@ -527,18 +631,32 @@ export default function AllExercisesPage() {
         
         {/* Légende */}
         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>Plus de 3 soumissions à corriger</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Statut des soumissions</h4>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span>Plus de 3 soumissions à corriger</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <span>1-3 soumissions à corriger</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span>Toutes les soumissions corrigées</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>1-3 soumissions à corriger</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>Toutes les soumissions corrigées</span>
+            
+            <div>
+              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Mises à jour</h4>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p>• Auto-rafraîchissement toutes les 30 secondes</p>
+                <p>• Cliquez sur "Actualiser" pour forcer le rafraîchissement</p>
+                <p>• Les exercices notés récemment sont mis en évidence</p>
+              </div>
             </div>
           </div>
         </div>

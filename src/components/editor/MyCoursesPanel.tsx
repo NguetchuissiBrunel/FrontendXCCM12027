@@ -1,21 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaTrash, FaSpinner,FaPaperPlane ,FaBook} from 'react-icons/fa';
+import { FaTimes, FaTrash, FaSpinner, FaPaperPlane, FaBook } from 'react-icons/fa';
 import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { toast } from 'react-hot-toast';
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface MyCoursesPanelProps {
   onClose: () => void;
-  onLoadCourse: (content: any, courseId: string, title: string, category: string, description: string) => void;
+  onLoadCourse: (content: any, courseId: string, title: string, category: string, description: string, photoUrl?: string) => void;
 }
 
 const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }) => {
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: number | null }>({
     isOpen: false,
     id: null
@@ -77,7 +87,8 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
       String(course.id),
       course.title || "Sans titre",
       course.category || "Informatique",
-      course.description || ""
+      course.description || "",
+      course.photoUrl
     );
     onClose();
   };
@@ -139,11 +150,8 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
 
       {/* Course List */}
       <div className="flex-1 overflow-y-auto p-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center mt-12 text-gray-500 dark:text-gray-400">
-            <FaSpinner className="animate-spin text-2xl mb-2" />
-            <p className="text-sm">Chargement de vos cours...</p>
-          </div>
+        {loading || globalLoading ? (
+          null
         ) : courses.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-8">
             Aucun cours sauvegardé pour le moment.
@@ -161,7 +169,16 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                   key={course.id}
                   className="group rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow bg-gray-50 dark:bg-gray-700"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 justify-between">
+                    {(course.photoUrl || (course as any).coverImage) && (
+                      <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-600">
+                        <img
+                          src={course.photoUrl || (course as any).coverImage}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900 dark:text-white truncate pr-2">
                         {course.title || "Sans titre"}

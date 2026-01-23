@@ -315,7 +315,7 @@ export default function PricingPage() {
                     href="/demo"
                     className="inline-flex items-center justify-center px-6 py-3 border border-purple-600 dark:border-purple-400 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700 shadow-sm transition-colors"
                   >
-                    Demander une démo
+                    Voir une démo
                   </Link>
                 </div>
               </div>

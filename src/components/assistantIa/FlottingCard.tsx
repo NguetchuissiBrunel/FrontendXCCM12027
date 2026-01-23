@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, Loader2 } from 'lucide-react';
-import { ChatService } from '@/lib2/services/ChatService'; 
+import { MessageCircle, X, Send, Bot, Loader2, Maximize2, Minimize2, Square } from 'lucide-react';
+import { ChatService } from '@/lib2/services/ChatService';
+import { CancelError } from '@/lib2/core/CancelablePromise';
 import { motion } from 'framer-motion'; 
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface Message {
   role: 'assistant' | 'user';
@@ -28,12 +30,24 @@ export default function AIChatWidget() {
     }
   ]);
   const [input, setInput] = useState('');
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
   const [isLoading, setIsLoading] = useState(false);
-  
+
+
   const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
   const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('general');
+  const [position, setPosition] = useState({ x: 20, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState({ x: 20, y: 0 });
+  const [isButtonDragging, setIsButtonDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const buttonDragOffset = useRef({ x: 0, y: 0 });
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const requestRef = useRef<any>(null);
 
   // Détection dynamique de la taille d'écran
   useEffect(() => {
@@ -41,7 +55,8 @@ export default function AIChatWidget() {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (!mobile) {
-        setPosition({ x: window.innerWidth - 380, y: window.innerHeight - 520 });
+        setPosition({ x: 20, y: window.innerHeight - 520 });
+        setButtonPosition({ x: 20, y: window.innerHeight - 70 });
       }
     };
 
@@ -57,29 +72,26 @@ export default function AIChatWidget() {
         const parsedUser = JSON.parse(userData);
         setPhotoUrl(parsedUser.photoUrl || '/images/pp.jpeg');
         setUserName(parsedUser.firstName || '');
-        
+
         // Déterminer le rôle de l'utilisateur
         if (parsedUser.role === 'teacher' || parsedUser.role === 'admin') {
           setUserRole(parsedUser.role);
         }
-        
+
         // Mettre à jour le message de bienvenue personnalisé
-        setMessages([{ 
-          role: 'assistant', 
-          content: `Bonjour ${parsedUser.firstName || ''} ! Je suis votre assistant éducatif XCCM1. Comment puis-je vous aider aujourd'hui ?` 
+        setMessages([{
+          role: 'assistant',
+          content: `Bonjour ${parsedUser.firstName || ''} ! Je suis votre assistant éducatif XCCM1. Comment puis-je vous aider aujourd'hui ?`
         }]);
-      } catch (e) { 
-        console.error('Erreur parsing user data:', e); 
+      } catch (e) {
+        console.error('Erreur parsing user data:', e);
       }
     }
   }, []);
 
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => { 
+
+  useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,12 +100,18 @@ export default function AIChatWidget() {
   }, [messages, isOpen]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMobile) return;
+    if (isMobile || isFullscreen) return;
     const target = e.target as HTMLElement;
     if (target.closest('.chat-header')) {
       setIsDragging(true);
       dragOffset.current = { x: e.clientX - position.x, y: e.clientY - position.y };
     }
+  };
+
+  const handleButtonMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    setIsButtonDragging(true);
+    buttonDragOffset.current = { x: e.clientX - buttonPosition.x, y: e.clientY - buttonPosition.y };
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -102,36 +120,73 @@ export default function AIChatWidget() {
       const newY = Math.max(10, Math.min(e.clientY - dragOffset.current.y, window.innerHeight - 490));
       setPosition({ x: newX, y: newY });
     }
-  }, [isDragging, isMobile]);
+    if (isButtonDragging && !isMobile) {
+      const newX = Math.max(10, Math.min(e.clientX - buttonDragOffset.current.x, window.innerWidth - 70));
+      const newY = Math.max(10, Math.min(e.clientY - buttonDragOffset.current.y, window.innerHeight - 70));
+      setButtonPosition({ x: newX, y: newY });
+    }
+  }, [isDragging, isButtonDragging, isMobile]);
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging || isButtonDragging) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', () => setIsDragging(false));
+      window.addEventListener('mouseup', () => {
+        setIsDragging(false);
+        setIsButtonDragging(false);
+      });
     }
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [isDragging, handleMouseMove]);
+  }, [isDragging, isButtonDragging, handleMouseMove]);
 
-  const handleSend = async () => {
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      prevPositionRef.current = position;
+      setIsFullscreen(true);
+      setIsDragging(false);
+    } else {
+      if (prevPositionRef.current) {
+        setPosition(prevPositionRef.current);
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isFullscreen]);
+
+  const handleStop = () => {
+    if (requestRef.current) {
+      requestRef.current.cancel();
+    }
+  };
+
+  const handleSend = async () => { 
     const trimmedInput = input.trim();
-    if (!trimmedInput || isLoading) return;
-    
+    if (!trimmedInput || globalLoading) return;
+
     // Ajouter le message de l'utilisateur
     setMessages(prev => [...prev, { role: 'user', content: trimmedInput }]);
     setInput('');
-    
+
     // Ajouter un message de chargement
-    setMessages(prev => [...prev, { 
-      role: 'assistant', 
-      content: '', 
-      loading: true 
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '',
+      loading: true
     }]);
-    
-    setIsLoading(true);
+
+    startLoading();
 
     try {
       // Appeler l'API via le service généré
-      const response = await ChatService.postChat({
+      const request = ChatService.postChat({
         question: trimmedInput,
         user_role: userRole,
         discipline: selectedDiscipline as any,
@@ -140,6 +195,8 @@ export default function AIChatWidget() {
         // course_context: "Votre contexte de cours ici",
         // difficulty_level: "intermediate",
       });
+      requestRef.current = request;
+      const response = await request;
 
       // Remplacer le message de chargement par la réponse
       setMessages(prev => {
@@ -174,16 +231,23 @@ export default function AIChatWidget() {
     } catch (error) {
       console.error('Erreur API:', error);
       
-      // Remplacer le message de chargement par un message d'erreur
       setMessages(prev => {
         const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'assistant',
-          content: 'Désolé, une erreur est survenue lors de la communication avec l\'assistant. Veuillez réessayer.',
-        };
+        if (error instanceof CancelError) {
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: 'La réflexion a été arrêtée par l\'utilisateur.',
+          };
+        } else {
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: 'Désolé, une erreur est survenue lors de la communication avec l\'assistant. Veuillez réessayer.',
+          };
+        }
         return newMessages;
       });
     } finally {
+      requestRef.current = null;
       setIsLoading(false);
     }
   };
@@ -211,12 +275,12 @@ export default function AIChatWidget() {
 
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
-      {/* Bouton - Toujours visible en bas à droite */}
-      
+      {/* Bouton flottant draggable */}
       <motion.button
+        onMouseDown={handleButtonMouseDown}
         onClick={() => setIsOpen(!isOpen)}
         animate={{
-          y: [0, -10, 0], 
+          y: [0, -10, 0],
         }}
         transition={{
           duration: 2,
@@ -225,29 +289,38 @@ export default function AIChatWidget() {
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="pointer-events-auto fixed bottom-5 left-5  w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white dark:border-gray-800 hover:bg-purple-700"
+        className="pointer-events-auto fixed w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white dark:border-gray-800 hover:bg-purple-700 cursor-grab active:cursor-grabbing"
+        style={{
+          left: `${buttonPosition.x}px`,
+          top: `${buttonPosition.y}px`,
+          right: 'auto',
+          bottom: 'auto',
+          cursor: isButtonDragging ? 'grabbing' : 'grab'
+        }}
       >
         {isOpen ? <X size={28} /> : <Bot size={28} />}
       </motion.button>
       {isOpen && (
         <div
           className={`pointer-events-auto fixed bg-white dark:bg-gray-900 shadow-2xl flex flex-col border border-purple-200 dark:border-gray-700 transition-all duration-200
-            ${isMobile 
-              ? 'inset-x-2 bottom-20 top-16 rounded-3xl w-auto h-auto' 
-              : 'rounded-2xl w-[400px] h-[550px]'
+            ${isFullscreen
+              ? 'inset-0 rounded-none w-full h-full'
+              : isMobile 
+                ? 'inset-x-2 bottom-20 top-16 rounded-3xl w-auto h-auto' 
+                : 'rounded-2xl w-[400px] h-[550px]'
             }
           `}
-          style={!isMobile ? { 
+          style={!isMobile && !isFullscreen ? { 
             left: `${position.x}px`, 
             top: `${position.y}px`, 
             cursor: isDragging ? 'grabbing' : 'default',
             touchAction: 'none' 
-          } : {}}
+          } : { touchAction: 'none' }}
           onMouseDown={handleMouseDown}
         >
           {/* Header */}
           <div className={`chat-header bg-gradient-to-r from-purple-600 to-purple-500 text-white p-4 flex items-center justify-between select-none
-            ${isMobile ? 'rounded-t-3xl' : 'rounded-t-2xl cursor-grab active:cursor-grabbing'}
+            ${isMobile ? 'rounded-t-3xl' : (isFullscreen ? 'rounded-t-none' : 'rounded-t-2xl cursor-grab active:cursor-grabbing')}
           `}>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -263,12 +336,22 @@ export default function AIChatWidget() {
                 </p>
               </div>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)} 
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center">
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors mr-2"
+                aria-pressed={isFullscreen}
+                title={isFullscreen ? 'Réduire' : 'Agrandir'}
+              >
+                {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              </button>
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Sélecteur de discipline (optionnel) */}
@@ -293,12 +376,11 @@ export default function AIChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-purple-50/20 dark:bg-gray-800/40">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 text-sm shadow-sm border ${
-                  msg.role === 'user'
+                <div className={`max-w-[85%] p-3 text-sm shadow-sm border ${msg.role === 'user'
                     ? 'bg-purple-600 text-white border-purple-500 rounded-2xl rounded-tr-none'
                     : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-purple-100 dark:border-gray-700 rounded-2xl rounded-tl-none'
-                }`}>
-                  {msg.loading ? (
+                  }`}>
+                  {msg.loading || (globalLoading && idx === messages.length - 1 && msg.role === 'assistant' && !msg.content) ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>L'assistant réfléchit...</span>
@@ -306,7 +388,7 @@ export default function AIChatWidget() {
                   ) : (
                     <>
                       <div>{msg.content}</div>
-                      
+
                       {/* Métadonnées de la réponse */}
                       {msg.metadata && (
                         <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -317,11 +399,11 @@ export default function AIChatWidget() {
                           )}
                           {msg.metadata.confidence_score && (
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              <span className="font-medium">Confiance :</span> 
+                              <span className="font-medium">Confiance :</span>
                               {(msg.metadata.confidence_score * 100).toFixed(1)}%
                             </div>
                           )}
-                          
+
                           {/* Questions de suivi */}
                           {msg.metadata.follow_up_questions && msg.metadata.follow_up_questions.length > 0 && (
                             <div className="mt-2">
@@ -360,22 +442,28 @@ export default function AIChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Posez votre question ici..."
-                disabled={isLoading}
+                disabled={globalLoading}
                 className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none text-sm dark:text-white disabled:opacity-50"
               />
-              <button 
-                onClick={handleSend} 
-                disabled={isLoading || !input.trim()}
-                className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors flex items-center justify-center"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
+              {isLoading ? (
+                <button 
+                  onClick={handleStop}
+                  className="bg-red-500 text-white p-3 rounded-2xl shadow-lg active:scale-95 hover:bg-red-600 transition-colors flex items-center justify-center"
+                  title="Arrêter la réflexion"
+                >
+                  <Square size={20} fill="currentColor" />
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSend} 
+                  disabled={!input.trim()}
+                  className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors flex items-center justify-center"
+                >
                   <Send size={20} />
-                )}
-              </button>
+                </button>
+              )}
             </div>
-            
+
             {/* Suggestions rapides */}
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">Essayez :</span>

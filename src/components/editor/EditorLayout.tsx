@@ -48,6 +48,7 @@ import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLoading } from '@/contexts/LoadingContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
 import { ExercicesService } from '@/lib/services/ExercicesService';
@@ -55,6 +56,7 @@ import { EnseignantService } from '@/lib/services/EnseignantService';
 import type { Exercise as ExerciseType, Submission } from '@/types/exercise';
 import EditorEntranceModal from './EditorEntranceModal';
 import CreateCourseModal from '@/components/create-course/page';
+import ImageUploader from '../upload/ImageUploader';
 
 
 interface EditorLayoutProps {
@@ -86,6 +88,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const [courseCategory, setCourseCategory] = useState<string>("Informatique");
   const [customCategory, setCustomCategory] = useState<string>("");
   const [courseDescription, setCourseDescription] = useState<string>("");
+  const [courseImage, setCourseImage] = useState<string | undefined>(undefined);
   const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
   const [isLoadingCourse, setIsLoadingCourse] = useState(false);
 
@@ -106,6 +109,15 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  useEffect(() => {
+    if (isLoadingCourse || exerciseLoading || gradingLoading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [isLoadingCourse, exerciseLoading, gradingLoading, startLoading, stopLoading]);
 
   // Modal state for save/publish confirmation
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -154,7 +166,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   const loadExercises = async () => {
     if (!currentCourseId) return;
-    
+
     try {
       setExerciseLoading(true);
       const resp = await ExercicesService.getExercisesForCourse(currentCourseId);
@@ -196,7 +208,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     const total = exercises.length;
     const published = exercises.filter(e => e.status === 'PUBLISHED').length;
     const pendingGrading = submissions.filter(s => !s.graded).length;
-    
+
     setExerciseStats({ total, published, pendingGrading });
   };
 
@@ -387,7 +399,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       return;
     }
 
-    const jsonContent = editorInstance.getJSON();
+  const jsonContent = editorInstance.getJSON();
 
     try {
       if (currentCourseId) {
@@ -397,6 +409,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           content: jsonContent as any,
           category: courseCategory.trim() || "Informatique",
           description: courseDescription.trim() || "Description du cours",
+          photoUrl: courseImage,
         };
 
         await CourseControllerService.updateCourse(currentCourseId, updateData);
@@ -414,6 +427,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           content: jsonContent as any,
           category: courseCategory.trim() || "Informatique",
           description: courseDescription.trim() || "Description du cours",
+          photoUrl: courseImage,
         };
 
         const response = await CourseControllerService.createCourse(user.id, createData);
@@ -566,7 +580,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             ref={editorRef}
           />
         </main>
-        
+
         {/* RIGHT SECTION - IconBar + Panel */}
         <div className="flex">
           {/* Panel Area - Slides based on activePanel */}
@@ -658,6 +672,19 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
+                      Image de couverture
+                    </label>
+                    <ImageUploader
+                      currentImageUrl={courseImage}
+                      onUploadComplete={(url) => setCourseImage(url)}
+                      onUploadError={(err) => toast.error(err)}
+                      placeholder="Changer l'image de couverture"
+                      className="mt-1"
+                    />
+                  </div>
+
                   {currentCourseId && (
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
@@ -704,7 +731,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {activePanel === 'author' && (
               <MyCoursesPanel
                 onClose={() => setActivePanel(null)}
-                onLoadCourse={(content, courseId, title, category, description) => {
+                onLoadCourse={(content, courseId, title, category, description, photoUrl) => {
                   if (editorInstance) {
                     editorInstance.commands.setContent(content);
                     setCurrentCourseId(Number(courseId));
@@ -712,6 +739,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     setCourseCategory(category);
                     setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(category) ? "" : category);
                     setCourseDescription(description);
+                    setCourseImage(photoUrl);
                   }
                 }}
               />
@@ -772,7 +800,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       <FaTimes />
                     </button>
                   </div>
-                  
+
                   {!currentCourseId ? (
                     <div className="text-center py-8">
                       <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
@@ -787,7 +815,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                         <h3 className="font-medium mb-4 dark:text-white">
                           {editingExercise.id ? 'Modifier l\'exercice' : 'Nouvel exercice'}
                         </h3>
-                        
+
                         <div className="space-y-4">
                           <div>
                             <label className="block text-xs font-medium mb-1 dark:text-gray-300">
@@ -796,25 +824,25 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                             <input
                               type="text"
                               value={editingExercise.title}
-                              onChange={(e) => setEditingExercise({...editingExercise, title: e.target.value})}
+                              onChange={(e) => setEditingExercise({ ...editingExercise, title: e.target.value })}
                               className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                               placeholder="Titre de l'exercice"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-xs font-medium mb-1 dark:text-gray-300">
                               Description
                             </label>
                             <textarea
                               value={editingExercise.description}
-                              onChange={(e) => setEditingExercise({...editingExercise, description: e.target.value})}
+                              onChange={(e) => setEditingExercise({ ...editingExercise, description: e.target.value })}
                               className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                               rows={3}
                               placeholder="Instructions..."
                             />
                           </div>
-                          
+
                           <div className="flex gap-4">
                             <div className="flex-1">
                               <label className="block text-xs font-medium mb-1 dark:text-gray-300">
@@ -823,18 +851,18 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                               <input
                                 type="number"
                                 value={editingExercise.maxScore}
-                                onChange={(e) => setEditingExercise({...editingExercise, maxScore: parseInt(e.target.value)})}
+                                onChange={(e) => setEditingExercise({ ...editingExercise, maxScore: parseInt(e.target.value) })}
                                 className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                               />
                             </div>
-                            
+
                             <div className="flex-1">
                               <label className="block text-xs font-medium mb-1 dark:text-gray-300">
                                 Statut
                               </label>
                               <select
                                 value={editingExercise.status}
-                                onChange={(e) => setEditingExercise({...editingExercise, status: e.target.value as any})}
+                                onChange={(e) => setEditingExercise({ ...editingExercise, status: e.target.value as any })}
                                 className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                               >
                                 <option value="DRAFT">Brouillon</option>
@@ -842,7 +870,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                               </select>
                             </div>
                           </div>
-                          
+
                           <div className="flex gap-2 pt-4">
                             <button
                               onClick={() => setEditingExercise(null)}
@@ -876,19 +904,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                           <div className="text-xs text-gray-600 dark:text-gray-400">À corriger</div>
                         </div>
                       </div>
-                      
+
                       <button
                         onClick={handleCreateExercise}
                         className="w-full mb-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2"
                       >
                         <FaPlus /> Nouvel exercice
                       </button>
-                      
+
                       {exerciseLoading ? (
-                        <div className="text-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                          <p className="text-sm text-gray-500 mt-2">Chargement...</p>
-                        </div>
+                        null
                       ) : exercises.length === 0 ? (
                         <div className="text-center py-8">
                           <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />
@@ -914,11 +939,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                       {exercise.description || 'Pas de description'}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
-                                      <span className={`text-xs px-2 py-1 rounded-full ${
-                                        exercise.status === 'PUBLISHED'
-                                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                      }`}>
+                                      <span className={`text-xs px-2 py-1 rounded-full ${exercise.status === 'PUBLISHED'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                        }`}>
                                         {exercise.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
                                       </span>
                                       <span className="text-xs text-gray-500">
@@ -969,7 +993,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       <FaTimes />
                     </button>
                   </div>
-                  
+
                   {!currentCourseId ? (
                     <div className="text-center py-8">
                       <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
@@ -994,12 +1018,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                 ← Retour
                               </button>
                             </div>
-                            
+
                             {gradingLoading ? (
-                              <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                                <p className="text-sm text-gray-500 mt-2">Chargement des soumissions...</p>
-                              </div>
+                              null
                             ) : submissions.length === 0 ? (
                               <div className="text-center py-8">
                                 <FaList className="text-4xl text-gray-400 mx-auto mb-4" />
@@ -1023,15 +1044,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                           Soumis le {new Date(submission.submittedAt).toLocaleDateString()}
                                         </p>
                                       </div>
-                                      <span className={`text-sm font-medium ${
-                                        submission.graded
-                                          ? 'text-green-600 dark:text-green-400'
-                                          : 'text-orange-600 dark:text-orange-400'
-                                      }`}>
+                                      <span className={`text-sm font-medium ${submission.graded
+                                        ? 'text-green-600 dark:text-green-400'
+                                        : 'text-orange-600 dark:text-orange-400'
+                                        }`}>
                                         {submission.graded ? `${submission.score}/${submission.maxScore}` : 'À noter'}
                                       </span>
                                     </div>
-                                    
+
                                     {!submission.graded && (
                                       <div className="mt-2">
                                         <div className="flex gap-2 mb-2">
@@ -1061,7 +1081,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                         </div>
                                       </div>
                                     )}
-                                    
+
                                     {submission.feedback && (
                                       <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
                                         <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -1080,11 +1100,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                           <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                             Sélectionnez un exercice pour voir les soumissions
                           </p>
-                          
+
                           {exerciseLoading ? (
-                            <div className="text-center py-4">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                            </div>
+                            null
                           ) : exercises.length === 0 ? (
                             <div className="text-center py-8">
                               <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />

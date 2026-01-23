@@ -51,7 +51,7 @@ export default function AllExercisesPage() {
     const loadAllExercises = async () => {
       try {
         setLoading(true);
-        
+
         // 1. Récupérer tous les cours du professeur
         const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
         const coursesData = coursesResponse.data || [];
@@ -150,7 +150,7 @@ export default function AllExercisesPage() {
             toast.error(`Erreur chargement exercices pour le cours: ${course.title}`);
           }
         }
-        
+
         setExercises(allExercises);
       } catch (error) {
         console.error('Erreur chargement des exercices:', error);
@@ -350,7 +350,7 @@ export default function AllExercisesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredExercises.length === 0 ? (
               <div className="p-8 text-center">

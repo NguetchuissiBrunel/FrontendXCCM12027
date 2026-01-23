@@ -70,13 +70,11 @@ export { UserDetailResponse } from './models/UserDetailResponse';
 export type { UserUpdateRequest } from './models/UserUpdateRequest';
 
 export { AdministrationService } from './services/AdministrationService';
-export { AdminService } from './AdminService';
 export { AuthControllerService } from './services/AuthControllerService';
 export { CourseControllerService } from './services/CourseControllerService';
 export { EnrollmentControllerService } from './services/EnrollmentControllerService';
 export { EnseignantService } from './services/EnseignantService';
 export { ExercicesService } from './services/ExercicesService';
 export { GestionDesUtilisateursService } from './services/GestionDesUtilisateursService';
-export { ImageUploadService } from './services/ImageUploadService';
 export { PublicServicesService } from './services/PublicServicesService';
 export { RootControllerService } from './services/RootControllerService';

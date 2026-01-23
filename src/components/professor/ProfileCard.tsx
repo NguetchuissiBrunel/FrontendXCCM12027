@@ -11,6 +11,7 @@ export interface Professor {
   id: string;
   name: string;
   city: string;
+  email?: string;
   university: string;
   grade: string;
   certification: string;
@@ -65,62 +66,81 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
     setIsEditing(false);
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const currentUser = localStorage.getItem('currentUser');
-      if (currentUser) {
-        const userData = JSON.parse(currentUser);
-
-        const updatePayload = {
-          firstName: editedProfessor.name.split(' ')[0],
-          lastName: editedProfessor.name.split(' ').slice(1).join(' '),
-          city: editedProfessor.city,
-          university: editedProfessor.university,
-          grade: editedProfessor.grade,
-          certification: editedProfessor.certification,
-          photoUrl: editedProfessor.photoUrl || defaultAvatar,
-        };
-
-        console.log('[ProfileCard] Envoi de la mise à jour au backend...', {
-          userId: editedProfessor.id,
-          payload: updatePayload
-        });
-
-        const response = await GestionDesUtilisateursService.updateUser1(
-          editedProfessor.id,
-          updatePayload
-        );
-
-        console.log('[ProfileCard] Réponse du backend reçue:', response);
-
-        if (!response.success) {
-          console.error('[ProfileCard] Échec de la mise à jour du profil:', response);
-          throw new Error('Failed to update profile');
-        }
-
-        const updatedUser = {
-          ...userData,
-          ...updatePayload,
-        };
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-
-        setIsEditing(false);
-
-        if (onUpdate) {
-          onUpdate(editedProfessor);
-        }
-
-        toast.success('Profil mis à jour avec succès !');
+const handleSave = async () => {
+  setIsSaving(true);
+  try {
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      const userData = JSON.parse(currentUser);
+      
+      // CRITIQUE: Utiliser userData.id (UUID) au lieu de editedProfessor.id (email)
+      const userId = userData.id; // C'est l'UUID
+      
+      if (!userId) {
+        throw new Error('ID utilisateur non trouvé');
       }
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      toast.error('Erreur lors de la sauvegarde du profil');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
+      const updatePayload = {
+        firstName: editedProfessor.name.split(' ')[0],
+        lastName: editedProfessor.name.split(' ').slice(1).join(' '),
+        city: editedProfessor.city,
+        university: editedProfessor.university,
+        grade: editedProfessor.grade,
+        certification: editedProfessor.certification,
+        photoUrl: editedProfessor.photoUrl || defaultAvatar,
+      };
+
+      console.log('[ProfileCard] Envoi de la mise à jour au backend...', {
+        userId: userId, // UUID maintenant
+        userEmail: editedProfessor.id, // Email pour référence
+        payload: updatePayload
+      });
+
+      // Utiliser l'UUID (userData.id) au lieu de l'email (editedProfessor.id)
+      const response = await GestionDesUtilisateursService.updateUser1(
+        userId, // UUID ici
+        updatePayload
+      );
+
+      console.log('[ProfileCard] Réponse du backend reçue:', response);
+
+      if (!response.success) {
+        console.error('[ProfileCard] Échec de la mise à jour du profil:', response);
+        throw new Error(response.error || 'Failed to update profile');
+      }
+
+      // Mettre à jour le localStorage avec les nouvelles données
+      const updatedUser = {
+        ...userData,
+        ...updatePayload,
+        name: `${updatePayload.firstName} ${updatePayload.lastName}`.trim()
+      };
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+      setIsEditing(false);
+
+      if (onUpdate) {
+        // Mettre à jour aussi l'objet professor localement
+        onUpdate({
+          ...editedProfessor,
+          name: updatedUser.name,
+          city: updatePayload.city,
+          university: updatePayload.university,
+          grade: updatePayload.grade,
+          certification: updatePayload.certification,
+          photoUrl: updatePayload.photoUrl
+        });
+      }
+
+      toast.success('Profil mis à jour avec succès !');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde:', error);
+    toast.error(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde du profil');
+  } finally {
+    setIsSaving(false);
+  }
+};
   const handleChange = (field: keyof Professor, value: string | number) => {
     setEditedProfessor({
       ...editedProfessor,

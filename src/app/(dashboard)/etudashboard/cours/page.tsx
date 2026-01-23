@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { useCourses } from '@/hooks/useCourses';
 import { EnrichedCourse } from '@/types/enrollment';
+import toast from 'react-hot-toast';
 
 import { useLoading } from '@/contexts/LoadingContext';
 
@@ -49,7 +50,7 @@ export default function StudentCourses() {
         const enrollments = await EnrollmentService.getMyEnrollments();
 
         // Joindre les informations des cours
-        const enriched = enrollments.map((enrollment) => {
+        const enriched = (enrollments || []).map((enrollment) => {
           const courseDetail = allCourses.find(c => c.id === enrollment.courseId);
 
           // Si on trouve les détails du cours, on les utilise
@@ -112,6 +113,23 @@ export default function StudentCourses() {
     }
   };
 
+  const handleUnenroll = async (enrollmentId: number) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir vous désinscrire de ce cours ?")) {
+      return;
+    }
+
+    try {
+      await EnrollmentService.unenroll(enrollmentId);
+      toast.success("Désinscription réussie");
+
+      // Recharger les données
+      window.location.reload(); // Simple reload for this page
+    } catch (error: any) {
+      console.error("Erreur lors de la désinscription:", error);
+      toast.error(error.message || "Erreur lors de la désinscription");
+    }
+  };
+
   if (loading || authLoading || coursesLoading || globalLoading) {
     return null;
   }
@@ -163,10 +181,19 @@ export default function StudentCourses() {
                   {course.category}
                 </span>
 
-                {/* Titre */}
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 line-clamp-2">
-                  {course.title}
-                </h3>
+                {/* Titre et Statut */}
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2">
+                    {course.title}
+                  </h3>
+                  {course.enrollment && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${course.enrollment.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                      course.enrollment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                      {course.enrollment.status === 'APPROVED' ? 'Actif' : course.enrollment.status === 'PENDING' ? 'Attente' : course.enrollment.status}
+                    </span>
+                  )}
+                </div>
 
                 {/* Auteur */}
                 <div className="flex items-center mb-4">
@@ -218,10 +245,28 @@ export default function StudentCourses() {
                 {/* Boutons d'action */}
                 <div className="flex gap-2">
                   <Link href={`/courses/${course.id}`} className="flex-1">
-                    <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-semibold transition-colors text-sm">
-                      Voir le cours
+                    <button
+                      disabled={course.enrollment?.status !== 'APPROVED'}
+                      className={`w-full py-2 rounded-lg font-semibold transition-colors text-sm ${course.enrollment?.status === 'APPROVED'
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
+                    >
+                      {course.enrollment?.status === 'APPROVED' ? 'Voir le cours' : 'En attente'}
                     </button>
                   </Link>
+
+                  {course.enrollment && (
+                    <button
+                      onClick={() => handleUnenroll(course.enrollment!.id)}
+                      className="px-3 py-2 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center justify-center"
+                      title="Se désinscrire"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

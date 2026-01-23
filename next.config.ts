@@ -27,6 +27,17 @@ const nextConfig: NextConfig = {
   },
   // images consolidated above
 
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
+  },
+
   // 4. For the "Failed to fetch Inter" error:
   // This is a network issue, not just a config issue. 
   // If you are behind a proxy or have no internet, Next.js cannot reach Google.

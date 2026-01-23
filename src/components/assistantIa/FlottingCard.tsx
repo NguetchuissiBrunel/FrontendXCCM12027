@@ -5,6 +5,7 @@ import { MessageCircle, X, Send, Bot, Loader2, Maximize2, Minimize2, Square } fr
 import { ChatService } from '@/lib2/services/ChatService';
 import { CancelError } from '@/lib2/core/CancelablePromise';
 import { motion } from 'framer-motion'; 
+import { useLoading } from '@/contexts/LoadingContext';
 
 interface Message {
   role: 'assistant' | 'user';
@@ -30,11 +31,23 @@ export default function AIChatWidget() {
   ]);
   const [input, setInput] = useState('');
   const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
   const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('general');
+  const [position, setPosition] = useState({ x: 20, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState({ x: 20, y: 0 });
+  const [isButtonDragging, setIsButtonDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const buttonDragOffset = useRef({ x: 0, y: 0 });
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const requestRef = useRef<any>(null);
 
   // Détection dynamique de la taille d'écran
   useEffect(() => {
@@ -42,8 +55,8 @@ export default function AIChatWidget() {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (!mobile) {
-        setPosition({ x: window.innerWidth - 380, y: window.innerHeight - 520 });
-        setButtonPosition({ x: window.innerWidth - 70, y: window.innerHeight - 70 });
+        setPosition({ x: 20, y: window.innerHeight - 520 });
+        setButtonPosition({ x: 20, y: window.innerHeight - 70 });
       }
     };
 
@@ -76,16 +89,7 @@ export default function AIChatWidget() {
     }
   }, []);
 
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
-  const [isButtonDragging, setIsButtonDragging] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const buttonDragOffset = useRef({ x: 0, y: 0 });
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
-  const requestRef = useRef<any>(null);
+
 
   useEffect(() => {
     if (isOpen) {

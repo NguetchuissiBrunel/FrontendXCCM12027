@@ -91,6 +91,43 @@ static async createExerciseWithContent(
     throw error;
   }
 }
+
+// Dans ExerciseApiWrapper.ts - AJOUTER une méthode pour bien parser les réponses
+static async getSubmissionDetails(submissionId: number): Promise<any> {
+  try {
+    const response = await __request(OpenAPI, {
+      method: 'GET',
+      url: `/api/v1/submissions/${submissionId}`,
+    });
+    
+    const parsedResponse = this.parseApiResponse<any>(response);
+    
+    if (parsedResponse.data && parsedResponse.data.content) {
+      // Essayer de parser le content
+      try {
+        const content = typeof parsedResponse.data.content === 'string' 
+          ? JSON.parse(parsedResponse.data.content)
+          : parsedResponse.data.content;
+        
+        parsedResponse.data.parsedContent = content;
+        
+        // Extraire les réponses si elles existent dans le content
+        if (content.answers && Array.isArray(content.answers)) {
+          parsedResponse.data.answers = content.answers;
+        }
+      } catch (error) {
+        console.warn('Erreur parsing submission content:', error);
+      }
+    }
+    
+    return parsedResponse.data;
+    
+  } catch (error) {
+    console.error('Erreur récupération détails soumission:', error);
+    throw this.formatError(error);
+  }
+}
+
   /**
    * Récupérer le contenu d'un exercice
    */

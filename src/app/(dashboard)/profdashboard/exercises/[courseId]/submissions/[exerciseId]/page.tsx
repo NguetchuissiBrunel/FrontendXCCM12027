@@ -388,7 +388,7 @@ export default function ExerciseSubmissionsPage() {
                   </button>
                   
                   <button
-                    onClick={() => router.push(`/profdashboard/exercises/${courseId}/edit/${exerciseId}`)}
+                    onClick={() => router.push(`/profdashboard/exercises/${courseId}/update/${exerciseId}`)}
                     className="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Edit size={18} />
@@ -621,27 +621,27 @@ export default function ExerciseSubmissionsPage() {
         </div>
       </div>
 
-      {/* Modal de notation */}
-      {showGradingModal && selectedSubmission && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <GradingInterface
-              submission={selectedSubmission}
-              exercise={exercise}
-              onClose={() => {
-                setShowGradingModal(false);
-                setSelectedSubmission(null);
-              }}
-              onGradeComplete={() => {
-                setShowGradingModal(false);
-                setSelectedSubmission(null);
-                refetchSubmissions();
-                toast.success('Soumission notée avec succès');
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {/* Modal de notation - VERSION PLEIN ÉCRAN */}
+{showGradingModal && selectedSubmission && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-0">
+    <div className="absolute inset-0 bg-white dark:bg-gray-900 overflow-hidden">
+      <GradingInterface
+        submission={selectedSubmission}
+        exercise={exercise}
+        onClose={() => {
+          setShowGradingModal(false);
+          setSelectedSubmission(null);
+        }}
+        onGradeComplete={() => {
+          setShowGradingModal(false);
+          setSelectedSubmission(null);
+          refetchSubmissions();
+          toast.success('Soumission notée avec succès');
+        }}
+      />
+    </div>
+  </div>
+)}
     </div>
   );
 }

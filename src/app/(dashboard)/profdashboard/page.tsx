@@ -563,30 +563,7 @@ export default function ProfessorDashboard() {
                 </span>
               )}
             </button>
-
-            {/* Bouton Corriger - UNIQUEMENT si besoin */}
-            {exercisesStats.pendingSubmissions > 0 && (
-              <button
-                onClick={() => {
-                  const courseWithPending = compositions.find(c =>
-                    c.courseStats?.totalExercises && c.courseStats.totalExercises > 0
-                  );
-                  if (courseWithPending) {
-                    router.push(`/profdashboard/exercises/${courseWithPending.id}/grading`);
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-md hover:shadow-lg relative"
-              >
-                <span className="absolute -top-2 -right-2 bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md">
-                  {exercisesStats.pendingSubmissions}
-                </span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Corriger ({exercisesStats.pendingSubmissions})
-              </button>
-            )}
+            
           </div>
         </div>
       </div>

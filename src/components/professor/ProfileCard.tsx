@@ -11,7 +11,7 @@ export interface Professor {
   id: string;
   name: string;
   city: string;
-  email: string;
+  email?: string;
   university: string;
   grade: string;
   certification: string;

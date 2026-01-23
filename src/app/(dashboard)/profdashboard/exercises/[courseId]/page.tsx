@@ -145,7 +145,7 @@ export default function CourseExercisesPage() {
       toast.error(error.message || 'Impossible de charger les exercices');
       setExercises([]);
     } finally {
-      stopLoading();
+      setLoading(false);
     }
   };
 
@@ -251,7 +251,7 @@ export default function CourseExercisesPage() {
     publishedExercises: exercises.filter(e => e.status === 'PUBLISHED').length,
     draftExercises: exercises.filter(e => e.status === 'DRAFT').length,
     closedExercises: exercises.filter(e => e.status === 'CLOSED' || e.status === 'ARCHIVED').length,
-    totalSubmissions: exercises.reduce((sum, e) => sum + (e.submissionCount || e.submissionsCount || 0), 0),
+    totalSubmissions: exercises.reduce((sum, e) => sum + (e.submissionCount || e.submissionCount || 0), 0),
     averageScore: exercises.length > 0 
       ? Math.round(exercises.reduce((sum, e) => sum + (e.averageScore || 0), 0) / exercises.length * 10) / 10
       : 0
@@ -549,7 +549,7 @@ export default function CourseExercisesPage() {
                               </div>
                               <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                                 <Users size={14} />
-                                <span>{exercise.submissionCount || exercise.submissionsCount || 0} soumissions</span>
+                                <span>{exercise.submissionCount || exercise.submissionCount || 0} soumissions</span>
                               </div>
                               <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                                 <FileText size={14} />

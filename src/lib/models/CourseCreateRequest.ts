@@ -13,6 +13,6 @@ export type CourseCreateRequest = {
     content?: JSONContent;
 =======
     content?: Record<string, Record<string, any>>;
->>>>>>> main
+    photoUrl?: string;
 };
 

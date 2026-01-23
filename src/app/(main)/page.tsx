@@ -36,9 +36,9 @@ export default function HomePage() {
       title: course.title,
       description: course.description || course.category || "Cours de qualité",
       image: course.image ? course.image : "/images/Capture.png",
-      views: course?.views || 0,
-      likes: course?.likes || 0,
-      downloads: course?.downloads || 0,
+      viewCount: course?.viewCount || 0,
+      likeCount: course?.likeCount || 0,
+      downloadCount: course?.downloadCount || 0,
       author: {
         name: course.author ? `${course.author.name}` : "Auteur inconnu",
         image: course.author?.image || course.author?.photoUrl || "/images/prof.jpeg",
@@ -229,20 +229,20 @@ export default function HomePage() {
                       {/* Étoiles de notation */}
                       <StarRating rating={course.rating} />
 
-                      {/* Stats: Views, Likes, Downloads */}
+                      {/* Stats: viewCount, likeCount, downloadCount */}
                       <div className="flex space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        <span>{course.views} vues</span>
+                        <span>{course.viewCount} vues</span>
                         <button className="flex items-center space-x-1 hover:text-purple-600 dark:hover:text-purple-400">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
-                          <span>{course.likes}</span>
+                          <span>{course.likeCount}</span>
                         </button>
                         <button className="flex items-center space-x-1 hover:text-purple-600 dark:hover:text-purple-400">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                           </svg>
-                          <span>{course.downloads}</span>
+                          <span>{course.downloadCount}</span>
                         </button>
                       </div>
                     </div>
@@ -275,7 +275,7 @@ export default function HomePage() {
                 name: "Marie Anne",
                 role: "Enseignante en informatique",
                 date: "15 décembre 2024",
-                likes: 24,
+                likeCount: 24,
                 comment: "La plateforme a transformé ma façon d'enseigner. L'interface intuitive et les outils de collaboration m'ont permis de créer des cours plus engageants pour mes étudiants."
               },
               {
@@ -283,7 +283,7 @@ export default function HomePage() {
                 name: "Thomas Bernard",
                 role: "Professeur universitaire",
                 date: "18 décembre 2024",
-                likes: 18,
+                likeCount: 18,
                 comment: "Excellent support pédagogique ! La qualité des ressources et la facilité de partage sont remarquables. Je recommande vivement à tous les enseignants."
               },
               {
@@ -291,7 +291,7 @@ export default function HomePage() {
                 name: "Sophie Laurent",
                 role: "Formatrice professionnelle",
                 date: "20 décembre 2024",
-                likes: 31,
+                likeCount: 31,
                 comment: "Un outil indispensable pour la formation moderne. La possibilité de personnaliser les contenus et de suivre la progression des apprenants est particulièrement appréciable."
               }
             ].map((testimonial, index) => (
@@ -314,7 +314,7 @@ export default function HomePage() {
                   <div className='flex items-center space-x-3'>
                     <span className='flex items-center space-x-1'>
                       <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v5m7 0h-4" /></svg>
-                      <span>{testimonial.likes}</span>
+                      <span>{testimonial.likeCount}</span>
                     </span>
                     <button className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center space-x-1">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>

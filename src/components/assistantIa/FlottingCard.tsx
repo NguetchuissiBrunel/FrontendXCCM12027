@@ -29,8 +29,8 @@ export default function AIChatWidget() {
     }
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
   const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
   const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'student' | 'teacher' | 'admin'>('student');
@@ -59,19 +59,19 @@ export default function AIChatWidget() {
         const parsedUser = JSON.parse(userData);
         setPhotoUrl(parsedUser.photoUrl || '/images/pp.jpeg');
         setUserName(parsedUser.firstName || '');
-        
+
         // Déterminer le rôle de l'utilisateur
         if (parsedUser.role === 'teacher' || parsedUser.role === 'admin') {
           setUserRole(parsedUser.role);
         }
-        
+
         // Mettre à jour le message de bienvenue personnalisé
-        setMessages([{ 
-          role: 'assistant', 
-          content: `Bonjour ${parsedUser.firstName || ''} ! Je suis votre assistant éducatif XCCM1. Comment puis-je vous aider aujourd'hui ?` 
+        setMessages([{
+          role: 'assistant',
+          content: `Bonjour ${parsedUser.firstName || ''} ! Je suis votre assistant éducatif XCCM1. Comment puis-je vous aider aujourd'hui ?`
         }]);
-      } catch (e) { 
-        console.error('Erreur parsing user data:', e); 
+      } catch (e) {
+        console.error('Erreur parsing user data:', e);
       }
     }
   }, []);
@@ -87,7 +87,7 @@ export default function AIChatWidget() {
   const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
   const requestRef = useRef<any>(null);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -165,20 +165,20 @@ export default function AIChatWidget() {
 
   const handleSend = async () => { 
     const trimmedInput = input.trim();
-    if (!trimmedInput || isLoading) return;
-    
+    if (!trimmedInput || globalLoading) return;
+
     // Ajouter le message de l'utilisateur
     setMessages(prev => [...prev, { role: 'user', content: trimmedInput }]);
     setInput('');
-    
+
     // Ajouter un message de chargement
-    setMessages(prev => [...prev, { 
-      role: 'assistant', 
-      content: '', 
-      loading: true 
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '',
+      loading: true
     }]);
-    
-    setIsLoading(true);
+
+    startLoading();
 
     try {
       // Appeler l'API via le service généré
@@ -276,7 +276,7 @@ export default function AIChatWidget() {
         onMouseDown={handleButtonMouseDown}
         onClick={() => setIsOpen(!isOpen)}
         animate={{
-          y: [0, -10, 0], 
+          y: [0, -10, 0],
         }}
         transition={{
           duration: 2,
@@ -294,7 +294,7 @@ export default function AIChatWidget() {
           cursor: isButtonDragging ? 'grabbing' : 'grab'
         }}
       >
-        {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
+        {isOpen ? <X size={28} /> : <Bot size={28} />}
       </motion.button>
       {isOpen && (
         <div
@@ -372,12 +372,11 @@ export default function AIChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-purple-50/20 dark:bg-gray-800/40">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 text-sm shadow-sm border ${
-                  msg.role === 'user'
+                <div className={`max-w-[85%] p-3 text-sm shadow-sm border ${msg.role === 'user'
                     ? 'bg-purple-600 text-white border-purple-500 rounded-2xl rounded-tr-none'
                     : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-purple-100 dark:border-gray-700 rounded-2xl rounded-tl-none'
-                }`}>
-                  {msg.loading ? (
+                  }`}>
+                  {msg.loading || (globalLoading && idx === messages.length - 1 && msg.role === 'assistant' && !msg.content) ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>L'assistant réfléchit...</span>
@@ -385,7 +384,7 @@ export default function AIChatWidget() {
                   ) : (
                     <>
                       <div>{msg.content}</div>
-                      
+
                       {/* Métadonnées de la réponse */}
                       {msg.metadata && (
                         <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -396,11 +395,11 @@ export default function AIChatWidget() {
                           )}
                           {msg.metadata.confidence_score && (
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              <span className="font-medium">Confiance :</span> 
+                              <span className="font-medium">Confiance :</span>
                               {(msg.metadata.confidence_score * 100).toFixed(1)}%
                             </div>
                           )}
-                          
+
                           {/* Questions de suivi */}
                           {msg.metadata.follow_up_questions && msg.metadata.follow_up_questions.length > 0 && (
                             <div className="mt-2">
@@ -439,7 +438,7 @@ export default function AIChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Posez votre question ici..."
-                disabled={isLoading}
+                disabled={globalLoading}
                 className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none text-sm dark:text-white disabled:opacity-50"
               />
               {isLoading ? (
@@ -460,7 +459,7 @@ export default function AIChatWidget() {
                 </button>
               )}
             </div>
-            
+
             {/* Suggestions rapides */}
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">Essayez :</span>

@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { FaUsers, FaChalkboardTeacher, FaBook, FaChartBar, FaUserShield, FaCheckCircle, FaClock, FaTimesCircle, FaFileAlt } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import { AdminService } from '@/lib';
-
 import { useLoading } from '@/contexts/LoadingContext';
 
 const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
@@ -39,7 +38,7 @@ export default function AdminOverview() {
         rejectedEnrollments: 0,
     });
     const [loading, setLoading] = useState(true);
-    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
 
     useEffect(() => {
         if (loading) {
@@ -91,9 +90,7 @@ export default function AdminOverview() {
         fetchStats();
     }, []);
 
-    if (loading || globalLoading) {
-        return null;
-    }
+    if (loading || globalLoading) return null;
 
     return (
         <div className="space-y-8">
@@ -106,19 +103,19 @@ export default function AdminOverview() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StatsCard
                         title="Total Utilisateurs"
-                        value={loading ? "..." : stats.totalUsers}
+                        value={stats.totalUsers}
                         icon={<FaUserShield size={24} />}
                         color="bg-purple-600 shadow-purple-200"
                     />
                     <StatsCard
                         title="Total Étudiants"
-                        value={loading ? "..." : stats.students}
+                        value={stats.students}
                         icon={<FaUsers size={24} />}
                         color="bg-indigo-600 shadow-indigo-200"
                     />
                     <StatsCard
                         title="Total Enseignants"
-                        value={loading ? "..." : stats.teachers}
+                        value={stats.teachers}
                         icon={<FaChalkboardTeacher size={24} />}
                         color="bg-blue-600 shadow-blue-200"
                     />
@@ -134,27 +131,27 @@ export default function AdminOverview() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <StatsCard
                         title="Total Cours"
-                        value={loading ? "..." : stats.totalCourses}
+                        value={stats.totalCourses}
                         icon={<FaBook size={24} />}
                         color="bg-pink-600 shadow-pink-200"
                     />
                     <StatsCard
                         title="Cours Actifs"
-                        value={loading ? "..." : stats.activeCourses}
+                        value={stats.activeCourses}
                         icon={<FaCheckCircle size={24} />}
                         color="bg-green-600 shadow-green-200"
                         subtitle="Publiés et disponibles"
                     />
                     <StatsCard
                         title="Brouillons"
-                        value={loading ? "..." : stats.draftCourses}
+                        value={stats.draftCourses}
                         icon={<FaFileAlt size={24} />}
                         color="bg-yellow-600 shadow-yellow-200"
                         subtitle="En cours de création"
                     />
                     <StatsCard
                         title="Archivés"
-                        value={loading ? "..." : stats.archivedCourses}
+                        value={stats.archivedCourses}
                         icon={<FaTimesCircle size={24} />}
                         color="bg-slate-600 shadow-slate-200"
                         subtitle="Non disponibles"
@@ -171,13 +168,13 @@ export default function AdminOverview() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <StatsCard
                         title="Total Enrollements"
-                        value={loading ? "..." : stats.totalEnrollments}
+                        value={stats.totalEnrollments}
                         icon={<FaChartBar size={24} />}
                         color="bg-violet-600 shadow-violet-200"
                     />
                     <StatsCard
                         title="En Attente"
-                        value={loading ? "..." : stats.pendingEnrollments}
+                        value={stats.pendingEnrollments}
                         icon={<FaClock size={24} />}
                         color="bg-orange-600 shadow-orange-200"
                         subtitle="À valider"
@@ -191,7 +188,7 @@ export default function AdminOverview() {
                     />
                     <StatsCard
                         title="Rejetés"
-                        value={loading ? "..." : stats.rejectedEnrollments}
+                        value={stats.rejectedEnrollments}
                         icon={<FaTimesCircle size={24} />}
                         color="bg-red-600 shadow-red-200"
                         subtitle="Refusés"

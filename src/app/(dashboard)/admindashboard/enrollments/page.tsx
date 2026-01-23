@@ -1,10 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaCheckCircle, FaTimesCircle, FaClock, FaChartBar, FaUserGraduate, FaBook, FaUser } from 'react-icons/fa';
-import { AdminService } from '@/lib';
+import { AdminService } from '@/lib/services/AdminService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-
 import { useLoading } from '@/contexts/LoadingContext';
 
 const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
@@ -27,8 +26,6 @@ const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
 
 export default function AdminEnrollmentsPage() {
     const [enrollments, setEnrollments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [stats, setStats] = useState({
@@ -37,21 +34,16 @@ export default function AdminEnrollmentsPage() {
         approved: 0,
         rejected: 0,
     });
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
 
-    useEffect(() => {
-        if (loading) {
-            startLoading();
-        } else {
-            stopLoading();
-        }
-    }, [loading, startLoading, stopLoading]);
+    // Plus besoin du useEffect local
 
     useEffect(() => {
         fetchEnrollments();
     }, []);
 
     const fetchEnrollments = async () => {
-        setLoading(true);
+        startLoading();
         try {
             const res = await AdminService.getAllEnrollments();
             // L'API retourne { data: [...] } d'après votre AdminService refactorisé
@@ -70,7 +62,7 @@ export default function AdminEnrollmentsPage() {
             toast.error("Erreur lors de la récupération des inscriptions");
             setEnrollments([]);
         } finally {
-            setLoading(false);
+            stopLoading();
         }
     };
 
@@ -159,8 +151,8 @@ export default function AdminEnrollmentsPage() {
 
     const filteredEnrollments = enrollments.filter(e => {
         // Ajout de vérifications de sécurité pour éviter les erreurs si l'objet student ou course est manquant
-        const studentName = `${e.student?.firstName || ''} ${e.student?.lastName || ''}`.toLowerCase();
-        const courseTitle = (e.course?.title || '').toLowerCase();
+        const studentName = `${e?.userFullName || ''} ${e?.userFullName || ''}`.toLowerCase();
+        const courseTitle = (e.course?.courseTitle || '').toLowerCase();
         const matchesSearch = studentName.includes(searchTerm.toLowerCase()) || courseTitle.includes(searchTerm.toLowerCase());
         const matchesFilter = filterStatus === 'ALL' || e.status === filterStatus;
         return matchesSearch && matchesFilter;
@@ -182,28 +174,28 @@ export default function AdminEnrollmentsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <StatsCard
                     title="Total Enrollements"
-                    value={loading ? "..." : stats.total}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.total}
                     icon={<FaChartBar size={24} />}
                     color="bg-purple-600"
                     subtitle="Toutes les demandes"
                 />
                 <StatsCard
                     title="En Attente"
-                    value={loading ? "..." : stats.pending}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.pending}
                     icon={<FaClock size={24} />}
                     color="bg-orange-600"
                     subtitle="À valider"
                 />
                 <StatsCard
                     title="Approuvés"
-                    value={loading ? "..." : stats.approved}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.approved}
                     icon={<FaCheckCircle size={24} />}
                     color="bg-green-600"
                     subtitle="Validés"
                 />
                 <StatsCard
                     title="Rejetés"
-                    value={loading ? "..." : stats.rejected}
+                    value={globalLoading && enrollments.length === 0 ? "..." : stats.rejected}
                     icon={<FaTimesCircle size={24} />}
                     color="bg-red-600"
                     subtitle="Refusés"
@@ -239,7 +231,7 @@ export default function AdminEnrollmentsPage() {
             </div>
 
             {/* Table/Content */}
-            {loading || globalLoading ? (
+            {globalLoading && enrollments.length === 0 ? (
                 null
             ) : filteredEnrollments.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -256,7 +248,6 @@ export default function AdminEnrollmentsPage() {
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Cours</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Date</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Statut</th>
-                                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -274,9 +265,8 @@ export default function AdminEnrollmentsPage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-slate-900 dark:text-white">
-                                                        {enrollment.student?.firstName} {enrollment.student?.lastName}
+                                                        {enrollment.userFullName ? `${enrollment.userFullName} ` : 'Étudiant inconnu'}
                                                     </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{enrollment.student?.email}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -284,8 +274,7 @@ export default function AdminEnrollmentsPage() {
                                             <div className="flex items-center gap-2">
                                                 <FaBook className="text-purple-600 dark:text-purple-400" size={16} />
                                                 <div>
-                                                    <p className="font-medium text-slate-900 dark:text-white">{enrollment.course?.title}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{enrollment.course?.category}</p>
+                                                    <p className="font-medium text-slate-900 dark:text-white">{enrollment?.courseTitle || 'Cours inconnu'}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -296,28 +285,6 @@ export default function AdminEnrollmentsPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             {getStatusBadge(enrollment.status)}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                {enrollment.status === 'PENDING' && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleApprove(enrollment.id)}
-                                                            className="p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                                                            title="Approuver"
-                                                        >
-                                                            <FaCheckCircle size={18} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleReject(enrollment.id)}
-                                                            className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                            title="Rejeter"
-                                                        >
-                                                            <FaTimesCircle size={18} />
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
                                         </td>
                                     </motion.tr>
                                 ))}

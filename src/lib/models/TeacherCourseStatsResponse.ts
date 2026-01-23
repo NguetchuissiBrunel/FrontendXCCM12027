@@ -12,6 +12,9 @@ export type TeacherCourseStatsResponse = {
     courseTitle?: string;
     courseCategory?: string;
     totalEnrolled?: number;
+    pendingEnrollments?: number;
+    acceptedEnrollments?: number;
+    rejectedEnrollments?: number;
     activeStudents?: number;
     participationRate?: number;
     averageProgress?: number;

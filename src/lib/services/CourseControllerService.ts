@@ -51,6 +51,70 @@ export class CourseControllerService {
     }
     /**
      * @param courseId
+     * @returns ApiResponseCourseResponse OK
+     * @throws ApiError
+     */
+    public static incrementViewCount(
+        courseId: number,
+    ): CancelablePromise<ApiResponseCourseResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/courses/{courseId}/view',
+            path: {
+                'courseId': courseId,
+            },
+        });
+    }
+    /**
+     * @param courseId
+     * @returns ApiResponseCourseResponse OK
+     * @throws ApiError
+     */
+    public static incrementLikeCount(
+        courseId: number,
+    ): CancelablePromise<ApiResponseCourseResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/courses/{courseId}/like',
+            path: {
+                'courseId': courseId,
+            },
+        });
+    }
+    /**
+     * @param courseId
+     * @returns ApiResponseCourseResponse OK
+     * @throws ApiError
+     */
+    public static incrementDownloadCount(
+        courseId: number,
+    ): CancelablePromise<ApiResponseCourseResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/courses/{courseId}/download',
+            path: {
+                'courseId': courseId,
+            },
+        });
+    }
+    /**
+     * @param courseId
+     * @returns ApiResponseCourseResponse OK
+     * @throws ApiError
+     */
+    public static decrementLikeCount(
+        courseId: number,
+    ): CancelablePromise<ApiResponseCourseResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/courses/{courseId}/dislike',
+            path: {
+                'courseId': courseId,
+            },
+        });
+    }
+    /**
+     * @param courseId
      * @param requestBody
      * @returns ApiResponseCourseResponse OK
      * @throws ApiError

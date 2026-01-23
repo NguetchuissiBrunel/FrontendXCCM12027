@@ -78,11 +78,13 @@ export class EnrollmentService {
   }
 
   /**
-   * Se désinscrire d'un cours (Non implémenté dans l'API backend actuelle)
+   * Se désinscrire d'un cours
    */
-  static async unenroll(): Promise<void> {
-    // throw new Error("Fonctionnalité non supportée par le backend");
-    console.warn("Unenrollment not supported by backend yet");
+  static async unenroll(enrollmentId: number): Promise<void> {
+    const response = await EnrollmentControllerService.unenroll(enrollmentId);
+    if (response.success === false) {
+      throw new Error(response.message || "Erreur lors de la désinscription");
+    }
   }
 
   /**

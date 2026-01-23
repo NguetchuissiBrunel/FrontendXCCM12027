@@ -9,6 +9,7 @@ export type CourseUpdateRequest = {
     status?: CourseUpdateRequest.status;
     content?: Record<string, Record<string, any>>;
     coverImage?: string;
+    photoUrl?: string;
 };
 export namespace CourseUpdateRequest {
     export enum status {

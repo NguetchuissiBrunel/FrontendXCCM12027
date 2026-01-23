@@ -14,5 +14,8 @@ export type EnrichedCourseResponse = {
     image?: string;
     author?: AuthorDTO;
     enrollment?: EnrollmentDTO;
+    viewCount?: number;
+    likeCount?: number;
+    downloadCount?: number;
 };
 

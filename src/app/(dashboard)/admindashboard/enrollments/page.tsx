@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaCheckCircle, FaTimesCircle, FaClock, FaChartBar, FaUserGraduate, FaBook, FaUser } from 'react-icons/fa';
-import { AdminService } from '@/lib/services/AdminService';
+import { AdministrationService as AdminService } from '@/lib/services/AdministrationService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { useLoading } from '@/contexts/LoadingContext';
@@ -82,7 +82,7 @@ export default function AdminEnrollmentsPage() {
                             toast.dismiss(t.id);
                             try {
                                 // APPEL API RÉEL
-                                await AdminService.approveEnrollment(enrollmentId);
+                                await AdminService.updateEnrollment(enrollmentId, { status: 'APPROVED' } as any);
                                 toast.success("Enrollement approuvé avec succès");
                                 // On rafraîchit la liste pour avoir les données à jour du serveur
                                 fetchEnrollments();
@@ -116,7 +116,7 @@ export default function AdminEnrollmentsPage() {
                             toast.dismiss(t.id);
                             try {
                                 // APPEL API RÉEL
-                                await AdminService.rejectEnrollment(enrollmentId);
+                                await AdminService.updateEnrollment(enrollmentId, { status: 'REJECTED' } as any);
                                 toast.success("Enrollement rejeté");
                                 // On rafraîchit la liste
                                 fetchEnrollments();

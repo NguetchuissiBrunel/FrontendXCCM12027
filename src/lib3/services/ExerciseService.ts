@@ -742,54 +742,72 @@ static async updateExercise(
    * Soumettre un exercice (étudiant)
    */
   static async submitExercise(
-    exerciseId: number,
-    request: SubmitExerciseRequest
-  ): Promise<ApiResponse<Submission>> {
-    try {
-      // Préparer le contenu de soumission
-      const submissionContent = {
-        version: '2.0',
-        answers: (request.answers || []).map(answer => ({
-          questionId: answer.questionId,
-          answer: answer.answer,
-          submittedAt: new Date().toISOString()
-        })),
-        metadata: {
-          submittedAt: new Date().toISOString(),
-          exerciseId: exerciseId,
-          studentId: 'current-student' // À remplacer par l'ID réel
-        }
-      };
-      
-      const backendRequest = {
-        submissionUrl: request.submissionUrl || '',
-        content: JSON.stringify(submissionContent)
-      };
-      
-      const response = await ExercicesService.submitExercise(
+  exerciseId: number,
+  request: SubmitExerciseRequest
+): Promise<ApiResponse<Submission>> {
+  try {
+    // Préparer le contenu de soumission
+    const submissionContent = {
+      version: '2.0',
+      answers: (request.answers || []).map(answer => ({
+        questionId: answer.questionId,
+        answer: answer.answer,
+        submittedAt: new Date().toISOString()
+      })),
+      metadata: {
+        submittedAt: new Date().toISOString(),
+        exerciseId: exerciseId,
+        studentId: 'current-student' // À remplacer par l'ID réel
+      }
+    };
+    
+    // CORRECTION : Envoyer l'objet directement, pas une string JSON
+    const backendRequest = {
+      submissionUrl: request.submissionUrl || '',
+      content: submissionContent  // ✅ Pas de JSON.stringify()
+    };
+    
+    console.log('📤 Soumission exercice - Données envoyées:', {
+      exerciseId,
+      backendRequest,
+      contentType: typeof backendRequest.content
+    });
+    
+    const response = await ExercicesService.submitExercise(
+      exerciseId,
+      backendRequest
+    ) as unknown;
+    
+    console.log('📥 Réponse API soumission:', response);
+    
+    const parsedResponse = this.parseGeneratedResponse<Submission>(response);
+    
+    return {
+      success: parsedResponse.success || false,
+      message: parsedResponse.message || 'Soumission effectuée',
+      data: parsedResponse.data,
+      timestamp: parsedResponse.timestamp || new Date().toISOString()
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Erreur soumission exercice:', error);
+    console.error('Détails erreur:', {
+      message: error.message,
+      stack: error.stack,
+      requestData: {
         exerciseId,
-        backendRequest
-      ) as unknown;
-      
-      const parsedResponse = this.parseGeneratedResponse<Submission>(response);
-      
-      return {
-        success: parsedResponse.success || false,
-        message: parsedResponse.message || 'Soumission effectuée',
-        data: parsedResponse.data,
-        timestamp: parsedResponse.timestamp || new Date().toISOString()
-      };
-      
-    } catch (error: any) {
-      console.error('Erreur soumission exercice:', error);
-      return {
-        success: false,
-        message: error.message || 'Erreur lors de la soumission',
-        errors: { general: [error.message] },
-        timestamp: new Date().toISOString()
-      };
-    }
+        answers: request.answers
+      }
+    });
+    
+    return {
+      success: false,
+      message: error.message || 'Erreur lors de la soumission',
+      errors: { general: [error.message] },
+      timestamp: new Date().toISOString()
+    };
   }
+}
   
   /**
    * Récupérer les soumissions d'un exercice (enseignant)

@@ -4,6 +4,7 @@ import {
   Question, 
   ApiResponse, 
   SubmitExerciseRequest, 
+  SubmissionAnswer,
   ExerciseContent,
   Submission,
   CreateQuestionDto as CreateQuestionInput,
@@ -291,8 +292,14 @@ static normalizeQuestions(questionsArray: any[]): Question[] {
    * Convertit les données API en objet Exercise frontend
    * IMPORTANT: Tous les exercices sont automatiquement publiés (statut = 'PUBLISHED')
    */
- static async transformApiToFrontend(apiData: any): Promise<Exercise> {
-  console.log('🔄 TRANSFORM API - Données reçues:', apiData);
+ // Dans ExerciseService.ts - VÉRIFIER CETTE MÉTHODE
+static async transformApiToFrontend(apiData: any): Promise<Exercise> {
+  console.log('🔄 TRANSFORM API - Données reçues:', {
+    id: apiData.id,
+    title: apiData.title,
+    statusFromAPI: apiData.status,
+    contentPresent: !!apiData.content
+  });
   
   if (!apiData) {
     throw new Error('Données API invalides');
@@ -300,17 +307,20 @@ static normalizeQuestions(questionsArray: any[]): Question[] {
   
   // Extraire le content directement
   const content = apiData.content;
-  console.log('🔄 Content extrait:', content, 'Type:', typeof content);
+  console.log('🔄 Content extrait:', typeof content, content);
   
-  // Parse les questions (la nouvelle parseContent gère tout)
+  // Parse les questions
   const questions = this.parseContent(content);
   console.log(`🔄 ${questions.length} questions parsées`);
   
   const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
   const maxScore = apiData.maxScore || totalPoints || 20;
   
+  // IMPORTANT : Utiliser le statut de l'API, pas toujours 'PUBLISHED'
+  const status = apiData.status || 'PUBLISHED'; // ← Utiliser le statut réel
+  
   // Créer l'exercice
-  return {
+  const transformedExercise: Exercise = {
     id: apiData.id || 0,
     courseId: apiData.courseId || 0,
     title: apiData.title || 'Exercice sans titre',
@@ -320,7 +330,7 @@ static normalizeQuestions(questionsArray: any[]): Question[] {
     createdAt: apiData.createdAt || new Date().toISOString(),
     updatedAt: apiData.updatedAt,
     questions,
-    status: 'PUBLISHED', // Toujours publié
+    status: status, // ← Utiliser le statut de l'API
     publishedAt: apiData.createdAt || new Date().toISOString(),
     version: this.CONTENT_VERSION,
     submissionCount: apiData.submissionCount || apiData.submissionsCount || 0,
@@ -334,6 +344,15 @@ static normalizeQuestions(questionsArray: any[]): Question[] {
     studentScore: apiData.score || apiData.studentScore,
     feedback: apiData.feedback
   };
+  
+  console.log('✅ Exercice transformé:', {
+    id: transformedExercise.id,
+    title: transformedExercise.title,
+    status: transformedExercise.status,
+    questions: transformedExercise.questions.length
+  });
+  
+  return transformedExercise;
 }
   // ============ VALIDATION ============
   
@@ -1076,61 +1095,115 @@ static async updateExerciseDirectWithCourse(
    * Soumettre un exercice (étudiant)
    */
   static async submitExercise(
-    exerciseId: number,
-    request: SubmitExerciseRequest
-  ): Promise<ApiResponse<any>> {
-    try {
-      const submissionContent = {
-        version: '1.0',
-        answers: request.answers || [],
-        metadata: {
-          submittedAt: new Date().toISOString(),
-          exerciseId: exerciseId
-        }
-      };
-      
-      const backendRequest = {
-        submissionUrl: request.submissionUrl || '',
-        content: JSON.stringify(submissionContent)
-      };
-      
-      const response = await ExercicesService.submitExercise(
-        exerciseId,
-        backendRequest
-      ) as unknown;
-      
-      const parsedResponse = this.parseGeneratedResponse(response);
-      
-      return {
-        success: parsedResponse.success || false,
-        message: parsedResponse.message || 'Soumission effectuée',
-        data: parsedResponse.data,
-        timestamp: parsedResponse.timestamp || new Date().toISOString()
-      };
-      
-    } catch (error: any) {
-      console.error('Erreur soumission exercice:', error);
-      return {
-        success: false,
-        message: error.message || 'Erreur lors de la soumission',
-        errors: { general: [error.message] },
-        timestamp: new Date().toISOString()
-      };
-    }
+  exerciseId: number,
+  request: SubmitExerciseRequest
+): Promise<ApiResponse<any>> {
+  try {
+    console.log('=== SUBMIT EXERCISE DEBUG ===');
+    console.log('Exercise ID:', exerciseId);
+    console.log('Request data:', request);
+    
+    // Format correct des réponses pour l'API
+    const submissionContent = {
+      version: '2.0',
+      answers: (request.answers || []).map(answer => ({
+        questionId: answer.questionId,
+        answer: answer.answer,
+        submittedAt: new Date().toISOString()
+      })),
+      metadata: {
+        submittedAt: new Date().toISOString(),
+        exerciseId: exerciseId,
+        studentId: 'current-student' // À remplacer par l'ID réel
+      }
+    };
+    
+    console.log('Submission content:', submissionContent);
+    
+    const backendRequest = {
+      submissionUrl: request.submissionUrl || '',
+      content: JSON.stringify(submissionContent) // ⚠️ Très important : convertir en string
+    };
+    
+    console.log('Backend request:', backendRequest);
+    
+    const response = await ExercicesService.submitExercise(
+      exerciseId,
+      backendRequest
+    ) as unknown;
+    
+    const parsedResponse = this.parseGeneratedResponse(response);
+    
+    console.log('API response:', parsedResponse);
+    
+    return {
+      success: parsedResponse.success || false,
+      message: parsedResponse.message || 'Soumission effectuée',
+      data: parsedResponse.data,
+      timestamp: parsedResponse.timestamp || new Date().toISOString()
+    };
+    
+  } catch (error: any) {
+    console.error('Erreur soumission exercice:', error);
+    console.error('Stack trace:', error.stack);
+    return {
+      success: false,
+      message: error.message || 'Erreur lors de la soumission',
+      errors: { general: [error.message] },
+      timestamp: new Date().toISOString()
+    };
   }
+}
+
   
   /**
    * Récupérer les soumissions d'un exercice (enseignant)
    */
   static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
-    try {
-      const submissions = await ExerciseApiWrapper.getSubmissionsWithAnswers(exerciseId);
+  try {
+    const submissions = await ExerciseApiWrapper.getSubmissionsWithAnswers(exerciseId);
+    
+    if (!Array.isArray(submissions)) {
+      return [];
+    }
+    
+    return submissions.map((sub: any): Submission => {
+      // Extraire les réponses du content si elles existent
+      let answers: SubmissionAnswer[] = [];
       
-      if (!Array.isArray(submissions)) {
-        return [];
+      if (sub.content) {
+        try {
+          const content = typeof sub.content === 'string' ? JSON.parse(sub.content) : sub.content;
+          if (content.answers && Array.isArray(content.answers)) {
+            answers = content.answers.map((ans: any) => ({
+              id: ans.id || Date.now(),
+              questionId: ans.questionId || 0,
+              answer: ans.answer || '',
+              points: ans.points,
+              feedback: ans.feedback,
+              graderComment: ans.graderComment,
+              autoGraded: ans.autoGraded
+            }));
+          }
+        } catch (error) {
+          console.warn('Erreur parsing content soumission:', error);
+        }
       }
       
-      return submissions.map((sub: any): Submission => ({
+      // Si answers est vide mais que sub.answers existe, utiliser celui-ci
+      if (answers.length === 0 && sub.answers && Array.isArray(sub.answers)) {
+        answers = sub.answers.map((ans: any) => ({
+          id: ans.id || Date.now(),
+          questionId: ans.questionId || 0,
+          answer: ans.answer || '',
+          points: ans.points,
+          feedback: ans.feedback,
+          graderComment: ans.graderComment,
+          autoGraded: ans.autoGraded
+        }));
+      }
+      
+      return {
         id: sub.id || 0,
         exerciseId: sub.exerciseId || exerciseId,
         studentId: sub.studentId || '',
@@ -1143,20 +1216,41 @@ static async updateExerciseDirectWithCourse(
         graded: sub.graded || false,
         gradedAt: sub.gradedAt,
         gradedBy: sub.gradedBy,
-        answers: sub.answers || [],
+        answers: answers, // ⚠️ Correction ici
         timeSpent: sub.timeSpent,
         ipAddress: sub.ipAddress,
         userAgent: sub.userAgent,
         lastModifiedAt: sub.lastModifiedAt,
         submissionUrl: sub.submissionUrl,
         exerciseTitle: sub.exerciseTitle
-      }));
-      
-    } catch (error) {
-      console.error('Erreur récupération soumissions:', error);
-      return [];
-    }
+      };
+    });
+    
+  } catch (error) {
+    console.error('Erreur récupération soumissions:', error);
+    return [];
   }
+}
+
+static parseSubmissionContent(content: string | any): { answers: any[] } {
+  try {
+    if (!content) return { answers: [] };
+    
+    let parsedContent;
+    if (typeof content === 'string') {
+      parsedContent = JSON.parse(content);
+    } else {
+      parsedContent = content;
+    }
+    
+    return {
+      answers: parsedContent.answers || []
+    };
+  } catch (error) {
+    console.error('Erreur parsing submission content:', error);
+    return { answers: [] };
+  }
+}
   
   /**
    * Noter une soumission

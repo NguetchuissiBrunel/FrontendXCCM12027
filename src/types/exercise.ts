@@ -28,7 +28,8 @@ export interface Exercise {
   description: string;
   maxScore: number;
   dueDate?: string;
-  
+  courseTitle?: string; // ✅ Nouvelle propriété
+
   // Métadonnées
   status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   createdAt: string;

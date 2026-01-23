@@ -1,12 +1,16 @@
-// app/(dashboard)/etudashboard/page.tsx - Version mise à jour
+// app/(dashboard)/etudashboard/page.tsx - Version corrigée
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { BookOpen, FileText, Award, Clock } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
-import { ExercicesService } from '@/lib/services/ExercicesService';
-import { Submission } from '@/types/exercise'; // ou le chemin correct
+import { ExerciseService } from '@/lib3/services/ExerciseService';
+import { ExercicesService } from '@/lib/services/ExercicesService'; // Pour compatibilité
+import { Submission, Exercise } from '@/types/exercise';
+import { toast } from 'react-hot-toast';
+
 interface User {
   id: string;
   firstName: string;
@@ -20,44 +24,44 @@ interface User {
   city?: string;
 }
 
-/*interface Submission {
-  id: number;
-  exerciseId: number;
-  exerciseTitle: string;
-  score: number;
-  maxScore: number;
-  submittedAt: string;
-  graded: boolean;
-  courseId?: number;
+// Interface étendue pour les exercices du dashboard
+interface DashboardExercise extends Exercise {
   courseTitle?: string;
-}*/
+}
 
-interface Exercise {
+interface DashboardStats {
+  averageScore: number;
+  totalSubmissions: number;
+  pendingExercises: number;
+  completedExercises: number;
+  submissionRate: number;
+}
+
+interface Enrollment {
   id: number;
-  title: string;
-  description: string;
-  dueDate: string;
   courseId: number;
   courseTitle?: string;
-  alreadySubmitted?: boolean;
-  canSubmit?: boolean;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  progress?: number;
 }
 
 export default function StudentHome() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
-  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<Enrollment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [pendingExercises, setPendingExercises] = useState<Exercise[]>([]);
-  const [stats, setStats] = useState({
+  const [pendingExercises, setPendingExercises] = useState<DashboardExercise[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
     averageScore: 0,
     totalSubmissions: 0,
     pendingExercises: 0,
-    completedExercises: 0
+    completedExercises: 0,
+    submissionRate: 0
   });
   const router = useRouter();
 
+  // Gestion du chargement global
   useEffect(() => {
     if (loading) {
       startLoading();
@@ -66,94 +70,149 @@ export default function StudentHome() {
     }
   }, [loading, startLoading, stopLoading]);
 
+  // Charger les données de l'étudiant
   const loadStudentData = async (userData: User) => {
     try {
-      // 1. Charger les inscriptions
-      try {
-        const { EnrollmentService } = await import('@/utils/enrollmentService');
-        const enrollments = await EnrollmentService.getMyEnrollments();
-        setEnrolledCourses(enrollments || []);
-        
-        // 2. Charger les soumissions et exercices pour chaque cours
-        if (enrollments && enrollments.length > 0) {
-          await loadExercisesAndSubmissions(enrollments);
-        }
-      } catch (err) {
-        console.error("Erreur chargement données:", err);
+      startLoading();
+      
+      // 1. Charger les inscriptions aux cours
+      await loadEnrollments();
+      
+      // 2. Charger les soumissions
+      await loadSubmissions();
+      
+      // 3. Charger les exercices en attente
+      if (enrolledCourses.length > 0) {
+        await loadPendingExercises();
       }
+      
     } catch (error) {
       console.error('Erreur lors du chargement des données étudiant:', error);
+      toast.error('Erreur lors du chargement des données');
     } finally {
       setLoading(false);
+      stopLoading();
     }
   };
 
-  const loadExercisesAndSubmissions = async (enrollments: any[]) => {
+  // Charger les inscriptions
+  const loadEnrollments = async () => {
     try {
-      // Charger les soumissions de l'étudiant
-      const mySubmissionsResp = await ExercicesService.getMySubmissions();
-      const mySubmissions = (((mySubmissionsResp as any)?.data) || []) as Submission[];
+      // Utiliser le service d'inscription existant ou simuler
+      const { EnrollmentService } = await import('@/utils/enrollmentService');
+      const enrollments = await EnrollmentService.getMyEnrollments();
+      const approvedEnrollments = (enrollments || []).filter(
+        (e: any) => e.status === 'APPROVED'
+      ) as Enrollment[];
+      setEnrolledCourses(approvedEnrollments);
+    } catch (err) {
+      console.warn("Service d'inscription non disponible, simulation activée:", err);
+      // Simulation pour le développement
+      setEnrolledCourses([
+        { id: 1, courseId: 101, courseTitle: 'Algorithmique', status: 'APPROVED', progress: 65 },
+        { id: 2, courseId: 102, courseTitle: 'Base de données', status: 'APPROVED', progress: 30 }
+      ]);
+    }
+  };
+
+  // Charger les soumissions
+  const loadSubmissions = async () => {
+    try {
+      // Utiliser le service unifié
+      const mySubmissions = await ExerciseService.getMySubmissions();
       setSubmissions(mySubmissions);
-      
-      // Charger les exercices en attente
-      const pending: Exercise[] = [];
-      
-      for (const enrollment of enrollments) {
-        if (enrollment.status === 'APPROVED' && enrollment.courseId) {
-            try {
-            const resp = await ExercicesService.getExercisesForCourse(enrollment.courseId);
-            const exercises = (((resp as any)?.data) || []) as Exercise[];
+      calculateStats(mySubmissions);
+    } catch (error) {
+      console.error('Erreur chargement soumissions:', error);
+      toast.error('Impossible de charger les soumissions');
+    }
+  };
 
-            // Filtrer les exercices non soumis ou dont la date d'échéance n'est pas passée
-            const now = new Date();
-            const pendingForCourse = exercises.filter((exercise: Exercise) => {
-              const dueDate = new Date(exercise.dueDate);
-              const alreadySubmitted = mySubmissions.some((s: Submission) => s.exerciseId === exercise.id);
-              return !alreadySubmitted && dueDate > now;
-            });
+  // Calculer les statistiques
+  const calculateStats = (submissionsList: Submission[]) => {
+    const gradedSubmissions = submissionsList.filter(s => s.graded);
+    const totalScore = gradedSubmissions.reduce((sum, s) => {
+      return sum + (s.score || 0);
+    }, 0);
+    
+    const totalMaxScore = gradedSubmissions.reduce((sum, s) => {
+      return sum + (s.maxScore || 0);
+    }, 0);
+    
+    const averageScore = gradedSubmissions.length > 0 && totalMaxScore > 0
+      ? (totalScore / totalMaxScore) * 100
+      : 0;
 
-            pending.push(...pendingForCourse.map((ex: Exercise) => ({
-              ...ex,
+    setStats(prev => ({
+      ...prev,
+      averageScore: Math.round(averageScore),
+      totalSubmissions: submissionsList.length,
+      completedExercises: gradedSubmissions.length
+    }));
+  };
+
+  // Charger les exercices en attente
+  const loadPendingExercises = async () => {
+    try {
+      const allExercises: DashboardExercise[] = [];
+      const now = new Date();
+
+      // Pour chaque cours, charger les exercices
+      for (const enrollment of enrolledCourses) {
+        try {
+          const exercises = await ExerciseService.getExercisesForCourse(enrollment.courseId);
+          
+          // Filtrer les exercices non soumis et non échus
+          const pendingForCourse = exercises.filter((exercise: Exercise) => {
+            const dueDate = exercise.dueDate ? new Date(exercise.dueDate) : null;
+            const alreadySubmitted = submissions.some(s => s.exerciseId === exercise.id);
+            
+            // Vérifier les permissions de soumission
+            const canSubmit = dueDate ? dueDate > now : true;
+            
+            return !alreadySubmitted && canSubmit;
+          });
+
+          // Ajouter les informations du cours
+          pendingForCourse.forEach(exercise => {
+            const dashboardExercise: DashboardExercise = {
+              ...exercise,
               courseTitle: enrollment.courseTitle || `Cours #${enrollment.courseId}`
-            })));
-          } catch (error) {
-            console.error(`Erreur chargement exercices cours ${enrollment.courseId}:`, error);
-          }
+            };
+            allExercises.push(dashboardExercise);
+          });
+
+        } catch (error) {
+          console.error(`Erreur chargement exercices cours ${enrollment.courseId}:`, error);
         }
       }
-      
-      setPendingExercises(pending);
-      
-      // Calculer les statistiques
-      const gradedSubmissions = mySubmissions.filter((s: Submission) => s.graded) as Submission[];
-      const averageScore = gradedSubmissions.length > 0
-        ? gradedSubmissions.reduce((sum: number, s: Submission) => sum + (s.score / s.maxScore * 100), 0) / gradedSubmissions.length
-        : 0;
-      
-      setStats({
-        averageScore: Math.round(averageScore),
-        totalSubmissions: mySubmissions.length,
-        pendingExercises: pending.length,
-        completedExercises: gradedSubmissions.length
-      });
-      
+
+      setPendingExercises(allExercises);
+      setStats(prev => ({
+        ...prev,
+        pendingExercises: allExercises.length
+      }));
+
     } catch (error) {
-      console.error('Erreur chargement exercices et soumissions:', error);
+      console.error('Erreur chargement exercices en attente:', error);
+      toast.error('Impossible de charger les exercices en attente');
     }
   };
 
+  // Chargement initial
   useEffect(() => {
     const loadData = async () => {
-      const currentUser = localStorage.getItem('currentUser');
-
-      if (!currentUser) {
-        router.push('/login');
-        return;
-      }
-
       try {
-        const userData = JSON.parse(currentUser);
+        const currentUser = localStorage.getItem('currentUser');
 
+        if (!currentUser) {
+          router.push('/login');
+          return;
+        }
+
+        const userData = JSON.parse(currentUser) as User;
+
+        // Vérifier le rôle
         if (userData.role !== 'student') {
           router.push('/profdashboard');
           return;
@@ -171,18 +230,27 @@ export default function StudentHome() {
     loadData();
   }, [router]);
 
+  // Gestion des actions
   const handleStartExercise = (exerciseId: number) => {
     router.push(`/etudashboard/exercises/${exerciseId}/submit`);
   };
 
   const handleViewSubmission = (submissionId: number) => {
-    // À implémenter : page de détail de soumission
-    console.log('Voir soumission:', submissionId);
+    router.push(`/etudashboard/submissions/${submissionId}`);
   };
 
+  const handleViewCourseExercises = (courseId: number) => {
+    router.push(`/etudashboard/courses/${courseId}/exercises`);
+  };
+
+  const handleViewExercise = (exerciseId: number) => {
+    router.push(`/etudashboard/exercises/${exerciseId}`);
+  };
+
+  // Composant de chargement
   if (loading || globalLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des données...</p>
@@ -205,12 +273,12 @@ export default function StudentHome() {
         activeTab="accueil"
       />
 
-      <main className="flex-1 p-8">
-        {/* Welcome Message avec statistiques */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+      <main className="flex-1 p-4 md:p-8">
+        {/* Section de bienvenue et statistiques */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="max-w-3xl">
-              <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+              <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
                 Bienvenue {user.firstName} !
               </h1>
               <p className="text-gray-600 dark:text-gray-300 italic">
@@ -219,124 +287,120 @@ export default function StudentHome() {
             </div>
             
             {/* Statistiques rapides */}
-            <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 min-w-[250px]">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
                     {stats.averageScore}%
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">Moyenne</div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Moyenne</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
                     {stats.totalSubmissions}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">Soumissions</div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Soumissions</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
+                  <div className="text-xl md:text-2xl font-bold text-red-600">
                     {stats.pendingExercises}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">Exercices en attente</div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">En attente</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-xl md:text-2xl font-bold text-green-600">
                     {stats.completedExercises}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">Terminés</div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Terminés</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           {/* Colonne gauche : Mes Cours */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                <BookOpen className="text-purple-600" />
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <BookOpen className="text-purple-600 w-5 h-5 md:w-6 md:h-6" />
                 Mes Cours ({enrolledCourses.length})
               </h2>
               <button
                 onClick={() => router.push('/bibliotheque')}
-                className="text-purple-600 hover:text-purple-700 font-medium hover:underline"
+                className="text-purple-600 hover:text-purple-700 font-medium hover:underline text-sm md:text-base"
               >
                 Explorer la bibliothèque →
               </button>
             </div>
 
             {enrolledCourses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {enrolledCourses.map((enrollment) => (
-                  <div key={enrollment.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all">
-                    <div className="h-32 bg-gray-200 dark:bg-gray-700 relative">
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                        <BookOpen className="w-12 h-12 opacity-50" />
+                  <div 
+                    key={enrollment.id} 
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all"
+                  >
+                    <div className="h-24 md:h-32 bg-gradient-to-r from-purple-500 to-blue-500 dark:from-purple-600 dark:to-blue-600 relative">
+                      <div className="absolute inset-0 flex items-center justify-center text-white opacity-80">
+                        <BookOpen className="w-8 h-8 md:w-12 md:h-12" />
                       </div>
                     </div>
-                    <div className="p-5">
+                    <div className="p-4 md:p-5">
                       <div className="flex justify-between items-start mb-2">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${enrollment.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                          enrollment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                          {enrollment.status === 'APPROVED' ? 'Actif' : enrollment.status === 'PENDING' ? 'En attente' : enrollment.status}
+                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          Actif
                         </span>
                         <span className="text-xs text-gray-500">
                           Cours #{enrollment.courseId}
                         </span>
                       </div>
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2 line-clamp-1">
-                        Cours #{enrollment.courseId}
+                      <h3 className="font-bold text-base md:text-lg text-gray-900 dark:text-white mb-2 line-clamp-1">
+                        {enrollment.courseTitle || `Cours #${enrollment.courseId}`}
                       </h3>
 
-                      {enrollment.status === 'APPROVED' && (
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex justify-between text-xs mb-1 text-gray-500">
-                              <span>Progression</span>
-                              <span>{enrollment.progress || 0}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                              <div
-                                className="bg-purple-600 h-1.5 rounded-full transition-all"
-                                style={{ width: `${enrollment.progress || 0}%` }}
-                              ></div>
-                            </div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex justify-between text-xs mb-1 text-gray-500">
+                            <span>Progression</span>
+                            <span>{enrollment.progress || 0}%</span>
                           </div>
-                          
-                          {/* Bouton pour voir les exercices du cours */}
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                            <div
+                              className="bg-purple-600 h-1.5 rounded-full transition-all"
+                              style={{ width: `${enrollment.progress || 0}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
                           <button
-                            onClick={() => {
-                              // Rediriger vers la page des exercices du cours
-                              router.push(`/etudashboard/courses/${enrollment.courseId}/exercises`);
-                            }}
-                            className="w-full py-2 text-sm border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+                            onClick={() => handleViewCourseExercises(enrollment.courseId)}
+                            className="flex-1 py-2 text-xs md:text-sm border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                           >
                             Voir les exercices
                           </button>
+                          <button
+                            onClick={() => router.push(`/courses/${enrollment.courseId}`)}
+                            className="flex-1 py-2 text-xs md:text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                          >
+                            Continuer
+                          </button>
                         </div>
-                      )}
-
-                      <button
-                        onClick={() => router.push(`/courses/${enrollment.courseId}`)}
-                        disabled={enrollment.status !== 'APPROVED'}
-                        className={`mt-4 w-full py-2 rounded-lg font-medium transition-colors ${enrollment.status === 'APPROVED'
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                      >
-                        {enrollment.status === 'APPROVED' ? 'Continuer' : 'En attente'}
-                      </button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-12 text-center border border-dashed border-gray-300 dark:border-gray-700">
-                <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Aucun cours pour le moment</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">Vous n'êtes inscrit à aucun cours.</p>
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 md:p-12 text-center border border-dashed border-gray-300 dark:border-gray-700">
+                <BookOpen className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg md:text-xl font-medium text-gray-900 dark:text-white mb-2">
+                  Aucun cours pour le moment
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  Vous n'êtes inscrit à aucun cours.
+                </p>
                 <button
                   onClick={() => router.push('/bibliotheque')}
                   className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
@@ -350,18 +414,24 @@ export default function StudentHome() {
           {/* Colonne droite : Exercices et Soumissions */}
           <div className="space-y-6">
             {/* Exercices en attente */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                  <Clock className="text-red-500" />
-                  Exercices en attente ({pendingExercises.length})
+                  <Clock className="text-red-500 w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-sm md:text-base">Exercices en attente</span>
+                  <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">
+                    {pendingExercises.length}
+                  </span>
                 </h3>
               </div>
               
               {pendingExercises.length > 0 ? (
                 <div className="space-y-3">
                   {pendingExercises.slice(0, 3).map((exercise) => (
-                    <div key={exercise.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div 
+                      key={exercise.id} 
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-medium text-sm text-gray-800 dark:text-white line-clamp-1">
@@ -370,17 +440,27 @@ export default function StudentHome() {
                           <p className="text-xs text-gray-500 mt-1">
                             {exercise.courseTitle}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Échéance: {new Date(exercise.dueDate).toLocaleDateString()}
-                          </p>
+                          {exercise.dueDate && (
+                            <p className="text-xs text-red-600 mt-1">
+                              Échéance: {new Date(exercise.dueDate).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleStartExercise(exercise.id)}
-                        className="mt-2 w-full py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                      >
-                        Commencer
-                      </button>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => handleViewExercise(exercise.id)}
+                          className="flex-1 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          Voir
+                        </button>
+                        <button
+                          onClick={() => handleStartExercise(exercise.id)}
+                          className="flex-1 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                        >
+                          Commencer
+                        </button>
+                      </div>
                     </div>
                   ))}
                   
@@ -395,7 +475,7 @@ export default function StudentHome() {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                  <FileText className="w-6 h-6 md:w-8 md:h-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Aucun exercice en attente
                   </p>
@@ -404,11 +484,11 @@ export default function StudentHome() {
             </div>
 
             {/* Dernières soumissions */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                  <Award className="text-green-500" />
-                  Dernières soumissions
+                  <Award className="text-green-500 w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-sm md:text-base">Dernières soumissions</span>
                 </h3>
                 <button
                   onClick={() => router.push('/etudashboard/submissions')}
@@ -423,20 +503,22 @@ export default function StudentHome() {
                   {submissions.slice(0, 3).map((submission) => (
                     <div key={submission.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                       <div className="flex justify-between items-start">
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-medium text-sm text-gray-800 dark:text-white line-clamp-1">
-                            {submission.exerciseTitle}
+                            {submission.exerciseTitle || 'Exercice'}
                           </h4>
                           <p className="text-xs text-gray-500 mt-1">
-                            Soumis le {new Date(submission.submittedAt).toLocaleDateString()}
+                            Soumis le {new Date(submission.submittedAt).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
-                        <div className={`text-sm font-bold ${submission.graded ? 
-                          (submission.score / submission.maxScore >= 0.5 ? 'text-green-600' : 'text-red-600') : 
-                          'text-yellow-600'
+                        <div className={`text-sm font-bold ml-2 ${
+                          submission.graded ? 
+                            ((submission.score || 0) / (submission.maxScore || 1) >= 0.5 ? 
+                              'text-green-600' : 'text-red-600') : 
+                            'text-yellow-600'
                         }`}>
                           {submission.graded ? 
-                            `${submission.score}/${submission.maxScore}` : 
+                            `${submission.score || 0}/${submission.maxScore || 0}` : 
                             'En attente'
                           }
                         </div>
@@ -444,13 +526,13 @@ export default function StudentHome() {
                       
                       {submission.graded && submission.feedback && (
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
-                          Feedback: {submission.feedback}
+                          {submission.feedback}
                         </p>
                       )}
                       
                       <button
                         onClick={() => handleViewSubmission(submission.id)}
-                        className="mt-2 w-full py-1 text-sm border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        className="mt-2 w-full py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
                         Voir détails
                       </button>
@@ -459,13 +541,13 @@ export default function StudentHome() {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                  <FileText className="w-6 h-6 md:w-8 md:h-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Aucune soumission
                   </p>
                   <button
                     onClick={() => router.push('/etudashboard/exercises')}
-                    className="mt-2 text-sm text-purple-600 hover:text-purple-700"
+                    className="mt-2 text-xs text-purple-600 hover:text-purple-700"
                   >
                     Voir les exercices disponibles
                   </button>
@@ -474,18 +556,20 @@ export default function StudentHome() {
             </div>
 
             {/* Actions rapides */}
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-5 border border-purple-200 dark:border-gray-700">
-              <h3 className="font-bold text-gray-800 dark:text-white mb-3">Actions rapides</h3>
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 md:p-5 border border-purple-200 dark:border-gray-700">
+              <h3 className="font-bold text-gray-800 dark:text-white mb-3 text-sm md:text-base">
+                Actions rapides
+              </h3>
               <div className="space-y-2">
                 <button
                   onClick={() => router.push('/etudashboard/exercises')}
-                  className="w-full py-2 text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  className="w-full py-2 text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
                 >
                   Voir tous les exercices
                 </button>
                 <button
                   onClick={() => router.push('/etudashboard/submissions')}
-                  className="w-full py-2 text-center border border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                  className="w-full py-2 text-center border border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors text-sm"
                 >
                   Mes soumissions
                 </button>
@@ -497,7 +581,7 @@ export default function StudentHome() {
                       router.push('/etudashboard/exercises');
                     }
                   }}
-                  className="w-full py-2 text-center bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  className="w-full py-2 text-center bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={pendingExercises.length === 0}
                 >
                   {pendingExercises.length > 0 ? 

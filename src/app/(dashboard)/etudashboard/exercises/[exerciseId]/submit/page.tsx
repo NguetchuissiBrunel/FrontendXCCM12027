@@ -1,11 +1,10 @@
-// src/app/(dashboard)/etudashboard/exercises/[exerciseId]/submit/page.tsx - VERSION CORRIGÉE
+// src/app/(dashboard)/etudashboard/exercises/[exerciseId]/submit/page.tsx - VERSION UNIFIÉE
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ExerciseService } from '@/lib3/services/ExerciseService';
-import type { Exercise, Question } from '@/types/exercise';
-import { ArrowLeft, Clock, FileText, CheckCircle } from 'lucide-react';
+import { useExercise, useSubmitExercise, useSubmissionPermission } from '@/hooks/useExercise';
+import { ArrowLeft, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function SubmitExercisePage() {
@@ -13,70 +12,75 @@ export default function SubmitExercisePage() {
   const router = useRouter();
   const exerciseId = parseInt(params.exerciseId as string);
   
-  const [exercise, setExercise] = useState<Exercise | null>(null);
+  // Utiliser les nouveaux hooks
+  const { 
+    exercise, 
+    isLoading: exerciseLoading, 
+    error: exerciseError,
+    refetch: refetchExercise 
+  } = useExercise(exerciseId);
+  
+  const { 
+    mutate: submitExercise, 
+    isPending: isSubmitting 
+  } = useSubmitExercise();
+  
+  const {
+    canSubmit,
+    reason,
+    isLoading: permissionLoading,
+    check: checkPermission
+  } = useSubmissionPermission(exerciseId);
+  
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [answeredCount, setAnsweredCount] = useState(0);
   
+  // Charger l'exercice et vérifier les permissions
   useEffect(() => {
-    loadExercise();
-  }, [exerciseId]);
+    if (exerciseId) {
+      refetchExercise();
+      checkPermission();
+    }
+  }, [exerciseId, refetchExercise, checkPermission]);
   
+  // Initialiser les réponses quand l'exercice est chargé
   useEffect(() => {
-    // Mettre à jour le compteur de réponses
-    const count = Object.values(answers).filter(v => v.trim()).length;
-    setAnsweredCount(count);
-  }, [answers]);
-  
-  const loadExercise = async () => {
-    try {
-      setLoading(true);
-      
-      const exerciseData = await ExerciseService.getExerciseDetails(exerciseId);
-      
-      if (!exerciseData) {
-        toast.error('Exercice non trouvé');
-        router.push('/etudashboard');
-        return;
-      }
-      
-      // Vérifier si l'exercice peut être soumis
-      const permission = await ExerciseService.checkSubmissionPermission(exerciseId);
-      
-      if (!permission.canSubmit && permission.reason) {
-        toast.error(permission.reason);
-        router.push('/etudashboard/exercises');
-        return;
-      }
-      
-      setExercise(exerciseData);
-      
-      // Initialiser les réponses vides
+    if (exercise) {
       const initialAnswers: Record<number, string> = {};
-      exerciseData.questions?.forEach((q: Question) => {
-        initialAnswers[q.id] = '';
+      exercise.questions?.forEach((q) => {
+        initialAnswers[q.id] = q.studentAnswer || '';
       });
       setAnswers(initialAnswers);
-      
-    } catch (error) {
-      console.error('Erreur chargement exercice:', error);
-      toast.error('Impossible de charger l\'exercice');
-      router.push('/etudashboard');
-    } finally {
-      setLoading(false);
+    }
+  }, [exercise]);
+  
+  // Mettre à jour le compteur de réponses
+  useEffect(() => {
+    if (exercise) {
+      const count = Object.values(answers).filter(v => v.trim()).length;
+      setAnsweredCount(count);
+    }
+  }, [answers, exercise]);
+  
+  // Vérifier les permissions de soumission
+  useEffect(() => {
+    if (!permissionLoading && !canSubmit && reason) {
+      toast.error(reason);
+      router.push('/etudashboard/exercises');
+    }
+  }, [canSubmit, reason, permissionLoading, router]);
+  
+  const handleAnswerChange = (questionId: number, value: string) => {
+    if (!exercise?.alreadySubmitted) {
+      setAnswers(prev => ({
+        ...prev,
+        [questionId]: value
+      }));
     }
   };
   
-  const handleAnswerChange = (questionId: number, value: string) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: value
-    }));
-  };
-  
   const handleSubmit = async () => {
-    if (!exercise) return;
+    if (!exercise || exercise.alreadySubmitted) return;
     
     // Validation
     const unansweredQuestions: number[] = [];
@@ -92,35 +96,41 @@ export default function SubmitExercisePage() {
     }
     
     try {
-      setSubmitting(true);
-      
       // Préparer les réponses
-      const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
-        questionId: parseInt(questionId),
-        answer: answer.trim()
-      }));
+      const formattedAnswers = Object.entries(answers)
+        .filter(([_, answer]) => answer.trim())
+        .map(([questionId, answer]) => ({
+          questionId: parseInt(questionId),
+          answer: answer.trim()
+        }));
       
       // Soumettre l'exercice
-      const result = await ExerciseService.submitExercise(exerciseId, {
-        answers: formattedAnswers
-      });
+      const result = await submitExercise(
+        exerciseId,
+        formattedAnswers
+      );
       
       if (result.success) {
-        toast.success('Exercice soumis avec succès !');
-        router.push('/etudashboard/submissions');
+        toast.success('✅ Exercice soumis avec succès !');
+        
+        // Rafraîchir les données
+        await refetchExercise();
+        
+        // Rediriger après un court délai
+        setTimeout(() => {
+          router.push('/etudashboard/submissions');
+        }, 1500);
       } else {
-        throw new Error(result.message);
+        toast.error(result.message || 'Erreur lors de la soumission');
       }
       
     } catch (error: any) {
       console.error('Erreur soumission:', error);
       toast.error(error.message || 'Erreur lors de la soumission');
-    } finally {
-      setSubmitting(false);
     }
   };
   
-  if (loading) {
+  if (exerciseLoading || permissionLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
         <div className="text-center">
@@ -131,17 +141,49 @@ export default function SubmitExercisePage() {
     );
   }
   
-  if (!exercise) {
+  if (exerciseError || !exercise) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Exercice non trouvé</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            L'exercice demandé n'existe pas ou vous n'y avez pas accès.
+          </p>
           <button
             onClick={() => router.push('/etudashboard')}
             className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             Retour au dashboard
           </button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (exercise.alreadySubmitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Exercice déjà soumis</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Vous avez déjà soumis cet exercice le {new Date().toLocaleDateString('fr-FR')}.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/etudashboard/submissions')}
+              className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Voir ma soumission
+            </button>
+            <button
+              onClick={() => router.push('/etudashboard/exercises')}
+              className="w-full px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+            >
+              Voir d'autres exercices
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -174,7 +216,7 @@ export default function SubmitExercisePage() {
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-3 py-1.5 rounded-full">
                 <Clock size={16} />
-                <span>Échéance: {ExerciseService.formatDueDate(exercise.dueDate)}</span>
+                <span>Échéance: {new Date(exercise.dueDate || '').toLocaleDateString('fr-FR')}</span>
               </div>
               
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
@@ -224,14 +266,14 @@ export default function SubmitExercisePage() {
                       {index + 1}
                     </div>
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      {question.questionType === 'TEXT' && 'Réponse libre'}
-                      {question.questionType === 'MULTIPLE_CHOICE' && 'Choix multiple'}
-                      {question.questionType === 'CODE' && 'Code'}
+                      {question.type === 'TEXT' && 'Réponse libre'}
+                      {question.type === 'MULTIPLE_CHOICE' && 'Choix multiple'}
+                      {question.type === 'CODE' && 'Code'}
                     </span>
                   </div>
                   
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                    {question.question}
+                    {question.text}
                   </h3>
                 </div>
                 
@@ -241,7 +283,7 @@ export default function SubmitExercisePage() {
               </div>
               
               {/* Zone de réponse */}
-              {question.questionType === 'TEXT' && (
+              {question.type === 'TEXT' && (
                 <textarea
                   value={answers[question.id] || ''}
                   onChange={(e) => handleAnswerChange(question.id, e.target.value)}
@@ -250,7 +292,7 @@ export default function SubmitExercisePage() {
                 />
               )}
               
-              {question.questionType === 'MULTIPLE_CHOICE' && question.options && (
+              {question.type === 'MULTIPLE_CHOICE' && question.options && (
                 <div className="space-y-2">
                   {question.options.map((option, optIndex) => (
                     <label 
@@ -275,7 +317,7 @@ export default function SubmitExercisePage() {
                 </div>
               )}
               
-              {question.questionType === 'CODE' && (
+              {question.type === 'CODE' && (
                 <div>
                   <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
                     Écrivez votre code dans le langage de votre choix :
@@ -309,10 +351,10 @@ export default function SubmitExercisePage() {
             
             <button
               onClick={handleSubmit}
-              disabled={submitting || answeredCount < (exercise.questions?.length || 0)}
+              disabled={isSubmitting || answeredCount < (exercise.questions?.length || 0)}
               className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md hover:shadow-lg transition-all"
             >
-              {submitting ? (
+              {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   Soumission en cours...

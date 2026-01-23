@@ -24,9 +24,9 @@ import {
 } from 'lucide-react';
 
 // Import des hooks et services corrigés
-import { useExercise, useUpdateExercise } from '@/hooks/useExercise';
-import { Exercise, Question, QuestionType, ApiResponse } from '@/types/exercise';
-import { ExerciseService } from '@/lib3/services/ExerciseService';
+import { useExercise } from '@/hooks/useExercise'; // useUpdateExercise n'existe pas
+import { Exercise, Question, QuestionType, ApiResponse, UpdateExerciseDto, UpdateQuestionDto } from '@/types/exercise';
+import { ExerciseService } from '@/lib3/services/ExerciseService'; // Chemin corrigé
 
 export default function UpdateExercisePage() {
   const params = useParams();
@@ -37,22 +37,16 @@ export default function UpdateExercisePage() {
   
   // Utilisation du hook useExercise pour récupérer l'exercice
   const { 
-    data: exerciseApiResponse, 
+    exercise, // ✅ Utilisez directement l'exercice du hook
     isLoading, 
     error,
-    refetch 
+    update, // ✅ Le hook useExercise a déjà une fonction update
+    isUpdating // ✅ Le hook a isUpdating
   } = useExercise(exerciseId, {
     enabled: !!exerciseId,
   });
   
-  // Utilisation du hook useUpdateExercise pour la mise à jour
-  const { 
-    mutate: updateExercise,
-    isPending: isUpdating,
-    error: updateError
-  } = useUpdateExercise(exerciseId, courseId);
-  
-  const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [localExercise, setLocalExercise] = useState<Exercise | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [courseInfo, setCourseInfo] = useState<{
@@ -61,12 +55,11 @@ export default function UpdateExercisePage() {
   } | null>(null);
 
   useEffect(() => {
-    if (exerciseApiResponse?.success && exerciseApiResponse.data) {
-      const exerciseData = exerciseApiResponse.data;
-      setExercise(exerciseData);
-      setQuestions(exerciseData.questions || []);
+    if (exercise) {
+      setLocalExercise(exercise);
+      setQuestions(exercise.questions || []);
     }
-  }, [exerciseApiResponse]);
+  }, [exercise]);
 
   useEffect(() => {
     // Charger les infos du cours
@@ -89,7 +82,7 @@ export default function UpdateExercisePage() {
   const validateExercise = (): boolean => {
     const errors: string[] = [];
 
-    if (!exercise?.title?.trim()) {
+    if (!localExercise?.title?.trim()) {
       errors.push('Le titre est requis');
     }
 
@@ -97,7 +90,7 @@ export default function UpdateExercisePage() {
       errors.push('Ajoutez au moins une question');
     } else {
       questions.forEach((q, index) => {
-        const questionText = q.text || q.question || '';
+        const questionText = q.text || ''; // ✅ Utilisez seulement 'text'
         if (!questionText.trim()) {
           errors.push(`La question ${index + 1} est vide`);
         }
@@ -106,7 +99,7 @@ export default function UpdateExercisePage() {
           errors.push(`La question ${index + 1} doit avoir des points positifs`);
         }
 
-        const questionType = q.type || q.questionType;
+        const questionType = q.type; // ✅ Utilisez seulement 'type'
         if (questionType === 'MULTIPLE_CHOICE') {
           if (!q.options || q.options.length < 2) {
             errors.push(`La question ${index + 1} (choix multiple) doit avoir au moins 2 options`);
@@ -123,56 +116,66 @@ export default function UpdateExercisePage() {
 
     // Validation du score total
     const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
-    if (exercise && totalPoints > exercise.maxScore) {
-      errors.push(`Total des points (${totalPoints}) dépasse le score maximum (${exercise.maxScore})`);
+    if (localExercise && totalPoints > localExercise.maxScore) {
+      errors.push(`Total des points (${totalPoints}) dépasse le score maximum (${localExercise.maxScore})`);
     }
 
     setValidationErrors(errors);
     return errors.length === 0;
   };
 
-  // Dans votre page edit/page.tsx, utilisez :
-const handleSave = async () => {
-  if (!exercise) return;
-  
-  if (!validateExercise()) {
-    toast.error('Veuillez corriger les erreurs avant de sauvegarder');
-    return;
-  }
-
-  try {
-    console.log('=== SAVE WITH DIRECT METHOD ===');
+  // Correction de handleSave
+  const handleSave = async () => {
+    if (!localExercise || !exerciseId) return;
     
-    const result = await ExerciseService.updateExerciseDirectWithCourse(
-      exerciseId,
-      courseId,
-      {
-        title: exercise.title,
-        description: exercise.description,
-        maxScore: exercise.maxScore,
-        dueDate: exercise.dueDate,
-        questions: questions
-      }
-    );
-    
-    console.log('Save result:', result);
-    
-    if (result.success) {
-      // CORRECTION : Utiliser un message par défaut si result.message est undefined
-      toast.success(result.message || '✅ Exercice mis à jour avec succès');
-      setTimeout(() => {
-        router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`);
-      }, 1000);
-    } else {
-      // CORRECTION : Utiliser un message par défaut
-      toast.error(result.message || '❌ Erreur lors de la mise à jour');
+    if (!validateExercise()) {
+      toast.error('Veuillez corriger les erreurs avant de sauvegarder');
+      return;
     }
-    
-  } catch (error: any) {
-    console.error('Save error:', error);
-    toast.error(`❌ Erreur: ${error.message || 'Erreur inconnue'}`);
-  }
-};
+
+    try {
+      console.log('=== SAVING EXERCICE ===');
+      
+      // Préparer les données de mise à jour
+      const updateData: UpdateExerciseDto = {
+        title: localExercise.title,
+        description: localExercise.description,
+        maxScore: localExercise.maxScore,
+        dueDate: localExercise.dueDate,
+        questions: questions.map(q => ({
+          id: q.id,
+          text: q.text, // ✅ Utilisez 'text' seulement
+          type: q.type, // ✅ Utilisez 'type' seulement
+          points: q.points,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          order: q.order
+        } as UpdateQuestionDto))
+      };
+
+      console.log('Update data:', updateData);
+      
+      // Utiliser la fonction update du hook useExercise
+      const result = await update(updateData);
+      
+      console.log('Save result:', result);
+      
+      if (result.success) {
+        toast.success(result.message || '✅ Exercice mis à jour avec succès');
+        setTimeout(() => {
+          router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`);
+        }, 1000);
+      } else {
+        toast.error(result.message || '❌ Erreur lors de la mise à jour');
+      }
+      
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast.error(`❌ Erreur: ${error.message || 'Erreur inconnue'}`);
+    }
+  };
+
   const handleCancel = () => {
     if (confirm('Voulez-vous vraiment annuler les modifications ? Les changements non enregistrés seront perdus.')) {
       router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`);
@@ -187,8 +190,8 @@ const handleSave = async () => {
     const newQuestion: Question = {
       id: Date.now(),
       exerciseId: exerciseId,
-      text: '',
-      type,
+      text: '', // ✅ Initialisez 'text', pas 'question'
+      type, // ✅ Utilisez 'type', pas 'questionType'
       points: 1,
       order: questions.length
     };
@@ -202,7 +205,17 @@ const handleSave = async () => {
 
   const updateQuestion = (index: number, updates: Partial<Question>) => {
     const newQuestions = [...questions];
-    newQuestions[index] = { ...newQuestions[index], ...updates };
+    
+    // S'assurer que 'type' et 'text' sont toujours présents
+    const updatedQuestion = { 
+      ...newQuestions[index], 
+      ...updates,
+      // Garantir que les champs obligatoires existent
+      text: updates.text !== undefined ? updates.text : newQuestions[index].text || '',
+      type: updates.type !== undefined ? updates.type : newQuestions[index].type || 'TEXT'
+    };
+    
+    newQuestions[index] = updatedQuestion;
     setQuestions(newQuestions);
   };
 
@@ -267,8 +280,8 @@ const handleSave = async () => {
     );
   }
 
-  if (error || !exerciseApiResponse?.success || !exerciseApiResponse.data) {
-    const errorMessage = error?.message || exerciseApiResponse?.message || 'Exercice non trouvé';
+  if (error || !exercise) {
+    const errorMessage = error?.message || 'Exercice non trouvé';
     
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
@@ -282,7 +295,7 @@ const handleSave = async () => {
           </p>
           <div className="flex gap-3 justify-center">
             <button
-              onClick={() => refetch()}
+              onClick={() => window.location.reload()}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <ArrowLeft size={18} />
@@ -300,7 +313,8 @@ const handleSave = async () => {
     );
   }
 
-  if (!exercise) return null;
+  // Utiliser localExercise pour l'affichage
+  const displayExercise = localExercise || exercise;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20">
@@ -333,7 +347,7 @@ const handleSave = async () => {
               href={`/profdashboard/exercises/${courseId}/view/${exerciseId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
-              {exercise.title}
+              {displayExercise.title}
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <span className="text-gray-800 dark:text-gray-200 font-medium">
@@ -383,18 +397,18 @@ const handleSave = async () => {
                       Modifier l'exercice
                     </h1>
                     <p className="text-blue-100">
-                      {exercise.title}
+                      {displayExercise.title}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        exercise.status === 'PUBLISHED' 
+                        displayExercise.status === 'PUBLISHED' 
                           ? 'bg-green-500/20 text-green-200' 
-                          : exercise.status === 'DRAFT'
+                          : displayExercise.status === 'DRAFT'
                           ? 'bg-yellow-500/20 text-yellow-200'
                           : 'bg-gray-500/20 text-gray-200'
                       }`}>
-                        {exercise.status === 'PUBLISHED' ? 'Publié' :
-                         exercise.status === 'DRAFT' ? 'Brouillon' :
+                        {displayExercise.status === 'PUBLISHED' ? 'Publié' :
+                         displayExercise.status === 'DRAFT' ? 'Brouillon' :
                          'Fermé'}
                       </div>
                       {courseInfo?.category && (
@@ -415,7 +429,7 @@ const handleSave = async () => {
                     <div>
                       <div className="text-sm font-medium">Statut préservé</div>
                       <div className="text-xs text-blue-200">
-                        L'exercice reste {exercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
+                        L'exercice reste {displayExercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
                       </div>
                     </div>
                   </div>
@@ -427,7 +441,7 @@ const handleSave = async () => {
                     <div>
                       <div className="text-sm font-medium">Échéance</div>
                       <div className="text-xs text-blue-200">
-                        {exercise.dueDate ? 'Date limite définie' : 'Pas de date limite'}
+                        {displayExercise.dueDate ? 'Date limite définie' : 'Pas de date limite'}
                       </div>
                     </div>
                   </div>
@@ -439,7 +453,7 @@ const handleSave = async () => {
                     <div>
                       <div className="text-sm font-medium">Soumissions</div>
                       <div className="text-xs text-blue-200">
-                        {exercise.submissionCount || 0} soumission{exercise.submissionCount !== 1 ? 's' : ''}
+                        {displayExercise.submissionCount || 0} soumission{displayExercise.submissionCount !== 1 ? 's' : ''}
                       </div>
                     </div>
                   </div>
@@ -450,7 +464,7 @@ const handleSave = async () => {
         </div>
 
         {/* Alertes importantes */}
-        {exercise.status === 'PUBLISHED' && (exercise.submissionCount || 0) > 0 && (
+        {displayExercise.status === 'PUBLISHED' && (displayExercise.submissionCount || 0) > 0 && (
           <div className="mb-6">
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5">
               <div className="flex items-start gap-3">
@@ -460,7 +474,7 @@ const handleSave = async () => {
                     Attention : Exercice déjà publié et noté
                   </h3>
                   <p className="text-yellow-700 dark:text-yellow-400 text-sm">
-                    Cet exercice a déjà été soumis par {exercise.submissionCount} étudiant{exercise.submissionCount !== 1 ? 's' : ''}. 
+                    Cet exercice a déjà été soumis par {displayExercise.submissionCount} étudiant{displayExercise.submissionCount !== 1 ? 's' : ''}. 
                     Les modifications peuvent affecter les notes existantes. Soyez prudent lors des changements.
                   </p>
                 </div>
@@ -512,7 +526,7 @@ const handleSave = async () => {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
                   <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                    {calculateTotalPoints()}/{exercise.maxScore} points
+                    {calculateTotalPoints()}/{displayExercise.maxScore} points
                   </span>
                 </div>
               </div>
@@ -533,8 +547,8 @@ const handleSave = async () => {
                   </label>
                   <input
                     type="text"
-                    value={exercise.title}
-                    onChange={(e) => setExercise({ ...exercise, title: e.target.value })}
+                    value={localExercise?.title || ''}
+                    onChange={(e) => setLocalExercise(prev => prev ? { ...prev, title: e.target.value } : null)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                     placeholder="Ex: Introduction à la programmation"
                   />
@@ -547,8 +561,8 @@ const handleSave = async () => {
                   <input
                     type="number"
                     min="1"
-                    value={exercise.maxScore}
-                    onChange={(e) => setExercise({ ...exercise, maxScore: parseInt(e.target.value) || 0 })}
+                    value={localExercise?.maxScore || 0}
+                    onChange={(e) => setLocalExercise(prev => prev ? { ...prev, maxScore: parseInt(e.target.value) || 0 } : null)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                   />
                 </div>
@@ -558,8 +572,8 @@ const handleSave = async () => {
                     Description
                   </label>
                   <textarea
-                    value={exercise.description || ''}
-                    onChange={(e) => setExercise({ ...exercise, description: e.target.value })}
+                    value={localExercise?.description || ''}
+                    onChange={(e) => setLocalExercise(prev => prev ? { ...prev, description: e.target.value } : null)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                     rows={3}
                     placeholder="Décrivez l'objectif de l'exercice..."
@@ -575,8 +589,8 @@ const handleSave = async () => {
                   </label>
                   <input
                     type="datetime-local"
-                    value={exercise.dueDate ? exercise.dueDate.slice(0, 16) : ''}
-                    onChange={(e) => setExercise({ ...exercise, dueDate: e.target.value })}
+                    value={localExercise?.dueDate ? localExercise.dueDate.slice(0, 16) : ''}
+                    onChange={(e) => setLocalExercise(prev => prev ? { ...prev, dueDate: e.target.value } : null)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                   />
                 </div>
@@ -674,10 +688,9 @@ const handleSave = async () => {
                             Énoncé de la question *
                           </label>
                           <textarea
-                            value={question.text || question.question || ''}
+                            value={question.text || ''} // ✅ Utilisez 'text' seulement
                             onChange={(e) => updateQuestion(index, { 
-                              text: e.target.value,
-                              question: e.target.value 
+                              text: e.target.value // ✅ Mettez à jour 'text'
                             })}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                             rows={2}
@@ -691,10 +704,9 @@ const handleSave = async () => {
                             Type de question
                           </label>
                           <select
-                            value={question.type || question.questionType || 'TEXT'}
+                            value={question.type || 'TEXT'} // ✅ Utilisez 'type' seulement
                             onChange={(e) => updateQuestion(index, { 
-                              type: e.target.value as QuestionType,
-                              questionType: e.target.value as QuestionType 
+                              type: e.target.value as QuestionType // ✅ Mettez à jour 'type'
                             })}
                             className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                           >
@@ -705,7 +717,7 @@ const handleSave = async () => {
                         </div>
                         
                         {/* Options pour choix multiple */}
-                        {(question.type === 'MULTIPLE_CHOICE' || question.questionType === 'MULTIPLE_CHOICE') && (
+                        {question.type === 'MULTIPLE_CHOICE' && ( // ✅ Vérifiez 'type' seulement
                           <div className="mb-6">
                             <div className="flex items-center justify-between mb-3">
                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -747,7 +759,7 @@ const handleSave = async () => {
                         )}
                         
                         {/* Réponse correcte pour choix multiple */}
-                        {(question.type === 'MULTIPLE_CHOICE' || question.questionType === 'MULTIPLE_CHOICE') && question.options && question.options.length > 0 && (
+                        {question.type === 'MULTIPLE_CHOICE' && question.options && question.options.length > 0 && (
                           <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                               Réponse correcte
@@ -853,13 +865,13 @@ const handleSave = async () => {
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Créé le {new Date(exercise.createdAt).toLocaleDateString('fr-FR')}
-                {exercise.updatedAt && exercise.updatedAt !== exercise.createdAt && (
-                  <> • Dernière modification le {new Date(exercise.updatedAt).toLocaleDateString('fr-FR')}</>
+                Créé le {new Date(displayExercise.createdAt).toLocaleDateString('fr-FR')}
+                {displayExercise.updatedAt && displayExercise.updatedAt !== displayExercise.createdAt && (
+                  <> • Dernière modification le {new Date(displayExercise.updatedAt).toLocaleDateString('fr-FR')}</>
                 )}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                ID: {exercise.id}
+                ID: {displayExercise.id}
               </div>
             </div>
           </div>

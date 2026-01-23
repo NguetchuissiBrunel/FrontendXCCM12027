@@ -1,10 +1,9 @@
-// src/components/exercises/ExerciseEditorV2.tsx
+// src/components/exercises/ExerciseEditorV2.tsx - VERSION UNIFIÉE
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Exercise, Question, QuestionType, ApiResponse  } from '@/types/exercise';
-import { ExerciseService } from '@/lib3/services/ExerciseService';
-import { ExerciseCreateService } from '@/lib3/services/ExerciseCreateService';
+import { Exercise, Question, QuestionType, ApiResponse, CreateExerciseDto, UpdateExerciseDto } from '@/types/exercise';
+import { useExercise, useCreateExercise } from '@/hooks/useExercise';
 import { toast } from 'react-hot-toast';
 import {
   Plus,
@@ -25,8 +24,8 @@ import {
 
 interface ExerciseEditorV2Props {
   courseId: number;
-  initialData: Exercise;
-  onSave: (result: any) => void;
+  initialData?: Exercise;
+  onSave: (result: ApiResponse<Exercise>) => void;
   onCancel: () => void;
 }
 
@@ -36,9 +35,27 @@ export default function ExerciseEditorV2({
   onSave,
   onCancel
 }: ExerciseEditorV2Props) {
-  const [exercise, setExercise] = useState<Exercise>(initialData);
-  const [questions, setQuestions] = useState<Question[]>(initialData.questions || []);
-  const [isSaving, setIsSaving] = useState(false);
+  const isEditing = !!initialData?.id;
+  
+  // Utiliser les nouveaux hooks
+  const { update, isUpdating } = useExercise(initialData?.id);
+  const { mutate: createExercise, isPending: isCreating } = useCreateExercise();
+  
+  const [exercise, setExercise] = useState<Exercise>(
+    initialData || {
+      id: 0,
+      courseId,
+      title: '',
+      description: '',
+      maxScore: 20,
+      status: 'DRAFT',
+      createdAt: new Date().toISOString(),
+      questions: [],
+      version: '2.0'
+    }
+  );
+  
+  const [questions, setQuestions] = useState<Question[]>(initialData?.questions || []);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Mettre à jour l'exercice quand les questions changent
@@ -201,55 +218,72 @@ export default function ExerciseEditorV2({
     return errors.length === 0;
   };
 
-  // Dans ExerciseEditorV2.tsx, corriger la méthode handleSave :
-const handleSave = async () => {
-  if (!validateExercise()) {
-    toast.error('Veuillez corriger les erreurs avant de sauvegarder');
-    return;
-  }
-
-  setIsSaving(true);
-  try {
-    let result: ApiResponse<Exercise>;
-    
-    if (exercise.id && exercise.id > 0) {
-      // Mise à jour - utiliser l'ancien service
-      result = await ExerciseService.updateExercise(exercise.id, {
-        title: exercise.title,
-        description: exercise.description,
-        maxScore: exercise.maxScore,
-        dueDate: exercise.dueDate,
-        questions
-      });
-    } else {
-      // Création - utiliser le NOUVEAU service simplifié
-      console.log('=== UTILISATION SERVICE SIMPLIFIÉ ===');
-      result = await ExerciseCreateService.createSimpleExercise(courseId, {
-        title: exercise.title,
-        description: exercise.description,
-        maxScore: exercise.maxScore,
-        dueDate: exercise.dueDate,
-        questions
-      });
+  const handleSave = async () => {
+    if (!validateExercise()) {
+      toast.error('Veuillez corriger les erreurs avant de sauvegarder');
+      return;
     }
 
-    onSave(result);
-    
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error);
-    
-    const errorResult: ApiResponse<Exercise> = {
-      success: false,
-      message: error instanceof Error ? error.message : 'Erreur lors de la sauvegarde',
-      timestamp: new Date().toISOString()
-    };
-    
-    onSave(errorResult);
-    toast.error('Erreur lors de la sauvegarde');
-  } finally {
-    setIsSaving(false);
-  }
-};
+    try {
+      let result: ApiResponse<Exercise>;
+      
+      if (isEditing && exercise.id) {
+        // Mise à jour
+        const updateData: UpdateExerciseDto = {
+          title: exercise.title,
+          description: exercise.description,
+          maxScore: exercise.maxScore,
+          dueDate: exercise.dueDate,
+          questions: questions.map(q => ({
+            id: q.id,
+            text: q.text,
+            type: q.type,
+            points: q.points,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            order: q.order
+          }))
+        };
+        
+        result = await update(updateData);
+      } else {
+        // Création
+        const createData: CreateExerciseDto = {
+          courseId,
+          title: exercise.title,
+          description: exercise.description,
+          maxScore: exercise.maxScore,
+          dueDate: exercise.dueDate,
+          questions: questions.map(q => ({
+            text: q.text,
+            type: q.type,
+            points: q.points,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            order: q.order
+          }))
+        };
+        
+        result = await createExercise(courseId, createData);
+      }
+
+      onSave(result);
+      
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      
+      const errorResult: ApiResponse<Exercise> = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erreur lors de la sauvegarde',
+        timestamp: new Date().toISOString()
+      };
+      
+      onSave(errorResult);
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
 
   const calculateTotalPoints = () => {
     return questions.reduce((sum, q) => sum + q.points, 0);
@@ -264,6 +298,8 @@ const handleSave = async () => {
     }
   };
 
+  const isLoading = isUpdating || isCreating;
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* En-tête */}
@@ -275,10 +311,10 @@ const handleSave = async () => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                Éditeur d'exercice
+                {isEditing ? 'Éditeur d\'exercice' : 'Nouvel exercice'}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Modifiez le contenu de votre exercice
+                {isEditing ? 'Modifiez le contenu de votre exercice' : 'Créez un nouvel exercice'}
               </p>
             </div>
           </div>
@@ -716,11 +752,11 @@ const handleSave = async () => {
             
             <button
               onClick={handleSave}
-              disabled={isSaving || validationErrors.length > 0}
+              disabled={isLoading || validationErrors.length > 0}
               className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Save size={20} />
-              {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
             </button>
           </div>
         </div>

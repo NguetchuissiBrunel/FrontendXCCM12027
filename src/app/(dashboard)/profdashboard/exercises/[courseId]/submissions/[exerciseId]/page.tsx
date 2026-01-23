@@ -388,7 +388,7 @@ export default function ExerciseSubmissionsPage() {
                   </button>
                   
                   <button
-                    onClick={() => router.push(`/profdashboard/exercises/${courseId}/edit/${exerciseId}`)}
+                    onClick={() => router.push(`/profdashboard/exercises/${courseId}/update/${exerciseId}`)}
                     className="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Edit size={18} />

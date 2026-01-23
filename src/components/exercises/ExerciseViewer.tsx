@@ -17,7 +17,7 @@ import { FiSend } from 'react-icons/fi';
 
 interface ExerciseViewerProps {
   exercise: Exercise;
-  onSubmit?: (answers: any[]) => void;
+  onSubmit?: (answers: Array<{ questionId: number; answer: string }>) => Promise<void> | void;
   readOnly?: boolean;
 }
 
@@ -32,15 +32,19 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const qs = exercise.questions || ExerciseService.parseContentToQuestions(exercise.content);
+    // Utiliser directement les questions de l'exercice
+    // L'exercice contient déjà les questions dans la propriété `questions`
+    const qs = exercise.questions || [];
     setQuestions(qs);
     
+    // Initialiser les réponses
     const initialAnswers: Record<number, string> = {};
     qs.forEach(q => {
+      const questionId = q.id || 0;
       if (q.studentAnswer) {
-        initialAnswers[q.id || 0] = q.studentAnswer;
+        initialAnswers[questionId] = q.studentAnswer;
       } else {
-        initialAnswers[q.id || 0] = '';
+        initialAnswers[questionId] = '';
       }
     });
     setAnswers(initialAnswers);
@@ -78,12 +82,15 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
         answer: answers[q.id || 0] || ''
       }));
       
+      // Appeler la fonction onSubmit passée en props
       await onSubmit(formattedAnswers);
+      
       setSubmitted(true);
       toast.success('✅ Exercice soumis avec succès !');
       
-    } catch (error) {
-      toast.error('Erreur lors de la soumission');
+    } catch (error: any) {
+      console.error('Erreur lors de la soumission:', error);
+      toast.error(error.message || 'Erreur lors de la soumission');
     } finally {
       setLoading(false);
     }
@@ -95,7 +102,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
     return Math.round((answered / questions.length) * 100);
   };
 
-  const getQuestionIcon = (type: string) => {
+  const getQuestionIcon = (type?: string) => {
     switch (type) {
       case 'CODE':
         return <FaCode className="w-4 h-4 text-blue-500" />;
@@ -106,12 +113,20 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
     }
   };
 
-  const formatQuestionType = (type: string) => {
+  const formatQuestionType = (type?: string) => {
     switch (type) {
       case 'CODE': return 'Code';
       case 'MULTIPLE_CHOICE': return 'Choix multiple';
       default: return 'Réponse texte';
     }
+  };
+
+  const getQuestionText = (question: Question): string => {
+    return question.text || question.question || `Question`;
+  };
+
+  const getQuestionType = (question: Question): string => {
+    return question.type || question.questionType || 'TEXT';
   };
 
   return (
@@ -176,133 +191,148 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
 
       {/* Liste des questions */}
       <div className="space-y-6">
-        {questions.map((question, index) => (
-          <div key={question.id || index} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-indigo-300 transition-colors">
-            {/* En-tête de la question */}
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full font-bold">
-                    {index + 1}
+        {questions.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-xl">
+            <FaFileAlt className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Cet exercice ne contient aucune question.</p>
+          </div>
+        ) : (
+          questions.map((question, index) => {
+            const questionId = question.id || index;
+            const questionText = getQuestionText(question);
+            const questionType = getQuestionType(question);
+            const questionPoints = question.points || 1;
+            const currentAnswer = answers[questionId] || '';
+            
+            return (
+              <div key={questionId} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-indigo-300 transition-colors">
+                {/* En-tête de la question */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full font-bold">
+                        {index + 1}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getQuestionIcon(questionType)}
+                        <span className="text-sm text-gray-600">
+                          {formatQuestionType(questionType)}
+                        </span>
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800">{questionText}</h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    {getQuestionIcon(question.questionType)}
-                    <span className="text-sm text-gray-600">
-                      {formatQuestionType(question.questionType)}
+                    <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
+                      {questionPoints} point{questionPoints > 1 ? 's' : ''}
                     </span>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800">{question.question}</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
-                  {question.points} point{question.points > 1 ? 's' : ''}
-                </span>
-              </div>
-            </div>
 
-            {/* Zone de réponse */}
-            {question.questionType === 'MULTIPLE_CHOICE' && question.options && (
-              <div className="space-y-3">
-                {question.options.map((option, optIndex) => (
-                  <label 
-                    key={optIndex} 
-                    className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${
-                      answers[question.id || 0] === option
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    } ${(readOnly || submitted) ? 'cursor-default' : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name={`question-${question.id}`}
-                      value={option}
-                      checked={answers[question.id || 0] === option}
-                      onChange={(e) => handleAnswerChange(question.id || 0, e.target.value)}
-                      className="mr-4 w-5 h-5 text-indigo-600"
+                {/* Zone de réponse */}
+                {questionType === 'MULTIPLE_CHOICE' && question.options && question.options.length > 0 ? (
+                  <div className="space-y-3">
+                    {question.options.map((option, optIndex) => (
+                      <label 
+                        key={optIndex} 
+                        className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${
+                          currentAnswer === option
+                            ? 'border-indigo-500 bg-indigo-50'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        } ${(readOnly || submitted) ? 'cursor-default' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${questionId}`}
+                          value={option}
+                          checked={currentAnswer === option}
+                          onChange={(e) => handleAnswerChange(questionId, e.target.value)}
+                          className="mr-4 w-5 h-5 text-indigo-600"
+                          disabled={readOnly || submitted}
+                        />
+                        <div className="flex-1">
+                          <span className="text-gray-800">{option}</span>
+                        </div>
+                        {question.correctAnswer === option && submitted && (
+                          <div className="ml-4 text-green-600">
+                            <FaCheckCircle className="w-5 h-5" />
+                          </div>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                ) : questionType === 'TEXT' ? (
+                  <textarea
+                    value={currentAnswer}
+                    onChange={(e) => handleAnswerChange(questionId, e.target.value)}
+                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none"
+                    rows={4}
+                    placeholder="Votre réponse..."
+                    disabled={readOnly || submitted}
+                  />
+                ) : questionType === 'CODE' ? (
+                  <div>
+                    <div className="mb-2 text-sm text-gray-600 flex items-center gap-2">
+                      <FaCode className="w-4 h-4" />
+                      Utilisez l'éditeur de code ou écrivez directement ci-dessous
+                    </div>
+                    <textarea
+                      value={currentAnswer}
+                      onChange={(e) => handleAnswerChange(questionId, e.target.value)}
+                      className="w-full p-4 font-mono text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none"
+                      rows={8}
+                      placeholder="// Écrivez votre code ici..."
                       disabled={readOnly || submitted}
                     />
-                    <div className="flex-1">
-                      <span className="text-gray-800">{option}</span>
+                    <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600">
+                      Support des langages : JavaScript, Python, Java, C++, etc.
                     </div>
-                    {question.correctAnswer === option && submitted && (
-                      <div className="ml-4 text-green-600">
-                        <FaCheckCircle className="w-5 h-5" />
-                      </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-500 italic">
+                    Type de question non supporté : {questionType}
+                  </div>
+                )}
+
+                {/* Feedback après soumission */}
+                {submitted && question.studentPoints !== undefined && (
+                  <div className={`mt-4 p-4 rounded-lg ${
+                    question.studentPoints === questionPoints
+                      ? 'bg-green-50 border border-green-200' 
+                      : 'bg-yellow-50 border border-yellow-200'
+                  }`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">
+                        Votre réponse : {question.studentPoints}/{questionPoints} points
+                      </span>
+                      {question.correctAnswer && (
+                        <span className="text-sm text-gray-600">
+                          Réponse attendue : {question.correctAnswer}
+                        </span>
+                      )}
+                    </div>
+                    {question.studentPoints < questionPoints && (
+                      <p className="text-sm text-gray-700 mt-1">
+                        {question.studentAnswer === question.correctAnswer 
+                          ? 'Votre réponse est correcte !' 
+                          : 'Vérifiez votre réponse.'}
+                      </p>
                     )}
-                  </label>
-                ))}
-              </div>
-            )}
-
-            {question.questionType === 'TEXT' && (
-              <textarea
-                value={answers[question.id || 0] || ''}
-                onChange={(e) => handleAnswerChange(question.id || 0, e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                rows={4}
-                placeholder="Votre réponse..."
-                disabled={readOnly || submitted}
-              />
-            )}
-
-            {question.questionType === 'CODE' && (
-              <div>
-                <div className="mb-2 text-sm text-gray-600 flex items-center gap-2">
-                  <FaCode className="w-4 h-4" />
-                  Utilisez l'éditeur de code ou écrivez directement ci-dessous
-                </div>
-                <textarea
-                  value={answers[question.id || 0] || ''}
-                  onChange={(e) => handleAnswerChange(question.id || 0, e.target.value)}
-                  className="w-full p-4 font-mono text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  rows={8}
-                  placeholder="// Écrivez votre code ici..."
-                  disabled={readOnly || submitted}
-                />
-                <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600">
-                  Support des langages : JavaScript, Python, Java, C++, etc.
-                </div>
-              </div>
-            )}
-
-            {/* Feedback après soumission */}
-            {submitted && question.studentPoints !== undefined && (
-              <div className={`mt-4 p-4 rounded-lg ${
-                question.studentPoints === question.points 
-                  ? 'bg-green-50 border border-green-200' 
-                  : 'bg-yellow-50 border border-yellow-200'
-              }`}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">
-                    Votre réponse : {question.studentPoints}/{question.points} points
-                  </span>
-                  {question.correctAnswer && (
-                    <span className="text-sm text-gray-600">
-                      Réponse attendue : {question.correctAnswer}
-                    </span>
-                  )}
-                </div>
-                {question.studentPoints < question.points && (
-                  <p className="text-sm text-gray-700 mt-1">
-                    {question.studentAnswer === question.correctAnswer 
-                      ? 'Votre réponse est correcte !' 
-                      : 'Vérifiez votre réponse.'}
-                  </p>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+            );
+          })
+        )}
       </div>
 
       {/* Bouton de soumission */}
-      {!readOnly && onSubmit && !submitted && (
+      {!readOnly && onSubmit && !submitted && questions.length > 0 && (
         <div className="mt-10 pt-8 border-t border-gray-200">
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <div className="flex items-center justify-center gap-3">
               {loading ? (

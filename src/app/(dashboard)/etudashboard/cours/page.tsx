@@ -11,7 +11,6 @@ import { useCourses } from '@/hooks/useCourses';
 import { EnrichedCourse } from '@/types/enrollment';
 
 import { useLoading } from '@/contexts/LoadingContext';
-import { EnrichedCourse } from '@/types/enrollment';
 
 export default function StudentCourses() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();

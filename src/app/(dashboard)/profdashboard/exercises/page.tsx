@@ -453,7 +453,7 @@ export default function AllExercisesPage() {
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          {exercise.totalStudents || 0} étudiants
+                          {exercise.totalSubmissions || 0} soumissions
                         </span>
                         <span className="flex items-center gap-1">
                           <FileText className="w-4 h-4" />

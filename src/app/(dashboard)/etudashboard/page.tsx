@@ -1,14 +1,12 @@
-// app/(dashboard)/etudashboard/page.tsx - Version corrigée
+// app/(dashboard)/etudashboard/page.tsx - VERSION AVEC IMPLÉMENTATION RÉELLE
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { BookOpen, FileText, Award, Clock } from 'lucide-react';
+import { BookOpen, FileText, Award, Clock, TrendingUp, Users, Loader2 } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
-import { ExerciseService } from '@/lib3/services/ExerciseService';
-import { ExercicesService } from '@/lib/services/ExercicesService'; // Pour compatibilité
-import { Submission, Exercise } from '@/types/exercise';
+import { useCourseExercises, useMySubmissions } from '@/hooks/useExercise';
 import { toast } from 'react-hot-toast';
 
 interface User {
@@ -24,9 +22,12 @@ interface User {
   city?: string;
 }
 
-// Interface étendue pour les exercices du dashboard
-interface DashboardExercise extends Exercise {
+interface Enrollment {
+  id: number;
+  courseId: number;
   courseTitle?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  progress?: number;
 }
 
 interface DashboardStats {
@@ -37,21 +38,12 @@ interface DashboardStats {
   submissionRate: number;
 }
 
-interface Enrollment {
-  id: number;
-  courseId: number;
-  courseTitle?: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  progress?: number;
-}
-
 export default function StudentHome() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [enrolledCourses, setEnrolledCourses] = useState<Enrollment[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [pendingExercises, setPendingExercises] = useState<DashboardExercise[]>([]);
+  const [pendingExercises, setPendingExercises] = useState<any[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     averageScore: 0,
     totalSubmissions: 0,
@@ -59,16 +51,15 @@ export default function StudentHome() {
     completedExercises: 0,
     submissionRate: 0
   });
+  
   const router = useRouter();
 
-  // Gestion du chargement global
-  useEffect(() => {
-    if (loading) {
-      startLoading();
-    } else {
-      stopLoading();
-    }
-  }, [loading, startLoading, stopLoading]);
+  // Utiliser les nouveaux hooks
+  const { 
+    submissions: mySubmissions, 
+    isLoading: submissionsLoading,
+    refetch: refetchSubmissions 
+  } = useMySubmissions();
 
   // Charger les données de l'étudiant
   const loadStudentData = async (userData: User) => {
@@ -78,10 +69,10 @@ export default function StudentHome() {
       // 1. Charger les inscriptions aux cours
       await loadEnrollments();
       
-      // 2. Charger les soumissions
-      await loadSubmissions();
+      // 2. Calculer les statistiques à partir des soumissions
+      calculateStats(mySubmissions);
       
-      // 3. Charger les exercices en attente
+      // 3. Charger les exercices en attente pour chaque cours
       if (enrolledCourses.length > 0) {
         await loadPendingExercises();
       }
@@ -98,46 +89,31 @@ export default function StudentHome() {
   // Charger les inscriptions
   const loadEnrollments = async () => {
     try {
-      // Utiliser le service d'inscription existant ou simuler
+      // Utiliser le service d'inscription existant
+      // Note: Assurez-vous que ce service est correctement implémenté
       const { EnrollmentService } = await import('@/utils/enrollmentService');
       const enrollments = await EnrollmentService.getMyEnrollments();
+      
+      // Filtrer uniquement les inscriptions approuvées
       const approvedEnrollments = (enrollments || []).filter(
         (e: any) => e.status === 'APPROVED'
       ) as Enrollment[];
+      
       setEnrolledCourses(approvedEnrollments);
+      
     } catch (err) {
-      console.warn("Service d'inscription non disponible, simulation activée:", err);
-      // Simulation pour le développement
-      setEnrolledCourses([
-        { id: 1, courseId: 101, courseTitle: 'Algorithmique', status: 'APPROVED', progress: 65 },
-        { id: 2, courseId: 102, courseTitle: 'Base de données', status: 'APPROVED', progress: 30 }
-      ]);
-    }
-  };
-
-  // Charger les soumissions
-  const loadSubmissions = async () => {
-    try {
-      // Utiliser le service unifié
-      const mySubmissions = await ExerciseService.getMySubmissions();
-      setSubmissions(mySubmissions);
-      calculateStats(mySubmissions);
-    } catch (error) {
-      console.error('Erreur chargement soumissions:', error);
-      toast.error('Impossible de charger les soumissions');
+      console.error("Erreur lors du chargement des inscriptions:", err);
+      toast.error('Impossible de charger vos inscriptions');
+      setEnrolledCourses([]);
     }
   };
 
   // Calculer les statistiques
-  const calculateStats = (submissionsList: Submission[]) => {
+  const calculateStats = (submissionsList: any[]) => {
     const gradedSubmissions = submissionsList.filter(s => s.graded);
-    const totalScore = gradedSubmissions.reduce((sum, s) => {
-      return sum + (s.score || 0);
-    }, 0);
+    const totalScore = gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0);
     
-    const totalMaxScore = gradedSubmissions.reduce((sum, s) => {
-      return sum + (s.maxScore || 0);
-    }, 0);
+    const totalMaxScore = gradedSubmissions.reduce((sum, s) => sum + (s.maxScore || 0), 0);
     
     const averageScore = gradedSubmissions.length > 0 && totalMaxScore > 0
       ? (totalScore / totalMaxScore) * 100
@@ -154,36 +130,45 @@ export default function StudentHome() {
   // Charger les exercices en attente
   const loadPendingExercises = async () => {
     try {
-      const allExercises: DashboardExercise[] = [];
+      const allExercises: any[] = [];
       const now = new Date();
 
-      // Pour chaque cours, charger les exercices
+      // Pour chaque cours, charger les exercices réels
       for (const enrollment of enrolledCourses) {
         try {
-          const exercises = await ExerciseService.getExercisesForCourse(enrollment.courseId);
-          
+          // Utiliser le hook useCourseExercises pour chaque cours
+          const { exercises: courseExercises } = await (async () => {
+            // Pour l'instant, utilisons une approche directe
+            // Vous devrez peut-être adapter cela selon votre implémentation
+            const { ExerciseService } = await import('@/lib3/services/ExerciseService');
+            const exercises = await ExerciseService.getExercisesForCourse(enrollment.courseId);
+            return { exercises };
+          })();
+
           // Filtrer les exercices non soumis et non échus
-          const pendingForCourse = exercises.filter((exercise: Exercise) => {
+          const submittedExerciseIds = new Set(
+            mySubmissions.map(s => s.exerciseId)
+          );
+          
+          const pendingForCourse = courseExercises.filter((exercise: any) => {
             const dueDate = exercise.dueDate ? new Date(exercise.dueDate) : null;
-            const alreadySubmitted = submissions.some(s => s.exerciseId === exercise.id);
-            
-            // Vérifier les permissions de soumission
+            const alreadySubmitted = submittedExerciseIds.has(exercise.id);
             const canSubmit = dueDate ? dueDate > now : true;
             
             return !alreadySubmitted && canSubmit;
           });
 
           // Ajouter les informations du cours
-          pendingForCourse.forEach(exercise => {
-            const dashboardExercise: DashboardExercise = {
+          pendingForCourse.forEach((exercise: any) => {
+            allExercises.push({
               ...exercise,
               courseTitle: enrollment.courseTitle || `Cours #${enrollment.courseId}`
-            };
-            allExercises.push(dashboardExercise);
+            });
           });
 
         } catch (error) {
           console.error(`Erreur chargement exercices cours ${enrollment.courseId}:`, error);
+          // Continuer avec le cours suivant
         }
       }
 
@@ -196,6 +181,7 @@ export default function StudentHome() {
     } catch (error) {
       console.error('Erreur chargement exercices en attente:', error);
       toast.error('Impossible de charger les exercices en attente');
+      setPendingExercises([]);
     }
   };
 
@@ -230,6 +216,26 @@ export default function StudentHome() {
     loadData();
   }, [router]);
 
+  // Recalculer les stats quand les soumissions changent
+  useEffect(() => {
+    if (mySubmissions.length > 0 && enrolledCourses.length > 0) {
+      calculateStats(mySubmissions);
+      loadPendingExercises();
+    }
+  }, [mySubmissions, enrolledCourses]);
+
+  // Rafraîchir les données périodiquement
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (user) {
+        refetchSubmissions();
+        loadEnrollments();
+      }
+    }, 30000); // Rafraîchir toutes les 30 secondes
+
+    return () => clearInterval(intervalId);
+  }, [user, refetchSubmissions]);
+
   // Gestion des actions
   const handleStartExercise = (exerciseId: number) => {
     router.push(`/etudashboard/exercises/${exerciseId}/submit`);
@@ -241,10 +247,6 @@ export default function StudentHome() {
 
   const handleViewCourseExercises = (courseId: number) => {
     router.push(`/etudashboard/courses/${courseId}/exercises`);
-  };
-
-  const handleViewExercise = (exerciseId: number) => {
-    router.push(`/etudashboard/exercises/${exerciseId}`);
   };
 
   // Composant de chargement
@@ -449,7 +451,7 @@ export default function StudentHome() {
                       </div>
                       <div className="flex gap-2 mt-2">
                         <button
-                          onClick={() => handleViewExercise(exercise.id)}
+                          onClick={() => router.push(`/etudashboard/exercises/${exercise.id}`)}
                           className="flex-1 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                           Voir
@@ -498,9 +500,9 @@ export default function StudentHome() {
                 </button>
               </div>
               
-              {submissions.length > 0 ? (
+              {mySubmissions.length > 0 ? (
                 <div className="space-y-3">
-                  {submissions.slice(0, 3).map((submission) => (
+                  {mySubmissions.slice(0, 3).map((submission) => (
                     <div key={submission.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">

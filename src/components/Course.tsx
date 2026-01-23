@@ -36,6 +36,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const [pdfGenerating, setPdfGenerating] = useState<boolean>(false);
   const [docxGenerating, setDocxGenerating] = useState<boolean>(false);
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
+  const [isLiking, setIsLiking] = useState<boolean>(false);
   const [evaluation, setEvaluation] = useState<{
     rating: number;
     feedback: string;
@@ -139,7 +140,6 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     }
   };
 
-  const [isLiking, setIsLiking] = useState(false);
   const handleLike = async () => {
     if (isLiking) return;
     setIsLiking(true);

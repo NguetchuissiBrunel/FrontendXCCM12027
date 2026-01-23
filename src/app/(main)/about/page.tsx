@@ -27,15 +27,16 @@ const sections = [
 
 export default function AboutPage() {
   const [activeSection, setActiveSection] = useState('intro');
-  const [isDarkMode] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Utiliser useEffect pour déterminer le mode sombre côté client seulement
+  useEffect(() => {
+    setMounted(true);
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    return savedTheme === 'dark' || (!savedTheme && prefersDark);
-  });
+    setIsDarkMode(savedTheme === 'dark' || (!savedTheme && prefersDark));
+  }, []);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -46,7 +47,7 @@ export default function AboutPage() {
       const scrollPos = window.scrollY + 140;
       for (const section of sections) {
         const element = document.getElementById(section.id);
-        if (element && element.offsetTop <= scrollPos && element.offsetTop + element.offsetHeight > scrollPos) {
+        if (element && element.offsetTop <= scrollPos && element.offsetHeight + element.offsetTop > scrollPos) {
           setActiveSection(section.id);
           break;
         }
@@ -55,6 +56,9 @@ export default function AboutPage() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Solution 1: Ne pas rendre l'image basée sur le thème avant le montage
+  const imageSrc = !mounted ? "/images/image1.png" : (isDarkMode ? "/images/image3.png" : "/images/image1.png");
 
   return (
     <main className="min-h-screen bg-slate-50 pt-16 dark:bg-slate-950">
@@ -186,10 +190,12 @@ export default function AboutPage() {
                     </div>
                     <div className="relative hidden h-48 w-48 overflow-hidden rounded-xl shadow-sm md:block">
                       <Image
-                        src={isDarkMode ? "/images/image3.png" : "/images/image1.png"}
+                        src={imageSrc}
                         alt="XCCM Platform"
                         fill
                         className="object-cover"
+                        priority
+                        suppressHydrationWarning
                       />
                     </div>
                   </div>
@@ -197,6 +203,7 @@ export default function AboutPage() {
               </motion.div>
             </section>
 
+            {/* Le reste du code reste inchangé */}
             <section id="problematique" className="scroll-mt-24">
               <motion.div
                 initial={{ opacity: 0, y: 24 }}

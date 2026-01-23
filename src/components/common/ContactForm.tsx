@@ -1,23 +1,32 @@
-// src/components/common/ContactForm.tsx
+// src/components/common/ContactForm.tsx - MIS À JOUR
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PublicServicesService } from '@/lib/services/PublicServicesService';
 import type { ContactRequest } from '@/lib/models/ContactRequest';
 import { useLoading } from '@/contexts/LoadingContext';
-import { useEffect } from 'react';
-import { Send, User, Mail, MessageSquare } from 'lucide-react';
+import { Send, User, Mail, MessageSquare, Phone, Building } from 'lucide-react';
 
 interface ContactFormProps {
   className?: string;
+  compact?: boolean;
+  title?: string;
+  description?: string;
+  showPrivacyNote?: boolean;
 }
 
-export default function ContactForm({ className = '' }: ContactFormProps) {
+export default function ContactForm({ 
+  className = '',
+  compact = false,
+  title = "Contactez-nous",
+  description = "Nous sommes là pour vous aider. Remplissez le formulaire ci-dessous et nous vous répondrons dans les plus brefs délais.",
+  showPrivacyNote = true
+}: ContactFormProps) {
   const [formData, setFormData] = useState<ContactRequest>({
     name: '',
     email: '',
-    message: '',
-    subject: '' // Ajoutez ce champ si votre ContactRequest l'inclut
+    subject: '',
+    message: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -32,25 +41,58 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
     }
   }, [loading, startLoading, stopLoading]);
 
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    
+    // Effacer le message d'erreur lorsque l'utilisateur commence à taper
+    if (message?.type === 'error') {
+      setMessage(null);
+    }
+  };
+
+  const validateForm = (): string | null => {
+    if (!formData.name.trim()) {
+      return 'Le nom est requis';
+    }
+    
+    if (!formData.email.trim()) {
+      return 'L\'adresse email est requise';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      return 'Veuillez entrer une adresse email valide';
+    }
+    
+    if (!formData.subject.trim()) {
+      return 'Le sujet est requis';
+    }
+    
+    if (!formData.message.trim()) {
+      return 'Le message est requis';
+    } else if (formData.message.length < 10) {
+      return 'Le message doit contenir au moins 10 caractères';
+    }
+    
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.name || !formData.email || !formData.message) {
-      setMessage({ type: 'error', text: 'Veuillez remplir tous les champs obligatoires' });
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setMessage({ type: 'error', text: 'Veuillez entrer une adresse email valide' });
+    const validationError = validateForm();
+    if (validationError) {
+      setMessage({ type: 'error', text: validationError });
       return;
     }
 
@@ -62,148 +104,271 @@ export default function ContactForm({ className = '' }: ContactFormProps) {
 
       setMessage({
         type: 'success',
-        text: 'Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.'
+        text: '🎉 Message envoyé avec succès ! Notre équipe vous répondra dans les 24-48 heures.'
       });
 
       // Réinitialiser le formulaire
       setFormData({
         name: '',
         email: '',
-        message: '',
-        subject: ''
+        subject: '',
+        message: ''
       });
 
-      // Effacer le message après 5 secondes
-      setTimeout(() => setMessage(null), 5000);
     } catch (error: any) {
       console.error('Erreur lors de l\'envoi du message:', error);
 
-      let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
+      let errorMessage = 'Une erreur inattendue est survenue. Veuillez réessayer.';
 
       if (error.status === 400) {
         errorMessage = 'Données invalides. Vérifiez les informations saisies.';
+      } else if (error.status === 422) {
+        errorMessage = 'Certains champs contiennent des erreurs de validation.';
       } else if (error.status === 429) {
-        errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
+        errorMessage = 'Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer.';
       } else if (error.status === 500) {
-        errorMessage = 'Erreur serveur. Notre équipe a été notifiée.';
+        errorMessage = 'Service temporairement indisponible. Notre équipe technique a été notifiée.';
+      } else if (error.message?.includes('Network Error') || !navigator.onLine) {
+        errorMessage = 'Vous semblez être hors ligne. Vérifiez votre connexion internet.';
       }
 
       setMessage({ type: 'error', text: errorMessage });
+      
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className={`bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg ${className}`}>
-      <h3 className="text-2xl font-bold text-purple-900 dark:text-purple-400 mb-6">
-        Contactez-nous directement
-      </h3>
-
-      {/* Messages de feedback */}
-      {message && (
-        <div className={`mb-6 rounded-lg p-4 ${message.type === 'success'
-            ? 'bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
-            : 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
-          }`}>
-          <div className="flex items-start">
-            {message.type === 'success' ? (
-              <svg className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            )}
-            <span>{message.text}</span>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative">
-            <User className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
+  // Version compacte
+  if (compact) {
+    return (
+      <div className={`space-y-4 ${className}`}>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               type="text"
               name="name"
-              placeholder="Votre nom *"
+              placeholder="Votre nom"
               value={formData.name}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none text-sm"
               disabled={loading}
               required
             />
-          </div>
-
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
             <input
               type="email"
               name="email"
-              placeholder="Votre email *"
+              placeholder="Votre email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none text-sm"
               disabled={loading}
               required
             />
           </div>
-        </div>
-
-        {/* Champ sujet si présent dans ContactRequest */}
-        {'subject' in formData && (
-          <div className="relative">
-            <input
-              type="text"
-              name="subject"
-              placeholder="Sujet (optionnel)"
-              value={formData.subject || ''}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none"
-              disabled={loading}
-            />
-          </div>
-        )}
-
-        <div className="relative">
-          <MessageSquare className="absolute left-3 top-3 text-purple-500 dark:text-purple-400 w-5 h-5" />
           <textarea
             name="message"
-            placeholder="Votre message *"
-            rows={5}
+            placeholder="Votre message"
+            rows={3}
             value={formData.message}
             onChange={handleChange}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 dark:text-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none resize-none"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none text-sm resize-none"
             disabled={loading}
             required
           />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Envoi...' : 'Envoyer'}
+          </button>
+        </form>
+        {message && (
+          <div className={`text-xs px-3 py-2 rounded ${message.type === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
+            {message.text}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Version complète
+  return (
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg ${className}`}>
+      <div className="p-6 md:p-8">
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {title}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300">
+            {description}
+          </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'animate-pulse' : ''
-            }`}
-        >
-          {loading ? (
-            "Envoi..."
-          ) : (
-            <>
-              <Send className="w-5 h-5" />
-              Envoyer le message
-            </>
-          )}
-        </button>
-      </form>
+        {/* Messages de feedback */}
+        {message && (
+          <div className={`mb-6 rounded-lg p-4 animate-fadeIn ${
+            message.type === 'success'
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800'
+              : 'bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-800'
+          }`}>
+            <div className="flex items-start">
+              {message.type === 'success' ? (
+                <svg className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-red-500 dark:text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              )}
+              <div>
+                <p className={`text-sm font-medium ${message.type === 'success' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                  {message.text}
+                </p>
+                {message.type === 'success' && (
+                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                    Nous vous répondrons à l&apos;adresse <span className="font-semibold">{formData.email}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-        * Champs obligatoires. Vos données sont traitées conformément à notre{' '}
-        <a href="/privacy" className="text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 underline">
-          politique de confidentialité
-        </a>.
-      </p>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Nom */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <User className="h-4 w-4" />
+                Nom complet *
+              </label>
+              <input
+                type="text"
+                name="name"
+                placeholder="Votre nom"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none transition-colors disabled:opacity-50"
+                disabled={loading}
+                required
+              />
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Mail className="h-4 w-4" />
+                Adresse email *
+              </label>
+              <input
+                type="email"
+                name="email"
+                placeholder="exemple@email.com"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none transition-colors disabled:opacity-50"
+                disabled={loading}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Sujet */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <MessageSquare className="h-4 w-4" />
+              Sujet *
+            </label>
+            <input
+              type="text"
+              name="subject"
+              placeholder="Sujet de votre message"
+              value={formData.subject}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none transition-colors disabled:opacity-50"
+              disabled={loading}
+              required
+            />
+          </div>
+
+          {/* Message */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <MessageSquare className="h-4 w-4" />
+              Message *
+            </label>
+            <textarea
+              name="message"
+              placeholder="Décrivez votre demande en détail..."
+              rows={5}
+              value={formData.message}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none transition-colors resize-none disabled:opacity-50"
+              disabled={loading}
+              required
+            />
+          </div>
+
+          {/* Bouton d'envoi */}
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl ${
+              loading ? 'animate-pulse' : 'hover:from-purple-700 hover:to-purple-800'
+            }`}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Envoi en cours...
+              </>
+            ) : (
+              <>
+                <Send className="h-5 w-5" />
+                Envoyer le message
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Informations de contact alternatives */}
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            Autres moyens de nous contacter
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Mail className="h-4 w-4 text-purple-500" />
+              <span>contact@xccm.com</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Phone className="h-4 w-4 text-purple-500" />
+              <span>+237 6 94 77 34 72</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Note de confidentialité */}
+        {showPrivacyNote && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              En soumettant ce formulaire, vous acceptez notre{' '}
+              <a 
+                href="/privacy" 
+                className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                politique de confidentialité
+              </a>
+              . Vos données sont sécurisées et ne seront jamais partagées avec des tiers.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

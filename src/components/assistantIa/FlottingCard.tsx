@@ -36,6 +36,16 @@ export default function AIChatWidget() {
   const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('general');
+  const [position, setPosition] = useState({ x: 20, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState({ x: 20, y: 0 });
+  const [isButtonDragging, setIsButtonDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const buttonDragOffset = useRef({ x: 0, y: 0 });
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const requestRef = useRef<any>(null);
 
   // Détection dynamique de la taille d'écran
   useEffect(() => {
@@ -43,8 +53,8 @@ export default function AIChatWidget() {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (!mobile) {
-        setPosition({ x: window.innerWidth - 380, y: window.innerHeight - 520 });
-        setButtonPosition({ x: window.innerWidth - 70, y: window.innerHeight - 70 });
+        setPosition({ x: 20, y: window.innerHeight - 520 });
+        setButtonPosition({ x: 20, y: window.innerHeight - 70 });
       }
     };
 
@@ -77,16 +87,7 @@ export default function AIChatWidget() {
     }
   }, []);
 
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
-  const [isButtonDragging, setIsButtonDragging] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const buttonDragOffset = useRef({ x: 0, y: 0 });
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const prevPositionRef = useRef<{ x: number; y: number } | null>(null);
-  const requestRef = useRef<any>(null);
+
 
   useEffect(() => {
     if (isOpen) {

@@ -1,75 +1,60 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-// 1. Importer 'Image' de Next.js
 import Image from 'next/image';
 import {
   FaFileAlt, FaSearch, FaKey, FaUser,
   FaFileUpload, FaShare, FaCreditCard,
   FaBook, FaUserPlus, FaHeadset, FaTimes
 } from 'react-icons/fa';
-
 import { Heart, Star, Send, Mail, User, MessageSquare, ThumbsUp, Award, Gift, Smile } from 'lucide-react';
 import ContactForm from '@/components/common/ContactForm';
 import { toast } from 'react-hot-toast';
+import { PublicServicesService } from '@/lib/services/PublicServicesService';
 
-
-// 2. Définir une interface pour vos objets 'helpItems'
 interface HelpItem {
   title: string;
-  icon: React.ReactElement; // Le type pour un composant JSX
+  icon: React.ReactElement;
   solution: string;
 }
 
 const ContactPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  // 3. Préciser le type du tableau dans useState
-  // 4. Préciser que le type est 'number' ou 'null'
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [feedback, setFeedback] = useState({ name: '', email: '', rating: '5', comments: '' });
   const [thankYouMessage, setThankYouMessage] = useState(false);
-  // Clic sur une suggestion ferme l'overlay
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSuggestionClick = (item: HelpItem) => {
     setSearchQuery(item.title);
     console.log(item.solution);
     closeSearch();
   };
 
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [feedbackForm, setFeedbackForm] = useState({
-    name: '',
-    email: '',
-    message: '',
-    rating: 0
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
-
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Validation basique
-    if (!feedbackForm.name || !feedbackForm.email || !feedbackForm.message) {
+    if (!feedback.name || !feedback.email || !feedback.comments) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
     setSubmitted(true);
-
   };
 
   const resetForm = () => {
     setSubmitted(false);
-    setFeedbackForm({
+    setFeedback({
       name: '',
       email: '',
-      message: '',
-      rating: 0
+      rating: '5',
+      comments: ''
     });
-    setRating(0);
   };
 
-  // 5. Appliquer le type 'HelpItem[]'
   const helpItems: HelpItem[] = useMemo(() => [
     {
       title: "Problème de connexion",
@@ -111,35 +96,30 @@ const ContactPage = () => {
       icon: <FaBook className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
       solution: "Explorez notre guide complet étape par étape. Accédez à 'Aide → Tutoriels' pour des vidéos et guides détaillés."
     }
-  ], []); // <-- Le tableau de dépendances vide [] est crucial
+  ], []);
 
-  // NOUVELLES FONCTIONS POUR GÉRER L'OVERLAY
   const openSearch = () => setIsSearchOverlayOpen(true);
-
   const closeSearch = () => setIsSearchOverlayOpen(false);
 
-  // Fonction pour basculer l'overlay et vider la recherche
   const toggleSearchOverlay = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isSearchOverlayOpen) {
-      setSearchQuery(''); // Vide la recherche en fermant
+      setSearchQuery('');
       closeSearch();
     } else {
       openSearch();
     }
   };
 
-  // NOUVELLE LOGIQUE avec useMemo
   const filteredItems = useMemo(() => {
     if (searchQuery.trim() === '') {
-      return []; // Retourne un tableau vide
+      return [];
     }
-    // Retourne le tableau filtré
     return helpItems.filter(item =>
       item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery, helpItems]); // Dépendances: se recalcule si searchQuery ou helpItems changent
-  // 8. Typer le paramètre 'index'
+  }, [searchQuery, helpItems]);
+
   const toggleFaq = (index: number) => {
     setFaqOpen(faqOpen === index ? null : index);
   };
@@ -174,18 +154,45 @@ const ContactPage = () => {
     { icon: <Gift className="text-purple-500" />, value: '200+', label: 'Features' }
   ];
 
-  // 9. Typer le paramètre 'e'
   const handleFeedbackChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFeedbackForm(prev => ({
+    setFeedback(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
-
-
-
+  // Nouvelle fonction pour gérer la soumission du formulaire de contact
+  const handleContactSubmit = async (formData: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+  }) => {
+    setIsSubmitting(true);
+    try {
+      await PublicServicesService.contactUs(formData);
+      toast.success('✅ Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.');
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erreur envoi formulaire contact:', error);
+      
+      let errorMessage = 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.';
+      
+      if (error.status === 400) {
+        errorMessage = 'Veuillez vérifier les informations saisies. Certains champs sont invalides.';
+      } else if (error.status === 429) {
+        errorMessage = 'Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer.';
+      } else if (error.status === 500) {
+        errorMessage = 'Service temporairement indisponible. Veuillez réessayer plus tard.';
+      }
+      
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
@@ -202,18 +209,16 @@ const ContactPage = () => {
             <div className="w-full max-w-4xl text-center px-4">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white dark:text-white flex items-center">
                 <FaFileAlt className="mr-4" />
-                {/* 12. Correction Linter: &apos; */}
                 Centre d&apos;aide de XCCM
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-white mb-6 dark:text-gray-100 sm:mb-8 max-w-2xl mx-auto">
                 Votre satisfaction est notre engagement : des solutions simples et rapides à portée de main... Contactez-nous !
               </p>
 
-              {/* ----- NOUVEAU BLOC DE RECHERCHE (DEBUT) ----- */}
-
+              {/* Bloc de recherche */}
               <div className={`max-w-xl w-full mx-auto ${isSearchOverlayOpen
-                ? 'z-50 fixed top-20 left-1/2 -translate-x-1/2 px-4' // Se fixe à 5rem (80px) du haut
-                : 'relative' // Reste normal dans l'en-tête
+                ? 'z-50 fixed top-20 left-1/2 -translate-x-1/2 px-4'
+                : 'relative'
                 }`}>
                 <form onSubmit={(e) => e.preventDefault()} className="relative flex items-center">
                   <input
@@ -237,16 +242,13 @@ const ContactPage = () => {
                 </form>
               </div>
 
-              {/* NOUVEL OVERLAY PLEIN ÉCRAN */}
+              {/* Overlay plein écran */}
               {isSearchOverlayOpen && (
                 <div
-                  // Ajout d'un effet de flou (backdrop-blur) pour un look plus moderne
                   className="fixed inset-0 top-0 left-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-40 overflow-y-auto"
                 >
-                  {/* Padding pour laisser la place au formulaire de recherche (pt-40 = 160px) */}
                   <div className="container mx-auto px-4 py-8 pt-40">
 
-                    {/* Logique d'affichage des résultats (maintenant dans l'overlay) */}
                     {searchQuery.trim() === '' && (
                       <div className="text-center text-gray-500 dark:text-gray-400 py-10">
                         <p>Commencez à taper pour rechercher un sujet...</p>
@@ -261,7 +263,7 @@ const ContactPage = () => {
                             <div
                               key={index}
                               className="cursor-pointer p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-shadow"
-                              onClick={() => handleSuggestionClick(item)} // <-- Appel corrigé
+                              onClick={() => handleSuggestionClick(item)}
                             >
                               <h3 className="text-purple-900 dark:text-purple-300 font-semibold">{item.title}</h3>
                               <span className="text-gray-600 dark:text-gray-400 block mt-1">{item.solution}</span>
@@ -277,13 +279,11 @@ const ContactPage = () => {
                   </div>
                 </div>
               )}
-              {/* ----- NOUVEAU BLOC DE RECHERCHE (FIN) ----- */}
             </div>
           </div>
         </div>
 
         {/* Help Items Section */}
-        {/* Les erreurs 'title' et 'solution' sont corrigées grâce au type 'HelpItem' */}
         <div className="container mx-auto px-4 py-8 ">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {helpItems.map((item, index) => (
@@ -325,10 +325,10 @@ const ContactPage = () => {
 
       {/* Tutorial Section */}
       <div className="container bg-purple-100 dark:bg-purple-800 rounded-lg mx-auto px-4 py-8 flex flex-col md:flex-row items-start">
+        {/* Section tutoriel - vous pouvez ajouter du contenu ici si nécessaire */}
       </div>
-      {/* Feedback */}
 
-      {/* Contact Section - REMPLACER LA SECTION FEEDBACK EXISTANTE */}
+      {/* Contact Section - AVEC FORMULAIRE CONNECTÉ */}
       <div className="container w-full bg-white dark:bg-gray-900 mx-auto px-4 py-8 flex flex-wrap md:flex-nowrap gap-6">
         <div className="w-full md:w-1/2">
           <div className="text-center mb-8">
@@ -341,7 +341,7 @@ const ContactPage = () => {
             </p>
           </div>
 
-          {/* Stats Section - conserver si vous voulez */}
+          {/* Stats Section */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {stats.map((stat, index) => (
               <div key={index} className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg text-center">
@@ -352,11 +352,14 @@ const ContactPage = () => {
             ))}
           </div>
 
-          {/* Utilisation du nouveau ContactForm */}
-          <ContactForm />
+          {/* ContactForm connecté à l'API */}
+          <ContactForm 
+            onSubmit={handleContactSubmit}
+            isSubmitting={isSubmitting}
+          />
         </div>
 
-        {/* Image Section - conserver */}
+        {/* Image Section */}
         <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
           <Image
             src="/images/ima20.jpeg"
@@ -367,8 +370,28 @@ const ContactPage = () => {
           />
         </div>
       </div>
-    </div>
 
+      {/* Section Feedback optionnelle - si vous voulez la garder */}
+      {submitted ? (
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 p-8 rounded-2xl text-center">
+            <Smile className="w-20 h-20 text-green-600 dark:text-green-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">
+              Merci pour votre feedback !
+            </h3>
+            <p className="text-green-700 dark:text-green-400 mb-6">
+              Votre avis nous est précieux pour améliorer nos services.
+            </p>
+            <button
+              onClick={resetForm}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Soumettre un autre feedback
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 };
 

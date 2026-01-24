@@ -283,7 +283,7 @@ export default function StudentHome() {
 
   // Gestion des actions
   const handleStartExercise = (exerciseId: number) => {
-    router.push(`/etudashboard/exercises/${exerciseId}/submit`);
+    router.push(`/etudashboard/exercises/${exerciseId}`);
   };
 
   const handleViewSubmission = (submissionId: number) => {
@@ -296,14 +296,7 @@ export default function StudentHome() {
 
   // Composant de chargement
   if (loading || globalLoading || coursesLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des données...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (!user) return null;

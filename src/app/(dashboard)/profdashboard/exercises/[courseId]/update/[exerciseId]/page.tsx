@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   AlertCircle,
   FileText,
   BookOpen,
@@ -35,21 +35,21 @@ import { ExerciseService } from '@/lib3/services/ExerciseService'; // Chemin cor
 export default function UpdateExercisePage() {
   const params = useParams();
   const router = useRouter();
-  
+
   const courseId = parseInt(params.courseId as string);
   const exerciseId = parseInt(params.exerciseId as string);
-  
+
   // Utilisation du hook useExercise pour récupérer l'exercice
-  const { 
+  const {
     exercise, // ✅ Utilisez directement l'exercice du hook
-    isLoading, 
+    isLoading,
     error,
     update, // ✅ Le hook useExercise a déjà une fonction update
     isUpdating // ✅ Le hook a isUpdating
   } = useExercise(exerciseId, {
     enabled: !!exerciseId,
   });
-  
+
   const [localExercise, setLocalExercise] = useState<Exercise | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -106,7 +106,7 @@ export default function UpdateExercisePage() {
           if (!q.options || q.options.length < 2) {
             errors.push(`La question ${index + 1} (choix multiple) doit avoir au moins 2 options`);
           }
-          
+
           q.options?.forEach((opt, optIndex) => {
             if (!opt?.trim()) {
               errors.push(`L'option ${optIndex + 1} de la question ${index + 1} est vide`);
@@ -129,7 +129,7 @@ export default function UpdateExercisePage() {
   // Correction de handleSave
   const handleSave = async () => {
     if (!localExercise || !exerciseId) return;
-    
+
     if (!validateExercise()) {
       toast.error('Veuillez corriger les erreurs avant de sauvegarder');
       return;
@@ -137,7 +137,7 @@ export default function UpdateExercisePage() {
 
     try {
       console.log('=== SAVING EXERCICE ===');
-      
+
       // Préparer les données de mise à jour
       const updateData: UpdateExerciseDto = {
         title: localExercise.title,
@@ -157,12 +157,12 @@ export default function UpdateExercisePage() {
       };
 
       console.log('Update data:', updateData);
-      
+
       // Utiliser la fonction update du hook useExercise
       const result = await update(updateData);
-      
+
       console.log('Save result:', result);
-      
+
       if (result.success) {
         toast.success(result.message || '✅ Exercice mis à jour avec succès');
         setTimeout(() => {
@@ -171,7 +171,7 @@ export default function UpdateExercisePage() {
       } else {
         toast.error(result.message || '❌ Erreur lors de la mise à jour');
       }
-      
+
     } catch (error: any) {
       console.error('Save error:', error);
       toast.error(`❌ Erreur: ${error.message || 'Erreur inconnue'}`);
@@ -207,16 +207,16 @@ export default function UpdateExercisePage() {
 
   const updateQuestion = (index: number, updates: Partial<Question>) => {
     const newQuestions = [...questions];
-    
+
     // S'assurer que 'type' et 'text' sont toujours présents
-    const updatedQuestion = { 
-      ...newQuestions[index], 
+    const updatedQuestion = {
+      ...newQuestions[index],
       ...updates,
       // Garantir que les champs obligatoires existent
       text: updates.text !== undefined ? updates.text : newQuestions[index].text || '',
       type: updates.type !== undefined ? updates.type : newQuestions[index].type || 'TEXT'
     };
-    
+
     newQuestions[index] = updatedQuestion;
     setQuestions(newQuestions);
   };
@@ -226,7 +226,7 @@ export default function UpdateExercisePage() {
       toast.error('Un exercice doit avoir au moins une question');
       return;
     }
-    
+
     const newQuestions = questions.filter((_, i) => i !== index);
     newQuestions.forEach((q, i) => { q.order = i; });
     setQuestions(newQuestions);
@@ -235,20 +235,20 @@ export default function UpdateExercisePage() {
   const addOption = (questionIndex: number) => {
     const newQuestions = [...questions];
     const question = newQuestions[questionIndex];
-    
+
     if (question.options) {
       question.options = [...question.options, ''];
     } else {
       question.options = [''];
     }
-    
+
     setQuestions(newQuestions);
   };
 
   const updateOption = (questionIndex: number, optionIndex: number, value: string) => {
     const newQuestions = [...questions];
     const question = newQuestions[questionIndex];
-    
+
     if (question.options) {
       const newOptions = [...question.options];
       newOptions[optionIndex] = value;
@@ -263,7 +263,7 @@ export default function UpdateExercisePage() {
   const removeOption = (questionIndex: number, optionIndex: number) => {
     const newQuestions = [...questions];
     const question = newQuestions[questionIndex];
-    
+
     if (question.options && question.options.length > 2) {
       const newOptions = question.options.filter((_, i) => i !== optionIndex);
       newQuestions[questionIndex] = {
@@ -293,7 +293,7 @@ export default function UpdateExercisePage() {
 
   if (error || !exercise) {
     const errorMessage = error?.message || 'Exercice non trouvé';
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
@@ -334,28 +334,28 @@ export default function UpdateExercisePage() {
         {/* Navigation */}
         <div className="mb-8">
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-            <Link 
-              href="/profdashboard" 
+            <Link
+              href="/profdashboard"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               Dashboard
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link 
-              href="/profdashboard/exercises" 
+            <Link
+              href="/profdashboard/exercises"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               Exercices
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link 
+            <Link
               href={`/profdashboard/exercises/${courseId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               {courseInfo?.title || `Cours #${courseId}`}
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link 
+            <Link
               href={`/profdashboard/exercises/${courseId}/view/${exerciseId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
@@ -366,7 +366,7 @@ export default function UpdateExercisePage() {
               Édition
             </span>
           </div>
-          
+
           <div className="flex items-center justify-between mb-8">
             <button
               onClick={() => router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`)}
@@ -375,7 +375,7 @@ export default function UpdateExercisePage() {
               <ArrowLeft size={20} />
               Retour à l'exercice
             </button>
-            
+
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePreview}
@@ -384,7 +384,7 @@ export default function UpdateExercisePage() {
                 <Eye size={18} />
                 Aperçu étudiant
               </button>
-              
+
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30">
                 <FileText size={16} className="text-purple-600 dark:text-purple-400" />
                 <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
@@ -397,7 +397,7 @@ export default function UpdateExercisePage() {
 
         {/* Bannière d'information */}
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/20 rounded-2xl p-6 text-white">
+          <div className="border border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
@@ -412,13 +412,12 @@ export default function UpdateExercisePage() {
                       {displayExercise.title}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        displayExercise.status === 'PUBLISHED' 
-                          ? 'bg-green-500/20 text-green-200' 
-                          : 'bg-gray-500/20 text-gray-200'
-                      }`}>
+                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${displayExercise.status === 'PUBLISHED'
+                        ? 'bg-green-500/20 text-green-200'
+                        : 'bg-gray-500/20 text-gray-200'
+                        }`}>
                         {displayExercise.status === 'PUBLISHED' ? 'Publié' :
-                         'Fermé'}
+                          'Fermé'}
                       </div>
                       {courseInfo?.category && (
                         <div className="px-3 py-1 bg-white/20 rounded-full text-sm">
@@ -429,7 +428,7 @@ export default function UpdateExercisePage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg backdrop-blur-sm">
                     <div className="p-1.5 bg-white/20 rounded-lg">
@@ -442,7 +441,7 @@ export default function UpdateExercisePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg backdrop-blur-sm">
                     <div className="p-1.5 bg-white/20 rounded-lg">
                       <Clock size={18} />
@@ -454,7 +453,7 @@ export default function UpdateExercisePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg backdrop-blur-sm">
                     <div className="p-1.5 bg-white/20 rounded-lg">
                       <Users size={18} />
@@ -483,7 +482,7 @@ export default function UpdateExercisePage() {
                     Attention : Exercice déjà publié et noté
                   </h3>
                   <p className="text-yellow-700 dark:text-yellow-400 text-sm">
-                    Cet exercice a déjà été soumis par {displayExercise.submissionCount} étudiant{displayExercise.submissionCount !== 1 ? 's' : ''}. 
+                    Cet exercice a déjà été soumis par {displayExercise.submissionCount} étudiant{displayExercise.submissionCount !== 1 ? 's' : ''}.
                     Les modifications peuvent affecter les notes existantes. Soyez prudent lors des changements.
                   </p>
                 </div>
@@ -530,7 +529,7 @@ export default function UpdateExercisePage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
                   <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -548,7 +547,7 @@ export default function UpdateExercisePage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
                 Informations générales
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -562,7 +561,7 @@ export default function UpdateExercisePage() {
                     placeholder="Ex: Introduction à la programmation"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Score maximum *
@@ -575,7 +574,7 @@ export default function UpdateExercisePage() {
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                   />
                 </div>
-                
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description
@@ -588,7 +587,7 @@ export default function UpdateExercisePage() {
                     placeholder="Décrivez l'objectif de l'exercice..."
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <div className="flex items-center gap-2">
@@ -617,7 +616,7 @@ export default function UpdateExercisePage() {
                     Organisez et configurez les questions de l'exercice
                   </p>
                 </div>
-                
+
                 {/* Bouton "Ajouter une question" en haut à droite */}
                 {/* {questions.length > 0 && (
                   <button
@@ -661,11 +660,11 @@ export default function UpdateExercisePage() {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {question.type === 'TEXT' ? 'Texte libre' :
-                                question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                                  question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
                               </span>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-gray-600 dark:text-gray-400">Points:</span>
@@ -677,7 +676,7 @@ export default function UpdateExercisePage() {
                                 className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
                               />
                             </div>
-                            
+
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => removeQuestion(index)}
@@ -690,7 +689,7 @@ export default function UpdateExercisePage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Contenu de la question */}
                       <div className="p-6">
                         {/* Énoncé */}
@@ -700,7 +699,7 @@ export default function UpdateExercisePage() {
                           </label>
                           <textarea
                             value={question.text || ''} // ✅ Utilisez 'text' seulement
-                            onChange={(e) => updateQuestion(index, { 
+                            onChange={(e) => updateQuestion(index, {
                               text: e.target.value // ✅ Mettez à jour 'text'
                             })}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
@@ -708,7 +707,7 @@ export default function UpdateExercisePage() {
                             placeholder="Posez votre question ici..."
                           />
                         </div>
-                        
+
                         {/* Type de question */}
                         <div className="mb-6">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -716,7 +715,7 @@ export default function UpdateExercisePage() {
                           </label>
                           <select
                             value={question.type || 'TEXT'} // ✅ Utilisez 'type' seulement
-                            onChange={(e) => updateQuestion(index, { 
+                            onChange={(e) => updateQuestion(index, {
                               type: e.target.value as QuestionType // ✅ Mettez à jour 'type'
                             })}
                             className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700"
@@ -726,7 +725,7 @@ export default function UpdateExercisePage() {
                             <option value="CODE">Code</option>
                           </select>
                         </div>
-                        
+
                         {/* Options pour choix multiple */}
                         {question.type === 'MULTIPLE_CHOICE' && ( // ✅ Vérifiez 'type' seulement
                           <div className="mb-6">
@@ -742,7 +741,7 @@ export default function UpdateExercisePage() {
                                 + Ajouter une option
                               </button>
                             </div>
-                            
+
                             <div className="space-y-3">
                               {question.options?.map((option, optIndex) => (
                                 <div key={optIndex} className="flex items-center gap-3">
@@ -769,7 +768,7 @@ export default function UpdateExercisePage() {
                             </div>
                           </div>
                         )}
-                        
+
                         {/* Réponse correcte pour choix multiple */}
                         {question.type === 'MULTIPLE_CHOICE' && question.options && question.options.length > 0 && (
                           <div className="mb-4">
@@ -790,7 +789,7 @@ export default function UpdateExercisePage() {
                             </select>
                           </div>
                         )}
-                        
+
                         {/* Explication */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -809,7 +808,7 @@ export default function UpdateExercisePage() {
                   ))
                 )}
               </div>
-              
+
               {/* Bouton "Ajouter une question" en bas à droite (seulement s'il y a déjà des questions) */}
               {questions.length > 0 && (
                 <div className="flex justify-end pt-4">
@@ -823,7 +822,7 @@ export default function UpdateExercisePage() {
                 </div>
               )}
             </div>
-           
+
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -834,7 +833,7 @@ export default function UpdateExercisePage() {
                 <X size={20} />
                 Annuler
               </button>
-              
+
               <button
                 onClick={handleSave}
                 disabled={isUpdating || validationErrors.length > 0}
@@ -861,7 +860,7 @@ export default function UpdateExercisePage() {
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
             📝 Notes importantes
           </h3>
-          
+
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
@@ -873,7 +872,7 @@ export default function UpdateExercisePage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-3">
               <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
@@ -884,19 +883,19 @@ export default function UpdateExercisePage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-3">
               <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <h4 className="font-medium text-gray-700 dark:text-gray-300">Publication automatique</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tous les exercices sont automatiquement publiés. 
+                  Tous les exercices sont automatiquement publiés.
                   Le statut 'PUBLISHED' est appliqué par défaut.
                 </p>
               </div>
             </div>
           </div>
-          
+
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500 dark:text-gray-400">

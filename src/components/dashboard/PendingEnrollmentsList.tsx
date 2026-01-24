@@ -8,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { useLoading } from '@/contexts/LoadingContext';
 
 export default function PendingEnrollmentsList() {
     const { user } = useAuth();
@@ -17,15 +16,7 @@ export default function PendingEnrollmentsList() {
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [studentNames, setStudentNames] = useState<Record<string, string>>({});
     const [courseTitles, setCourseTitles] = useState<Record<number, string>>({});
-    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
 
-    useEffect(() => {
-        if (loading) {
-            startLoading();
-        } else {
-            stopLoading();
-        }
-    }, [loading, startLoading, stopLoading]);
 
     useEffect(() => {
         fetchPendingEnrollments();
@@ -96,8 +87,13 @@ export default function PendingEnrollmentsList() {
     // Si l'utilisateur n'est pas un prof, ne rien afficher (sécurité côté client)
     if (user?.role !== 'teacher') return null;
 
-    if (loading || globalLoading) {
-        return null;
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="h-10 w-10 text-purple-600 animate-spin mb-4" />
+                <p className="text-gray-500">Chargement des demandes...</p>
+            </div>
+        );
     }
 
     if (enrollments.length === 0) {

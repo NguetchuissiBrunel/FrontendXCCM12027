@@ -7,6 +7,8 @@ import Sidebar from '@/components/Sidebar';
 import { BookOpen, FileText, Award, Clock, TrendingUp, Users, Loader2 } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
 import { useCourseExercises, useMySubmissions } from '@/hooks/useExercise';
+import { useCourses } from '@/hooks/useCourses';
+import { EnrichedCourse } from '@/types/enrollment';
 import { toast } from 'react-hot-toast';
 
 interface User {
@@ -42,7 +44,7 @@ export default function StudentHome() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
-  const [enrolledCourses, setEnrolledCourses] = useState<Enrollment[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrichedCourse[]>([]);
   const [pendingExercises, setPendingExercises] = useState<any[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     averageScore: 0,
@@ -51,32 +53,33 @@ export default function StudentHome() {
     completedExercises: 0,
     submissionRate: 0
   });
-  
+
   const router = useRouter();
 
   // Utiliser les nouveaux hooks
-  const { 
-    submissions: mySubmissions, 
+  const { courses: allCourses, loading: coursesLoading } = useCourses();
+  const {
+    submissions: mySubmissions,
     isLoading: submissionsLoading,
-    refetch: refetchSubmissions 
+    refetch: refetchSubmissions
   } = useMySubmissions();
 
   // Charger les données de l'étudiant
   const loadStudentData = async (userData: User) => {
     try {
       startLoading();
-      
+
       // 1. Charger les inscriptions aux cours
       await loadEnrollments();
-      
+
       // 2. Calculer les statistiques à partir des soumissions
       calculateStats(mySubmissions);
-      
+
       // 3. Charger les exercices en attente pour chaque cours
       if (enrolledCourses.length > 0) {
         await loadPendingExercises();
       }
-      
+
     } catch (error) {
       console.error('Erreur lors du chargement des données étudiant:', error);
       toast.error('Erreur lors du chargement des données');
@@ -90,17 +93,52 @@ export default function StudentHome() {
   const loadEnrollments = async () => {
     try {
       // Utiliser le service d'inscription existant
-      // Note: Assurez-vous que ce service est correctement implémenté
       const { EnrollmentService } = await import('@/utils/enrollmentService');
       const enrollments = await EnrollmentService.getMyEnrollments();
-      
+
       // Filtrer uniquement les inscriptions approuvées
       const approvedEnrollments = (enrollments || []).filter(
         (e: any) => e.status === 'APPROVED'
-      ) as Enrollment[];
-      
-      setEnrolledCourses(approvedEnrollments);
-      
+      );
+
+      // Enrichir avec les détails des cours (comme dans StudentCourses)
+      const enriched = approvedEnrollments.map((enrollment: any) => {
+        const courseDetail = allCourses.find(c => c.id === enrollment.courseId);
+
+        // Si on trouve les détails du cours, on les utilise
+        if (courseDetail) {
+          return {
+            id: courseDetail.id,
+            title: courseDetail.title,
+            category: courseDetail.category || 'Formation',
+            image: courseDetail.image,
+            author: courseDetail.author,
+            enrollment: {
+              ...enrollment,
+              status: enrollment.status
+            }
+          } as unknown as EnrichedCourse;
+        }
+
+        // Sinon, on retourne un objet partiel
+        return {
+          id: enrollment.courseId,
+          title: `Cours #${enrollment.courseId}`,
+          category: 'Cours',
+          image: '',
+          author: {
+            name: 'Inconnu',
+            image: ''
+          },
+          enrollment: {
+            ...enrollment,
+            status: enrollment.status
+          }
+        } as EnrichedCourse;
+      });
+
+      setEnrolledCourses(enriched);
+
     } catch (err) {
       console.error("Erreur lors du chargement des inscriptions:", err);
       toast.error('Impossible de charger vos inscriptions');
@@ -112,9 +150,9 @@ export default function StudentHome() {
   const calculateStats = (submissionsList: any[]) => {
     const gradedSubmissions = submissionsList.filter(s => s.graded);
     const totalScore = gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0);
-    
+
     const totalMaxScore = gradedSubmissions.reduce((sum, s) => sum + (s.maxScore || 0), 0);
-    
+
     const averageScore = gradedSubmissions.length > 0 && totalMaxScore > 0
       ? (totalScore / totalMaxScore) * 100
       : 0;
@@ -134,14 +172,14 @@ export default function StudentHome() {
       const now = new Date();
 
       // Pour chaque cours, charger les exercices réels
-      for (const enrollment of enrolledCourses) {
+      for (const course of enrolledCourses) {
         try {
           // Utiliser le hook useCourseExercises pour chaque cours
           const { exercises: courseExercises } = await (async () => {
             // Pour l'instant, utilisons une approche directe
             // Vous devrez peut-être adapter cela selon votre implémentation
             const { ExerciseService } = await import('@/lib3/services/ExerciseService');
-            const exercises = await ExerciseService.getExercisesForCourse(enrollment.courseId);
+            const exercises = await ExerciseService.getExercisesForCourse(course.id);
             return { exercises };
           })();
 
@@ -149,12 +187,12 @@ export default function StudentHome() {
           const submittedExerciseIds = new Set(
             mySubmissions.map(s => s.exerciseId)
           );
-          
+
           const pendingForCourse = courseExercises.filter((exercise: any) => {
             const dueDate = exercise.dueDate ? new Date(exercise.dueDate) : null;
             const alreadySubmitted = submittedExerciseIds.has(exercise.id);
             const canSubmit = dueDate ? dueDate > now : true;
-            
+
             return !alreadySubmitted && canSubmit;
           });
 
@@ -162,12 +200,12 @@ export default function StudentHome() {
           pendingForCourse.forEach((exercise: any) => {
             allExercises.push({
               ...exercise,
-              courseTitle: enrollment.courseTitle || `Cours #${enrollment.courseId}`
+              courseTitle: course.title
             });
           });
 
         } catch (error) {
-          console.error(`Erreur chargement exercices cours ${enrollment.courseId}:`, error);
+          console.error(`Erreur chargement exercices cours ${course.id}:`, error);
           // Continuer avec le cours suivant
         }
       }
@@ -224,6 +262,13 @@ export default function StudentHome() {
     }
   }, [mySubmissions, enrolledCourses]);
 
+  // Recharger les inscriptions quand les cours sont disponibles
+  useEffect(() => {
+    if (!coursesLoading && allCourses.length > 0 && user) {
+      loadEnrollments();
+    }
+  }, [coursesLoading, allCourses, user]);
+
   // Rafraîchir les données périodiquement
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -238,7 +283,7 @@ export default function StudentHome() {
 
   // Gestion des actions
   const handleStartExercise = (exerciseId: number) => {
-    router.push(`/etudashboard/exercises/${exerciseId}/submit`);
+    router.push(`/etudashboard/exercises/${exerciseId}`);
   };
 
   const handleViewSubmission = (submissionId: number) => {
@@ -250,15 +295,8 @@ export default function StudentHome() {
   };
 
   // Composant de chargement
-  if (loading || globalLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des données...</p>
-        </div>
-      </div>
-    );
+  if (loading || globalLoading || coursesLoading) {
+    return null;
   }
 
   if (!user) return null;
@@ -287,7 +325,7 @@ export default function StudentHome() {
                 "Le succès n'est pas final, l'échec n'est pas fatal : c'est le courage de continuer qui compte."
               </p>
             </div>
-            
+
             {/* Statistiques rapides */}
             <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
               <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
@@ -338,9 +376,9 @@ export default function StudentHome() {
 
             {enrolledCourses.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                {enrolledCourses.map((enrollment) => (
-                  <div 
-                    key={enrollment.id} 
+                {enrolledCourses.map((course) => (
+                  <div
+                    key={course.id}
                     className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all"
                   >
                     <div className="h-24 md:h-32 bg-gradient-to-r from-purple-500 to-blue-500 dark:from-purple-600 dark:to-blue-600 relative">
@@ -353,37 +391,37 @@ export default function StudentHome() {
                         <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                           Actif
                         </span>
-                        <span className="text-xs text-gray-500">
-                          Cours #{enrollment.courseId}
+                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                          {course.category}
                         </span>
                       </div>
                       <h3 className="font-bold text-base md:text-lg text-gray-900 dark:text-white mb-2 line-clamp-1">
-                        {enrollment.courseTitle || `Cours #${enrollment.courseId}`}
+                        {course.title}
                       </h3>
 
                       <div className="space-y-3">
                         <div>
                           <div className="flex justify-between text-xs mb-1 text-gray-500">
                             <span>Progression</span>
-                            <span>{enrollment.progress || 0}%</span>
+                            <span>{course.enrollment?.progress || 0}%</span>
                           </div>
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                             <div
                               className="bg-purple-600 h-1.5 rounded-full transition-all"
-                              style={{ width: `${enrollment.progress || 0}%` }}
+                              style={{ width: `${course.enrollment?.progress || 0}%` }}
                             ></div>
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleViewCourseExercises(enrollment.courseId)}
+                            onClick={() => handleViewCourseExercises(course.id)}
                             className="flex-1 py-2 text-xs md:text-sm border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                           >
                             Voir les exercices
                           </button>
                           <button
-                            onClick={() => router.push(`/courses/${enrollment.courseId}`)}
+                            onClick={() => router.push(`/courses/${course.id}`)}
                             className="flex-1 py-2 text-xs md:text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
                           >
                             Continuer
@@ -426,12 +464,12 @@ export default function StudentHome() {
                   </span>
                 </h3>
               </div>
-              
+
               {pendingExercises.length > 0 ? (
                 <div className="space-y-3">
                   {pendingExercises.slice(0, 3).map((exercise) => (
-                    <div 
-                      key={exercise.id} 
+                    <div
+                      key={exercise.id}
                       className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                       <div className="flex justify-between items-start">
@@ -465,7 +503,7 @@ export default function StudentHome() {
                       </div>
                     </div>
                   ))}
-                  
+
                   {pendingExercises.length > 3 && (
                     <button
                       onClick={() => router.push('/etudashboard/exercises')}
@@ -499,7 +537,7 @@ export default function StudentHome() {
                   Voir tout
                 </button>
               </div>
-              
+
               {mySubmissions.length > 0 ? (
                 <div className="space-y-3">
                   {mySubmissions.slice(0, 3).map((submission) => (
@@ -513,25 +551,24 @@ export default function StudentHome() {
                             Soumis le {new Date(submission.submittedAt).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
-                        <div className={`text-sm font-bold ml-2 ${
-                          submission.graded ? 
-                            ((submission.score || 0) / (submission.maxScore || 1) >= 0.5 ? 
-                              'text-green-600' : 'text-red-600') : 
-                            'text-yellow-600'
-                        }`}>
-                          {submission.graded ? 
-                            `${submission.score || 0}/${submission.maxScore || 0}` : 
+                        <div className={`text-sm font-bold ml-2 ${submission.graded ?
+                          ((submission.score || 0) / (submission.maxScore || 1) >= 0.5 ?
+                            'text-green-600' : 'text-red-600') :
+                          'text-yellow-600'
+                          }`}>
+                          {submission.graded ?
+                            `${submission.score || 0}/${submission.maxScore || 0}` :
                             'En attente'
                           }
                         </div>
                       </div>
-                      
+
                       {submission.graded && submission.feedback && (
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
                           {submission.feedback}
                         </p>
                       )}
-                      
+
                       <button
                         onClick={() => handleViewSubmission(submission.id)}
                         className="mt-2 w-full py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -586,8 +623,8 @@ export default function StudentHome() {
                   className="w-full py-2 text-center bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={pendingExercises.length === 0}
                 >
-                  {pendingExercises.length > 0 ? 
-                    'Commencer un exercice' : 
+                  {pendingExercises.length > 0 ?
+                    'Commencer un exercice' :
                     'Aucun exercice en attente'
                   }
                 </button>

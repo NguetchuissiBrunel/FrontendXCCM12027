@@ -78,9 +78,11 @@ export default function ProfessorDashboard() {
   // Statistiques pour ProfileCard
   const [coursesStatsForProfile, setCoursesStatsForProfile] = useState<CourseStat[]>([]);
 
-  // Mettre à jour le loading context
+  // Mettre à jour le loading context de manière synchronisée
   useEffect(() => {
-    if (authLoading || loading) {
+    const isActuallyLoading = authLoading || loading;
+
+    if (isActuallyLoading) {
       startLoading();
     } else {
       stopLoading();
@@ -396,6 +398,7 @@ export default function ProfessorDashboard() {
     }
   }, [dashboardError, loading]);
 
+  // Si on charge ou que le loader global est actif, on ne rend rien (le loader s'en occupe)
   if (authLoading || loading || globalLoading) {
     return null;
   }
@@ -563,7 +566,7 @@ export default function ProfessorDashboard() {
                 </span>
               )}
             </button>
-            
+
           </div>
         </div>
       </div>

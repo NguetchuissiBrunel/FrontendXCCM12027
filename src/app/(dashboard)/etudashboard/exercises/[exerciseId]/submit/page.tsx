@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useExercise, useSubmitExercise, useSubmissionPermission } from '@/hooks/useExercise';
+import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLoading } from '@/contexts/LoadingContext';
@@ -12,42 +13,38 @@ export default function SubmitExercisePage() {
   const params = useParams();
   const router = useRouter();
   const exerciseId = parseInt(params.exerciseId as string);
-  
-  // Utiliser les nouveaux hooks
-  const { 
-    exercise, 
-    isLoading: exerciseLoading, 
+  const { loading: authLoading } = useAuth();
+
+  const {
+    exercise,
+    isLoading: exerciseLoading,
     error: exerciseError,
-    refetch: refetchExercise 
+    refetch: refetchExercise
   } = useExercise(exerciseId);
-  
-  const { 
-    mutate: submitExercise, 
-    isPending: isSubmitting 
+
+  const {
+    mutate: submitExercise,
+    isPending: isSubmitting
   } = useSubmitExercise();
-  
+
   const {
     canSubmit,
     reason,
     isLoading: permissionLoading,
     check: checkPermission
   } = useSubmissionPermission(exerciseId);
-  
+
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [loading, setLoading] = useState(true);
-  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading(); 
-  const [submitting, setSubmitting] = useState(false);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [answeredCount, setAnsweredCount] = useState(0);
-  
-  // Charger l'exercice et vérifier les permissions
+
   useEffect(() => {
     if (exerciseId) {
       refetchExercise();
       checkPermission();
     }
   }, [exerciseId, refetchExercise, checkPermission]);
-  
-  // Initialiser les réponses quand l'exercice est chargé
+
   useEffect(() => {
     if (exercise) {
       const initialAnswers: Record<number, string> = {};
@@ -57,23 +54,21 @@ export default function SubmitExercisePage() {
       setAnswers(initialAnswers);
     }
   }, [exercise]);
-  
-  // Mettre à jour le compteur de réponses
+
   useEffect(() => {
     if (exercise) {
       const count = Object.values(answers).filter(v => v.trim()).length;
       setAnsweredCount(count);
     }
   }, [answers, exercise]);
-  
-  // Vérifier les permissions de soumission
+
   useEffect(() => {
     if (!permissionLoading && !canSubmit && reason) {
       toast.error(reason);
       router.push('/etudashboard/exercises');
     }
   }, [canSubmit, reason, permissionLoading, router]);
-  
+
   const handleAnswerChange = (questionId: number, value: string) => {
     if (!exercise?.alreadySubmitted) {
       setAnswers(prev => ({
@@ -82,69 +77,55 @@ export default function SubmitExercisePage() {
       }));
     }
   };
-  
+
   const handleSubmit = async () => {
     if (!exercise || exercise.alreadySubmitted) return;
-    
-    // Validation
+
     const unansweredQuestions: number[] = [];
     exercise.questions?.forEach((q, index) => {
       if (!answers[q.id]?.trim()) {
         unansweredQuestions.push(index + 1);
       }
     });
-    
+
     if (unansweredQuestions.length > 0) {
       toast.error(`Veuillez répondre aux questions : ${unansweredQuestions.join(', ')}`);
       return;
     }
 
     try {
-      // Préparer les réponses
       const formattedAnswers = Object.entries(answers)
         .filter(([_, answer]) => answer.trim())
         .map(([questionId, answer]) => ({
           questionId: parseInt(questionId),
           answer: answer.trim()
         }));
-      
-      // Soumettre l'exercice
+
       const result = await submitExercise(
         exerciseId,
         formattedAnswers
       );
-      
+
       if (result.success) {
         toast.success('✅ Exercice soumis avec succès !');
-        
-        // Rafraîchir les données
         await refetchExercise();
-        
-        // Rediriger après un court délai
         setTimeout(() => {
           router.push('/etudashboard/submissions');
         }, 1500);
       } else {
         toast.error(result.message || 'Erreur lors de la soumission');
       }
-      
-    } catch (error: any) {
-      console.error('Erreur soumission:', error);
-      toast.error(error.message || 'Erreur lors de la soumission');
+    } catch (err) {
+      console.error('Erreur soumission:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la soumission';
+      toast.error(errorMessage);
     }
   };
-  
-  if (exerciseLoading || permissionLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de l'exercice...</p>
-        </div>
-      </div>
-    );
+
+  if (authLoading || exerciseLoading || permissionLoading || globalLoading) {
+    return null;
   }
-  
+
   if (exerciseError || !exercise) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
@@ -164,7 +145,7 @@ export default function SubmitExercisePage() {
       </div>
     );
   }
-  
+
   if (exercise.alreadySubmitted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
@@ -192,7 +173,7 @@ export default function SubmitExercisePage() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -205,29 +186,29 @@ export default function SubmitExercisePage() {
             <ArrowLeft size={20} />
             <span>Retour aux exercices</span>
           </button>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700 shadow-sm">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
               {exercise.title}
             </h1>
-            
+
             {exercise.description && (
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {exercise.description}
               </p>
             )}
-            
+
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-3 py-1.5 rounded-full">
                 <Clock size={16} />
                 <span>Échéance: {new Date(exercise.dueDate || '').toLocaleDateString('fr-FR')}</span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
                 <FileText size={16} />
                 <span>Score max: {exercise.maxScore} points</span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
                 <CheckCircle size={16} />
                 <span>{exercise.questions?.length || 0} questions</span>
@@ -235,7 +216,7 @@ export default function SubmitExercisePage() {
             </div>
           </div>
         </div>
-        
+
         {/* Barre de progression */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center mb-2">
@@ -247,20 +228,20 @@ export default function SubmitExercisePage() {
             </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div 
+            <div
               className="bg-green-500 h-2 rounded-full transition-all duration-300"
-              style={{ 
-                width: `${(answeredCount / (exercise.questions?.length || 1)) * 100}%` 
+              style={{
+                width: `${(answeredCount / (exercise.questions?.length || 1)) * 100}%`
               }}
             />
           </div>
         </div>
-        
+
         {/* Questions */}
         <div className="space-y-6 mb-8">
           {exercise.questions?.map((question, index) => (
-            <div 
-              key={question.id} 
+            <div
+              key={question.id}
               className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-colors"
             >
               <div className="flex justify-between items-start mb-4">
@@ -275,17 +256,17 @@ export default function SubmitExercisePage() {
                       {question.type === 'CODE' && 'Code'}
                     </span>
                   </div>
-                  
+
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                     {question.text}
                   </h3>
                 </div>
-                
+
                 <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-sm font-medium rounded-full">
                   {question.points} point{question.points > 1 ? 's' : ''}
                 </div>
               </div>
-              
+
               {/* Zone de réponse */}
               {question.type === 'TEXT' && (
                 <textarea
@@ -295,17 +276,16 @@ export default function SubmitExercisePage() {
                   placeholder="Tapez votre réponse ici..."
                 />
               )}
-              
+
               {question.type === 'MULTIPLE_CHOICE' && question.options && (
                 <div className="space-y-2">
                   {question.options.map((option, optIndex) => (
-                    <label 
-                      key={optIndex} 
-                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${
-                        answers[question.id] === option
-                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
-                          : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
+                    <label
+                      key={optIndex}
+                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${answers[question.id] === option
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                        : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -320,7 +300,7 @@ export default function SubmitExercisePage() {
                   ))}
                 </div>
               )}
-              
+
               {question.type === 'CODE' && (
                 <div>
                   <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
@@ -338,7 +318,7 @@ export default function SubmitExercisePage() {
             </div>
           ))}
         </div>
-        
+
         {/* Bouton de soumission (sticky) */}
         <div className="sticky bottom-6 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -352,7 +332,7 @@ export default function SubmitExercisePage() {
                 </span>
               )}
             </div>
-            
+
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || answeredCount < (exercise.questions?.length || 0)}

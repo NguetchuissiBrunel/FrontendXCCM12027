@@ -7,12 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
-import { 
-  BookOpen, 
-  FileText, 
-  Users, 
-  ArrowLeft, 
-  Search, 
+import {
+  BookOpen,
+  FileText,
+  Users,
+  ArrowLeft,
+  Search,
   Filter,
   AlertCircle,
   CheckCircle,
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Exercise, Submission } from '@/types/exercise';
+import { useLoading } from '@/contexts/LoadingContext';
 
 // ============ TYPES ============
 
@@ -49,27 +50,27 @@ interface ExerciseWithStats extends Exercise {
 
 const useExerciseSync = () => {
   const [syncTrigger, setSyncTrigger] = useState(0);
-  
+
   const triggerSync = (exerciseId?: number) => {
     console.log(`🔄 Sync déclenchée pour ${exerciseId ? `exercice ${exerciseId}` : 'tous les exercices'}`);
     setSyncTrigger(Date.now());
-    
+
     if (typeof window !== 'undefined') {
       localStorage.setItem('exercise-sync', JSON.stringify({
         exerciseId,
         timestamp: Date.now(),
         trigger: Math.random()
       }));
-      
+
       window.dispatchEvent(new CustomEvent('exercise-sync', {
         detail: { exerciseId, timestamp: Date.now() }
       }));
     }
   };
-  
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'exercise-sync' && e.newValue) {
         try {
@@ -81,22 +82,22 @@ const useExerciseSync = () => {
         }
       }
     };
-    
+
     const handleCustomEvent = (e: Event) => {
       const customEvent = e as CustomEvent;
       console.log('📡 Sync reçue depuis le même onglet:', customEvent.detail);
       setSyncTrigger(Date.now());
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('exercise-sync', handleCustomEvent);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('exercise-sync', handleCustomEvent);
     };
   }, []);
-  
+
   return { syncTrigger, triggerSync };
 };
 
@@ -105,7 +106,8 @@ const useExerciseSync = () => {
 export default function AllExercisesPage() {
   const router = useRouter();
   const { user } = useAuth();
-  
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
+
   // États
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [exercises, setExercises] = useState<ExerciseWithStats[]>([]);
@@ -114,14 +116,14 @@ export default function AllExercisesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'pending' | 'graded'>('all');
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  
+
   // Références
   const loadingRef = useRef(false);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Sync
   const { syncTrigger, triggerSync } = useExerciseSync();
-  
+
   // Service de cache
   const exerciseCache = useRef<Map<number, { data: ExerciseWithStats; timestamp: number }>>(new Map());
   const CACHE_DURATION = 30000;
@@ -137,40 +139,40 @@ export default function AllExercisesPage() {
   const loadCourseExercises = useCallback(async (courseId: number, courseData: CourseData): Promise<ExerciseWithStats[]> => {
     try {
       console.log(`📚 Chargement exercices cours ${courseId}...`);
-      
+
       const exercisesResponse = await ExercicesService.getExercisesForCourse(courseId);
       const courseExercises = exercisesResponse.data || [];
-      
+
       const exercisesWithStats: ExerciseWithStats[] = [];
-      
+
       for (const exerciseData of courseExercises) {
         const exerciseId = exerciseData.id;
         if (!exerciseId) continue;
-        
+
         try {
           const cached = exerciseCache.current.get(exerciseId);
           const now = Date.now();
-          
+
           if (cached && (now - cached.timestamp) < CACHE_DURATION) {
             console.log(`✅ Exercice ${exerciseId} depuis le cache`);
             exercisesWithStats.push(cached.data);
             continue;
           }
-          
+
           const [fullExercise, submissions] = await Promise.all([
             ExerciseService.getExerciseDetails(exerciseId),
             ExerciseService.getExerciseSubmissions(exerciseId).catch(() => [])
           ]);
-          
+
           if (!fullExercise) continue;
-          
+
           const gradedSubmissions = submissions.filter((s: Submission) => s.graded);
           const pendingSubmissions = submissions.filter((s: Submission) => !s.graded);
-          
-          const averageScore = gradedSubmissions.length > 0 
+
+          const averageScore = gradedSubmissions.length > 0
             ? Math.round(gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / gradedSubmissions.length * 10) / 10
             : 0;
-          
+
           const exerciseWithStats: ExerciseWithStats = {
             ...fullExercise,
             courseTitle: courseData.title,
@@ -181,22 +183,22 @@ export default function AllExercisesPage() {
             averageScore,
             lastActivity: new Date().toISOString()
           };
-          
+
           exerciseCache.current.set(exerciseId, {
             data: exerciseWithStats,
             timestamp: now
           });
-          
+
           exercisesWithStats.push(exerciseWithStats);
-          
+
         } catch (error) {
           console.error(`❌ Erreur exercice ${exerciseId}:`, error);
         }
       }
-      
+
       console.log(`✅ ${exercisesWithStats.length} exercices chargés pour cours ${courseId}`);
       return exercisesWithStats;
-      
+
     } catch (error) {
       console.error(`❌ Erreur cours ${courseId}:`, error);
       return [];
@@ -206,100 +208,102 @@ export default function AllExercisesPage() {
   // Charger tous les exercices
   const loadAllExercises = useCallback(async (forceRefresh = false) => {
     if (!user || loadingRef.current) return;
-    
+
     loadingRef.current = true;
     setLoading(true);
+    startLoading();
     setRefreshing(true);
-    
+
     try {
       console.log('🔄 Chargement de tous les exercices...');
-      
+
       // Récupérer les cours avec validation
       const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
       const rawCourses = coursesResponse.data || [];
-      
+
       // Normaliser et filtrer les cours
       const validCourses = rawCourses
         .map(normalizeCourseData)
         .filter(course => course.id > 0);
-      
+
       setCourses(validCourses);
-      
+
       if (validCourses.length === 0) {
         setExercises([]);
         return;
       }
-      
+
       // Charger les exercices séquentiellement pour éviter les timeouts
       const allExercises: ExerciseWithStats[] = [];
-      
+
       for (const course of validCourses) {
         const courseExercises = await loadCourseExercises(course.id, course);
         allExercises.push(...courseExercises);
       }
-      
+
       setExercises(allExercises);
       setLastRefresh(new Date());
-      
+
       console.log(`🎯 ${allExercises.length} exercices chargés avec succès`);
-      
+
       if (forceRefresh) {
         toast.success(`${allExercises.length} exercices actualisés`);
       }
-      
+
     } catch (error) {
       console.error('❌ Erreur chargement exercices:', error);
       toast.error('Erreur de chargement des exercices');
     } finally {
       setLoading(false);
       setRefreshing(false);
+      stopLoading();
       loadingRef.current = false;
     }
-  }, [user, loadCourseExercises]);
+  }, [user, loadCourseExercises, startLoading, stopLoading]);
 
   // Rafraîchir un exercice spécifique
   const refreshSingleExercise = useCallback(async (exerciseId: number) => {
     try {
       console.log(`🔄 Rafraîchissement exercice ${exerciseId}...`);
-      
-      setExercises(prev => prev.map(ex => 
-        ex.id === exerciseId 
+
+      setExercises(prev => prev.map(ex =>
+        ex.id === exerciseId
           ? { ...ex, isUpdating: true, hasUpdates: false }
           : ex
       ));
-      
+
       const [fullExercise, submissions] = await Promise.all([
         ExerciseService.getExerciseDetails(exerciseId),
         ExerciseService.getExerciseSubmissions(exerciseId)
       ]);
-      
+
       if (!fullExercise) return;
-      
+
       const gradedSubmissions = submissions.filter((s: Submission) => s.graded);
       const pendingSubmissions = submissions.filter((s: Submission) => !s.graded);
-      
-      const averageScore = gradedSubmissions.length > 0 
+
+      const averageScore = gradedSubmissions.length > 0
         ? Math.round(gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / gradedSubmissions.length * 10) / 10
         : 0;
-      
+
       // Trouver le cours correspondant
       const course = courses.find(c => c.id === fullExercise.courseId);
-      
-      setExercises(prev => prev.map(ex => 
-        ex.id === exerciseId 
+
+      setExercises(prev => prev.map(ex =>
+        ex.id === exerciseId
           ? {
-              ...ex,
-              ...fullExercise,
-              pendingSubmissions: pendingSubmissions.length,
-              totalSubmissions: submissions.length,
-              averageScore,
-              lastActivity: new Date().toISOString(),
-              isUpdating: false,
-              hasUpdates: true
-            }
+            ...ex,
+            ...fullExercise,
+            pendingSubmissions: pendingSubmissions.length,
+            totalSubmissions: submissions.length,
+            averageScore,
+            lastActivity: new Date().toISOString(),
+            isUpdating: false,
+            hasUpdates: true
+          }
           : ex
       ));
-      
+
       // Mettre à jour le cache
       exerciseCache.current.set(exerciseId, {
         data: {
@@ -314,22 +318,22 @@ export default function AllExercisesPage() {
         },
         timestamp: Date.now()
       });
-      
+
       setTimeout(() => {
-        setExercises(prev => prev.map(ex => 
-          ex.id === exerciseId 
+        setExercises(prev => prev.map(ex =>
+          ex.id === exerciseId
             ? { ...ex, hasUpdates: false }
             : ex
         ));
       }, 2000);
-      
+
       console.log(`✅ Exercice ${exerciseId} rafraîchi`);
-      
+
     } catch (error) {
       console.error(`❌ Erreur rafraîchissement exercice ${exerciseId}:`, error);
-      
-      setExercises(prev => prev.map(ex => 
-        ex.id === exerciseId 
+
+      setExercises(prev => prev.map(ex =>
+        ex.id === exerciseId
           ? { ...ex, isUpdating: false }
           : ex
       ));
@@ -347,30 +351,30 @@ export default function AllExercisesPage() {
   // Écouter les synchronisations
   useEffect(() => {
     if (!syncTrigger) return;
-    
+
     console.log('🎯 Sync détectée, rafraîchissement...');
-    
+
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
     }
-    
+
     syncTimeoutRef.current = setTimeout(() => {
       loadAllExercises(true);
     }, 500);
-    
+
   }, [syncTrigger, loadAllExercises]);
 
   // Auto-refresh périodique
   useEffect(() => {
     if (!user) return;
-    
+
     const intervalId = setInterval(() => {
       const now = Date.now();
       const needsRefresh = exercises.some(exercise => {
         const lastUpdate = exercise.lastActivity ? new Date(exercise.lastActivity).getTime() : 0;
         return (now - lastUpdate) > 60000;
       });
-      
+
       if (needsRefresh && !loadingRef.current) {
         console.log('⏰ Auto-refresh des exercices...');
         loadAllExercises();
@@ -396,50 +400,50 @@ export default function AllExercisesPage() {
       toast.error('Exercice invalide');
       return;
     }
-    
+
     localStorage.setItem('current-exercise', JSON.stringify({
       id: exercise.id,
       courseId: exercise.courseId,
       action: 'manage'
     }));
-    
+
     router.push(`/profdashboard/exercises/${exercise.courseId}/view/${exercise.id}`);
   };
 
   const handleViewSubmissions = (exercise: ExerciseWithStats) => {
     if (!exercise.id || !exercise.courseId) return;
-    
+
     localStorage.setItem('current-exercise', JSON.stringify({
       id: exercise.id,
       courseId: exercise.courseId,
       action: 'submissions'
     }));
-    
+
     router.push(`/profdashboard/exercises/${exercise.courseId}/submissions/${exercise.id}`);
   };
 
   const handleEditExercise = (exercise: ExerciseWithStats) => {
     if (!exercise.id || !exercise.courseId) return;
-    
+
     localStorage.setItem('current-exercise', JSON.stringify({
       id: exercise.id,
       courseId: exercise.courseId,
       action: 'edit'
     }));
-    
+
     router.push(`/profdashboard/exercises/${exercise.courseId}/update/${exercise.id}`);
   };
 
   // ============ FILTRES ============
 
   const filteredExercises = exercises.filter(exercise => {
-    const matchesSearch = 
+    const matchesSearch =
       exercise.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exercise.courseTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exercise.courseCategory?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (!matchesSearch) return false;
-    
+
     switch (selectedFilter) {
       case 'pending':
         return exercise.pendingSubmissions > 0;
@@ -468,7 +472,7 @@ export default function AllExercisesPage() {
   const formatLastRefresh = () => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - lastRefresh.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return `Il y a ${diffInSeconds}s`;
     if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)}min`;
     return `Il y a ${Math.floor(diffInSeconds / 3600)}h`;
@@ -476,21 +480,14 @@ export default function AllExercisesPage() {
 
   const totalPending = exercises.reduce((sum, ex) => sum + ex.pendingSubmissions, 0);
   const totalSubmissions = exercises.reduce((sum, ex) => sum + ex.totalSubmissions, 0);
-  const gradedPercentage = totalSubmissions > 0 
+  const gradedPercentage = totalSubmissions > 0
     ? Math.round((totalSubmissions - totalPending) / totalSubmissions * 100)
     : 0;
 
   // ============ RENDU ============
 
-  if (loading && !refreshing) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-purple-600 dark:text-purple-400 animate-spin mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des exercices...</p>
-        </div>
-      </div>
-    );
+  if ((loading && !refreshing) || globalLoading) {
+    return null;
   }
 
   return (
@@ -505,7 +502,7 @@ export default function AllExercisesPage() {
             <ArrowLeft size={20} />
             Retour au dashboard
           </button>
-          
+
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -515,7 +512,7 @@ export default function AllExercisesPage() {
                 Gérez et suivez tous vos exercices en un seul endroit
               </p>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <button
                 onClick={handleRefresh}
@@ -525,7 +522,7 @@ export default function AllExercisesPage() {
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 {refreshing ? 'Actualisation...' : 'Actualiser'}
               </button>
-              
+
               <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-6">
                   <div className="text-center">
@@ -565,36 +562,33 @@ export default function AllExercisesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedFilter('all')}
-                className={`px-4 py-2 rounded-lg border transition-colors ${
-                  selectedFilter === 'all'
+                className={`px-4 py-2 rounded-lg border transition-colors ${selectedFilter === 'all'
                     ? 'bg-purple-600 border-purple-600 text-white'
                     : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 Tous
               </button>
               <button
                 onClick={() => setSelectedFilter('pending')}
-                className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
-                  selectedFilter === 'pending'
+                className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${selectedFilter === 'pending'
                     ? 'bg-red-600 border-red-600 text-white'
                     : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 <AlertCircle className="w-4 h-4" />
                 À corriger
               </button>
               <button
                 onClick={() => setSelectedFilter('graded')}
-                className={`px-4 py-2 rounded-lg border transition-colors ${
-                  selectedFilter === 'graded'
+                className={`px-4 py-2 rounded-lg border transition-colors ${selectedFilter === 'graded'
                     ? 'bg-green-600 border-green-600 text-white'
                     : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 Corrigés
               </button>
@@ -634,20 +628,19 @@ export default function AllExercisesPage() {
               </div>
             ) : (
               filteredExercises.map((exercise) => (
-                <div 
-                  key={`${exercise.id}-${exercise.lastActivity}`} 
-                  className={`p-6 transition-all duration-300 relative ${
-                    exercise.isUpdating ? 'bg-blue-50 dark:bg-blue-900/20' :
-                    exercise.hasUpdates ? 'bg-green-50 dark:bg-green-900/20' :
-                    'hover:bg-gray-50 dark:hover:bg-gray-900/30'
-                  }`}
+                <div
+                  key={`${exercise.id}-${exercise.lastActivity}`}
+                  className={`p-6 transition-all duration-300 relative ${exercise.isUpdating ? 'bg-blue-50 dark:bg-blue-900/20' :
+                      exercise.hasUpdates ? 'bg-green-50 dark:bg-green-900/20' :
+                        'hover:bg-gray-50 dark:hover:bg-gray-900/30'
+                    }`}
                 >
                   {exercise.isUpdating && (
                     <div className="absolute top-4 right-4">
                       <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
                     </div>
                   )}
-                  
+
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -657,21 +650,21 @@ export default function AllExercisesPage() {
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                           {exercise.courseTitle}
                         </span>
-                        
+
                         {exercise.pendingSubmissions > 0 && (
                           <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getBadgeColor(exercise.pendingSubmissions)}`}>
                             {getExerciseStatusIcon(exercise.pendingSubmissions)}
                             {exercise.pendingSubmissions} à corriger
                           </span>
                         )}
-                        
+
                         {exercise.totalSubmissions === 0 && (
                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
                             Aucune soumission
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">
@@ -681,7 +674,7 @@ export default function AllExercisesPage() {
                             {exercise.description || 'Pas de description'}
                           </p>
                         </div>
-                        
+
                         <div className="flex items-center gap-4">
                           <div className="text-center">
                             <div className="font-bold text-gray-800 dark:text-gray-200">
@@ -691,7 +684,7 @@ export default function AllExercisesPage() {
                               Score max
                             </div>
                           </div>
-                          
+
                           {exercise.totalSubmissions > 0 && (
                             <div className="text-center">
                               <div className="font-bold text-gray-800 dark:text-gray-200">
@@ -704,7 +697,7 @@ export default function AllExercisesPage() {
                           )}
                         </div>
                       </div>
-                      
+
                       {exercise.totalSubmissions > 0 && (
                         <div className="mb-3">
                           <div className="flex justify-between text-xs mb-1">
@@ -712,23 +705,23 @@ export default function AllExercisesPage() {
                               Soumissions: {exercise.totalSubmissions - exercise.pendingSubmissions} corrigées sur {exercise.totalSubmissions}
                             </span>
                             <span className="text-gray-600 dark:text-gray-400">
-                              {exercise.totalSubmissions > 0 
+                              {exercise.totalSubmissions > 0
                                 ? Math.round(((exercise.totalSubmissions - exercise.pendingSubmissions) / exercise.totalSubmissions) * 100)
                                 : 0
                               }%
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-purple-600 h-2 rounded-full transition-all duration-500"
-                              style={{ 
-                                width: `${((exercise.totalSubmissions - exercise.pendingSubmissions) / exercise.totalSubmissions) * 100}%` 
+                              style={{
+                                width: `${((exercise.totalSubmissions - exercise.pendingSubmissions) / exercise.totalSubmissions) * 100}%`
                               }}
                             />
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
@@ -750,7 +743,7 @@ export default function AllExercisesPage() {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="ml-4">
                       <div className="flex flex-col gap-2">
                         <button
@@ -768,7 +761,7 @@ export default function AllExercisesPage() {
                             'Gérer'
                           )}
                         </button>
-                        
+
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleViewSubmissions(exercise)}
@@ -792,7 +785,7 @@ export default function AllExercisesPage() {
             )}
           </div>
         </div>
-        
+
         {/* Légende */}
         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -813,7 +806,7 @@ export default function AllExercisesPage() {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Mises à jour</h4>
               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
@@ -831,7 +824,7 @@ export default function AllExercisesPage() {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Actions</h4>
               <div className="text-sm text-gray-600 dark:text-gray-400">

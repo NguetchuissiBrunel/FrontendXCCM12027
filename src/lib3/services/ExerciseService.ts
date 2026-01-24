@@ -1214,6 +1214,7 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
     }
   }
   
+  
   static calculateTotalPoints(exercise: Exercise): number {
     if (exercise.questions && exercise.questions.length > 0) {
       return exercise.questions.reduce((sum, q) => sum + q.points, 0);

@@ -8,6 +8,7 @@ import { BookOpen, FileText, Award, Clock, TrendingUp, Users, Loader2 } from 'lu
 import { useLoading } from '@/contexts/LoadingContext';
 import { useCourseExercises, useMySubmissions } from '@/hooks/useExercise';
 import { useCourses } from '@/hooks/useCourses';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { EnrichedCourse } from '@/types/enrollment';
 import { toast } from 'react-hot-toast';
 
@@ -102,21 +103,33 @@ export default function StudentHome() {
       );
 
       // Enrichir avec les détails des cours (comme dans StudentCourses)
-      const enriched = approvedEnrollments.map((enrollment: any) => {
-        // Recherche robuste par ID
-        const courseDetail = allCourses.find(c => String(c.id) === String(enrollment.courseId));
+      const enrichedPromises = approvedEnrollments.map(async (enrollment: any) => {
+        // Recherche robuste par ID dans allCourses (déjà chargé par le hook)
+        let courseDetail = allCourses.find(c => String(c.id) === String(enrollment.courseId));
 
-        // Si on trouve les détails du cours, on les utilise
+        // Si non trouvé, on tente de récupérer individuellement
+        if (!courseDetail) {
+          try {
+            const resp = await CourseControllerService.getEnrichedCourse(enrollment.courseId);
+            if (resp.success && resp.data) {
+              courseDetail = resp.data as any;
+            }
+          } catch (e) {
+            console.error(`Erreur fetch cours ${enrollment.courseId}:`, e);
+          }
+        }
+
+        // Si on a des détails, on les utilise
         if (courseDetail) {
           return {
             id: courseDetail.id,
             title: courseDetail.title,
             category: courseDetail.category || 'Formation',
-            image: courseDetail.photoUrl || courseDetail.image || courseDetail.coverImage || '',
+            image: courseDetail.photoUrl || (courseDetail as any).image || (courseDetail as any).coverImage || '',
             author: {
-              name: courseDetail.author ? `${courseDetail.author.name || ''}` : 'Inconnu',
-              image: courseDetail.author?.image || courseDetail.author?.photoUrl || '',
-              designation: courseDetail.author?.designation
+              name: courseDetail.author ? (typeof courseDetail.author === 'string' ? courseDetail.author : `${(courseDetail.author as any).firstName || (courseDetail.author as any).name || ''} ${(courseDetail.author as any).lastName || ''}`) : 'Inconnu',
+              image: (courseDetail.author as any)?.image || (courseDetail.author as any)?.photoUrl || '',
+              designation: (courseDetail.author as any)?.designation
             },
             enrollment: {
               ...enrollment,
@@ -125,23 +138,11 @@ export default function StudentHome() {
           } as unknown as EnrichedCourse;
         }
 
-        // Sinon, on retourne un objet partiel
-        return {
-          id: enrollment.courseId,
-          title: `Cours #${enrollment.courseId}`,
-          category: 'Cours',
-          image: '',
-          author: {
-            name: 'Inconnu',
-            image: ''
-          },
-          enrollment: {
-            ...enrollment,
-            status: enrollment.status
-          }
-        } as EnrichedCourse;
+        // Si on n'a vraiment rien, on retourne null pour filtrer ensuite
+        return null;
       });
 
+      const enriched = (await Promise.all(enrichedPromises)).filter(Boolean) as EnrichedCourse[];
       setEnrolledCourses(enriched);
 
     } catch (err) {

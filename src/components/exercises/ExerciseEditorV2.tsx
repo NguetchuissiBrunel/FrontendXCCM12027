@@ -42,18 +42,18 @@ export default function ExerciseEditorV2({
   const { mutate: createExercise, isPending: isCreating } = useCreateExercise();
   
   const [exercise, setExercise] = useState<Exercise>(
-    initialData || {
-      id: 0,
-      courseId,
-      title: '',
-      description: '',
-      maxScore: 20,
-      status: 'DRAFT',
-      createdAt: new Date().toISOString(),
-      questions: [],
-      version: '2.0'
-    }
-  );
+  initialData || {
+    id: 0,
+    courseId,
+    title: '',
+    description: '',
+    maxScore: 20,
+    status: 'PUBLISHED', // ⬅️ CHANGER "DRAFT" EN "PUBLISHED"
+    createdAt: new Date().toISOString(),
+    questions: [],
+    version: '2.0'
+  }
+);
   
   const [questions, setQuestions] = useState<Question[]>(initialData?.questions || []);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);

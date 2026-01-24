@@ -46,7 +46,7 @@ export interface Exercise {
   courseTitle?: string;           // Titre du cours (optionnel)
   
   // Statut et dates
-  status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
+  status: 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   createdAt: string;
   updatedAt?: string;
   publishedAt?: string;
@@ -306,11 +306,13 @@ export interface ValidationResult {
  * Constantes pour les statuts d'exercice
  */
 export const EXERCISE_STATUS = {
-  DRAFT: 'DRAFT',
   PUBLISHED: 'PUBLISHED',
   CLOSED: 'CLOSED',
   ARCHIVED: 'ARCHIVED',
 } as const;
+
+export type ExerciseStatus = 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
+
 
 /**
  * Constantes pour les types de questions
@@ -405,8 +407,14 @@ export function migrateLegacyQuestion(legacy: Partial<LegacyQuestion>): Question
  * Fonction de migration pour convertir les anciens exercices
  */
 export function migrateLegacyExercise(legacy: Partial<LegacyExercise>): Exercise {
-  // Utiliser 'submissionsCount' au lieu de 'submissionCount' pour LegacyExercise
   const submissionCount = legacy.submissionsCount || legacy.submissionCount || 0;
+  
+  // Déterminer le statut - convertir 'DRAFT' en 'PUBLISHED'
+  let status: ExerciseStatus = 'PUBLISHED';
+  if (legacy.status && ['PUBLISHED', 'CLOSED', 'ARCHIVED'].includes(legacy.status)) {
+    status = legacy.status as ExerciseStatus;
+  }
+  // Si legacy.status est 'DRAFT', on le garde comme 'PUBLISHED' (valeur par défaut)
   
   return {
     id: legacy.id || 0,
@@ -416,12 +424,12 @@ export function migrateLegacyExercise(legacy: Partial<LegacyExercise>): Exercise
     maxScore: legacy.maxScore || 0,
     dueDate: legacy.dueDate,
     courseTitle: legacy.courseTitle,
-    status: legacy.status || 'DRAFT',
+    status: status, // ⬅️ Utilise le statut converti
     createdAt: legacy.createdAt || new Date().toISOString(),
     updatedAt: legacy.updatedAt,
     publishedAt: legacy.publishedAt,
     questions: legacy.questions || [],
-    submissionCount: submissionCount, // ✅ CORRIGÉ
+    submissionCount: submissionCount,
     averageScore: legacy.averageScore,
     completionRate: legacy.completionRate,
     pendingGrading: legacy.pendingGrading,

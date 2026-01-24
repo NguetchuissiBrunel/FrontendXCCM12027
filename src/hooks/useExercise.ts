@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
 import { Exercise, Submission, ApiResponse, CreateExerciseDto, UpdateExerciseDto } from '@/types/exercise';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ============ TYPES D'OPTIONS ============
 
@@ -24,12 +25,12 @@ interface UseExerciseResult {
   // Données
   exercise: Exercise | null;
   data: ApiResponse<Exercise> | null;
-  
+
   // État
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
-  
+
   // Actions
   refetch: () => Promise<void>;
   update: (data: UpdateExerciseDto) => Promise<ApiResponse<Exercise>>;
@@ -38,7 +39,7 @@ interface UseExerciseResult {
   close: () => Promise<ApiResponse<Exercise>>;
   archive: () => Promise<ApiResponse<Exercise>>;
   duplicate: (targetCourseId: number, newTitle?: string) => Promise<ApiResponse<Exercise>>;
-  
+
   // Métadonnées
   isUpdating: boolean;
   isDeleting: boolean;
@@ -49,16 +50,16 @@ interface UseExerciseSubmissionsResult {
   // Données
   submissions: Submission[];
   data: ApiResponse<Submission[]> | null;
-  
+
   // État
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
-  
+
   // Actions
   refetch: () => Promise<void>;
   grade: (submissionId: number, score: number, feedback?: string) => Promise<ApiResponse<Submission>>;
-  
+
   // Métadonnées
   isGrading: boolean;
 }
@@ -66,12 +67,12 @@ interface UseExerciseSubmissionsResult {
 interface UseExerciseStatsResult {
   // Données
   stats: any | null;
-  
+
   // État
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
-  
+
   // Actions
   refetch: () => Promise<void>;
 }
@@ -81,10 +82,10 @@ interface UseSubmissionPermissionResult {
   canSubmit: boolean;
   reason?: string;
   exercise?: Exercise;
-  
+
   // État
   isLoading: boolean;
-  
+
   // Actions
   check: () => Promise<void>;
 }
@@ -99,7 +100,8 @@ export const useExercise = (
   options: UseExerciseOptions = {}
 ): UseExerciseResult => {
   const { enabled = true, refetchInterval, autoRefetch = true } = options;
-  
+  const { loading: authLoading, isAuthenticated } = useAuth();
+
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [data, setData] = useState<ApiResponse<Exercise> | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -110,8 +112,8 @@ export const useExercise = (
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
 
   const fetchExercise = useCallback(async () => {
-    if (!enabled || !exerciseId) {
-      setIsLoading(false);
+    if (!enabled || !exerciseId || authLoading) {
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -121,7 +123,7 @@ export const useExercise = (
 
     try {
       const exerciseData = await ExerciseService.getExerciseDetails(exerciseId);
-      
+
       if (exerciseData) {
         setExercise(exerciseData);
         setData({
@@ -158,7 +160,7 @@ export const useExercise = (
 
   // Refetch automatisé
   useEffect(() => {
-    if (autoRefetch && exerciseId) {
+    if (autoRefetch && exerciseId && !authLoading) {
       fetchExercise();
     }
 
@@ -184,10 +186,10 @@ export const useExercise = (
     }
 
     setIsUpdating(true);
-    
+
     try {
       const result = await ExerciseService.updateExercise(exerciseId, updateData);
-      
+
       if (result.success && result.data) {
         setExercise(result.data);
         setData(result);
@@ -197,26 +199,26 @@ export const useExercise = (
         toast.error(result.message || '❌ Erreur lors de la mise à jour');
         mutationOptions.onError?.(new Error(result.message || 'Erreur inconnue'));
       }
-      
+
       mutationOptions.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la mise à jour');
       setError(error);
       toast.error(error.message);
       mutationOptions.onError?.(error);
-      
+
       const errorResult: ApiResponse<Exercise> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       mutationOptions.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsUpdating(false);
     }
@@ -231,10 +233,10 @@ export const useExercise = (
     }
 
     setIsDeleting(true);
-    
+
     try {
       const success = await ExerciseService.deleteExercise(exerciseId);
-      
+
       if (success) {
         setExercise(null);
         setData(null);
@@ -244,10 +246,10 @@ export const useExercise = (
         toast.error('❌ Erreur lors de la suppression');
         mutationOptions.onError?.(new Error('Erreur lors de la suppression'));
       }
-      
+
       mutationOptions.onSettled?.();
       return success;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la suppression');
       setError(error);
@@ -255,13 +257,13 @@ export const useExercise = (
       mutationOptions.onError?.(error);
       mutationOptions.onSettled?.();
       return false;
-      
+
     } finally {
       setIsDeleting(false);
     }
   }, [exerciseId]);
 
-  
+
 
   // Publier l'exercice
   const publish = useCallback(async (
@@ -272,10 +274,10 @@ export const useExercise = (
     }
 
     setIsPublishing(true);
-    
+
     try {
       const result = await ExerciseService.publishExercise(exerciseId);
-      
+
       if (result.success && result.data) {
         setExercise(result.data);
         setData(result);
@@ -285,26 +287,26 @@ export const useExercise = (
         toast.error(result.message || '❌ Erreur lors de la publication');
         mutationOptions.onError?.(new Error(result.message || 'Erreur inconnue'));
       }
-      
+
       mutationOptions.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la publication');
       setError(error);
       toast.error(error.message);
       mutationOptions.onError?.(error);
-      
+
       const errorResult: ApiResponse<Exercise> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       mutationOptions.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsPublishing(false);
     }
@@ -319,10 +321,10 @@ export const useExercise = (
     }
 
     setIsPublishing(true);
-    
+
     try {
       const result = await ExerciseService.closeExercise(exerciseId);
-      
+
       if (result.success && result.data) {
         setExercise(result.data);
         setData(result);
@@ -332,26 +334,26 @@ export const useExercise = (
         toast.error(result.message || '❌ Erreur lors de la fermeture');
         mutationOptions.onError?.(new Error(result.message || 'Erreur inconnue'));
       }
-      
+
       mutationOptions.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la fermeture');
       setError(error);
       toast.error(error.message);
       mutationOptions.onError?.(error);
-      
+
       const errorResult: ApiResponse<Exercise> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       mutationOptions.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsPublishing(false);
     }
@@ -366,10 +368,10 @@ export const useExercise = (
     }
 
     setIsPublishing(true);
-    
+
     try {
       const result = await ExerciseService.archiveExercise(exerciseId);
-      
+
       if (result.success && result.data) {
         setExercise(result.data);
         setData(result);
@@ -379,26 +381,26 @@ export const useExercise = (
         toast.error(result.message || '❌ Erreur lors de l\'archivage');
         mutationOptions.onError?.(new Error(result.message || 'Erreur inconnue'));
       }
-      
+
       mutationOptions.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de l\'archivage');
       setError(error);
       toast.error(error.message);
       mutationOptions.onError?.(error);
-      
+
       const errorResult: ApiResponse<Exercise> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       mutationOptions.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsPublishing(false);
     }
@@ -415,14 +417,14 @@ export const useExercise = (
     }
 
     setIsUpdating(true);
-    
+
     try {
       const result = await ExerciseService.duplicateExercise(
         exerciseId,
         targetCourseId,
         newTitle
       );
-      
+
       if (result.success && result.data) {
         toast.success(result.message || '✅ Exercice dupliqué avec succès');
         mutationOptions.onSuccess?.(result.data);
@@ -430,26 +432,26 @@ export const useExercise = (
         toast.error(result.message || '❌ Erreur lors de la duplication');
         mutationOptions.onError?.(new Error(result.message || 'Erreur inconnue'));
       }
-      
+
       mutationOptions.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la duplication');
       setError(error);
       toast.error(error.message);
       mutationOptions.onError?.(error);
-      
+
       const errorResult: ApiResponse<Exercise> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       mutationOptions.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsUpdating(false);
     }
@@ -460,12 +462,12 @@ export const useExercise = (
     // Données
     exercise,
     data,
-    
+
     // État
     isLoading,
     isError,
     error,
-    
+
     // Actions
     refetch: fetchExercise,
     update,
@@ -474,7 +476,7 @@ export const useExercise = (
     close,
     archive,
     duplicate,
-    
+
     // Métadonnées
     isUpdating,
     isDeleting,
@@ -530,23 +532,23 @@ export const useCreateExercise = () => {
 
       options.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la création');
       setError(error);
       toast.error(error.message);
       options.onError?.(error);
-      
+
       const errorResult: ApiResponse<Exercise> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       options.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsPending(false);
     }
@@ -568,7 +570,8 @@ export const useExerciseSubmissions = (
   options: UseExerciseOptions = {}
 ): UseExerciseSubmissionsResult => {
   const { enabled = true, autoRefetch = true } = options;
-  
+  const { loading: authLoading } = useAuth();
+
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [data, setData] = useState<ApiResponse<Submission[]> | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -577,8 +580,8 @@ export const useExerciseSubmissions = (
   const [isGrading, setIsGrading] = useState<boolean>(false);
 
   const fetchSubmissions = useCallback(async () => {
-    if (!enabled || !exerciseId) {
-      setIsLoading(false);
+    if (!enabled || !exerciseId || authLoading) {
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -588,7 +591,7 @@ export const useExerciseSubmissions = (
 
     try {
       const submissionsData = await ExerciseService.getExerciseSubmissions(exerciseId);
-      
+
       setSubmissions(submissionsData);
       setData({
         success: true,
@@ -614,10 +617,10 @@ export const useExerciseSubmissions = (
 
   // Refetch automatisé
   useEffect(() => {
-    if (autoRefetch && exerciseId) {
+    if (autoRefetch && exerciseId && !authLoading) {
       fetchSubmissions();
     }
-  }, [fetchSubmissions, autoRefetch, exerciseId]);
+  }, [fetchSubmissions, autoRefetch, exerciseId, authLoading]);
 
   // Noter une soumission
   const grade = useCallback(async (
@@ -627,42 +630,42 @@ export const useExerciseSubmissions = (
     mutationOptions: MutationOptions<Submission> = {}
   ): Promise<ApiResponse<Submission>> => {
     setIsGrading(true);
-    
+
     try {
       const result = await ExerciseService.gradeSubmission(submissionId, { score, feedback });
-      
+
       if (result.success && result.data) {
         // Mettre à jour la soumission dans la liste
-        setSubmissions(prev => prev.map(sub => 
+        setSubmissions(prev => prev.map(sub =>
           sub.id === submissionId ? { ...sub, ...result.data } : sub
         ));
-        
+
         toast.success(result.message || '✅ Soumission notée avec succès');
         mutationOptions.onSuccess?.(result.data);
       } else {
         toast.error(result.message || '❌ Erreur lors de la notation');
         mutationOptions.onError?.(new Error(result.message || 'Erreur inconnue'));
       }
-      
+
       mutationOptions.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la notation');
       setError(error);
       toast.error(error.message);
       mutationOptions.onError?.(error);
-      
+
       const errorResult: ApiResponse<Submission> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       mutationOptions.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsGrading(false);
     }
@@ -672,16 +675,16 @@ export const useExerciseSubmissions = (
     // Données
     submissions,
     data,
-    
+
     // État
     isLoading,
     isError,
     error,
-    
+
     // Actions
     refetch: fetchSubmissions,
     grade,
-    
+
     // Métadonnées
     isGrading
   };
@@ -695,15 +698,16 @@ export const useExerciseStats = (
   options: UseExerciseOptions = {}
 ): UseExerciseStatsResult => {
   const { enabled = true, autoRefetch = true } = options;
-  
+  const { loading: authLoading } = useAuth();
+
   const [stats, setStats] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchStats = useCallback(async () => {
-    if (!enabled || !exerciseId) {
-      setIsLoading(false);
+    if (!enabled || !exerciseId || authLoading) {
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -726,20 +730,20 @@ export const useExerciseStats = (
 
   // Refetch automatisé
   useEffect(() => {
-    if (autoRefetch && exerciseId) {
+    if (autoRefetch && exerciseId && !authLoading) {
       fetchStats();
     }
-  }, [fetchStats, autoRefetch, exerciseId]);
+  }, [fetchStats, autoRefetch, exerciseId, authLoading]);
 
   return {
     // Données
     stats,
-    
+
     // État
     isLoading,
     isError,
     error,
-    
+
     // Actions
     refetch: fetchStats
   };
@@ -755,14 +759,15 @@ export const useSubmissionDetails = (
   options: UseExerciseOptions = {}
 ) => {
   const { enabled = true, autoRefetch = true } = options;
-  
+  const { loading: authLoading } = useAuth();
+
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchSubmissionDetails = useCallback(async () => {
-    if (!enabled || !submissionId) {
-      setIsLoading(false);
+    if (!enabled || !submissionId || authLoading) {
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -772,16 +777,16 @@ export const useSubmissionDetails = (
     try {
       // Option 1: Si ExerciseApiWrapper.getSubmissionDetails existe
       // const details = await ExerciseApiWrapper.getSubmissionDetails(submissionId);
-      
+
       // Option 2: Filtrer depuis les soumissions de l'étudiant
       const { ExerciseService } = await import('@/lib3/services/ExerciseService');
       const mySubmissions = await ExerciseService.getMySubmissions();
       const foundSubmission = mySubmissions.find(s => s.id === submissionId);
-      
+
       if (foundSubmission) {
         // Si besoin de plus de détails, on pourrait récupérer l'exercice associé
         const exercise = await ExerciseService.getExerciseDetails(foundSubmission.exerciseId);
-        
+
         setSubmission({
           ...foundSubmission,
           exerciseTitle: exercise?.title || 'Exercice'
@@ -789,7 +794,7 @@ export const useSubmissionDetails = (
       } else {
         throw new Error('Soumission non trouvée');
       }
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la récupération de la soumission');
       setError(error);
@@ -801,10 +806,10 @@ export const useSubmissionDetails = (
 
   // Refetch automatisé
   useEffect(() => {
-    if (autoRefetch && submissionId) {
+    if (autoRefetch && submissionId && !authLoading) {
       fetchSubmissionDetails();
     }
-  }, [fetchSubmissionDetails, autoRefetch, submissionId]);
+  }, [fetchSubmissionDetails, autoRefetch, submissionId, authLoading]);
 
   return {
     submission,
@@ -832,7 +837,7 @@ export const useSubmissionPermission = (
     }
 
     setIsLoading(true);
-    
+
     try {
       const permission = await ExerciseService.checkSubmissionPermission(exerciseId);
       setCanSubmit(permission.canSubmit);
@@ -858,10 +863,10 @@ export const useSubmissionPermission = (
     canSubmit,
     reason,
     exercise,
-    
+
     // État
     isLoading,
-    
+
     // Actions
     check: checkPermission
   };
@@ -889,7 +894,7 @@ export const useSubmitExercise = () => {
         submissionUrl,
         answers
       });
-      
+
       setData(result);
 
       if (result.success && result.data) {
@@ -902,23 +907,23 @@ export const useSubmitExercise = () => {
 
       options.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la soumission');
       setError(error);
       toast.error(error.message);
       options.onError?.(error);
-      
+
       const errorResult: ApiResponse<Submission> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       options.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsPending(false);
     }
@@ -939,14 +944,15 @@ export const useMySubmissions = (
   options: UseExerciseOptions = {}
 ) => {
   const { enabled = true, autoRefetch = true } = options;
-  
+  const { loading: authLoading } = useAuth();
+
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchMySubmissions = useCallback(async () => {
-    if (!enabled) {
-      setIsLoading(false);
+    if (!enabled || authLoading) {
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -966,10 +972,10 @@ export const useMySubmissions = (
   }, [enabled]);
 
   useEffect(() => {
-    if (autoRefetch) {
+    if (autoRefetch && !authLoading) {
       fetchMySubmissions();
     }
-  }, [fetchMySubmissions, autoRefetch]);
+  }, [fetchMySubmissions, autoRefetch, authLoading]);
 
   return {
     submissions,
@@ -999,11 +1005,11 @@ export const useGradeSubmission = () => {
     setError(null);
 
     try {
-      const result = await ExerciseService.gradeSubmission(submissionId, { 
-        score, 
-        feedback 
+      const result = await ExerciseService.gradeSubmission(submissionId, {
+        score,
+        feedback
       });
-      
+
       setData(result);
 
       if (result.success && result.data) {
@@ -1016,23 +1022,23 @@ export const useGradeSubmission = () => {
 
       options.onSettled?.();
       return result;
-      
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la notation');
       setError(error);
       toast.error(error.message);
       options.onError?.(error);
-      
+
       const errorResult: ApiResponse<Submission> = {
         success: false,
         message: error.message,
         errors: { general: [error.message] },
         timestamp: new Date().toISOString()
       };
-      
+
       options.onSettled?.();
       return errorResult;
-      
+
     } finally {
       setIsPending(false);
     }
@@ -1064,7 +1070,7 @@ export const useDeleteExercise = (
 
     try {
       const success = await ExerciseService.deleteExercise(exerciseId);
-      
+
       if (success) {
         toast.success('✅ Exercice supprimé avec succès');
         options.onSuccess?.(success);
@@ -1079,10 +1085,10 @@ export const useDeleteExercise = (
       setError(error);
       toast.error(error.message);
       options.onError?.(error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message,
-        message: error.message 
+        message: error.message
       };
     } finally {
       setIsPending(false);
@@ -1173,7 +1179,7 @@ export const usePublishExercise = (
     try {
       // Tous les exercices sont automatiquement publiés
       const result = await ExerciseService.publishExercise(exerciseId);
-      
+
       if (result.success) {
         toast.success('✅ L\'exercice est publié (tous les exercices sont publiés par défaut)');
         options.onSuccess?.(result.data);
@@ -1187,10 +1193,10 @@ export const usePublishExercise = (
       setError(error);
       toast.error(error.message);
       options.onError?.(error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message,
-        message: error.message 
+        message: error.message
       };
     } finally {
       setIsPending(false);
@@ -1223,13 +1229,13 @@ export const useCloseExercise = (
     try {
       // La fermeture n'est pas supportée par l'API
       const result = await ExerciseService.closeExercise(exerciseId);
-      
+
       if (!result.success) {
         toast.error('❌ ' + result.message);
       } else {
         toast.success('✅ ' + result.message);
       }
-      
+
       options.onSuccess?.(result.data);
       return result;
     } catch (err) {
@@ -1237,10 +1243,10 @@ export const useCloseExercise = (
       setError(error);
       toast.error(error.message);
       options.onError?.(error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message,
-        message: error.message 
+        message: error.message
       };
     } finally {
       setIsPending(false);
@@ -1277,7 +1283,7 @@ export const useDuplicateExercise = (
         targetCourseId,
         newTitle
       );
-      
+
       if (result.success) {
         toast.success('✅ Exercice dupliqué avec succès');
         options.onSuccess?.(result.data);
@@ -1292,10 +1298,10 @@ export const useDuplicateExercise = (
       setError(error);
       toast.error(error.message);
       options.onError?.(error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message,
-        message: error.message 
+        message: error.message
       };
     } finally {
       setIsPending(false);
@@ -1317,14 +1323,15 @@ export const useCourseExercises = (
   options: UseExerciseOptions = {}
 ) => {
   const { enabled = true, autoRefetch = true } = options;
-  
+  const { loading: authLoading } = useAuth();
+
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchCourseExercises = useCallback(async () => {
-    if (!enabled || !courseId) {
-      setIsLoading(false);
+    if (!enabled || !courseId || authLoading) {
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -1344,10 +1351,10 @@ export const useCourseExercises = (
   }, [courseId, enabled]);
 
   useEffect(() => {
-    if (autoRefetch && courseId) {
+    if (autoRefetch && courseId && !authLoading) {
       fetchCourseExercises();
     }
-  }, [fetchCourseExercises, autoRefetch, courseId]);
+  }, [fetchCourseExercises, autoRefetch, courseId, authLoading]);
 
   return {
     exercises,

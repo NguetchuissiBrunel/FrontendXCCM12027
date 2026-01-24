@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt, FaUserGraduate } from 'react-icons/fa';
-import { AdminService } from '@/lib/services/AdminService';
+import { AdministrationService as AdminService } from '@/lib/services/AdministrationService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { useLoading } from '@/contexts/LoadingContext';
@@ -44,7 +44,7 @@ export default function AdminCoursesPage() {
         startLoading();
         try {
             const [res, enrollRes] = await Promise.all([
-                AdminService.getAllCourses(),
+                AdminService.getAllCourses1(),
                 AdminService.getAllEnrollments()
             ]);
 
@@ -94,7 +94,7 @@ export default function AdminCoursesPage() {
                             toast.dismiss(t.id);
                             try {
                                 // Appel API réel
-                                await AdminService.deleteCourse(courseId);
+                                await AdminService.deleteCourse1(courseId);
                                 toast.success("Cours supprimé avec succès");
                                 // Rafraîchissement complet depuis le serveur
                                 fetchCourses();

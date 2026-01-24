@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaUserShield, FaEnvelope, FaUser } from 'react-icons/fa';
-import { AdminService } from '@/lib/services/AdminService';
+import { AdministrationService as AdminService } from '@/lib/services/AdministrationService';
 import { Award, BookOpen, Clock } from 'lucide-react';
 import { OpenAPI } from '@/lib/core/OpenAPI';
 import toast, { Toaster } from 'react-hot-toast';
@@ -53,9 +53,9 @@ export default function AdminProfile() {
 
     const fetchStats = async () => {
         try {
-            const res = await AdminService.getAdminStats();
+            const res = await AdminService.getStatistics();
             const data = res.data || res;
-            setStats({ totalUsers: data.totalUsers || 0 });
+            setStats({ totalUsers: (res.data as any)?.totalUsers || 0 });
         } catch (error) {
             console.error("Error fetching stats:", error);
         } finally {

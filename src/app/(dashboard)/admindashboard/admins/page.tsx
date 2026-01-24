@@ -2,9 +2,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaTrash, FaSearch, FaUserShield, FaPlus, FaTimes, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from 'react-icons/fa';
-import { AdminService } from '@/lib/services/AdminService';
+import { AdministrationService as AdminService } from '@/lib/services/AdministrationService';
 import { RegisterRequest } from '@/lib';
-import type { User } from '@/types/user';
+import type { User } from '@/lib/models/User';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLoading } from '@/contexts/LoadingContext';
@@ -49,8 +49,8 @@ function AdminsList() {
             const res = await AdminService.getAllUsers();
             // Filter only admins
             const allUsers = res.data || [];
-            const adminUsers = allUsers.filter(u => u.role === 'ADMIN');
-            setAdmins(adminUsers);
+            const adminUsers = allUsers.filter(u => (u.role as string) === 'ADMIN');
+            setAdmins(adminUsers as any);
         } catch (error) {
             console.error("Error fetching admins:", error);
             toast.error("Impossible de charger la liste des administrateurs");

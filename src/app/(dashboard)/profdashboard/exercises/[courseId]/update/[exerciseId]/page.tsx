@@ -397,7 +397,7 @@ export default function UpdateExercisePage() {
 
         {/* Bannière d'information */}
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white">
+          <div className="bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/20 rounded-2xl p-6 text-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
@@ -408,7 +408,7 @@ export default function UpdateExercisePage() {
                     <h1 className="text-2xl font-bold mb-1">
                       Modifier l'exercice
                     </h1>
-                    <p className="text-blue-100">
+                    <p className="text-purple-100">
                       {displayExercise.title}
                     </p>
                     <div className="flex items-center gap-2 mt-2">

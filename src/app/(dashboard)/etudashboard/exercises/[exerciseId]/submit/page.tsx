@@ -34,6 +34,9 @@ export default function SubmitExercisePage() {
   } = useSubmissionPermission(exerciseId);
   
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [loading, setLoading] = useState(true);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading(); 
+  const [submitting, setSubmitting] = useState(false);
   const [answeredCount, setAnsweredCount] = useState(0);
   
   // Charger l'exercice et vérifier les permissions

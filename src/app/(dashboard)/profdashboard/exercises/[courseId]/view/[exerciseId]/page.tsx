@@ -1,4 +1,4 @@
-// src/app/(dashboard)/profdashboard/exercises/[courseId]/view/[exerciseId]/page.tsx - VERSION CORRIGÉE COMPLÈTE
+// src/app/(dashboard)/profdashboard/exercises/[courseId]/view/[exerciseId]/page.tsx - VERSION CORRIGÉE
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -31,7 +31,6 @@ import {
   Loader2
 } from 'lucide-react';
 
-// Import des hooks - chemin corrigé
 import { 
   useExercise, 
   useDeleteExercise, 
@@ -40,7 +39,7 @@ import {
   useDuplicateExercise 
 } from '@/hooks/useExercise';
 import ExerciseStats from '@/components/exercises/ExerciseStats';
-import { Exercise, ApiResponse } from '@/types/exercise';
+import { Exercise } from '@/types/exercise';
 
 export default function ViewExercisePage() {
   const params = useParams();
@@ -106,7 +105,6 @@ export default function ViewExercisePage() {
 
   const loadCourseInfo = async () => {
     try {
-      // TODO: Remplacer par votre service de cours
       setCourseInfo({
         title: `Cours #${courseId}`,
         category: 'Informatique',
@@ -125,7 +123,6 @@ export default function ViewExercisePage() {
       return;
     }
     
-    // CORRECTION: mutate attend un objet options, pas undefined
     deleteMutation.mutate({
       onSuccess: (result: any) => {
         if (result.success) {
@@ -162,7 +159,7 @@ export default function ViewExercisePage() {
       onSuccess: (result: any) => {
         if (result.success) {
           toast.success('✅ L\'exercice est déjà publié (tous les exercices sont publiés par défaut)');
-          refetch(); // Recharger les données pour mettre à jour l'UI
+          refetch();
         }
       },
       onError: (error: Error) => {
@@ -176,7 +173,7 @@ export default function ViewExercisePage() {
       onSuccess: (result: any) => {
         if (result.success) {
           toast.success('Message d\'information: ' + result.message);
-          refetch(); // Recharger les données
+          refetch();
         } else {
           toast.error('❌ ' + result.message);
         }
@@ -329,18 +326,6 @@ export default function ViewExercisePage() {
             </button>
             
             <div className="flex gap-3">
-              {/* Note: Dans ExerciseService, tous les exercices sont automatiquement publiés */}
-              {/* La publication/fermeture est visuelle seulement */}
-              {exercise.status === 'DRAFT' && (
-                <button
-                  onClick={handlePublish}
-                  disabled={publishMutation.isPending}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Send size={18} />
-                  {publishMutation.isPending ? 'Publication...' : 'Publier'}
-                </button>
-              )}
               
               {exercise.status === 'PUBLISHED' && (
                 <button
@@ -468,10 +453,10 @@ export default function ViewExercisePage() {
                 </div>
               </div>
               
-              {/* Statistiques */}
+              {/* Statistiques - CORRECTION ICI */}
               {(exercise.submissionCount || 0) > 0 && (
                 <div className="mt-8">
-                  <ExerciseStats exercise={exercise} />
+                  <ExerciseStats exerciseId={exercise.id} />
                 </div>
               )}
             </div>
@@ -496,9 +481,9 @@ export default function ViewExercisePage() {
           {(exercise.questions?.length || 0) > 0 ? (
             <div className="space-y-4">
               {(exercise.questions || []).map((question, index) => {
-                // Utiliser les propriétés compatibles
-                const questionText = question.text || question.question || '';
-                const questionType = question.type || question.questionType || 'TEXT';
+                // CORRECTION ICI : Utilisez seulement les propriétés officielles
+                const questionText = question.text; // Pas de fallback avec question.question
+                const questionType = question.type || 'TEXT'; // Pas de fallback avec question.questionType
                 const questionPoints = question.points || 0;
                 const questionOptions = question.options || [];
                 const correctAnswer = question.correctAnswer;

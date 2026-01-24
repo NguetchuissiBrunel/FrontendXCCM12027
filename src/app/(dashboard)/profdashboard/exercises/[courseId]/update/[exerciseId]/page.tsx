@@ -415,12 +415,9 @@ export default function UpdateExercisePage() {
                       <div className={`px-3 py-1 rounded-full text-sm font-medium ${
                         displayExercise.status === 'PUBLISHED' 
                           ? 'bg-green-500/20 text-green-200' 
-                          : displayExercise.status === 'DRAFT'
-                          ? 'bg-yellow-500/20 text-yellow-200'
                           : 'bg-gray-500/20 text-gray-200'
                       }`}>
                         {displayExercise.status === 'PUBLISHED' ? 'Publié' :
-                         displayExercise.status === 'DRAFT' ? 'Brouillon' :
                          'Fermé'}
                       </div>
                       {courseInfo?.category && (
@@ -441,7 +438,7 @@ export default function UpdateExercisePage() {
                     <div>
                       <div className="text-sm font-medium">Statut préservé</div>
                       <div className="text-xs text-blue-200">
-                        L'exercice reste {displayExercise.status === 'PUBLISHED' ? 'publié' : 'en brouillon'}
+                        L'exercice reste {displayExercise.status === 'PUBLISHED' ? 'publié' : 'fermé'} après les modifications
                       </div>
                     </div>
                   </div>

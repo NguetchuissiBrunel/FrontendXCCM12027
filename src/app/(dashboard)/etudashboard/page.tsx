@@ -103,7 +103,8 @@ export default function StudentHome() {
 
       // Enrichir avec les détails des cours (comme dans StudentCourses)
       const enriched = approvedEnrollments.map((enrollment: any) => {
-        const courseDetail = allCourses.find(c => c.id === enrollment.courseId);
+        // Recherche robuste par ID
+        const courseDetail = allCourses.find(c => String(c.id) === String(enrollment.courseId));
 
         // Si on trouve les détails du cours, on les utilise
         if (courseDetail) {
@@ -111,8 +112,12 @@ export default function StudentHome() {
             id: courseDetail.id,
             title: courseDetail.title,
             category: courseDetail.category || 'Formation',
-            image: courseDetail.image,
-            author: courseDetail.author,
+            image: courseDetail.photoUrl || courseDetail.image || courseDetail.coverImage || '',
+            author: {
+              name: courseDetail.author ? `${courseDetail.author.name || ''}` : 'Inconnu',
+              image: courseDetail.author?.image || courseDetail.author?.photoUrl || '',
+              designation: courseDetail.author?.designation
+            },
             enrollment: {
               ...enrollment,
               status: enrollment.status
@@ -379,12 +384,20 @@ export default function StudentHome() {
                 {enrolledCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all group"
                   >
-                    <div className="h-24 md:h-32 bg-gradient-to-r from-purple-500 to-blue-500 dark:from-purple-600 dark:to-blue-600 relative">
-                      <div className="absolute inset-0 flex items-center justify-center text-white opacity-80">
-                        <BookOpen className="w-8 h-8 md:w-12 md:h-12" />
-                      </div>
+                    <div className="h-32 md:h-40 bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
+                      {course.image ? (
+                        <img
+                          src={course.image}
+                          alt={course.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 dark:from-purple-600 dark:to-blue-600 flex items-center justify-center text-white opacity-80">
+                          <BookOpen className="w-10 h-10 md:w-14 md:h-14" />
+                        </div>
+                      )}
                     </div>
                     <div className="p-4 md:p-5">
                       <div className="flex justify-between items-start mb-2">

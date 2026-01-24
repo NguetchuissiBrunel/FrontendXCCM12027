@@ -5,12 +5,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useCourseExercises } from '@/hooks/useExercise';
-import { 
-  BookOpen, 
-  FileText, 
-  Clock, 
-  Award, 
-  Filter, 
+import {
+  BookOpen,
+  FileText,
+  Clock,
+  Award,
+  Filter,
   Search,
   Calendar,
   CheckCircle,
@@ -29,18 +29,21 @@ interface User {
   specialization?: string;
 }
 
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
+
 interface CourseInfo {
   id: number;
   title: string;
   description?: string;
   instructor?: string;
+  photoUrl?: string;
 }
 
 export default function CourseExercisesPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = parseInt(params.courseId as string);
-  
+
   const [user, setUser] = useState<User | null>(null);
   const [courseInfo, setCourseInfo] = useState<CourseInfo | null>(null);
   const [filter, setFilter] = useState({
@@ -48,13 +51,13 @@ export default function CourseExercisesPage() {
     search: '',
     sortBy: 'dueDate' // 'dueDate', 'title', 'points'
   });
-  
+
   // Utiliser le hook pour les exercices du cours
-  const { 
-    exercises, 
-    isLoading, 
-    error, 
-    refetch 
+  const {
+    exercises,
+    isLoading,
+    error,
+    refetch
   } = useCourseExercises(courseId, {
     enabled: !!courseId,
     autoRefetch: true
@@ -79,14 +82,26 @@ export default function CourseExercisesPage() {
 
         setUser(userData);
 
-        // Charger les infos du cours (simulation - à remplacer par un vrai service)
-        // Dans une vraie implémentation, utiliser un CourseService
-        setCourseInfo({
-          id: courseId,
-          title: `Cours #${courseId}`,
-          description: 'Description du cours...',
-          instructor: 'Professeur Exemple'
-        });
+        // Charger les infos du cours
+        const response = await CourseControllerService.getEnrichedCourse(courseId);
+        if (response && response.success && response.data) {
+          const courseData = response.data;
+          setCourseInfo({
+            id: courseData.id || courseId,
+            title: courseData.title || `Cours #${courseId}`,
+            description: courseData.category || 'Description du cours...',
+            instructor: courseData.author ? `${courseData.author.name}` : 'Professeur Exemple',
+            photoUrl: courseData.image // EnrichedCourseResponse uses 'image' based on model file
+          });
+        } else {
+          // Fallback if API fails
+          setCourseInfo({
+            id: courseId,
+            title: `Cours #${courseId}`,
+            description: 'Description du cours...',
+            instructor: 'Professeur Exemple'
+          });
+        }
 
       } catch (error) {
         console.error('Erreur chargement données:', error);
@@ -105,21 +120,21 @@ export default function CourseExercisesPage() {
     if (filter.status !== 'all') {
       const submitted = exercise.alreadySubmitted || false;
       const graded = exercise.studentScore !== undefined;
-      
+
       if (filter.status === 'pending' && submitted) return false;
       if (filter.status === 'submitted' && !submitted) return false;
       if (filter.status === 'graded' && !graded) return false;
     }
-    
+
     // Filtre par recherche
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
       if (!exercise.title.toLowerCase().includes(searchLower) &&
-          !(exercise.description?.toLowerCase().includes(searchLower))) {
+        !(exercise.description?.toLowerCase().includes(searchLower))) {
         return false;
       }
     }
-    
+
     return true;
   }).sort((a, b) => {
     // Trier les exercices
@@ -152,21 +167,21 @@ export default function CourseExercisesPage() {
 
   const getExerciseStatus = (exercise: any) => {
     if (exercise.studentScore !== undefined) {
-      return { 
-        label: 'Noté', 
+      return {
+        label: 'Noté',
         color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
         icon: CheckCircle
       };
     }
     if (exercise.alreadySubmitted) {
-      return { 
-        label: 'Soumis', 
+      return {
+        label: 'Soumis',
         color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
         icon: FileText
       };
     }
-    return { 
-      label: 'En attente', 
+    return {
+      label: 'En attente',
       color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
       icon: Clock
     };
@@ -205,45 +220,53 @@ export default function CourseExercisesPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
+              <div className="flex items-center gap-4 mb-4">
+                {courseInfo.photoUrl ? (
+                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-sm border border-purple-100 dark:border-gray-700 flex-shrink-0">
+                    <img
+                      src={courseInfo.photoUrl}
+                      alt={courseInfo.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="p-4 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex-shrink-0">
+                    <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-purple-600 dark:text-purple-400" />
+                  </div>
+                )}
                 <div>
-                  <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
                     {courseInfo.title}
                   </h1>
-                  <p className="text-gray-600 dark:text-gray-300 mt-2">
+                  <p className="text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
                     {courseInfo.description}
                   </p>
                 </div>
               </div>
-              
-              <div className="flex flex-wrap gap-4 text-sm">
+
+              <div className="flex flex-wrap gap-4 text-sm mt-2">
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Enseignant:</span>
-                  <span>{courseInfo.instructor}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Code cours:</span>
-                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">#{courseInfo.id}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Enseignant:</span>
+                  <span className="bg-purple-50 dark:bg-purple-900/20 px-3 py-1 rounded-full text-purple-700 dark:text-purple-400">
+                    {courseInfo.instructor}
+                  </span>
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center gap-4">
+
+            <div className="flex items-center gap-6 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-2xl">
               <div className="text-center">
                 <div className="text-2xl md:text-3xl font-bold text-purple-700 dark:text-purple-400">
                   {filteredExercises.length}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Exercices</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Exercices</div>
               </div>
-              <div className="h-12 w-px bg-gray-300 dark:bg-gray-700"></div>
+              <div className="h-10 w-px bg-gray-300 dark:bg-gray-600"></div>
               <div className="text-center">
                 <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
                   {filteredExercises.filter(e => e.alreadySubmitted).length}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Soumis</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Soumis</div>
               </div>
             </div>
           </div>
@@ -265,7 +288,7 @@ export default function CourseExercisesPage() {
                 />
               </div>
             </div>
-            
+
             {/* Filtres */}
             <div className="flex gap-2">
               <select
@@ -278,7 +301,7 @@ export default function CourseExercisesPage() {
                 <option value="submitted">Soumis</option>
                 <option value="graded">Notés</option>
               </select>
-              
+
               <select
                 value={filter.sortBy}
                 onChange={(e) => setFilter(prev => ({ ...prev, sortBy: e.target.value }))}
@@ -288,7 +311,7 @@ export default function CourseExercisesPage() {
                 <option value="title">Trier par titre</option>
                 <option value="points">Trier par points</option>
               </select>
-              
+
               <button
                 onClick={() => refetch()}
                 className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2"
@@ -334,7 +357,7 @@ export default function CourseExercisesPage() {
                 Aucun exercice trouvé
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                {filter.search || filter.status !== 'all' 
+                {filter.search || filter.status !== 'all'
                   ? 'Aucun exercice ne correspond à vos critères de recherche.'
                   : 'Aucun exercice n\'est disponible pour ce cours pour le moment.'}
               </p>
@@ -352,10 +375,10 @@ export default function CourseExercisesPage() {
               const status = getExerciseStatus(exercise);
               const StatusIcon = status.icon;
               const isDue = isDueDatePassed(exercise.dueDate);
-              
+
               return (
-                <div 
-                  key={exercise.id} 
+                <div
+                  key={exercise.id}
                   className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all"
                 >
                   <div className="p-6">
@@ -370,24 +393,24 @@ export default function CourseExercisesPage() {
                             {status.label}
                           </span>
                         </div>
-                        
+
                         {exercise.description && (
                           <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                             {exercise.description}
                           </p>
                         )}
-                        
+
                         <div className="flex flex-wrap gap-4 text-sm">
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                             <Award className="w-4 h-4" />
                             <span>{exercise.maxScore} points</span>
                           </div>
-                          
+
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                             <FileText className="w-4 h-4" />
                             <span>{exercise.questions?.length || 0} questions</span>
                           </div>
-                          
+
                           {exercise.dueDate && (
                             <div className={`flex items-center gap-2 ${isDue ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
                               <Calendar className="w-4 h-4" />
@@ -398,7 +421,7 @@ export default function CourseExercisesPage() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col md:items-end gap-3">
                         {/* Score si noté */}
                         {exercise.studentScore !== undefined && (
@@ -411,7 +434,7 @@ export default function CourseExercisesPage() {
                             </div>
                           </div>
                         )}
-                        
+
                         {/* Actions */}
                         <div className="flex gap-2">
                           <button
@@ -420,7 +443,7 @@ export default function CourseExercisesPage() {
                           >
                             Voir
                           </button>
-                          
+
                           {exercise.alreadySubmitted ? (
                             <button
                               onClick={() => handleViewSubmission(exercise.id)}
@@ -433,11 +456,10 @@ export default function CourseExercisesPage() {
                             <button
                               onClick={() => handleStartExercise(exercise.id)}
                               disabled={isDue}
-                              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                                isDue 
-                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                                  : 'bg-purple-600 hover:bg-purple-700 text-white'
-                              }`}
+                              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isDue
+                                ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                                : 'bg-purple-600 hover:bg-purple-700 text-white'
+                                }`}
                             >
                               {isDue ? 'Échéance dépassée' : 'Commencer'}
                               <ChevronRight className="w-4 h-4" />
@@ -459,7 +481,7 @@ export default function CourseExercisesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Affichage de {filteredExercises.length} exercice{filteredExercises.length !== 1 ? 's' : ''}
             </div>
-            
+
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/etudashboard')}
@@ -467,7 +489,7 @@ export default function CourseExercisesPage() {
               >
                 ← Retour au dashboard
               </button>
-              
+
               <button
                 onClick={() => router.push(`/courses/${courseId}`)}
                 className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors text-sm"

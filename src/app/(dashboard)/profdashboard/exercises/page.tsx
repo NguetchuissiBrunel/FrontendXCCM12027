@@ -567,8 +567,8 @@ export default function AllExercisesPage() {
               <button
                 onClick={() => setSelectedFilter('all')}
                 className={`px-4 py-2 rounded-lg border transition-colors ${selectedFilter === 'all'
-                    ? 'bg-purple-600 border-purple-600 text-white'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-purple-600 border-purple-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
               >
                 Tous
@@ -576,8 +576,8 @@ export default function AllExercisesPage() {
               <button
                 onClick={() => setSelectedFilter('pending')}
                 className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${selectedFilter === 'pending'
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
               >
                 <AlertCircle className="w-4 h-4" />
@@ -586,8 +586,8 @@ export default function AllExercisesPage() {
               <button
                 onClick={() => setSelectedFilter('graded')}
                 className={`px-4 py-2 rounded-lg border transition-colors ${selectedFilter === 'graded'
-                    ? 'bg-green-600 border-green-600 text-white'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-green-600 border-green-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
               >
                 Corrigés
@@ -631,8 +631,8 @@ export default function AllExercisesPage() {
                 <div
                   key={`${exercise.id}-${exercise.lastActivity}`}
                   className={`p-6 transition-all duration-300 relative ${exercise.isUpdating ? 'bg-blue-50 dark:bg-blue-900/20' :
-                      exercise.hasUpdates ? 'bg-green-50 dark:bg-green-900/20' :
-                        'hover:bg-gray-50 dark:hover:bg-gray-900/30'
+                    exercise.hasUpdates ? 'bg-green-50 dark:bg-green-900/20' :
+                      'hover:bg-gray-50 dark:hover:bg-gray-900/30'
                     }`}
                 >
                   {exercise.isUpdating && (

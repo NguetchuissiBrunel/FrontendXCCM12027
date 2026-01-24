@@ -1,9 +1,9 @@
 // src/lib/services/ExerciseService.ts - VERSION UNIFIÉE
-import { 
-  Exercise, 
-  Question, 
-  ApiResponse, 
-  SubmitExerciseRequest, 
+import {
+  Exercise,
+  Question,
+  ApiResponse,
+  SubmitExerciseRequest,
   SubmissionAnswer,
   ExerciseContent,
   Submission,
@@ -42,9 +42,9 @@ interface GeneratedApiResponse<T = any> {
 
 export class ExerciseService {
   private static readonly CONTENT_VERSION = '2.0';
-  
+
   // ============ CONVERSION ET PARSING ============
-  
+
   /**
    * Convertit les questions frontend en ExerciseContent pour le backend
    */
@@ -59,9 +59,9 @@ export class ExerciseService {
       ...(q.correctAnswer !== undefined && { correctAnswer: q.correctAnswer }),
       ...(q.explanation && { explanation: q.explanation })
     }));
-    
+
     const uniqueTypes = [...new Set(safeQuestions.map(q => q.type))];
-    
+
     return {
       version: this.CONTENT_VERSION,
       questions: safeQuestions,
@@ -75,7 +75,7 @@ export class ExerciseService {
       }
     };
   }
-  
+
   /**
    * Convertit ExerciseContent en string JSON pour l'API
    */
@@ -97,57 +97,57 @@ export class ExerciseService {
       });
     }
   }
-  
-// ============ CONVERSION DTO -> ENTITY ============
 
-/**
- * Convertit CreateQuestionDto[] en Question[] (ajoute id et exerciseId)
- */
-static convertCreateQuestionsToQuestions(
-  createQuestions: CreateQuestionDto[], 
-  exerciseId: number = 0
-): Question[] {
-  return createQuestions.map((dto, index) => ({
-    id: Date.now() + index, // ID temporaire
-    exerciseId: exerciseId,
-    text: dto.text,
-    type: dto.type,
-    points: dto.points || 1,
-    order: dto.order || index,
-    options: dto.options,
-    correctAnswer: dto.correctAnswer,
-    explanation: dto.explanation,
-    // Pas de studentAnswer/studentPoints pour les nouvelles questions
-  }));
-}
+  // ============ CONVERSION DTO -> ENTITY ============
 
-/**
- * Convertit UpdateQuestionDto[] en Question[] (préserve les IDs existants)
- */
-static convertUpdateQuestionsToQuestions(
-  updateQuestions: UpdateQuestionDto[],
-  existingQuestions: Question[] = [],
-  exerciseId: number = 0
-): Question[] {
-  return updateQuestions.map((dto, index) => {
-    // Trouver la question existante par ID si fourni
-    const existing = dto.id ? existingQuestions.find(q => q.id === dto.id) : null;
-    
-    return {
-      id: dto.id || existing?.id || Date.now() + index,
+  /**
+   * Convertit CreateQuestionDto[] en Question[] (ajoute id et exerciseId)
+   */
+  static convertCreateQuestionsToQuestions(
+    createQuestions: CreateQuestionDto[],
+    exerciseId: number = 0
+  ): Question[] {
+    return createQuestions.map((dto, index) => ({
+      id: Date.now() + index, // ID temporaire
       exerciseId: exerciseId,
-      text: dto.text || existing?.text || '',
-      type: dto.type || existing?.type || 'TEXT',
-      points: dto.points || existing?.points || 1,
-      order: dto.order || existing?.order || index,
-      options: dto.options || existing?.options,
-      correctAnswer: dto.correctAnswer !== undefined ? dto.correctAnswer : existing?.correctAnswer,
-      explanation: dto.explanation || existing?.explanation,
-      studentAnswer: existing?.studentAnswer,
-      studentPoints: existing?.studentPoints
-    };
-  });
-}
+      text: dto.text,
+      type: dto.type,
+      points: dto.points || 1,
+      order: dto.order || index,
+      options: dto.options,
+      correctAnswer: dto.correctAnswer,
+      explanation: dto.explanation,
+      // Pas de studentAnswer/studentPoints pour les nouvelles questions
+    }));
+  }
+
+  /**
+   * Convertit UpdateQuestionDto[] en Question[] (préserve les IDs existants)
+   */
+  static convertUpdateQuestionsToQuestions(
+    updateQuestions: UpdateQuestionDto[],
+    existingQuestions: Question[] = [],
+    exerciseId: number = 0
+  ): Question[] {
+    return updateQuestions.map((dto, index) => {
+      // Trouver la question existante par ID si fourni
+      const existing = dto.id ? existingQuestions.find(q => q.id === dto.id) : null;
+
+      return {
+        id: dto.id || existing?.id || Date.now() + index,
+        exerciseId: exerciseId,
+        text: dto.text || existing?.text || '',
+        type: dto.type || existing?.type || 'TEXT',
+        points: dto.points || existing?.points || 1,
+        order: dto.order || existing?.order || index,
+        options: dto.options || existing?.options,
+        correctAnswer: dto.correctAnswer !== undefined ? dto.correctAnswer : existing?.correctAnswer,
+        explanation: dto.explanation || existing?.explanation,
+        studentAnswer: existing?.studentAnswer,
+        studentPoints: existing?.studentPoints
+      };
+    });
+  }
 
   /**
    * Parse le contenu JSON en questions frontend
@@ -157,19 +157,19 @@ static convertUpdateQuestionsToQuestions(
     if (content == null) {
       return [];
     }
-    
+
     // Si content est déjà un tableau de questions
     if (Array.isArray(content)) {
       return this.normalizeQuestions(content);
     }
-    
+
     // Si content est une chaîne JSON
     if (typeof content === 'string') {
       const trimmed = content.trim();
       if (trimmed === '' || trimmed === '{}' || trimmed === '[]') {
         return [];
       }
-      
+
       try {
         const parsed = JSON.parse(trimmed);
         return this.extractQuestionsFromObject(parsed);
@@ -178,16 +178,16 @@ static convertUpdateQuestionsToQuestions(
         return [];
       }
     }
-    
+
     // Si content est un objet
     if (typeof content === 'object') {
       return this.extractQuestionsFromObject(content);
     }
-    
+
     console.warn('Format de content non reconnu:', typeof content);
     return [];
   }
-  
+
   /**
    * Extrait les questions d'un objet (support multiple formats)
    */
@@ -196,7 +196,7 @@ static convertUpdateQuestionsToQuestions(
     if (obj.questions && Array.isArray(obj.questions)) {
       return this.normalizeQuestions(obj.questions);
     }
-    
+
     // Format plat avec propriété questions
     const possibleQuestionProps = ['questions', 'items', 'content'];
     for (const prop of possibleQuestionProps) {
@@ -204,7 +204,7 @@ static convertUpdateQuestionsToQuestions(
         return this.normalizeQuestions(obj[prop]);
       }
     }
-    
+
     // Si l'objet est directement un tableau déguisé
     if (Array.isArray(Object.values(obj)[0])) {
       const firstValue = Object.values(obj)[0];
@@ -212,10 +212,10 @@ static convertUpdateQuestionsToQuestions(
         return this.normalizeQuestions(firstValue);
       }
     }
-    
+
     return [];
   }
-  
+
   /**
    * Normalise un tableau de questions vers le format Question
    */
@@ -223,7 +223,7 @@ static convertUpdateQuestionsToQuestions(
     if (!Array.isArray(questionsArray)) {
       return [];
     }
-    
+
     return questionsArray.map((item, index): Question => {
       // Migration depuis les anciens formats si nécessaire
       const migrated = migrateLegacyQuestion({
@@ -241,11 +241,11 @@ static convertUpdateQuestionsToQuestions(
         studentAnswer: item.studentAnswer,
         studentPoints: item.studentPoints
       });
-      
+
       return migrated;
     });
   }
-  
+
   /**
    * Convertit les données API en objet Exercise frontend
    */
@@ -253,7 +253,7 @@ static convertUpdateQuestionsToQuestions(
     if (!apiData) {
       throw new Error('Données API invalides');
     }
-    
+
     // Migration depuis l'ancien format si nécessaire
     const migrated = migrateLegacyExercise({
       id: apiData.id,
@@ -278,19 +278,19 @@ static convertUpdateQuestionsToQuestions(
       canSubmit: apiData.canSubmit,
       feedback: apiData.feedback
     });
-    
+
     // Extraire et parser les questions
     const content = apiData.content;
     const questions = this.parseContent(content);
-    
+
     // Mettre à jour les questions
     migrated.questions = questions;
-    
+
     return migrated;
   }
-  
+
   // ============ VALIDATION ============
-  
+
   static validateExercise(data: {
     title: string;
     questions: Array<Question | CreateQuestionDto>;  // ✅ Accepte les deux
@@ -298,7 +298,7 @@ static convertUpdateQuestionsToQuestions(
   }): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    
+
     // Validation du titre
     const trimmedTitle = data.title?.trim();
     if (!trimmedTitle) {
@@ -306,7 +306,7 @@ static convertUpdateQuestionsToQuestions(
     } else if (trimmedTitle.length > 200) {
       errors.push('Le titre ne doit pas dépasser 200 caractères');
     }
-    
+
     // Validation des questions
     if (!data.questions || data.questions.length === 0) {
       errors.push('Ajoutez au moins une question');
@@ -315,20 +315,20 @@ static convertUpdateQuestionsToQuestions(
         if (!q.text?.trim()) {
           errors.push(`La question ${index + 1} est vide`);
         }
-        
+
         if (!q.points || q.points <= 0) {
           errors.push(`La question ${index + 1} doit avoir des points positifs`);
         }
-        
+
         if (!isQuestionType(q.type)) {
           errors.push(`La question ${index + 1} a un type invalide: ${q.type}`);
         }
-        
+
         if (q.type === 'MULTIPLE_CHOICE') {
           if (!q.options || q.options.length < 2) {
             errors.push(`La question ${index + 1} (choix multiple) doit avoir au moins 2 options`);
           }
-          
+
           q.options?.forEach((opt, optIndex) => {
             if (!opt.trim()) {
               errors.push(`L'option ${optIndex + 1} de la question ${index + 1} est vide`);
@@ -337,7 +337,7 @@ static convertUpdateQuestionsToQuestions(
         }
       });
     }
-    
+
     // Validation du score total
     const totalPoints = data.questions.reduce((sum, q) => sum + q.points, 0);
     if (totalPoints > data.maxScore) {
@@ -345,16 +345,16 @@ static convertUpdateQuestionsToQuestions(
     } else if (totalPoints < data.maxScore) {
       warnings.push(`Total des points (${totalPoints}) inférieur au score maximum (${data.maxScore})`);
     }
-    
+
     return {
       valid: errors.length === 0,
       errors,
       warnings: warnings.length > 0 ? warnings : undefined
     };
   }
-  
+
   // ============ CRUD OPERATIONS ============
-  
+
   /**
    * Créer un nouvel exercice
    */
@@ -369,17 +369,17 @@ static convertUpdateQuestionsToQuestions(
         questions: data.questions,
         maxScore: data.maxScore
       });
-      
+
       if (!validation.valid) {
         throw new Error(validation.errors.join(', '));
       }
 
       // Convertir les DTOs en Questions pour la sérialisation
-    const questions = this.convertCreateQuestionsToQuestions(data.questions);
-      
+      const questions = this.convertCreateQuestionsToQuestions(data.questions);
+
       // Serialize content
       const content = this.serializeQuestions(questions);
-      
+
       // Appel API
       const response = await ExerciseApiWrapper.createExerciseWithContent(
         courseId,
@@ -391,28 +391,28 @@ static convertUpdateQuestionsToQuestions(
           content: content
         }
       );
-      
+
       if (!response.success) {
         throw new Error(response.message || 'Erreur API');
       }
-      
+
       if (!response.data) {
         throw new Error('Données API manquantes');
       }
-      
+
       // Transformation
       const exercise = await this.transformApiToFrontend(response.data);
-      
+
       return {
         success: true,
         message: '✅ Exercice créé avec succès',
         data: exercise,
         timestamp: new Date().toISOString()
       };
-      
+
     } catch (error: any) {
       console.error('Échec création exercice:', error);
-      
+
       return {
         success: false,
         message: error.message || 'Erreur création',
@@ -421,7 +421,7 @@ static convertUpdateQuestionsToQuestions(
       };
     }
   }
-  
+
   /**
    * Récupérer tous les exercices d'un cours
    */
@@ -429,13 +429,13 @@ static convertUpdateQuestionsToQuestions(
     try {
       const response = await ExercicesService.getExercisesForCourse(courseId) as unknown;
       const parsedResponse = this.parseGeneratedResponse<any[]>(response);
-      
+
       if (!parsedResponse.data || !Array.isArray(parsedResponse.data)) {
         return [];
       }
-      
+
       const exercises: Exercise[] = [];
-      
+
       for (const apiExercise of parsedResponse.data) {
         try {
           const exercise = await this.transformApiToFrontend(apiExercise);
@@ -444,157 +444,157 @@ static convertUpdateQuestionsToQuestions(
           console.warn('Erreur transformation exercice:', error);
         }
       }
-      
+
       return exercises;
-      
+
     } catch (error) {
       console.error('Erreur récupération exercices:', error);
       return [];
     }
   }
-  
+
   /**
    * Récupérer les détails d'un exercice
    */
   static async getExerciseDetails(exerciseId: number): Promise<Exercise | null> {
     try {
       const apiData = await ExerciseApiWrapper.getFullExercise(exerciseId);
-      
+
       if (!apiData) {
         return null;
       }
-      
+
       return await this.transformApiToFrontend(apiData);
-      
+
     } catch (error) {
       console.error('Erreur récupération détails exercice:', error);
       return null;
     }
   }
-  
+
   // Dans ExerciseService.ts, méthode updateExercise - CORRECTION
 
-static async updateExercise(
-  exerciseId: number,
-  data: UpdateExerciseDto
-): Promise<ApiResponse<Exercise>> {
-  try {
-    // Vérification de l'ID
-    if (!exerciseId || exerciseId <= 0) {
-      throw new Error(`ID d'exercice invalide: ${exerciseId}`);
-    }
-    
-    // Récupérer l'exercice existant pour référence
-    const existingExercise = await this.getExerciseDetails(exerciseId);
-    if (!existingExercise) {
-      throw new Error(`Exercice ${exerciseId} non trouvé`);
-    }
-    
-    console.log('🔍 === DEBUG updateExercise ===');
-    console.log('Exercise ID:', exerciseId);
-    console.log('Update data:', data);
-    console.log('Existing exercise:', existingExercise);
-    
-    // Préparer les données de mise à jour
-    const updateData: any = {};
-    
-    // Ajouter les champs de base
-    if (data.title !== undefined) updateData.title = data.title;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.maxScore !== undefined) updateData.maxScore = data.maxScore;
-    if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
-    if (data.status !== undefined) updateData.status = data.status;
-    
-    // Si des questions sont fournies, ajouter le content
-    if (data.questions !== undefined) {
-      // Convertir UpdateQuestionDto[] en Question[] pour la validation et sérialisation
-      const questionsToValidate = this.convertUpdateQuestionsToQuestions(
-        data.questions,
-        existingExercise.questions,
-        exerciseId
-      );
-      
-      // Extraire les propriétés validables pour la validation
-      const validatableQuestions = questionsToValidate.map(q => ({
-        text: q.text,
-        type: q.type,
-        points: q.points,
-        options: q.options,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
-        order: q.order
-      }));
-      
-      const validation = this.validateExercise({
-        title: data.title || existingExercise.title,
-        questions: validatableQuestions,
-        maxScore: data.maxScore || existingExercise.maxScore
-      });
-      
-      if (!validation.valid) {
-        throw new Error(validation.errors.join(', '));
+  static async updateExercise(
+    exerciseId: number,
+    data: UpdateExerciseDto
+  ): Promise<ApiResponse<Exercise>> {
+    try {
+      // Vérification de l'ID
+      if (!exerciseId || exerciseId <= 0) {
+        throw new Error(`ID d'exercice invalide: ${exerciseId}`);
       }
-      
-      // CRITIQUE: Mise à jour du content avec le bon format
-      const content = this.serializeQuestions(questionsToValidate);
-      
-      // Vérifier le format attendu par l'API
-      // Option 1: Content en tant qu'objet
-      updateData.content = content;
-      
-      // Option 2: Content en tant que string JSON (essayez les deux)
-      // updateData.content = JSON.stringify(content);
-      
-      console.log('📦 Content à envoyer:', content);
-    }
-    
-    console.log('📤 Données complètes à envoyer à l\'API:', updateData);
-    
-    // Utiliser l'endpoint principal de mise à jour
-    const response = await EnseignantService.updateExercise(
-      exerciseId, 
-      updateData
-    ) as unknown;
-    
-    const parsedResponse = this.parseGeneratedResponse(response);
-    
-    console.log('📩 Réponse API:', parsedResponse);
-    
-    if (!parsedResponse.success) {
-      if (parsedResponse.code === 404) {
+
+      // Récupérer l'exercice existant pour référence
+      const existingExercise = await this.getExerciseDetails(exerciseId);
+      if (!existingExercise) {
         throw new Error(`Exercice ${exerciseId} non trouvé`);
       }
-      throw new Error(parsedResponse.message || 'Erreur lors de la mise à jour');
+
+      console.log('🔍 === DEBUG updateExercise ===');
+      console.log('Exercise ID:', exerciseId);
+      console.log('Update data:', data);
+      console.log('Existing exercise:', existingExercise);
+
+      // Préparer les données de mise à jour
+      const updateData: any = {};
+
+      // Ajouter les champs de base
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.maxScore !== undefined) updateData.maxScore = data.maxScore;
+      if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
+      if (data.status !== undefined) updateData.status = data.status;
+
+      // Si des questions sont fournies, ajouter le content
+      if (data.questions !== undefined) {
+        // Convertir UpdateQuestionDto[] en Question[] pour la validation et sérialisation
+        const questionsToValidate = this.convertUpdateQuestionsToQuestions(
+          data.questions,
+          existingExercise.questions,
+          exerciseId
+        );
+
+        // Extraire les propriétés validables pour la validation
+        const validatableQuestions = questionsToValidate.map(q => ({
+          text: q.text,
+          type: q.type,
+          points: q.points,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          order: q.order
+        }));
+
+        const validation = this.validateExercise({
+          title: data.title || existingExercise.title,
+          questions: validatableQuestions,
+          maxScore: data.maxScore || existingExercise.maxScore
+        });
+
+        if (!validation.valid) {
+          throw new Error(validation.errors.join(', '));
+        }
+
+        // CRITIQUE: Mise à jour du content avec le bon format
+        const content = this.serializeQuestions(questionsToValidate);
+
+        // Vérifier le format attendu par l'API
+        // Option 1: Content en tant qu'objet
+        updateData.content = content;
+
+        // Option 2: Content en tant que string JSON (essayez les deux)
+        // updateData.content = JSON.stringify(content);
+
+        console.log('📦 Content à envoyer:', content);
+      }
+
+      console.log('📤 Données complètes à envoyer à l\'API:', updateData);
+
+      // Utiliser l'endpoint principal de mise à jour
+      const response = await EnseignantService.updateExercise(
+        exerciseId,
+        updateData
+      ) as unknown;
+
+      const parsedResponse = this.parseGeneratedResponse(response);
+
+      console.log('📩 Réponse API:', parsedResponse);
+
+      if (!parsedResponse.success) {
+        if (parsedResponse.code === 404) {
+          throw new Error(`Exercice ${exerciseId} non trouvé`);
+        }
+        throw new Error(parsedResponse.message || 'Erreur lors de la mise à jour');
+      }
+
+      // Récupération de l'exercice mis à jour
+      const updatedExercise = await this.getExerciseDetails(exerciseId);
+
+      if (!updatedExercise) {
+        throw new Error('Exercice non trouvé après mise à jour');
+      }
+
+      console.log('✅ Exercice mis à jour avec succès:', updatedExercise);
+
+      return {
+        success: true,
+        message: '✅ Exercice mis à jour',
+        data: updatedExercise,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error: any) {
+      console.error('❌ Échec mise à jour exercice:', error);
+
+      return {
+        success: false,
+        message: error.message || 'Erreur lors de la mise à jour',
+        errors: { general: [error.message] },
+        timestamp: new Date().toISOString()
+      };
     }
-    
-    // Récupération de l'exercice mis à jour
-    const updatedExercise = await this.getExerciseDetails(exerciseId);
-    
-    if (!updatedExercise) {
-      throw new Error('Exercice non trouvé après mise à jour');
-    }
-    
-    console.log('✅ Exercice mis à jour avec succès:', updatedExercise);
-    
-    return {
-      success: true,
-      message: '✅ Exercice mis à jour',
-      data: updatedExercise,
-      timestamp: new Date().toISOString()
-    };
-    
-  } catch (error: any) {
-    console.error('❌ Échec mise à jour exercice:', error);
-    
-    return {
-      success: false,
-      message: error.message || 'Erreur lors de la mise à jour',
-      errors: { general: [error.message] },
-      timestamp: new Date().toISOString()
-    };
   }
-}
-  
+
   /**
    * Supprimer un exercice
    */
@@ -608,25 +608,25 @@ static async updateExercise(
       throw error;
     }
   }
-  
+
   // ============ GESTION DU STATUT ============
-  
+
   /**
    * Publier un exercice
    */
   static async publishExercise(exerciseId: number): Promise<ApiResponse<Exercise>> {
     try {
       const result = await this.updateExercise(exerciseId, { status: 'PUBLISHED' });
-      
+
       if (result.success) {
         return {
           ...result,
           message: '✅ Exercice publié avec succès'
         };
       }
-      
+
       return result;
-      
+
     } catch (error: any) {
       return {
         success: false,
@@ -636,23 +636,23 @@ static async updateExercise(
       };
     }
   }
-  
+
   /**
    * Fermer un exercice
    */
   static async closeExercise(exerciseId: number): Promise<ApiResponse<Exercise>> {
     try {
       const result = await this.updateExercise(exerciseId, { status: 'CLOSED' });
-      
+
       if (result.success) {
         return {
           ...result,
           message: '✅ Exercice fermé avec succès'
         };
       }
-      
+
       return result;
-      
+
     } catch (error: any) {
       return {
         success: false,
@@ -662,23 +662,23 @@ static async updateExercise(
       };
     }
   }
-  
+
   /**
    * Archiver un exercice
    */
   static async archiveExercise(exerciseId: number): Promise<ApiResponse<Exercise>> {
     try {
       const result = await this.updateExercise(exerciseId, { status: 'ARCHIVED' });
-      
+
       if (result.success) {
         return {
           ...result,
           message: '✅ Exercice archivé avec succès'
         };
       }
-      
+
       return result;
-      
+
     } catch (error: any) {
       return {
         success: false,
@@ -688,9 +688,9 @@ static async updateExercise(
       };
     }
   }
-  
+
   // ============ DUPLICATION ============
-  
+
   /**
    * Dupliquer un exercice
    */
@@ -701,11 +701,11 @@ static async updateExercise(
   ): Promise<ApiResponse<Exercise>> {
     try {
       const sourceExercise = await this.getExerciseDetails(sourceExerciseId);
-      
+
       if (!sourceExercise) {
         throw new Error('Exercice source non trouvé');
       }
-      
+
       const createData: CreateExerciseDto = {
         courseId: targetCourseId,
         title: newTitle || `${sourceExercise.title} (Copie)`,
@@ -722,9 +722,9 @@ static async updateExercise(
           order: q.order
         }))
       };
-      
+
       return await this.createExercise(targetCourseId, createData);
-      
+
     } catch (error: any) {
       console.error('Échec duplication exercice:', error);
       return {
@@ -735,9 +735,9 @@ static async updateExercise(
       };
     }
   }
-  
+
   // ============ SOUMISSIONS ============
-  
+
   /**
    * Soumettre un exercice (étudiant)
    */
@@ -1059,16 +1059,16 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
         submissionId,
         gradeData
       ) as unknown;
-      
+
       const parsedResponse = this.parseGeneratedResponse<Submission>(response);
-      
+
       return {
         success: parsedResponse.success || false,
         message: parsedResponse.message || 'Notation effectuée',
         data: parsedResponse.data,
         timestamp: parsedResponse.timestamp || new Date().toISOString()
       };
-      
+
     } catch (error: any) {
       console.error('Erreur notation soumission:', error);
       return {
@@ -1079,7 +1079,7 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
       };
     }
   }
-  
+
   /**
    * Récupérer les soumissions de l'étudiant connecté
    */
@@ -1087,11 +1087,11 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
     try {
       const response = await ExercicesService.getMySubmissions() as unknown;
       const parsedResponse = this.parseGeneratedResponse<any[]>(response);
-      
+
       if (!parsedResponse.data || !Array.isArray(parsedResponse.data)) {
         return [];
       }
-      
+
       return parsedResponse.data.map((sub: any): Submission => ({
         id: sub.id || 0,
         exerciseId: sub.exerciseId || 0,
@@ -1115,9 +1115,9 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
       return [];
     }
   }
-  
+
   // ============ STATISTIQUES ============
-  
+
   /**
    * Calculer les statistiques d'un exercice
    */
@@ -1125,51 +1125,51 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
     try {
       const exercise = await this.getExerciseDetails(exerciseId);
       const submissions = await this.getExerciseSubmissions(exerciseId);
-      
+
       if (!exercise || submissions.length === 0) {
         return null;
       }
-      
+
       const gradedSubmissions = submissions.filter(s => s.graded && s.score !== undefined);
-      
+
       if (gradedSubmissions.length === 0) {
         return this.createEmptyStats(exercise);
       }
-      
+
       const scores = gradedSubmissions.map(s => s.score!);
       const totalScore = scores.reduce((sum, score) => sum + score, 0);
       const averageScore = totalScore / gradedSubmissions.length;
-      
+
       // Statistiques par question
       const questionStats: QuestionStat[] = exercise.questions.map(question => {
         const questionAnswers = gradedSubmissions
           .flatMap(s => s.answers.filter(a => a.questionId === question.id));
-        
+
         const correctCount = questionAnswers.filter(a => a.points && a.points >= question.points * 0.8).length;
         const correctRate = questionAnswers.length > 0 ? correctCount / questionAnswers.length : 0;
-        
+
         // Analyse des réponses incorrectes
         const wrongAnswers = questionAnswers.filter(a => a.points && a.points < question.points * 0.5);
         const commonWrongAnswers = this.analyzeCommonAnswers(wrongAnswers);
-        
+
         return {
           questionId: question.id,
           text: question.text,
           type: question.type,
-          averageScore: questionAnswers.length > 0 
-            ? questionAnswers.reduce((sum, a) => sum + (a.points || 0), 0) / questionAnswers.length 
+          averageScore: questionAnswers.length > 0
+            ? questionAnswers.reduce((sum, a) => sum + (a.points || 0), 0) / questionAnswers.length
             : 0,
           correctRate,
           commonWrongAnswers
         };
       });
-      
+
       // Distribution des notes
       const gradeDistribution = this.calculateGradeDistribution(
-        scores, 
+        scores,
         exercise.maxScore
       );
-      
+
       return {
         exerciseId: exercise.id,
         title: exercise.title,
@@ -1183,15 +1183,15 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
         questionStats,
         gradeDistribution
       };
-      
+
     } catch (error) {
       console.error('Erreur calcul statistiques:', error);
       return null;
     }
   }
-  
+
   // ============ UTILITIES ============
-  
+
   private static parseGeneratedResponse<T = any>(response: unknown): GeneratedApiResponse<T> {
     if (!response || typeof response !== 'object') {
       return {
@@ -1201,9 +1201,9 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
         timestamp: new Date().toISOString()
       };
     }
-    
+
     const resp = response as Record<string, any>;
-    
+
     return {
       code: typeof resp.code === 'number' ? resp.code : undefined,
       success: typeof resp.success === 'boolean' ? resp.success : undefined,
@@ -1214,7 +1214,7 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
       timestamp: typeof resp.timestamp === 'string' ? resp.timestamp : new Date().toISOString()
     };
   }
-  
+
   private static createEmptyStats(exercise: Exercise): ExerciseStats {
     return {
       exerciseId: exercise.id,
@@ -1237,21 +1237,21 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
       gradeDistribution: []
     };
   }
-  
+
   private static analyzeCommonAnswers(answers: SubmissionAnswer[]): Array<{ answer: string; count: number }> {
     const answerCounts: Record<string, number> = {};
-    
+
     answers.forEach(answer => {
       const key = answer.answer.trim().toLowerCase();
       answerCounts[key] = (answerCounts[key] || 0) + 1;
     });
-    
+
     return Object.entries(answerCounts)
       .map(([answer, count]) => ({ answer, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }
-  
+
   private static calculateGradeDistribution(scores: number[], maxScore: number): GradeDistribution[] {
     const ranges = [
       { min: 0, max: maxScore * 0.25, label: '0-25%' },
@@ -1259,25 +1259,25 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
       { min: maxScore * 0.5, max: maxScore * 0.75, label: '50-75%' },
       { min: maxScore * 0.75, max: maxScore, label: '75-100%' }
     ];
-    
+
     const distribution = ranges.map(range => {
-      const count = scores.filter(score => 
+      const count = scores.filter(score =>
         score >= range.min && score < range.max
       ).length;
-      
+
       return {
         gradeRange: range.label,
         count,
         percentage: scores.length > 0 ? (count / scores.length) * 100 : 0
       };
     });
-    
+
     return distribution;
   }
-  
+
   static isDueDatePassed(dueDate: string | null | undefined): boolean {
     if (!dueDate) return false;
-    
+
     try {
       const due = new Date(dueDate);
       const now = new Date();
@@ -1286,10 +1286,10 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
       return false;
     }
   }
-  
+
   static formatDueDate(dueDate: string | null | undefined): string {
     if (!dueDate) return 'Pas de date limite';
-    
+
     try {
       const date = new Date(dueDate);
       return date.toLocaleDateString('fr-FR', {
@@ -1304,47 +1304,47 @@ static async getExerciseSubmissions(exerciseId: number): Promise<Submission[]> {
       return 'Date invalide';
     }
   }
-  
-  
+
+
   static calculateTotalPoints(exercise: Exercise): number {
     if (exercise.questions && exercise.questions.length > 0) {
       return exercise.questions.reduce((sum, q) => sum + q.points, 0);
     }
     return exercise.maxScore;
   }
-  
+
   static async checkSubmissionPermission(
     exerciseId: number
   ): Promise<{ canSubmit: boolean; reason?: string; exercise?: Exercise }> {
     try {
       const exercise = await this.getExerciseDetails(exerciseId);
-      
+
       if (!exercise) {
         return { canSubmit: false, reason: 'Exercice non trouvé' };
       }
-      
+
       const status = getSubmissionStatus(exercise.dueDate);
       if (status === 'CLOSED') {
         return { canSubmit: false, reason: 'La date d\'échéance est dépassée', exercise };
       }
-      
+
       const submissions = await this.getMySubmissions();
       const alreadySubmitted = submissions.some(
         (sub) => sub.exerciseId === exerciseId
       );
-      
+
       if (alreadySubmitted) {
         return { canSubmit: false, reason: 'Vous avez déjà soumis cet exercice', exercise };
       }
-      
+
       return { canSubmit: true, exercise };
-      
+
     } catch (error) {
       console.error('Erreur vérification permission:', error);
       return { canSubmit: false, reason: 'Erreur de vérification' };
     }
   }
-  
+
   static cleanupLocalStorage(): void {
     if (typeof window !== 'undefined') {
       try {

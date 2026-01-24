@@ -8,6 +8,7 @@ import { BookOpen, FileText, Award, Clock, TrendingUp, Users, Loader2 } from 'lu
 import { useLoading } from '@/contexts/LoadingContext';
 import { useCourseExercises, useMySubmissions } from '@/hooks/useExercise';
 import { useCourses } from '@/hooks/useCourses';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { EnrichedCourse } from '@/types/enrollment';
 import { toast } from 'react-hot-toast';
 
@@ -102,17 +103,34 @@ export default function StudentHome() {
       );
 
       // Enrichir avec les détails des cours (comme dans StudentCourses)
-      const enriched = approvedEnrollments.map((enrollment: any) => {
-        const courseDetail = allCourses.find(c => c.id === enrollment.courseId);
+      const enrichedPromises = approvedEnrollments.map(async (enrollment: any) => {
+        // Recherche robuste par ID dans allCourses (déjà chargé par le hook)
+        let courseDetail = allCourses.find(c => String(c.id) === String(enrollment.courseId));
 
-        // Si on trouve les détails du cours, on les utilise
+        // Si non trouvé, on tente de récupérer individuellement
+        if (!courseDetail) {
+          try {
+            const resp = await CourseControllerService.getEnrichedCourse(enrollment.courseId);
+            if (resp.success && resp.data) {
+              courseDetail = resp.data as any;
+            }
+          } catch (e) {
+            console.error(`Erreur fetch cours ${enrollment.courseId}:`, e);
+          }
+        }
+
+        // Si on a des détails, on les utilise
         if (courseDetail) {
           return {
             id: courseDetail.id,
             title: courseDetail.title,
             category: courseDetail.category || 'Formation',
-            image: courseDetail.image,
-            author: courseDetail.author,
+            image: courseDetail.photoUrl || (courseDetail as any).image || (courseDetail as any).coverImage || '',
+            author: {
+              name: courseDetail.author ? (typeof courseDetail.author === 'string' ? courseDetail.author : `${(courseDetail.author as any).firstName || (courseDetail.author as any).name || ''} ${(courseDetail.author as any).lastName || ''}`) : 'Inconnu',
+              image: (courseDetail.author as any)?.image || (courseDetail.author as any)?.photoUrl || '',
+              designation: (courseDetail.author as any)?.designation
+            },
             enrollment: {
               ...enrollment,
               status: enrollment.status
@@ -120,23 +138,11 @@ export default function StudentHome() {
           } as unknown as EnrichedCourse;
         }
 
-        // Sinon, on retourne un objet partiel
-        return {
-          id: enrollment.courseId,
-          title: `Cours #${enrollment.courseId}`,
-          category: 'Cours',
-          image: '',
-          author: {
-            name: 'Inconnu',
-            image: ''
-          },
-          enrollment: {
-            ...enrollment,
-            status: enrollment.status
-          }
-        } as EnrichedCourse;
+        // Si on n'a vraiment rien, on retourne null pour filtrer ensuite
+        return null;
       });
 
+      const enriched = (await Promise.all(enrichedPromises)).filter(Boolean) as EnrichedCourse[];
       setEnrolledCourses(enriched);
 
     } catch (err) {
@@ -379,12 +385,20 @@ export default function StudentHome() {
                 {enrolledCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all group"
                   >
-                    <div className="h-24 md:h-32 bg-gradient-to-r from-purple-500 to-blue-500 dark:from-purple-600 dark:to-blue-600 relative">
-                      <div className="absolute inset-0 flex items-center justify-center text-white opacity-80">
-                        <BookOpen className="w-8 h-8 md:w-12 md:h-12" />
-                      </div>
+                    <div className="h-32 md:h-40 bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
+                      {course.image ? (
+                        <img
+                          src={course.image}
+                          alt={course.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 dark:from-purple-600 dark:to-blue-600 flex items-center justify-center text-white opacity-80">
+                          <BookOpen className="w-10 h-10 md:w-14 md:h-14" />
+                        </div>
+                      )}
                     </div>
                     <div className="p-4 md:p-5">
                       <div className="flex justify-between items-start mb-2">

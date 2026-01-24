@@ -5,10 +5,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Submission, Exercise, Question } from '@/types/exercise';
 import { useGradeSubmission } from '@/hooks/useExercise';
 import { toast } from 'react-hot-toast';
-import { 
-  X, 
-  Save, 
-  Award, 
+import {
+  X,
+  Save,
+  Award,
   MessageSquare,
   User,
   FileText,
@@ -64,7 +64,7 @@ export default function GradingInterface({
         const headerHeight = 64; // En-tête approx
         const footerHeight = 180; // Pied approx
         const availableHeight = modalMaxHeight - headerHeight - footerHeight;
-        
+
         setContentHeight(`${Math.max(availableHeight, 300)}px`);
       }
     };
@@ -77,7 +77,7 @@ export default function GradingInterface({
   const questions = exercise.questions || [];
   const currentQuestion = questions[currentQuestionIndex];
   const currentAnswer = submission.answers?.find(
-    a => a.questionId === currentQuestion?.id
+    a => String(a.questionId) === String(currentQuestion?.id)
   );
 
   // Calculer le score total
@@ -94,7 +94,7 @@ export default function GradingInterface({
 
     const maxPoints = question.points || 1;
     const newScore = Math.min(Math.max(0, score), maxPoints);
-    
+
     setScores(prev => ({
       ...prev,
       [questionId]: newScore
@@ -174,12 +174,12 @@ export default function GradingInterface({
   const getQuickPoints = () => {
     const maxPoints = currentQuestion?.points || 1;
     const points = [0, 0.5, 1];
-    
+
     if (maxPoints >= 2) points.push(2);
     if (maxPoints >= 3) points.push(3);
     if (maxPoints >= 5) points.push(5);
     if (maxPoints >= 10) points.push(10);
-    
+
     points.push(maxPoints);
     return Array.from(new Set(points)).sort((a, b) => a - b);
   };
@@ -226,14 +226,14 @@ export default function GradingInterface({
             >
               <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
-            
+
             <div className="text-center min-w-[80px]">
               <div className="text-xs text-gray-500 dark:text-gray-400">Question</div>
               <div className="text-base font-bold text-gray-800 dark:text-gray-200">
                 {currentQuestionIndex + 1} / {questions.length}
               </div>
             </div>
-            
+
             <button
               onClick={goToNextQuestion}
               disabled={currentQuestionIndex === questions.length - 1}
@@ -242,7 +242,7 @@ export default function GradingInterface({
               <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
-          
+
           <div className="text-right">
             <div className="text-xs text-gray-500 dark:text-gray-400">Score global</div>
             <div className={`text-lg font-bold ${getScoreColor(currentTotalScore, exercise.maxScore)}`}>
@@ -250,29 +250,27 @@ export default function GradingInterface({
             </div>
           </div>
         </div>
-        
+
         {/* Liste des questions */}
         <div className="overflow-x-auto">
           <div className="flex gap-1 pb-1">
             {questions.map((question, index) => {
               const isCurrent = currentQuestionIndex === index;
               const score = scores[question.id] || 0;
-              
+
               return (
                 <button
                   key={question.id}
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`flex flex-col items-center p-2 rounded min-w-[60px] transition-colors ${
-                    isCurrent
+                  className={`flex flex-col items-center p-2 rounded min-w-[60px] transition-colors ${isCurrent
                       ? 'bg-blue-100 dark:bg-blue-900/30'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                    }`}
                 >
-                  <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium ${
-                    isCurrent
+                  <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium ${isCurrent
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                  }`}>
+                    }`}>
                     {index + 1}
                   </div>
                   <div className="text-xs font-medium mt-1">
@@ -286,7 +284,7 @@ export default function GradingInterface({
       </div>
 
       {/* CONTENU PRINCIPAL avec SCROLL */}
-      <div 
+      <div
         ref={contentRef}
         className="flex-1 overflow-y-auto p-4"
         style={{ minHeight: '300px', maxHeight: contentHeight }}
@@ -305,11 +303,11 @@ export default function GradingInterface({
                     {currentQuestion.points || 1} pts
                   </span>
                 </div>
-                
+
                 <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">
                   {currentQuestion.text}
                 </h3>
-                
+
                 {/* Réponse étudiante */}
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -318,7 +316,7 @@ export default function GradingInterface({
                       Réponse de l'étudiant
                     </span>
                   </div>
-                  
+
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded border border-gray-200 dark:border-gray-700 p-3">
                     {currentAnswer?.answer ? (
                       currentQuestion.type === 'CODE' ? (
@@ -345,7 +343,7 @@ export default function GradingInterface({
               <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Attribuer un score
               </h4>
-              
+
               {/* Score actuel */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
@@ -354,7 +352,7 @@ export default function GradingInterface({
                     {scores[currentQuestion.id]?.toFixed(1) || 0} / {currentQuestion.points || 1}
                   </span>
                 </div>
-                
+
                 {/* Curseur SIMPLE */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -370,7 +368,7 @@ export default function GradingInterface({
                     />
                     <span className="text-sm text-gray-500 w-8 text-center">{currentQuestion.points || 1}</span>
                   </div>
-                  
+
                   <div className="flex justify-center">
                     <div className="w-40">
                       <input
@@ -397,11 +395,10 @@ export default function GradingInterface({
                     <button
                       key={points}
                       onClick={() => handleQuestionScoreChange(currentQuestion.id, points)}
-                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                        scores[currentQuestion.id] === points
+                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${scores[currentQuestion.id] === points
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
+                        }`}
                     >
                       {points} point{points !== 1 ? 's' : ''}
                     </button>
@@ -443,7 +440,7 @@ export default function GradingInterface({
               placeholder="Commentaire sur l'ensemble..."
             />
           </div>
-          
+
           {/* Actions */}
           <div className="flex items-center justify-between">
             <div>
@@ -452,7 +449,7 @@ export default function GradingInterface({
                 {currentTotalScore.toFixed(1)} pts
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={onClose}

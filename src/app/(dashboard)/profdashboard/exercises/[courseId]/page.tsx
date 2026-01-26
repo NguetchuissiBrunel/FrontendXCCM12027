@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
-import { 
+import {
   Calendar,
   Users,
   Award,
@@ -57,9 +57,9 @@ export default function CourseExercisesPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const courseId = params?.courseId ? parseInt(params.courseId as string) : 0;
-  
+
   // Vérification du courseId
   if (!courseId) {
     return (
@@ -82,7 +82,7 @@ export default function CourseExercisesPage() {
       </div>
     );
   }
-  
+
   const [courseInfo, setCourseInfo] = useState<EnrichedCourseResponse>({
     id: courseId,
     title: `Cours #${courseId}`,
@@ -98,7 +98,7 @@ export default function CourseExercisesPage() {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
-  
+
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCourse, setLoadingCourse] = useState(true);
@@ -111,7 +111,7 @@ export default function CourseExercisesPage() {
       router.push('/login');
       return;
     }
-    
+
     loadCourseInfo();
     loadExercises();
   }, [courseId, user, router]);
@@ -120,7 +120,7 @@ export default function CourseExercisesPage() {
     try {
       setLoadingCourse(true);
       const response = await CourseControllerService.getEnrichedCourse(courseId);
-      
+
       if (response.data) {
         const courseData = response.data as EnrichedCourseResponse;
         setCourseInfo(courseData);
@@ -153,7 +153,7 @@ export default function CourseExercisesPage() {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer l'exercice "${exerciseTitle}" ?`)) {
       return;
     }
-    
+
     try {
       const success = await ExerciseService.deleteExercise(exerciseId);
       if (success) {
@@ -172,9 +172,9 @@ export default function CourseExercisesPage() {
     try {
       toast.loading('Duplication en cours...');
       const result = await ExerciseService.duplicateExercise(exerciseId, courseId);
-      
+
       toast.dismiss();
-      
+
       if (result.success) {
         toast.success('✅ Exercice dupliqué avec succès');
         loadExercises(); // Recharger la liste
@@ -190,7 +190,7 @@ export default function CourseExercisesPage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Non définie';
-    
+
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('fr-FR', {
@@ -205,9 +205,9 @@ export default function CourseExercisesPage() {
 
   const getStatusColor = (status?: string) => {
     if (!status) return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-    
+
     switch (status) {
-      case 'PUBLISHED': 
+      case 'PUBLISHED':
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'DRAFT':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
@@ -221,7 +221,7 @@ export default function CourseExercisesPage() {
 
   const getStatusText = (status?: string) => {
     if (!status) return 'Inconnu';
-    
+
     switch (status) {
       case 'PUBLISHED': return 'Publié';
       case 'DRAFT': return 'Brouillon';
@@ -234,14 +234,14 @@ export default function CourseExercisesPage() {
   // Filtrer les exercices
   const filteredExercises = exercises.filter(exercise => {
     // Filtre par recherche
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       exercise.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (exercise.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    
+
     // Filtre par statut
-    const matchesStatus = filterStatus === 'all' || 
+    const matchesStatus = filterStatus === 'all' ||
       exercise.status === filterStatus.toUpperCase();
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -252,7 +252,7 @@ export default function CourseExercisesPage() {
     draftExercises: exercises.filter(e => e.status === 'DRAFT').length,
     closedExercises: exercises.filter(e => e.status === 'CLOSED' || e.status === 'ARCHIVED').length,
     totalSubmissions: exercises.reduce((sum, e) => sum + (e.submissionCount || e.submissionCount || 0), 0),
-    averageScore: exercises.length > 0 
+    averageScore: exercises.length > 0
       ? Math.round(exercises.reduce((sum, e) => sum + (e.averageScore || 0), 0) / exercises.length * 10) / 10
       : 0
   };
@@ -274,15 +274,15 @@ export default function CourseExercisesPage() {
         {/* Navigation */}
         <div className="mb-8">
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-            <Link 
-              href="/profdashboard" 
+            <Link
+              href="/profdashboard"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               Dashboard
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link 
-              href="/profdashboard/exercises" 
+            <Link
+              href="/profdashboard/exercises"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               Exercices
@@ -292,7 +292,7 @@ export default function CourseExercisesPage() {
               {courseInfo.title}
             </span>
           </div>
-          
+
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => router.push('/profdashboard/exercises')}
@@ -301,14 +301,6 @@ export default function CourseExercisesPage() {
               <ArrowLeft size={20} />
               Retour aux cours
             </button>
-            
-            <Link
-              href={`/profdashboard/exercises/${courseId}/create`}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
-            >
-              <PlusCircle size={18} />
-              Créer un exercice
-            </Link>
           </div>
         </div>
 
@@ -326,15 +318,14 @@ export default function CourseExercisesPage() {
                       <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
                         {courseInfo.title}
                       </h1>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        courseInfo.status === 'PUBLISHED' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : courseInfo.status === 'DRAFT'
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${courseInfo.status === 'PUBLISHED'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : courseInfo.status === 'DRAFT'
                           ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                           : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                      }`}>
+                        }`}>
                         {courseInfo.status === 'PUBLISHED' ? 'Publié' :
-                         courseInfo.status === 'DRAFT' ? 'Brouillon' : 'Archivé'}
+                          courseInfo.status === 'DRAFT' ? 'Brouillon' : 'Archivé'}
                       </span>
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -352,7 +343,7 @@ export default function CourseExercisesPage() {
                     )}
                   </div>
                 </div>
-                
+
                 {/* Statistiques rapides */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
@@ -368,7 +359,7 @@ export default function CourseExercisesPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-center gap-3">
                       <Users className="w-5 h-5 text-orange-500" />
@@ -382,7 +373,7 @@ export default function CourseExercisesPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-center gap-3">
                       <Award className="w-5 h-5 text-purple-500" />
@@ -396,7 +387,7 @@ export default function CourseExercisesPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-center gap-3">
                       <TrendingUp className="w-5 h-5 text-green-500" />
@@ -431,7 +422,7 @@ export default function CourseExercisesPage() {
                 />
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <select
                 value={filterStatus}
@@ -443,7 +434,7 @@ export default function CourseExercisesPage() {
                 <option value="draft">Brouillons</option>
                 <option value="closed">Fermés/Archivés</option>
               </select>
-              
+
               <button
                 onClick={() => {
                   setSearchTerm('');
@@ -470,7 +461,7 @@ export default function CourseExercisesPage() {
                   {filteredExercises.length} exercice{filteredExercises.length !== 1 ? 's' : ''} trouvé{filteredExercises.length !== 1 ? 's' : ''}
                 </p>
               </div>
-              
+
               <Link
                 href={`/profdashboard/exercises/${courseId}/create`}
                 className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
@@ -480,7 +471,7 @@ export default function CourseExercisesPage() {
               </Link>
             </div>
           </div>
-          
+
           <div className="p-6">
             {loading ? (
               <div className="text-center py-12">
@@ -496,7 +487,7 @@ export default function CourseExercisesPage() {
                   Aucun exercice trouvé
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
-                  {exercises.length === 0 
+                  {exercises.length === 0
                     ? 'Ce cours ne contient pas encore d\'exercices. Créez votre premier exercice !'
                     : 'Aucun exercice ne correspond à vos critères de recherche.'
                   }
@@ -512,8 +503,8 @@ export default function CourseExercisesPage() {
             ) : (
               <div className="space-y-4">
                 {filteredExercises.map((exercise) => (
-                  <div 
-                    key={exercise.id} 
+                  <div
+                    key={exercise.id}
                     className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
                   >
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -531,13 +522,13 @@ export default function CourseExercisesPage() {
                                 {getStatusText(exercise.status)}
                               </span>
                             </div>
-                            
+
                             {exercise.description && (
                               <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
                                 {exercise.description}
                               </p>
                             )}
-                            
+
                             <div className="flex flex-wrap gap-3 text-sm">
                               <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                                 <Calendar size={14} />
@@ -559,7 +550,7 @@ export default function CourseExercisesPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleDuplicateExercise(exercise.id)}
@@ -568,7 +559,7 @@ export default function CourseExercisesPage() {
                         >
                           <Copy size={18} />
                         </button>
-                        
+
                         <Link
                           href={`/profdashboard/exercises/${courseId}/view/${exercise.id}`}
                           className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
@@ -576,7 +567,7 @@ export default function CourseExercisesPage() {
                         >
                           <Eye size={18} />
                         </Link>
-                        
+
                         <Link
                           href={`/profdashboard/exercises/${courseId}/update/${exercise.id}`}
                           className="p-2 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
@@ -584,7 +575,7 @@ export default function CourseExercisesPage() {
                         >
                           <Edit size={18} />
                         </Link>
-                        
+
                         <button
                           onClick={() => handleDeleteExercise(exercise.id, exercise.title)}
                           className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -601,54 +592,6 @@ export default function CourseExercisesPage() {
           </div>
         </div>
 
-        {/* Actions supplémentaires */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-800/30 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                Statistiques avancées
-              </h3>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Consultez des analyses détaillées sur les performances des étudiants et la progression du cours
-            </p>
-            <button 
-              onClick={() => router.push(`/profdashboard/analytics/${courseId}`)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Voir les analyses
-            </button>
-          </div>
-          
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-2xl border border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-green-100 dark:bg-green-800/30 rounded-lg">
-                <Download className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                Export des données
-              </h3>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Exportez les résultats des exercices au format CSV ou Excel pour analyse externe
-            </p>
-            <button 
-              onClick={() => {
-                toast.loading('Préparation de l\'export...');
-                setTimeout(() => {
-                  toast.dismiss();
-                  toast.success('Export prêt au téléchargement');
-                }, 1500);
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Exporter les données
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

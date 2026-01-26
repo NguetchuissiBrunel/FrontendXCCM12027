@@ -750,16 +750,10 @@ export default function AllExercisesPage() {
                           onClick={() => handleManageExercise(exercise)}
                           className="px-4 py-2 text-sm rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 min-w-[120px]"
                         >
-                          {exercise.pendingSubmissions > 0 ? (
-                            <>
-                              <AlertCircle className="w-4 h-4" />
-                              Corriger ({exercise.pendingSubmissions})
-                            </>
-                          ) : exercise.totalSubmissions > 0 ? (
-                            'Voir résultats'
-                          ) : (
-                            'Gérer'
-                          )}
+
+                          <AlertCircle className="w-4 h-4" />
+                          gerer
+
                         </button>
 
                         <div className="flex gap-2">

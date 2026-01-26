@@ -473,7 +473,7 @@ export default function StudentHome() {
                 <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
                   <Clock className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
                   <span className="text-sm md:text-base">Exercices en attente</span>
-                  <span className="bg-pur-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">
+                  <span className="bg-pur-100 border-2 border-radius-full border-purple-700 text-xs px-2 py-0.5 rounded-full">
                     {pendingExercises.length}
                   </span>
                 </h3>

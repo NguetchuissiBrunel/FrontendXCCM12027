@@ -175,7 +175,7 @@ export default function ExerciseDetailsPage() {
 
                             {exercise.alreadySubmitted && (
                                 <button
-                                    onClick={() => router.push('/etudashboard/submissions')}
+                                    onClick={() => router.push('/etudashboard')}
                                     className="w-full sm:w-auto px-8 py-4 border-2 border-purple-600 text-purple-600 dark:text-purple-400 rounded-2xl font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
                                 >
                                     Voir mon résultat

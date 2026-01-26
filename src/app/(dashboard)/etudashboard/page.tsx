@@ -471,9 +471,9 @@ export default function StudentHome() {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                  <Clock className="text-red-500 w-4 h-4 md:w-5 md:h-5" />
+                  <Clock className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
                   <span className="text-sm md:text-base">Exercices en attente</span>
-                  <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">
+                  <span className="bg-pur-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">
                     {pendingExercises.length}
                   </span>
                 </h3>
@@ -495,7 +495,7 @@ export default function StudentHome() {
                             {exercise.courseTitle}
                           </p>
                           {exercise.dueDate && (
-                            <p className="text-xs text-red-600 mt-1">
+                            <p className="text-xs text-purple-600 mt-1">
                               Échéance: {new Date(exercise.dueDate).toLocaleDateString('fr-FR')}
                             </p>
                           )}
@@ -510,7 +510,7 @@ export default function StudentHome() {
                         </button>
                         <button
                           onClick={() => handleStartExercise(exercise.id)}
-                          className="flex-1 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                          className="flex-1 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
                         >
                           Commencer
                         </button>
@@ -542,19 +542,13 @@ export default function StudentHome() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
                   <Award className="text-green-500 w-4 h-4 md:w-5 md:h-5" />
-                  <span className="text-sm md:text-base">Dernières soumissions</span>
+                  <span className="text-sm md:text-base">Mes soumissions</span>
                 </h3>
-                <button
-                  onClick={() => router.push('/etudashboard/submissions')}
-                  className="text-xs text-purple-600 hover:text-purple-700"
-                >
-                  Voir tout
-                </button>
               </div>
 
               {mySubmissions.length > 0 ? (
                 <div className="space-y-3">
-                  {mySubmissions.slice(0, 3).map((submission) => (
+                  {mySubmissions.map((submission) => (
                     <div key={submission.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -570,9 +564,9 @@ export default function StudentHome() {
                             'text-green-600' : 'text-red-600') :
                           'text-yellow-600'
                           }`}>
-                          {submission.graded ?
-                            `${submission.score || 0}/${submission.maxScore || 0}` :
-                            'En attente'
+                          {submission.score == undefined ?
+                            'En attente' :
+                            `${submission.score}/${submission.maxScore}`
                           }
                         </div>
                       </div>
@@ -621,12 +615,6 @@ export default function StudentHome() {
                   Voir tous les exercices
                 </button>
                 <button
-                  onClick={() => router.push('/etudashboard/submissions')}
-                  className="w-full py-2 text-center border border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors text-sm"
-                >
-                  Mes soumissions
-                </button>
-                <button
                   onClick={() => {
                     if (pendingExercises.length > 0) {
                       handleStartExercise(pendingExercises[0].id);
@@ -634,7 +622,7 @@ export default function StudentHome() {
                       router.push('/etudashboard/exercises');
                     }
                   }}
-                  className="w-full py-2 text-center bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-2 text-center border-3 border-purple-600 hover:border-purple-700 hover:bg-purple-600 hover:text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={pendingExercises.length === 0}
                 >
                   {pendingExercises.length > 0 ?

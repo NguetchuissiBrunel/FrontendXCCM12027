@@ -5,12 +5,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useSubmissionDetails, useExercise } from '@/hooks/useExercise';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  Clock, 
-  FileText, 
-  Award, 
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  FileText,
+  Award,
   AlertCircle,
   Calendar,
   User as UserIcon,
@@ -23,23 +23,23 @@ import {
 import { toast } from 'react-hot-toast';
 
 // Importer le type User généré
-import type { User } from '@/lib/models'; // Ajustez le chemin selon votre structure
+import type { User } from '@/lib/models/User'; // Ajustez le chemin selon votre structure
 
 export default function SubmissionDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const submissionId = parseInt(params.submissionId as string);
-  
+
   const [user, setUser] = useState<User | null>(null);
-  
+
   // Utiliser les nouveaux hooks
-  const { 
-    submission, 
-    isLoading: submissionLoading, 
+  const {
+    submission,
+    isLoading: submissionLoading,
     error: submissionError,
-    refetch: refetchSubmission 
+    refetch: refetchSubmission
   } = useSubmissionDetails(submissionId);
-  
+
   const {
     exercise,
     isLoading: exerciseLoading,
@@ -64,7 +64,7 @@ export default function SubmissionDetailsPage() {
 
   const handleDownload = () => {
     if (!submission || !exercise) return;
-    
+
     const data = {
       student: submission.studentName,
       email: submission.studentEmail,
@@ -77,7 +77,7 @@ export default function SubmissionDetailsPage() {
       feedback: submission.feedback,
       answers: submission.answers
     };
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -118,12 +118,14 @@ export default function SubmissionDetailsPage() {
   if (!user) return null;
 
   if (submissionLoading || exerciseLoading) {
+    console.log("submission", submission);
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de la soumission...</p>
         </div>
+
       </div>
     );
   }
@@ -159,7 +161,7 @@ export default function SubmissionDetailsPage() {
 
   // Utiliser le nom complet avec gestion des valeurs optionnelles
   const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilisateur';
-  
+
   // Utiliser `specialization` comme défini dans le type User
   const userLevel = user.specialization || 'Étudiant';
 
@@ -182,7 +184,7 @@ export default function SubmissionDetailsPage() {
             <ArrowLeft size={20} />
             <span>Retour à mes soumissions</span>
           </button>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700 shadow-sm">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="max-w-3xl">
@@ -193,7 +195,7 @@ export default function SubmissionDetailsPage() {
                   {exercise?.title || 'Exercice'}
                 </p>
               </div>
-              
+
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleDownload}
@@ -222,7 +224,7 @@ export default function SubmissionDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Statut de la soumission
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
@@ -246,7 +248,7 @@ export default function SubmissionDetailsPage() {
                       </p>
                     )}
                   </div>
-                  
+
                   <div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Score</div>
                     <div className="flex items-baseline">
@@ -263,7 +265,7 @@ export default function SubmissionDetailsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -274,7 +276,7 @@ export default function SubmissionDetailsPage() {
                       {formatDate(submission.submittedAt)}
                     </p>
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Timer className="w-5 h-5 text-blue-500" />
@@ -308,12 +310,12 @@ export default function SubmissionDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Réponses soumises
               </h3>
-              
+
               {submission.answers && submission.answers.length > 0 ? (
                 <div className="space-y-6">
                   {submission.answers.map((answer, index) => {
                     const question = exercise?.questions?.find(q => q.id === answer.questionId);
-                    
+
                     return (
                       <div key={answer.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-3">
@@ -332,14 +334,14 @@ export default function SubmissionDetailsPage() {
                               </div>
                             )}
                           </div>
-                          
+
                           {answer.points !== undefined && question?.points && (
                             <div className={`text-lg font-bold ${getScoreColor(answer.points, question.points)}`}>
                               {answer.points}/{question.points}
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="mb-3">
                           <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Votre réponse :</div>
                           <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
@@ -348,7 +350,7 @@ export default function SubmissionDetailsPage() {
                             </p>
                           </div>
                         </div>
-                        
+
                         {answer.feedback && (
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                             <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Feedback :</div>
@@ -381,7 +383,7 @@ export default function SubmissionDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Informations étudiant
               </h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -392,7 +394,7 @@ export default function SubmissionDetailsPage() {
                     {submission.studentName}
                   </p>
                 </div>
-                
+
                 {submission.studentEmail && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -404,7 +406,7 @@ export default function SubmissionDetailsPage() {
                     </p>
                   </div>
                 )}
-                
+
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Award className="w-5 h-5 text-gray-500" />
@@ -422,7 +424,7 @@ export default function SubmissionDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Métadonnées techniques
               </h3>
-              
+
               <div className="space-y-3">
                 {submission.ipAddress && (
                   <div>
@@ -432,7 +434,7 @@ export default function SubmissionDetailsPage() {
                     </p>
                   </div>
                 )}
-                
+
                 {submission.userAgent && (
                   <div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Navigateur</div>
@@ -441,7 +443,7 @@ export default function SubmissionDetailsPage() {
                     </p>
                   </div>
                 )}
-                
+
                 {submission.lastModifiedAt && (
                   <div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Dernière modification</div>

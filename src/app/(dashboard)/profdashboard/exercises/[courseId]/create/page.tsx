@@ -6,8 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   AlertCircle,
   FileText,
   BookOpen,
@@ -35,7 +35,7 @@ export default function CreateExercisePage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const courseId = params?.courseId ? parseInt(params.courseId as string) : 0;
   const [courseInfo, setCourseInfo] = useState<{
     title: string;
@@ -43,21 +43,21 @@ export default function CreateExercisePage() {
   } | null>(null);
 
   // Dans create/page.tsx - assurez-vous que l'exercice initial a bien id: 0
-const initialExerciseData: Exercise = {
-  id: 0, // TRÈS IMPORTANT : doit être 0 pour indiquer une création
-  courseId: courseId,
-  title: 'Nouvel exercice',
-  description: '',
-  maxScore: 20,
-  status: 'PUBLISHED',
-  createdAt: new Date().toISOString(),
-  questions: [],
-  version: '2.0',
-  submissionCount: 0,
-  averageScore: 0,
-  completionRate: 0,
-  pendingGrading: 0
-};
+  const initialExerciseData: Exercise = {
+    id: 0, // TRÈS IMPORTANT : doit être 0 pour indiquer une création
+    courseId: courseId,
+    title: 'Nouvel exercice',
+    description: '',
+    maxScore: 20,
+    status: 'PUBLISHED',
+    createdAt: new Date().toISOString(),
+    questions: [],
+    version: '2.0',
+    submissionCount: 0,
+    averageScore: 0,
+    completionRate: 0,
+    pendingGrading: 0
+  };
 
   useEffect(() => {
     if (!user) {
@@ -65,13 +65,13 @@ const initialExerciseData: Exercise = {
       router.push('/login');
       return;
     }
-    
+
     if (!courseId) {
       toast.error('ID du cours invalide');
       router.push('/profdashboard/exercises');
       return;
     }
-    
+
     loadCourseInfo();
   }, [user, router, courseId]);
 
@@ -87,41 +87,41 @@ const initialExerciseData: Exercise = {
   };
 
   // CORRECTION DÉFINITIVE - Gestion type-safe
- // Dans create/page.tsx - CORRECTION DÉFINITIVE
-const handleSave = async (result: ApiResponse<Exercise>) => {
-  try {
-    // CORRECTION : Vérification correcte du type
-    if (result.success === true) {
-      // Maintenant nous savons que success est true
-      // Mais data peut encore être undefined selon le type
-      
-      if (result.data) {
-        // data existe, nous pouvons l'utiliser
-        const exercise = result.data;
-        toast.success(result.message || '✅ Exercice créé avec succès !');
-        
-        setTimeout(() => {
-          router.push(`/profdashboard/exercises/${courseId}/view/${exercise.id}`);
-        }, 1000);
+  // Dans create/page.tsx - CORRECTION DÉFINITIVE
+  const handleSave = async (result: ApiResponse<Exercise>) => {
+    try {
+      // CORRECTION : Vérification correcte du type
+      if (result.success === true) {
+        // Maintenant nous savons que success est true
+        // Mais data peut encore être undefined selon le type
+
+        if (result.data) {
+          // data existe, nous pouvons l'utiliser
+          const exercise = result.data;
+          toast.success(result.message || '✅ Exercice créé avec succès !');
+
+          setTimeout(() => {
+            router.push(`/profdashboard/exercises/${courseId}/view/${exercise.id}`);
+          }, 1000);
+        } else {
+          // success est true mais data est undefined
+          // Cela ne devrait pas arriver, mais on gère le cas
+          toast.success(result.message || '✅ Exercice créé avec succès !');
+
+          setTimeout(() => {
+            router.push(`/profdashboard/exercises/${courseId}`);
+          }, 1000);
+        }
       } else {
-        // success est true mais data est undefined
-        // Cela ne devrait pas arriver, mais on gère le cas
-        toast.success(result.message || '✅ Exercice créé avec succès !');
-        
-        setTimeout(() => {
-          router.push(`/profdashboard/exercises/${courseId}`);
-        }, 1000);
+        // success est false
+        const errorMessage = result.message || 'Erreur lors de la création';
+        toast.error(`❌ ${errorMessage}`);
       }
-    } else {
-      // success est false
-      const errorMessage = result.message || 'Erreur lors de la création';
-      toast.error(`❌ ${errorMessage}`);
+    } catch (error: any) {
+      console.error('Erreur lors de la création:', error);
+      toast.error(error.message || 'Erreur lors de la création');
     }
-  } catch (error: any) {
-    console.error('Erreur lors de la création:', error);
-    toast.error(error.message || 'Erreur lors de la création');
-  }
-};
+  };
 
   // Version alternative sans type guard (plus simple)
   const handleSaveSimple = async (result: ApiResponse<Exercise>) => {
@@ -131,7 +131,7 @@ const handleSave = async (result: ApiResponse<Exercise>) => {
         // Type assertion pour satisfaire TypeScript
         const exercise = result.data as Exercise;
         toast.success(result.message || '✅ Exercice créé avec succès !');
-        
+
         setTimeout(() => {
           router.push(`/profdashboard/exercises/${courseId}/view/${exercise.id}`);
         }, 1000);
@@ -210,7 +210,7 @@ const handleSave = async (result: ApiResponse<Exercise>) => {
               Création d'exercice
             </span>
           </div>
-          
+
           <div className="flex items-center justify-between mb-8">
             <button
               onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
@@ -219,16 +219,16 @@ const handleSave = async (result: ApiResponse<Exercise>) => {
               <ArrowLeft size={20} />
               Retour aux exercices
             </button>
-            
+
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePreview}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
               >
                 <Eye size={18} />
                 Aperçu
               </button>
-              
+
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30">
                 <Plus size={16} className="text-green-600 dark:text-green-400" />
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">
@@ -236,20 +236,6 @@ const handleSave = async (result: ApiResponse<Exercise>) => {
                 </span>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Bannière d'information */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-6 text-white">
-            {/* ... contenu identique ... */}
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="mb-6">
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
-            {/* ... contenu identique ... */}
           </div>
         </div>
 

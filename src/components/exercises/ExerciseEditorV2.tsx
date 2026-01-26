@@ -36,25 +36,25 @@ export default function ExerciseEditorV2({
   onCancel
 }: ExerciseEditorV2Props) {
   const isEditing = !!initialData?.id;
-  
+
   // Utiliser les nouveaux hooks
   const { update, isUpdating } = useExercise(initialData?.id);
   const { mutate: createExercise, isPending: isCreating } = useCreateExercise();
-  
+
   const [exercise, setExercise] = useState<Exercise>(
-  initialData || {
-    id: 0,
-    courseId,
-    title: '',
-    description: '',
-    maxScore: 20,
-    status: 'PUBLISHED', // ⬅️ CHANGER "DRAFT" EN "PUBLISHED"
-    createdAt: new Date().toISOString(),
-    questions: [],
-    version: '2.0'
-  }
-);
-  
+    initialData || {
+      id: 0,
+      courseId,
+      title: '',
+      description: '',
+      maxScore: 20,
+      status: 'PUBLISHED', // ⬅️ CHANGER "DRAFT" EN "PUBLISHED"
+      createdAt: new Date().toISOString(),
+      questions: [],
+      version: '2.0'
+    }
+  );
+
   const [questions, setQuestions] = useState<Question[]>(initialData?.questions || []);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
@@ -110,7 +110,7 @@ export default function ExerciseEditorV2({
       toast.error('Un exercice doit avoir au moins une question');
       return;
     }
-    
+
     const newQuestions = questions.filter((_, i) => i !== index);
     // Réorganiser l'ordre
     newQuestions.forEach((q, i) => { q.order = i; });
@@ -127,34 +127,34 @@ export default function ExerciseEditorV2({
 
     const newQuestions = [...questions];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
-    
+
     // Échanger les questions
-    [newQuestions[index], newQuestions[newIndex]] = 
-    [newQuestions[newIndex], newQuestions[index]];
-    
+    [newQuestions[index], newQuestions[newIndex]] =
+      [newQuestions[newIndex], newQuestions[index]];
+
     // Mettre à jour l'ordre
     newQuestions.forEach((q, i) => { q.order = i; });
-    
+
     setQuestions(newQuestions);
   };
 
   const addOption = (questionIndex: number) => {
     const newQuestions = [...questions];
     const question = newQuestions[questionIndex];
-    
+
     if (question.options) {
       question.options = [...question.options, ''];
     } else {
       question.options = [''];
     }
-    
+
     setQuestions(newQuestions);
   };
 
   const updateOption = (questionIndex: number, optionIndex: number, value: string) => {
     const newQuestions = [...questions];
     const question = newQuestions[questionIndex];
-    
+
     if (question.options) {
       question.options[optionIndex] = value;
       setQuestions(newQuestions);
@@ -164,7 +164,7 @@ export default function ExerciseEditorV2({
   const removeOption = (questionIndex: number, optionIndex: number) => {
     const newQuestions = [...questions];
     const question = newQuestions[questionIndex];
-    
+
     if (question.options && question.options.length > 2) {
       question.options = question.options.filter((_, i) => i !== optionIndex);
       setQuestions(newQuestions);
@@ -226,7 +226,7 @@ export default function ExerciseEditorV2({
 
     try {
       let result: ApiResponse<Exercise>;
-      
+
       if (isEditing && exercise.id) {
         // Mise à jour
         const updateData: UpdateExerciseDto = {
@@ -245,7 +245,7 @@ export default function ExerciseEditorV2({
             order: q.order
           }))
         };
-        
+
         result = await update(updateData);
       } else {
         // Création
@@ -265,21 +265,21 @@ export default function ExerciseEditorV2({
             order: q.order
           }))
         };
-        
+
         result = await createExercise(courseId, createData);
       }
 
       onSave(result);
-      
+
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      
+
       const errorResult: ApiResponse<Exercise> = {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de la sauvegarde',
         timestamp: new Date().toISOString()
       };
-      
+
       onSave(errorResult);
       toast.error('Erreur lors de la sauvegarde');
     }
@@ -301,7 +301,7 @@ export default function ExerciseEditorV2({
   const isLoading = isUpdating || isCreating;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-purple-300 dark:border-gray-700 overflow-hidden">
       {/* En-tête */}
       <div className="p-6 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
@@ -318,7 +318,7 @@ export default function ExerciseEditorV2({
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
               <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -358,7 +358,7 @@ export default function ExerciseEditorV2({
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
             Informations générales
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -372,7 +372,7 @@ export default function ExerciseEditorV2({
                 placeholder="Ex: Introduction à la programmation"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Score maximum *
@@ -385,7 +385,7 @@ export default function ExerciseEditorV2({
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
               />
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Description
@@ -398,7 +398,7 @@ export default function ExerciseEditorV2({
                 placeholder="Décrivez l'objectif de l'exercice..."
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <div className="flex items-center gap-2">
@@ -427,11 +427,11 @@ export default function ExerciseEditorV2({
                 Organisez et configurez les questions de l'exercice
               </p>
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={() => addQuestion('TEXT')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
               >
                 <Plus size={18} />
                 Ajouter une question
@@ -455,7 +455,7 @@ export default function ExerciseEditorV2({
                 </div>
               </div>
             </button>
-            
+
             <button
               onClick={() => addQuestion('MULTIPLE_CHOICE')}
               className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors"
@@ -470,7 +470,7 @@ export default function ExerciseEditorV2({
                 </div>
               </div>
             </button>
-            
+
             <button
               onClick={() => addQuestion('CODE')}
               className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors"
@@ -519,11 +519,11 @@ export default function ExerciseEditorV2({
                           {getQuestionTypeIcon(question.type)}
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {question.type === 'TEXT' ? 'Texte libre' :
-                             question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                              question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Points:</span>
@@ -535,7 +535,7 @@ export default function ExerciseEditorV2({
                             className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                           />
                         </div>
-                        
+
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => moveQuestion(index, 'up')}
@@ -561,7 +561,7 @@ export default function ExerciseEditorV2({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Contenu de la question */}
                   <div className="p-6">
                     {/* Énoncé */}
@@ -577,7 +577,7 @@ export default function ExerciseEditorV2({
                         placeholder="Posez votre question ici..."
                       />
                     </div>
-                    
+
                     {/* Options pour choix multiple */}
                     {question.type === 'MULTIPLE_CHOICE' && (
                       <div className="mb-6">
@@ -593,7 +593,7 @@ export default function ExerciseEditorV2({
                             + Ajouter une option
                           </button>
                         </div>
-                        
+
                         <div className="space-y-3">
                           {question.options?.map((option, optIndex) => (
                             <div key={optIndex} className="flex items-center gap-3">
@@ -617,7 +617,7 @@ export default function ExerciseEditorV2({
                             </div>
                           ))}
                         </div>
-                        
+
                         {/* Réponse correcte */}
                         {question.options && question.options.length > 0 && (
                           <div className="mt-4">
@@ -640,7 +640,7 @@ export default function ExerciseEditorV2({
                         )}
                       </div>
                     )}
-                    
+
                     {/* Explication */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -666,7 +666,7 @@ export default function ExerciseEditorV2({
           <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
             Résumé de l'exercice
           </h4>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-4">
               <div>
@@ -675,7 +675,7 @@ export default function ExerciseEditorV2({
                   {exercise.title || 'Non défini'}
                 </div>
               </div>
-              
+
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Questions</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
@@ -683,7 +683,7 @@ export default function ExerciseEditorV2({
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Score total</div>
@@ -694,17 +694,17 @@ export default function ExerciseEditorV2({
                   )}
                 </div>
               </div>
-              
+
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Date d'échéance</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
-                  {exercise.dueDate 
+                  {exercise.dueDate
                     ? new Date(exercise.dueDate).toLocaleDateString('fr-FR')
                     : 'Non définie'}
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Types de questions</div>
@@ -712,7 +712,7 @@ export default function ExerciseEditorV2({
                   {Array.from(new Set(questions.map(q => q.type))).join(', ')}
                 </div>
               </div>
-              
+
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Statut</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
@@ -732,7 +732,7 @@ export default function ExerciseEditorV2({
             <X size={20} />
             Annuler
           </button>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
@@ -744,12 +744,12 @@ export default function ExerciseEditorV2({
                 console.log('Preview:', previewData);
                 toast.success('Aperçu généré (voir console)');
               }}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
             >
               <Eye size={20} />
               Aperçu
             </button>
-            
+
             <button
               onClick={handleSave}
               disabled={isLoading || validationErrors.length > 0}

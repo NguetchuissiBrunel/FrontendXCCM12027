@@ -946,7 +946,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                         {exercise.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
                                       </span>
                                       <span className="text-xs text-gray-500">
-                                        Échéance: {new Date(exercise.dueDate).toLocaleDateString()}
+                                        Échéance: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
                                       </span>
                                     </div>
                                   </div>
@@ -1129,7 +1129,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                       </div>
                                       <div className="text-right">
                                         <div className="text-sm font-medium">
-                                          {exercise.submissionsCount || 0} soumissions
+                                          {exercise.submissionCount || 0} soumissions
                                         </div>
                                         <div className="text-xs text-gray-500">
                                           {exercise.averageScore ? `Moyenne: ${exercise.averageScore}/${exercise.maxScore}` : 'Pas encore noté'}

@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Try to get the full profile from localStorage saved during login
           const savedUserJSON = localStorage.getItem('currentUser');
           const savedUser = savedUserJSON ? JSON.parse(savedUserJSON) : null;
+          console.log('🔄 Restauration session depuis token/localStorage:', { savedToken, savedUser });
 
           if (decoded) {
             const rawRole = String(decoded.role || '').toLowerCase();
@@ -190,6 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Configurer le token
       setAuthToken(authData.token);
       setToken(authData.token);
+      console.log('authdata object:',authData);
 
       // Créer l'objet utilisateur
       const rawRole = String(authData.role || '').toLowerCase();

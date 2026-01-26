@@ -3,17 +3,21 @@
 
 import React, { useState } from 'react';
 import { Submission, Exercise } from '@/types/exercise';
-import { 
-  CheckCircle, 
-  Clock, 
-  Eye, 
-  Download, 
-  Mail, 
+import {
+  CheckCircle,
+  Clock,
+  Eye,
+  Download,
+  Mail,
   User,
   ChevronUp,
   ChevronDown,
   Filter
 } from 'lucide-react';
+import DownloadOptions from '@/components/DownloadOptions';
+import { downloadCourseAsDocx } from '@/utils/DownloadDocx';
+import { downloadCourseAsPDF } from '@/utils/DownloadPdf';
+import { transformSubmissionToCourseData } from '@/utils/submissionTransformer';
 
 interface SubmissionsTableProps {
   submissions: Submission[];
@@ -34,6 +38,10 @@ export default function SubmissionsTable({
   filter
 }: SubmissionsTableProps) {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [submissionToDownload, setSubmissionToDownload] = useState<Submission | null>(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isWordLoading, setIsWordLoading] = useState(false);
 
   // Filtrer et trier les soumissions
   const filteredAndSortedSubmissions = React.useMemo(() => {
@@ -59,7 +67,7 @@ export default function SubmissionsTable({
     // Tri
     result.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (filter.sortBy) {
         case 'studentName':
           aValue = a.studentName;
@@ -120,23 +128,36 @@ export default function SubmissionsTable({
   };
 
   const downloadSubmission = (submission: Submission) => {
-    // Logique de téléchargement
-    const data = {
-      student: submission.studentName,
-      exercise: exercise.title,
-      score: submission.score,
-      maxScore: exercise.maxScore,
-      submittedAt: submission.submittedAt,
-      answers: submission.answers
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `soumission-${submission.studentName}-${exercise.title}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setSubmissionToDownload(submission);
+    setDownloadModalOpen(true);
+  };
+
+  const handleDownloadPdf = async (orientation: 'p' | 'l') => {
+    if (!submissionToDownload) return;
+    try {
+      setIsPdfLoading(true);
+      const courseData = transformSubmissionToCourseData(submissionToDownload, exercise);
+      await downloadCourseAsPDF(courseData, orientation);
+      setDownloadModalOpen(false);
+    } catch (error) {
+      console.error('Erreur téléchargement PDF', error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  const handleDownloadWord = async () => {
+    if (!submissionToDownload) return;
+    try {
+      setIsWordLoading(true);
+      const courseData = transformSubmissionToCourseData(submissionToDownload, exercise);
+      await downloadCourseAsDocx(courseData);
+      setDownloadModalOpen(false);
+    } catch (error) {
+      console.error('Erreur téléchargement Word', error);
+    } finally {
+      setIsWordLoading(false);
+    }
   };
 
   return (
@@ -164,7 +185,7 @@ export default function SubmissionsTable({
               </span>
             </div>
           </div>
-          
+
           {selectedRows.length > 0 && (
             <div className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full">
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
@@ -209,11 +230,10 @@ export default function SubmissionsTable({
         </thead>
         <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
           {filteredAndSortedSubmissions.map((submission) => (
-            <tr 
+            <tr
               key={submission.id}
-              className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
-                selectedRows.includes(submission.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-              }`}
+              className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${selectedRows.includes(submission.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                }`}
             >
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
@@ -242,11 +262,10 @@ export default function SubmissionsTable({
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  submission.graded
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${submission.graded
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                     : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                }`}>
+                  }`}>
                   {submission.graded ? (
                     <>
                       <CheckCircle className="w-3 h-3 mr-1" />
@@ -296,11 +315,10 @@ export default function SubmissionsTable({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onGradeSubmission(submission)}
-                    className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
-                      submission.graded
+                    className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${submission.graded
                         ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50'
                         : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
-                    }`}
+                      }`}
                   >
                     <Eye className="w-4 h-4" />
                     {submission.graded ? 'Re-corriger' : 'Corriger'}
@@ -372,6 +390,14 @@ export default function SubmissionsTable({
           </div>
         </div>
       )}
+      <DownloadOptions
+        isOpen={downloadModalOpen}
+        onClose={() => setDownloadModalOpen(false)}
+        onSelectPdf={handleDownloadPdf}
+        onSelectWord={handleDownloadWord}
+        isPdfLoading={isPdfLoading}
+        isWordLoading={isWordLoading}
+      />
     </div>
   );
 }

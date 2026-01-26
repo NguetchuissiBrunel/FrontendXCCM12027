@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion';
 import { FaUsers, FaChalkboardTeacher, FaBook, FaChartBar, FaUserShield, FaCheckCircle, FaClock, FaTimesCircle, FaFileAlt } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
-import { AdminService } from '@/lib';
+import { AdminService } from '@/lib/AdminService';
 import { useLoading } from '@/contexts/LoadingContext';
 
 const StatsCard = ({ title, value, icon, color, subtitle }: any) => (

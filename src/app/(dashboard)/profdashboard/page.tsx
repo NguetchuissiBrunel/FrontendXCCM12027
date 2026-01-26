@@ -288,7 +288,7 @@ export default function ProfessorDashboard() {
       setLoading(true);
       setDashboardError(null);
 
-      console.log('📊 Chargement des données du dashboard pour:', user.id);
+      console.log('📊 Chargement des données du dashboard pour:', user);
 
       // 1. Fetch courses (compositions) pour cet enseignant
       const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);

@@ -29,9 +29,12 @@ import {
 // Import des services
 import { ExerciseService } from '@/lib3/services/ExerciseService';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { Exercise } from '@/types/exercise';
-import { useAuth } from '@/contexts/AuthContext';
+import { Exercise as BaseExercise } from '@/types/exercise';
 
+
+import { useAuth } from '@/contexts/AuthContext';
+// Étendre le type Exercise pour inclure 'DRAFT'
+type Exercise = BaseExercise & { status: 'PUBLISHED' | 'DRAFT' | 'CLOSED' | 'ARCHIVED' };
 // Types pour les réponses du service de cours
 interface CourseResponse {
   id: number;

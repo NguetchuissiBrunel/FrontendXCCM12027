@@ -562,7 +562,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         {/* Toggle Sidebar Button */}
         <button
           onClick={() => setShowSidebar(!showSidebar)}
-          className={`absolute top-4 z-20 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'
+          className={`absolute top-24 z-20 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'
             }`}
           title={showSidebar ? 'Masquer la table des matières' : 'Afficher la table des matières'}
         >

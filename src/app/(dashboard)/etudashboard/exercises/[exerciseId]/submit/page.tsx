@@ -110,7 +110,7 @@ export default function SubmitExercisePage() {
         toast.success('✅ Exercice soumis avec succès !');
         await refetchExercise();
         setTimeout(() => {
-          router.push('/etudashboard/submissions');
+          router.push('/etudashboard');
         }, 1500);
       } else {
         toast.error(result.message || 'Erreur lors de la soumission');
@@ -157,7 +157,7 @@ export default function SubmitExercisePage() {
           </p>
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/etudashboard/submissions')}
+              onClick={() => router.push('/etudashboard')}
               className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               Voir ma soumission

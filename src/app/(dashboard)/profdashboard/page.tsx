@@ -262,9 +262,9 @@ export default function ProfessorDashboard() {
 
     const params = new URLSearchParams({
       new: 'true',
-      title: encodeURIComponent(data.title),
-      category: encodeURIComponent(data.category),
-      description: encodeURIComponent(data.description)
+      title: data.title,
+      category: data.category,
+      description: data.description
     });
 
     router.push(`/editor?${params.toString()}`);
@@ -288,7 +288,7 @@ export default function ProfessorDashboard() {
       setLoading(true);
       setDashboardError(null);
 
-      console.log('📊 Chargement des données du dashboard pour:', user.id);
+      console.log('📊 Chargement des données du dashboard pour:', user);
 
       // 1. Fetch courses (compositions) pour cet enseignant
       const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);

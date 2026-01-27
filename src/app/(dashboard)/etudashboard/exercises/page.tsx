@@ -1,10 +1,10 @@
-// src/app/(dashboard)/etudashboard/exercises/page.tsx - VERSION FONCTIONNELLE
+// src/app/(dashboard)/etudashboard/exercises/page.tsx - VERSION AVEC PADDING CORRIGÉ
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMySubmissions, useCourseExercises } from '@/hooks/useExercise';
+import { useMySubmissions } from '@/hooks/useExercise';
 import { Exercise, Submission } from '@/types/exercise';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
 import Sidebar from '@/components/Sidebar';
@@ -24,17 +24,15 @@ import {
   FileText,
   AlertCircle,
   Target,
-  TrendingUp,
   FileCheck,
   RefreshCw,
   AlertTriangle,
-  CheckSquare,
   XCircle,
-  GraduationCap,
   ListTodo,
-  ChevronRight
+  User
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { EnrichedCourse } from '@/types/enrollment';
 
 // Données combinées exercice + statut étudiant
 interface StudentExerciseData {
@@ -67,19 +65,11 @@ interface StatusBadge {
   label: string;
 }
 
-// Données de cours mockées (à remplacer par votre API)
-const MOCK_COURSES = [
-  { id: 1, title: 'Algorithmique Avancée', code: 'INF301' },
-  { id: 2, title: 'Structures de Données', code: 'INF302' },
-  { id: 3, title: 'Base de Données', code: 'INF303' },
-  { id: 4, title: 'Développement Web', code: 'INF304' },
-];
-
 export default function StudentExercisesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
-
+  
   // États
   const [exercisesData, setExercisesData] = useState<StudentExerciseData[]>([]);
   const [filteredExercises, setFilteredExercises] = useState<StudentExerciseData[]>([]);
@@ -89,6 +79,7 @@ export default function StudentExercisesPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrichedCourse[]>([]);
 
   // Récupérer les soumissions
   const {
@@ -98,147 +89,141 @@ export default function StudentExercisesPage() {
     refetch: refetchSubmissions
   } = useMySubmissions();
 
-  // Charger les exercices pour chaque cours
+  /**
+   * Récupérer les cours de l'étudiant via l'API enrollments
+   * Adapté depuis page.tsx
+   */
+  const fetchStudentCourses = useCallback(async (): Promise<EnrichedCourse[]> => {
+    if (!user?.id) return [];
+    
+    try {
+      console.log('📚 Récupération des cours de l\'étudiant via EnrollmentService...');
+      
+      // Utiliser le service d'inscription existant (comme dans page.tsx)
+      const { EnrollmentService } = await import('@/utils/enrollmentService');
+      const enrollments = await EnrollmentService.getMyEnrollments();
+
+      // Filtrer uniquement les inscriptions approuvées (comme dans page.tsx)
+      const approvedEnrollments = (enrollments || []).filter(
+        (e: any) => e.status === 'APPROVED'
+      );
+
+      // Enrichir avec les détails des cours
+      const { CourseControllerService } = await import('@/lib/services/CourseControllerService');
+      const enrichedPromises = approvedEnrollments.map(async (enrollment: any) => {
+        try {
+          // Récupérer les détails du cours via le service
+          const resp = await CourseControllerService.getEnrichedCourse(enrollment.courseId);
+          
+          if (resp.success && resp.data) {
+            const courseDetail = resp.data as any;
+            
+            return {
+              id: courseDetail.id,
+              title: courseDetail.title,
+              category: courseDetail.category || 'Formation',
+              image: courseDetail.photoUrl || courseDetail.image || courseDetail.coverImage || '',
+              author: {
+                name: courseDetail.author ? 
+                  (typeof courseDetail.author === 'string' ? 
+                    courseDetail.author : 
+                    `${courseDetail.author.firstName || courseDetail.author.name || ''} ${courseDetail.author.lastName || ''}`
+                  ) : 'Inconnu',
+                image: courseDetail.author?.image || courseDetail.author?.photoUrl || '',
+                designation: courseDetail.author?.designation
+              },
+              enrollment: {
+                ...enrollment,
+                status: enrollment.status
+              }
+            } as unknown as EnrichedCourse;
+          }
+          return null;
+        } catch (e) {
+          console.error(`Erreur fetch cours ${enrollment.courseId}:`, e);
+          return null;
+        }
+      });
+
+      const enriched = (await Promise.all(enrichedPromises)).filter(Boolean) as EnrichedCourse[];
+      setEnrolledCourses(enriched);
+      
+      console.log(`✅ ${enriched.length} cours approuvés récupérés`);
+      return enriched;
+      
+    } catch (err) {
+      console.error("❌ Erreur lors du chargement des inscriptions:", err);
+      toast.error('Impossible de charger vos inscriptions');
+      setEnrolledCourses([]);
+      return [];
+    }
+  }, [user]);
+
+  /**
+   * Récupérer les exercices pour un cours spécifique
+   */
+  const fetchExercisesForCourse = useCallback(async (courseId: number, courseTitle: string): Promise<Exercise[]> => {
+    try {
+      console.log(`📝 Récupération exercices pour cours ${courseId}...`);
+      
+      // Utiliser ExercicesService qui utilise déjà le bon endpoint
+      const exercises = await ExerciseService.getExercisesForCourse(courseId);
+      
+      // Enrichir avec le titre du cours
+      return exercises.map(exercise => ({
+        ...exercise,
+        courseTitle,
+        courseId
+      }));
+      
+    } catch (error) {
+      console.error(`❌ Erreur cours ${courseId}:`, error);
+      return []; // Retourner tableau vide, ne pas bloquer les autres cours
+    }
+  }, []);
+
+  /**
+   * Récupérer TOUS les exercices de l'étudiant
+   * Version adaptée avec la logique de page.tsx
+   */
   const loadAllExercises = useCallback(async (): Promise<Exercise[]> => {
     if (!user?.id) return [];
 
     try {
-      console.log('📚 Récupération des exercices pour tous les cours...');
-
-      let allExercises: Exercise[] = [];
-
-      // Méthode 1: Par les cours mockés (démonstration)
-      for (const course of MOCK_COURSES) {
-        try {
-          const exercises = await ExerciseService.getExercisesForCourse(course.id);
-
-          // Ajouter le titre du cours à chaque exercice
-          const enrichedExercises = exercises.map(exercise => ({
-            ...exercise,
-            courseTitle: course.title,
-            courseCode: course.code
-          }));
-
-          allExercises = [...allExercises, ...enrichedExercises];
-        } catch (courseError) {
-          console.warn(`Erreur cours ${course.id}:`, courseError);
-        }
+      console.log('🔄 Début récupération exercices étudiants...');
+      
+      // 1. Récupérer les cours de l'étudiant (inscriptions approuvées)
+      const courses = await fetchStudentCourses();
+      
+      if (courses.length === 0) {
+        console.warn('⚠️ Aucun cours approuvé trouvé pour l\'étudiant');
+        toast('Vous n\'êtes inscrit à aucun cours approuvé', {
+          icon: '📭',
+          className: 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+        });
+        return [];
       }
+      
+      console.log(`📚 ${courses.length} cours approuvés à traiter`);
 
-      // Méthode 2: Fallback avec données mockées si aucun exercice
-      if (allExercises.length === 0) {
-        console.log('⚠️ Aucun exercice API, utilisation de données mockées');
-        allExercises = getMockExercises();
-      }
-
-      console.log(`✅ ${allExercises.length} exercices récupérés`);
+      // 2. Récupérer les exercices pour chaque cours (en parallèle)
+      const exercisePromises = courses.map(course => 
+        fetchExercisesForCourse(course.id, course.title)
+      );
+      
+      const exercisesArrays = await Promise.all(exercisePromises);
+      
+      // 3. Fusionner tous les exercices
+      const allExercises = exercisesArrays.flat();
+      
+      console.log(`✅ Total: ${allExercises.length} exercices récupérés`);
       return allExercises;
-
+      
     } catch (error) {
-      console.error('❌ Erreur récupération exercices:', error);
-      // Fallback aux données mockées
-      return getMockExercises();
+      console.error('❌ Erreur récupération exercices étudiants:', error);
+      throw new Error('Impossible de récupérer les exercices');
     }
-  }, [user]);
-
-  // Données mockées pour démo
-  const getMockExercises = (): Exercise[] => {
-    return [
-      {
-        id: 1,
-        courseId: 1,
-        courseTitle: 'Algorithmique Avancée',
-        title: 'Introduction aux algorithmes de tri',
-        description: 'Implémentez les algorithmes de tri classiques et analysez leur complexité.',
-        maxScore: 20,
-        dueDate: '2024-12-31T23:59:00',
-        status: 'PUBLISHED',
-        createdAt: '2024-01-15T10:00:00',
-        questions: [
-          { id: 1, exerciseId: 1, text: 'Implémentez le tri rapide', type: 'CODE', points: 10, order: 0 },
-          { id: 2, exerciseId: 1, text: 'Complexité du tri fusion', type: 'TEXT', points: 5, order: 1 },
-          { id: 3, exerciseId: 1, text: 'Quiz sur les tris', type: 'MULTIPLE_CHOICE', points: 5, order: 2, options: ['O(n²)', 'O(n log n)', 'O(n!)'] }
-        ],
-        version: '2.0',
-        submissionCount: 45,
-        averageScore: 14.5
-      },
-      {
-        id: 2,
-        courseId: 2,
-        courseTitle: 'Structures de Données',
-        title: 'Manipulation des arbres binaires',
-        description: 'Exercices sur les parcours et propriétés des arbres binaires.',
-        maxScore: 15,
-        dueDate: '2024-12-20T23:59:00',
-        status: 'PUBLISHED',
-        createdAt: '2024-01-20T14:30:00',
-        questions: [
-          { id: 1, exerciseId: 2, text: 'Parcours pré-ordre', type: 'CODE', points: 8, order: 0 },
-          { id: 2, exerciseId: 2, text: 'Hauteur d\'un arbre', type: 'TEXT', points: 7, order: 1 }
-        ],
-        version: '2.0',
-        submissionCount: 32,
-        averageScore: 11.2
-      },
-      {
-        id: 3,
-        courseId: 3,
-        courseTitle: 'Base de Données',
-        title: 'Requêtes SQL avancées',
-        description: 'Maîtrisez les jointures, sous-requêtes et fonctions d\'agrégation.',
-        maxScore: 25,
-        dueDate: '2024-12-25T23:59:00',
-        status: 'PUBLISHED',
-        createdAt: '2024-01-25T09:15:00',
-        questions: [
-          { id: 1, exerciseId: 3, text: 'Jointure multiple', type: 'CODE', points: 10, order: 0 },
-          { id: 2, exerciseId: 3, text: 'Sous-requêtes', type: 'CODE', points: 10, order: 1 },
-          { id: 3, exerciseId: 3, text: 'Fonctions d\'agrégation', type: 'TEXT', points: 5, order: 2 }
-        ],
-        version: '2.0',
-        submissionCount: 28,
-        averageScore: 18.7
-      },
-      {
-        id: 4,
-        courseId: 4,
-        courseTitle: 'Développement Web',
-        title: 'Création d\'une API REST',
-        description: 'Développez une API REST complète avec Express.js et MongoDB.',
-        maxScore: 30,
-        dueDate: undefined, // Pas de date limite
-        status: 'PUBLISHED',
-        createdAt: '2024-02-01T16:45:00',
-        questions: [
-          { id: 1, exerciseId: 4, text: 'Structure du projet', type: 'TEXT', points: 5, order: 0 },
-          { id: 2, exerciseId: 4, text: 'Routes CRUD', type: 'CODE', points: 15, order: 1 },
-          { id: 3, exerciseId: 4, text: 'Validation des données', type: 'CODE', points: 10, order: 2 }
-        ],
-        version: '2.0',
-        submissionCount: 12,
-        averageScore: 22.4
-      },
-      {
-        id: 5,
-        courseId: 1,
-        courseTitle: 'Algorithmique Avancée',
-        title: 'Algorithmes de graphes',
-        description: 'Implémentation des algorithmes de parcours et de chemin le plus court.',
-        maxScore: 20,
-        dueDate: '2024-12-28T23:59:00',
-        status: 'PUBLISHED',
-        createdAt: '2024-02-05T11:20:00',
-        questions: [
-          { id: 1, exerciseId: 5, text: 'Parcours BFS/DFS', type: 'CODE', points: 8, order: 0 },
-          { id: 2, exerciseId: 5, text: 'Algorithme de Dijkstra', type: 'CODE', points: 12, order: 1 }
-        ],
-        version: '2.0',
-        submissionCount: 0,
-        averageScore: 0
-      }
-    ];
-  };
+  }, [user, fetchStudentCourses, fetchExercisesForCourse]);
 
   /**
    * Charger toutes les données étudiant
@@ -251,27 +236,33 @@ export default function StudentExercisesPage() {
 
     try {
       setLoading(true);
-      startLoading();
       setError(null);
+      startLoading();
 
       console.log('🔄 Chargement des exercices étudiant...');
 
-      // 1. Récupérer TOUS les exercices
+      // 1. Récupérer TOUS les exercices (cours approuvés uniquement)
       const exercises = await loadAllExercises();
 
       if (exercises.length === 0) {
-        console.log('⚠️ Aucun exercice trouvé');
+        console.log('ℹ️ Aucun exercice disponible pour le moment');
         setExercisesData([]);
         setFilteredExercises([]);
+        
+        // Toast informatif
+        toast('Aucun exercice disponible pour le moment', {
+          icon: '📭',
+          className: 'bg-blue-50 text-blue-800 border border-blue-200'
+        });
         return;
       }
 
       console.log(`✅ ${exercises.length} exercices récupérés`);
 
-      // 2. Enrichir avec les soumissions et déterminer les statuts
+      // 2. Enrichir avec les soumissions
       const enrichedData: StudentExerciseData[] = exercises.map(exercise => {
         const submission = submissions?.find(s => s.exerciseId === exercise.id);
-
+        
         // Déterminer le statut d'échéance
         let dueDateStatus: 'open' | 'closed' | 'no_due_date' = 'no_due_date';
         if (exercise.dueDate) {
@@ -293,11 +284,9 @@ export default function StudentExercisesPage() {
             canSubmit = false;
           }
         }
-
-        // Pour démo: simuler quelques exercices en cours
-        if (exercise.id === 5 && !submission) {
-          studentStatus = 'in_progress';
-        }
+        
+        // Vérifier si l'exercice est accessible
+        const isAccessible = exercise.status === 'PUBLISHED' && dueDateStatus !== 'closed';
 
         return {
           exercise,
@@ -305,21 +294,22 @@ export default function StudentExercisesPage() {
           studentStatus,
           courseTitle: exercise.courseTitle || `Cours #${exercise.courseId}`,
           courseId: exercise.courseId,
-          canSubmit: canSubmit && dueDateStatus === 'open' && exercise.status === 'PUBLISHED',
+          canSubmit: canSubmit && isAccessible,
           dueDateStatus,
-          progress: exercise.id === 5 ? 1 : 0, // Pour démo
-          timeSpent: exercise.id === 5 ? 1200 : 0 // 20 minutes en secondes
+          progress: 0,
+          timeSpent: 0
         };
       });
 
       setExercisesData(enrichedData);
-      setFilteredExercises(enrichedData); // Initialiser les filtres
-      console.log(`🎯 ${enrichedData.length} exercices enrichis`);
+      setFilteredExercises(enrichedData);
+      console.log(`🎯 ${enrichedData.length} exercices traités`);
 
     } catch (error: any) {
       console.error('❌ Erreur chargement données étudiant:', error);
-      setError(error.message || 'Erreur de chargement des exercices');
-      toast.error('Erreur de chargement des exercices');
+      const errorMessage = error.message || 'Erreur de chargement des exercices';
+      setError(errorMessage);
+      toast.error(`Erreur: ${errorMessage}`);
     } finally {
       setLoading(false);
       stopLoading();
@@ -358,18 +348,10 @@ export default function StudentExercisesPage() {
   ];
 
   // Extraire les cours uniques pour le filtre
-  const uniqueCourses = Array.from(
-    new Set(
-      exercisesData
-        .map(data => data.courseId)
-    )
-  ).map(courseId => {
-    const exercise = exercisesData.find(e => e.courseId === courseId);
-    return {
-      id: courseId,
-      title: exercise?.courseTitle || `Cours #${courseId}`
-    };
-  });
+  const uniqueCourses = enrolledCourses.map(course => ({
+    id: course.id,
+    title: course.title
+  }));
 
   // Appliquer les filtres
   useEffect(() => {
@@ -510,6 +492,24 @@ export default function StudentExercisesPage() {
   };
 
   /**
+   * Formater une date
+   */
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'Non définie';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Date invalide';
+    }
+  };
+
+  /**
    * Calculer les statistiques
    */
   const calculateStats = () => {
@@ -573,7 +573,14 @@ export default function StudentExercisesPage() {
   // ============ RENDU ============
 
   if (authLoading || loading || globalLoading) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-indigo-600 dark:text-indigo-400 animate-spin mx-auto" />
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de vos exercices...</p>
+        </div>
+      </div>
+    );
   }
 
   // Non authentifié
@@ -612,7 +619,8 @@ export default function StudentExercisesPage() {
         activeTab="exercices"
       />
 
-      <main className="flex-1 p-4 md:p-6 lg:p-8 lg:ml-64">
+      {/* MODIFICATION : Ajout de padding-top pour éviter le chevauchement avec le header */}
+      <main className="flex-1 p-4 md:p-6 lg:p-8 lg:ml-64 mt-16 md:mt-20">
         {/* En-tête */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -627,6 +635,7 @@ export default function StudentExercisesPage() {
               </div>
               <p className="text-gray-600 dark:text-gray-400">
                 Suivez votre progression sur {stats.total} exercice{stats.total !== 1 ? 's' : ''}
+                {enrolledCourses.length > 0 && ` dans ${enrolledCourses.length} cours approuvés`}
               </p>
             </div>
 
@@ -768,7 +777,7 @@ export default function StudentExercisesPage() {
                 })}
               </div>
 
-              {/* Sélecteur de cours - optionnel */}
+              {/* Sélecteur de cours */}
               {uniqueCourses.length > 0 && (
                 <div className="relative min-w-[180px]">
                   <select
@@ -824,7 +833,9 @@ export default function StudentExercisesPage() {
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
               {searchTerm || selectedStatus !== 'all' || selectedCourse !== 'all'
                 ? 'Aucun exercice ne correspond à vos critères de recherche.'
-                : 'Vous n\'avez pas encore d\'exercices disponibles.'}
+                : enrolledCourses.length === 0
+                  ? 'Vous n\'êtes inscrit à aucun cours approuvé.'
+                  : 'Aucun exercice n\'est disponible dans vos cours approuvés.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
@@ -837,6 +848,14 @@ export default function StudentExercisesPage() {
               >
                 Réinitialiser les filtres
               </button>
+              {enrolledCourses.length === 0 && (
+                <button
+                  onClick={() => router.push('/bibliotheque')}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+                >
+                  Explorer les cours
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -878,13 +897,6 @@ export default function StudentExercisesPage() {
                                 {dueDateStatus.label}
                               </span>
                             )}
-
-                            {/* Progression en cours */}
-                            {data.progress && data.progress > 0 && data.studentStatus === 'in_progress' && (
-                              <span className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">
-                                {data.progress} réponse{data.progress > 1 ? 's' : ''}
-                              </span>
-                            )}
                           </div>
 
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
@@ -917,11 +929,7 @@ export default function StudentExercisesPage() {
                                 <div className="flex items-center gap-1.5">
                                   <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                   <span>
-                                    Échéance: {new Date(data.exercise.dueDate).toLocaleDateString('fr-FR', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric'
-                                    })}
+                                    Échéance: {formatDate(data.exercise.dueDate)}
                                   </span>
                                 </div>
                               </>

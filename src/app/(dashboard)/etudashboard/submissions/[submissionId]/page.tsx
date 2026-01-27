@@ -5,12 +5,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useSubmissionDetails } from '@/hooks/useExercise';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  Clock, 
-  FileText, 
-  Award, 
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  FileText,
+  Award,
   AlertCircle,
   Calendar,
   User,
@@ -38,15 +38,15 @@ export default function SubmissionDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const submissionId = parseInt(params.submissionId as string);
-  
+
   const [user, setUser] = useState<AppUser | null>(null);
-  
+
   // Utiliser le hook de soumission
-  const { 
-    submission, 
-    isLoading: submissionLoading, 
+  const {
+    submission,
+    isLoading: submissionLoading,
     error: submissionError,
-    refetch: refetchSubmission 
+    refetch: refetchSubmission
   } = useSubmissionDetails(submissionId);
 
   // Charger l'utilisateur
@@ -66,7 +66,7 @@ export default function SubmissionDetailsPage() {
 
   const handleDownload = () => {
     if (!submission) return;
-    
+
     const data = {
       student: submission.studentName,
       email: submission.studentEmail,
@@ -79,7 +79,7 @@ export default function SubmissionDetailsPage() {
       feedback: submission.feedback,
       answers: submission.answers
     };
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -195,7 +195,7 @@ export default function SubmissionDetailsPage() {
             <ArrowLeft size={20} />
             <span>Retour à mes soumissions</span>
           </button>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex-1">
@@ -206,25 +206,18 @@ export default function SubmissionDetailsPage() {
                   {exerciseTitle}
                 </p>
               </div>
-              
-              <div className="flex flex-wrap gap-2">
+
+
+
+              {submission.exerciseId && (
                 <button
-                  onClick={handleDownload}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
+                  onClick={() => router.push(`/etudashboard/exercises/${submission.exerciseId}`)}
+                  className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2 text-sm"
                 >
-                  <Download size={16} />
-                  Télécharger
+                  <Eye size={16} />
+                  Voir l'exercice
                 </button>
-                {submission.exerciseId && (
-                  <button
-                    onClick={() => router.push(`/etudashboard/exercises/${submission.exerciseId}`)}
-                    className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2 text-sm"
-                  >
-                    <Eye size={16} />
-                    Voir l'exercice
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -237,12 +230,12 @@ export default function SubmissionDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Statut de la soumission
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      {submission.graded ? (
+                      {submission.score !== undefined ? (
                         <>
                           <CheckCircle className="w-5 h-5 text-green-500" />
                           <span className="font-medium text-green-600">Noté</span>
@@ -261,7 +254,7 @@ export default function SubmissionDetailsPage() {
                       </p>
                     )}
                   </div>
-                  
+
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Score</div>
                     <div className="flex items-baseline gap-2">
@@ -278,7 +271,7 @@ export default function SubmissionDetailsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -289,7 +282,7 @@ export default function SubmissionDetailsPage() {
                       {formatDate(submission.submittedAt)}
                     </p>
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Timer className="w-5 h-5 text-blue-500" />
@@ -323,7 +316,7 @@ export default function SubmissionDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Réponses soumises
               </h3>
-              
+
               {submission.answers && submission.answers.length > 0 ? (
                 <div className="space-y-4">
                   {submission.answers.map((answer, index) => (
@@ -342,14 +335,14 @@ export default function SubmissionDetailsPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         {answer.points !== undefined && (
                           <div className={`text-lg font-bold ${getScoreColor(answer.points, 10)}`}>
                             {answer.points} pts
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="mb-3">
                         <div className="text-sm text-gray-500 mb-1">Votre réponse :</div>
                         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
@@ -358,7 +351,7 @@ export default function SubmissionDetailsPage() {
                           </p>
                         </div>
                       </div>
-                      
+
                       {answer.feedback && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <div className="text-sm text-gray-500 mb-1">Commentaire :</div>
@@ -390,7 +383,7 @@ export default function SubmissionDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 Informations étudiant
               </h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -401,7 +394,7 @@ export default function SubmissionDetailsPage() {
                     {submission.studentName}
                   </p>
                 </div>
-                
+
                 {submission.studentEmail && (
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -413,7 +406,7 @@ export default function SubmissionDetailsPage() {
                     </p>
                   </div>
                 )}
-                
+
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Award className="w-4 h-4 text-gray-500" />
@@ -426,64 +419,8 @@ export default function SubmissionDetailsPage() {
               </div>
             </div>
 
-            {/* Métadonnées */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                Métadonnées
-              </h3>
-              
-              <div className="space-y-3">
-                {submission.ipAddress && (
-                  <div>
-                    <div className="text-sm text-gray-500">Adresse IP</div>
-                    <p className="text-gray-800 dark:text-gray-200 font-mono text-sm">
-                      {submission.ipAddress}
-                    </p>
-                  </div>
-                )}
-                
-                {submission.lastModifiedAt && (
-                  <div>
-                    <div className="text-sm text-gray-500">Dernière modification</div>
-                    <p className="text-gray-800 dark:text-gray-200 text-sm">
-                      {formatDate(submission.lastModifiedAt)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Actions */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-              <h3 className="font-bold text-gray-800 dark:text-white mb-3">
-                Actions
-              </h3>
-              <div className="space-y-2">
-                {submission.exerciseId && (
-                  <button
-                    onClick={() => router.push(`/etudashboard/exercises/${submission.exerciseId}`)}
-                    className="w-full py-2.5 text-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-                  >
-                    <Eye size={16} />
-                    Revoir l'exercice
-                  </button>
-                )}
-                <button
-                  onClick={handleDownload}
-                  className="w-full py-2.5 text-center border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-                >
-                  <Download size={16} />
-                  Télécharger
-                </button>
-                <button
-                  onClick={refetchSubmission}
-                  className="w-full py-2.5 text-center border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-                >
-                  <RefreshCw size={16} />
-                  Actualiser
-                </button>
-              </div>
-            </div>
+
           </div>
         </div>
       </main>

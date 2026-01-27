@@ -183,7 +183,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Ex: Architecture des Systèmes"
-                className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all shadow-sm"
+                className="w-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-xl p-4 outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all shadow-sm"
               />
             </div>
 
@@ -193,7 +193,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 appearance-none outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all cursor-pointer"
+                  className="w-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-xl p-4 appearance-none outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all cursor-pointer"
                 >
                   <option value="" disabled hidden>Sélectionner...</option>
                   <option value="Informatique">Informatique</option>
@@ -211,7 +211,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
             <input
               type="text"
               placeholder="Saisissez votre catégorie personnalisée"
-              className="w-full border-b-2 border-purple-400 p-2 outline-none animate-in slide-in-from-top-2"
+              className="w-full bg-transparent text-gray-900 dark:text-gray-100 border-b-2 border-purple-400 p-2 outline-none animate-in slide-in-from-top-2"
               onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
             />
           )}
@@ -279,7 +279,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Qu'est-ce que les étudiants vont apprendre ?"
-              className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-4 dark:bg-gray-900 h-32 outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all resize-none"
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-4 dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-32 outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all resize-none"
             />
           </div>
         </div>

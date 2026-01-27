@@ -138,7 +138,7 @@ export default function CompositionsCard({ compositions, onDelete, onCreateClick
                 }, 0)
               } étudiants
             </div>
-            
+
           </div>
         </div>
       )}

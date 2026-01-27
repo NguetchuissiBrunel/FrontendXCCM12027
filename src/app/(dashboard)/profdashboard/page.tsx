@@ -262,9 +262,9 @@ export default function ProfessorDashboard() {
 
     const params = new URLSearchParams({
       new: 'true',
-      title: encodeURIComponent(data.title),
-      category: encodeURIComponent(data.category),
-      description: encodeURIComponent(data.description)
+      title: data.title,
+      category: data.category,
+      description: data.description
     });
 
     router.push(`/editor?${params.toString()}`);

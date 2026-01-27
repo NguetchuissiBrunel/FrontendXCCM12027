@@ -66,81 +66,81 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
     setIsEditing(false);
   };
 
-const handleSave = async () => {
-  setIsSaving(true);
-  try {
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      const userData = JSON.parse(currentUser);
-      
-      // CRITIQUE: Utiliser userData.id (UUID) au lieu de editedProfessor.id (email)
-      const userId = userData.id; // C'est l'UUID
-      
-      if (!userId) {
-        throw new Error('ID utilisateur non trouvé');
-      }
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        const userData = JSON.parse(currentUser);
 
-      const updatePayload = {
-        firstName: editedProfessor.name.split(' ')[0],
-        lastName: editedProfessor.name.split(' ').slice(1).join(' '),
-        city: editedProfessor.city,
-        university: editedProfessor.university,
-        grade: editedProfessor.grade,
-        certification: editedProfessor.certification,
-        photoUrl: editedProfessor.photoUrl || defaultAvatar,
-      };
+        // CRITIQUE: Utiliser userData.id (UUID) au lieu de editedProfessor.id (email)
+        const userId = userData.id; // C'est l'UUID
 
-      console.log('[ProfileCard] Envoi de la mise à jour au backend...', {
-        userId: userId, // UUID maintenant
-        userEmail: editedProfessor.id, // Email pour référence
-        payload: updatePayload
-      });
+        if (!userId) {
+          throw new Error('ID utilisateur non trouvé');
+        }
 
-      // Utiliser l'UUID (userData.id) au lieu de l'email (editedProfessor.id)
-      const response = await GestionDesUtilisateursService.updateUser1(
-        userId, // UUID ici
-        updatePayload
-      );
+        const updatePayload = {
+          firstName: editedProfessor.name.split(' ')[0],
+          lastName: editedProfessor.name.split(' ').slice(1).join(' '),
+          city: editedProfessor.city,
+          university: editedProfessor.university,
+          grade: editedProfessor.grade,
+          certification: editedProfessor.certification,
+          photoUrl: editedProfessor.photoUrl || defaultAvatar,
+        };
 
-      console.log('[ProfileCard] Réponse du backend reçue:', response);
-
-      if (!response.success) {
-        console.error('[ProfileCard] Échec de la mise à jour du profil:', response);
-        throw new Error(response.error || 'Failed to update profile');
-      }
-
-      // Mettre à jour le localStorage avec les nouvelles données
-      const updatedUser = {
-        ...userData,
-        ...updatePayload,
-        name: `${updatePayload.firstName} ${updatePayload.lastName}`.trim()
-      };
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-
-      setIsEditing(false);
-
-      if (onUpdate) {
-        // Mettre à jour aussi l'objet professor localement
-        onUpdate({
-          ...editedProfessor,
-          name: updatedUser.name,
-          city: updatePayload.city,
-          university: updatePayload.university,
-          grade: updatePayload.grade,
-          certification: updatePayload.certification,
-          photoUrl: updatePayload.photoUrl
+        console.log('[ProfileCard] Envoi de la mise à jour au backend...', {
+          userId: userId, // UUID maintenant
+          userEmail: editedProfessor.id, // Email pour référence
+          payload: updatePayload
         });
-      }
 
-      toast.success('Profil mis à jour avec succès !');
+        // Utiliser l'UUID (userData.id) au lieu de l'email (editedProfessor.id)
+        const response = await GestionDesUtilisateursService.updateUser1(
+          userId, // UUID ici
+          updatePayload
+        );
+
+        console.log('[ProfileCard] Réponse du backend reçue:', response);
+
+        if (!response.success) {
+          console.error('[ProfileCard] Échec de la mise à jour du profil:', response);
+          throw new Error(response.error || 'Failed to update profile');
+        }
+
+        // Mettre à jour le localStorage avec les nouvelles données
+        const updatedUser = {
+          ...userData,
+          ...updatePayload,
+          name: `${updatePayload.firstName} ${updatePayload.lastName}`.trim()
+        };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+        setIsEditing(false);
+
+        if (onUpdate) {
+          // Mettre à jour aussi l'objet professor localement
+          onUpdate({
+            ...editedProfessor,
+            name: updatedUser.name,
+            city: updatePayload.city,
+            university: updatePayload.university,
+            grade: updatePayload.grade,
+            certification: updatePayload.certification,
+            photoUrl: updatePayload.photoUrl
+          });
+        }
+
+        toast.success('Profil mis à jour avec succès !');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde du profil');
+    } finally {
+      setIsSaving(false);
     }
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error);
-    toast.error(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde du profil');
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
   const handleChange = (field: keyof Professor, value: string | number) => {
     setEditedProfessor({
       ...editedProfessor,
@@ -248,21 +248,19 @@ const handleSave = async () => {
       <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-6 py-3 font-semibold transition-colors ${
-            activeTab === 'overview'
+          className={`px-6 py-3 font-semibold transition-colors ${activeTab === 'overview'
               ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
-          }`}
+            }`}
         >
           Aperçu
         </button>
         <button
           onClick={() => setActiveTab('courses')}
-          className={`px-6 py-3 font-semibold transition-colors ${
-            activeTab === 'courses'
+          className={`px-6 py-3 font-semibold transition-colors ${activeTab === 'courses'
               ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
-          }`}
+            }`}
         >
           Statistiques par Cours
         </button>
@@ -404,8 +402,8 @@ const handleSave = async () => {
                   {editedProfessor.totalStudents > 0 ? editedProfessor.totalStudents : 'Aucun'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {editedProfessor.publications > 0 
-                    ? `sur ${editedProfessor.publications} cours publiés` 
+                  {editedProfessor.publications > 0
+                    ? `sur ${editedProfessor.publications} cours publiés`
                     : 'aucun cours publié'}
                 </p>
               </div>
@@ -419,7 +417,7 @@ const handleSave = async () => {
                   {editedProfessor.participationRate}%
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {editedProfessor.activeStudents > 0 
+                  {editedProfessor.activeStudents > 0
                     ? `${editedProfessor.activeStudents} étudiants actifs`
                     : 'aucun étudiant actif'}
                 </p>
@@ -463,8 +461,8 @@ const handleSave = async () => {
                   {editedProfessor.totalExercises}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {editedProfessor.totalExercises > 0 
-                    ? `dans ${editedProfessor.publications} cours` 
+                  {editedProfessor.totalExercises > 0
+                    ? `dans ${editedProfessor.publications} cours`
                     : 'aucun exercice créé'}
                 </p>
               </div>
@@ -491,7 +489,7 @@ const handleSave = async () => {
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Taux de Complétion</p>
                   <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                    {editedProfessor.totalStudents > 0 
+                    {editedProfessor.totalStudents > 0
                       ? `${Math.round((editedProfessor.completedStudents / editedProfessor.totalStudents) * 100)}%`
                       : '0%'}
                   </p>
@@ -516,13 +514,13 @@ const handleSave = async () => {
                         const circumference = 2 * Math.PI * 40;
                         const strokeDasharray = `${(item.value * circumference) / 100} ${circumference}`;
                         const strokeDashoffset = `-${(previousValues * circumference) / 100}`;
-                        
+
                         // Déterminer la couleur basée sur la plage
                         let strokeColor = '#7c3aed'; // Couleur par défaut purple-600
                         if (item.range === 'Bien') strokeColor = '#a78bfa'; // purple-400
                         if (item.range === 'Passable') strokeColor = '#c4b5fd'; // purple-300
                         if (item.range === 'Faible') strokeColor = '#ddd6fe'; // purple-200
-                        
+
                         return (
                           <circle
                             key={index}
@@ -540,7 +538,7 @@ const handleSave = async () => {
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-2xl font-bold text-gray-800 dark:text-white">
-                        {editedProfessor.performanceDistribution.length > 0 
+                        {editedProfessor.performanceDistribution.length > 0
                           ? `${Math.round(editedProfessor.performanceDistribution.reduce((sum, item) => sum + item.value, 0) / editedProfessor.performanceDistribution.length)}%`
                           : '0%'}
                       </span>
@@ -593,7 +591,7 @@ const handleSave = async () => {
               {coursesStats?.length || 0} cours
             </span>
           </div>
-          
+
           {coursesStats && coursesStats.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {coursesStats.map((courseItem) => (
@@ -604,7 +602,7 @@ const handleSave = async () => {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     {courseItem.courseCategory}
                   </p>
-                  
+
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-white dark:bg-gray-700 p-3 rounded-lg">
@@ -620,7 +618,7 @@ const handleSave = async () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Participation</span>
@@ -629,13 +627,13 @@ const handleSave = async () => {
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
-                          className="bg-purple-600 dark:bg-purple-500 h-2 rounded-full transition-all duration-500" 
+                        <div
+                          className="bg-purple-600 dark:bg-purple-500 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${courseItem.participationRate}%` }}
                         ></div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Progression</span>
@@ -644,13 +642,13 @@ const handleSave = async () => {
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
-                          className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all duration-500" 
+                        <div
+                          className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${courseItem.averageProgress}%` }}
                         ></div>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-3 text-sm">
                       <div className="text-center">
                         <p className="text-gray-500 dark:text-gray-400">Terminés</p>
@@ -667,7 +665,7 @@ const handleSave = async () => {
                       <div className="text-center">
                         <p className="text-gray-500 dark:text-gray-400">Taux</p>
                         <p className="font-bold text-gray-800 dark:text-white">
-                          {courseItem.totalEnrolled > 0 
+                          {courseItem.totalEnrolled > 0
                             ? `${Math.round((courseItem.completedStudents / courseItem.totalEnrolled) * 100)}%`
                             : '0%'}
                         </p>
@@ -698,7 +696,7 @@ const handleSave = async () => {
                 Les statistiques apparaîtront une fois que vos cours auront des étudiants inscrits.
               </p>
               <button
-                onClick={() => window.location.href = '/create-course'}
+                onClick={() => window.location.href = '/editor'}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 dark:bg-purple-500 text-white text-sm rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

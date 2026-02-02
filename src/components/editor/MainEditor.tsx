@@ -631,10 +631,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
             <ToolbarButton
               onClick={() => editor?.chain().focus().setMath().run()}
-              title="Insérer Formule (Math)"
+              title="Insérer Équation (Math)"
               isActive={editor?.isActive('math')}
             >
-              <Sigma size={16} />
+              <div className="flex items-center gap-1">
+                <Sigma size={16} />
+                <span className="text-xs font-bold hidden xl:inline">Équation</span>
+              </div>
             </ToolbarButton>
 
             <ToolbarButton

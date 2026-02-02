@@ -13,9 +13,10 @@ export const extractTextFromContent = (content: any): string => {
     if (Array.isArray(content)) {
         return content.map((node: any) => {
             if (node.type === 'text') return node.text;
+            if (node.type === 'math') return ` $${node.attrs?.tex || ''}$ `;
             if (node.content) return extractTextFromContent(node.content);
             return '';
-        }).join(' ');
+        }).join('');
     }
     if (content.type === 'doc' && content.content) return extractTextFromContent(content.content);
     if (content.content) return extractTextFromContent(content.content);
@@ -45,9 +46,10 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
 
         return nodes.map((node: any) => {
             if (node.type === 'text') return node.text;
+            if (node.type === 'math') return ` $${node.attrs?.tex || ''}$ `;
             if (node.content) return getRawText(node.content);
             return '';
-        }).join(' ').trim();
+        }).join('').trim();
     };
 
     // 2. Parcourir l'arbre TOC pour construire la structure (récursif pour gérer l'imbrication)
@@ -72,22 +74,22 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
 
                         // Paragraphs inside chapter
                         child.children.forEach(grandChild => {
-                            if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice'].includes(grandChild.type)) {
+                            if (['paragraph', 'notion', 'exercise'].includes(grandChild.type)) {
                                 chapter.paragraphs.push({
                                     title: grandChild.title || "",
                                     content: grandChild.content || [],
                                     notions: grandChild.type === 'notion' ? [grandChild.title] : [],
-                                    exercise: (grandChild.type === 'exercise' || grandChild.type === 'exercice') ? { questions: [] } : undefined
+                                    exercise: grandChild.type === 'exercise' ? { questions: [] } : undefined
                                 });
                             }
                         });
                         section.chapters!.push(chapter);
-                    } else if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice'].includes(child.type)) {
+                    } else if (['paragraph', 'notion', 'exercise'].includes(child.type)) {
                         section.paragraphs!.push({
                             title: child.title || "",
                             content: child.content || [],
                             notions: child.type === 'notion' ? [child.title] : [],
-                            exercise: (child.type === 'exercise' || child.type === 'exercice') ? { questions: [] } : undefined
+                            exercise: child.type === 'exercise' ? { questions: [] } : undefined
                         });
                     }
                 });
@@ -99,12 +101,12 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                     paragraphs: []
                 };
                 item.children.forEach(child => {
-                    if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice'].includes(child.type)) {
+                    if (['paragraph', 'notion', 'exercise'].includes(child.type)) {
                         chapter.paragraphs.push({
                             title: child.title || "",
                             content: child.content || [],
                             notions: child.type === 'notion' ? [child.title] : [],
-                            exercise: (child.type === 'exercise' || child.type === 'exercice') ? { questions: [] } : undefined
+                            exercise: child.type === 'exercise' ? { questions: [] } : undefined
                         });
                     }
                 });

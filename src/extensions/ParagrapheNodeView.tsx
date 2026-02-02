@@ -42,7 +42,7 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
         margin: '16px 0',
         borderRadius: '0 4px 4px 0',
         maxWidth: '100%',
-        overflow: 'hidden'
+        overflow: 'visible'
       }}
     >
       {/* Editable Label Badge */}

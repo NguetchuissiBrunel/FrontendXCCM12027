@@ -16,6 +16,7 @@ import Chapitre from '../extensions/Chapitre';
 import Paragraphe from '../extensions/Paragraphe';
 import Notion from '../extensions/Notion';
 import Exercice from '../extensions/Exercice';
+import Math from '../extensions/Math';
 
 interface CourseContentRendererProps {
     content: any;
@@ -99,6 +100,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, 
             Paragraphe,
             Notion,
             Exercice,
+            Math,
         ],
         editorProps: {
             attributes: {

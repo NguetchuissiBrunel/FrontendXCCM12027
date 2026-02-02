@@ -538,36 +538,58 @@ export default function ProfessorDashboard() {
         </div>
       )}
 
-      {/* Top Section with Welcome */}
-      <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="max-w-3xl">
-          <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-400 mb-3">
-            Bienvenue Professeur {user.firstName} !
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 italic">
-            "L'éducation est l'arme la plus puissante que vous puissiez utiliser pour changer le monde." - Nelson Mandela
-          </p>
-        </div>
-        <div>
+      {/* Top Section with Welcome and Quick Stats */}
+      <div className="bg-white dark:bg-gray-800 px-8 py-8 mb-8 border-b border-purple-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
+              Tableau de bord <span className="text-purple-600 dark:text-purple-400">Expert</span>
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              Ravi de vous revoir, <span className="font-bold text-purple-600">{user.firstName}</span>. Voici l'état de vos enseignements aujourd'hui.
+            </p>
+          </div>
           <div className="flex items-center gap-4 flex-wrap">
-            {/* Bouton Gérer les inscriptions */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
+            >
+              <Plus size={20} />
+              Nouveau Cours
+            </button>
             <button
               onClick={() => router.push('/teacher/inscriptions')}
-              className="relative flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg"
+              className="relative flex items-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-100 dark:border-gray-600 font-bold hover:bg-purple-50 dark:hover:bg-gray-600 transition-all shadow-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Gérer les inscriptions
+              <Users size={20} />
+              Inscriptions
               {pendingInscriptionsCount > 0 && (
                 <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-gray-800 animate-bounce">
                   {pendingInscriptionsCount}
                 </span>
               )}
             </button>
-
           </div>
+        </div>
+
+        {/* Desktop Quick Stats Grid */}
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+          {[
+            { label: 'Étudiants Totaux', value: professor.totalStudents, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+            { label: 'Cours Actifs', value: professor.publications, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+            { label: 'À Corriger', value: professor.pendingSubmissions, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+            { label: 'Score Global', value: `${professor.averageProgress}%`, icon: Activity, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
+          ].map((stat, idx) => (
+            <div key={idx} className={`${stat.bg} rounded-2xl p-6 border border-white dark:border-gray-700 shadow-sm flex items-center gap-4`}>
+              <div className={`p-3 rounded-xl bg-white dark:bg-gray-800 shadow-sm ${stat.color}`}>
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{stat.label}</p>
+                <p className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCourses } from '@/hooks/useCourses';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Play } from 'lucide-react';
 // Composant pour simuler les étoiles de notation
 const StarRating = ({ rating = 5 }: { rating: number }) => (
   <div className="flex text-yellow-400 text-xs">
@@ -29,6 +32,8 @@ const SpecialOfferSkeleton = () => (
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { courses, loading } = useCourses();
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const specialOffers = useMemo(() => {
     return courses.slice(0, 3).map((course) => ({
@@ -50,13 +55,20 @@ export default function HomePage() {
   }, [courses]);
 
   useEffect(() => {
+    // Rediriger vers le dashboard si déjà connecté
+    if (isAuthenticated && user) {
+      if (user.role === 'student') router.push('/etudashboard');
+      else if (user.role === 'teacher') router.push('/profdashboard');
+      else if (user.role === 'admin') router.push('/admindashboard');
+    }
+
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setIsDarkMode(true);
     }
-  }, []);
+  }, [isAuthenticated, user, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16 transition-colors duration-300">
@@ -66,12 +78,10 @@ export default function HomePage() {
           <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
             <div className="sm:text-center lg:text-left">
               <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
-                <span className="block">Créez vos cours</span>
-                <span className="block text-purple-600 dark:text-purple-400">facilement et partagez</span>
-                <span className="block">vos connaissances</span>
+                <span className="block italic text-3xl sm:text-4xl mt-2 text-gray-400 dark:text-gray-500 font-light">L'outil ultime pour les enseignants modernes</span>
               </h1>
               <p className="mt-3 text-base text-gray-500 dark:text-gray-400 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                Notre plateforme vous permet de créer, organiser et partager vos contenus pédagogiques de manière intuitive.
+                Créez, structurez et diffusez vos cours en un clin d'œil. Rejoignez une communauté d'experts et transformez votre expertise en expériences d'apprentissage inoubliables.
               </p>
               <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:justify-center lg:justify-start space-y-3 sm:space-y-0 sm:space-x-4">
                 <Link
@@ -80,12 +90,14 @@ export default function HomePage() {
                 >
                   Voir démo
                 </Link>
-                <Link
-                  href="/register"
-                  className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-purple-600 dark:border-purple-400 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700 md:py-4 md:text-lg md:px-10 transition-colors shadow-sm"
-                >
-                  S'inscrire
-                </Link>
+                {!isAuthenticated && (
+                  <Link
+                    href="/register"
+                    className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-purple-600 dark:border-purple-400 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700 md:py-4 md:text-lg md:px-10 transition-colors shadow-sm"
+                  >
+                    S'inscrire
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -116,43 +128,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800 sm:py-20 lg:py-24 border-b border-gray-100 dark:border-gray-700 transition-colors duration-300">
+      {/* How it Works / Demo Section */}
+      <section id="demo" className="py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-              Une nouvelle façon de créer du contenu pédagogique
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white sm:text-5xl mb-4">
+              Comment ça <span className="text-purple-600">marche ?</span>
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-              Découvrez les fonctionnalités qui révolutionnent la création de cours en ligne
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Trois étapes simples pour passer de votre idée à un cours complet accessible partout.
             </p>
           </div>
-          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                icon: <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-                title: "Éditeur Intuitif",
-                description: "Créez du contenu avec notre éditeur WYSIWYG moderne. Mise en forme avancée, insertion d'images et de tableaux en quelques clics."
-              },
-              {
-                icon: <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>,
-                title: "Contenu Modulaire",
-                description: "Structurez vos cours en granules réutilisables. Assemblez et réorganisez votre contenu comme des blocs de construction."
-              },
-              {
-                icon: <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-                title: "Collaboration",
-                description: "Travaillez en équipe sur vos cours. Partagez vos granules et collaborez avec d'autres enseignants."
-              }
-            ].map((feature, index) => (
-              <div key={index} className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300 border-8 border-purple-100 dark:border-purple-900/30">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-4">
-                  {feature.icon}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              {[
+                { step: "01", title: "Concevez votre structure", desc: "Utilisez notre éditeur par blocs pour organiser vos sections, chapitres et notions. Une approche granulaire pour une clarté maximale." },
+                { step: "02", title: "Enrichissez votre contenu", desc: "Ajoutez des formules mathématiques, des extraits de code, des images et des exercices interactifs pour captiver vos étudiants." },
+                { step: "03", title: "Publiez et analysez", desc: "Diffusez votre cours en un clic et suivez les performances de vos élèves grâce à notre tableau de bord analytique." }
+              ].map((item, i) => (
+                <div key={i} className="flex gap-6 group">
+                  <div className="flex-shrink-0 w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-2xl font-black text-purple-600 dark:text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                    {item.step}
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{item.title}</h4>
+                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-600 dark:text-gray-400">{feature.description}</p>
+              ))}
+            </div>
+
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-8 border-purple-50 dark:border-gray-800">
+              <div className="absolute inset-0 bg-purple-600/10 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity z-10 cursor-pointer">
+                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl animate-bounce">
+                  <Play className="w-8 h-8 text-purple-600 ml-1" />
+                </div>
               </div>
-            ))}
+              <Image
+                src="/images/image7.jpg"
+                alt="Démonstration"
+                width={800}
+                height={500}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>

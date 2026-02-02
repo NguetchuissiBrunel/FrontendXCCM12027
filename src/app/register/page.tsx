@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket, FaEyeSlash, FaEye } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -34,6 +34,33 @@ type FormData = {
   teachingGoal?: string;
 };
 
+const GRADES = [
+  "Professeur des écoles",
+  "Certifié (CAPES)",
+  "Agrégé",
+  "Enseignant-Chercheur",
+  "Maître de Conférences",
+  "Professeur des Universités",
+  "Doctorant"
+];
+
+const SUBJECTS = [
+  "Mathématiques",
+  "Physique-Chimie",
+  "SVT",
+  "Informatique",
+  "Français",
+  "Anglais",
+  "Histoire-Géographie",
+  "Philosophie",
+  "Économie",
+  "Gestion",
+  "Droit",
+  "Médecine",
+  "Génie Civil",
+  "Génie Électrique"
+];
+
 const SignupPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
@@ -52,6 +79,18 @@ const SignupPage = () => {
   const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
+  const subjectDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (subjectDropdownRef.current && !subjectDropdownRef.current.contains(event.target as Node)) {
+        setShowSubjectDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const router = useRouter();
   const { registerStudent, registerTeacher, user } = useAuth();
@@ -125,6 +164,16 @@ const SignupPage = () => {
     setErrors({ ...errors, photo: error });
     toast.error(error);
   }, [errors]);
+
+  const toggleSubject = (subject: string) => {
+    setFormData(prev => {
+      const currentSubjects = prev.subjects || [];
+      const newSubjects = currentSubjects.includes(subject)
+        ? currentSubjects.filter(s => s !== subject)
+        : [...currentSubjects, subject];
+      return { ...prev, subjects: newSubjects };
+    });
+  };
 
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
@@ -391,23 +440,55 @@ const SignupPage = () => {
           <>
             <div className="relative">
               <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <input
-                type="text"
-                placeholder="Grade"
+              <select
                 value={formData.grade || ''}
                 onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
-              />
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all appearance-none"
+              >
+                <option value="" disabled>Sélectionnez votre grade</option>
+                {GRADES.map(grade => (
+                  <option key={grade} value={grade}>{grade}</option>
+                ))}
+              </select>
             </div>
-            <div className="relative">
-              <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <input
-                type="text"
-                placeholder="Matières enseignées (séparer par des virgules)"
-                value={formData.subjects?.join(', ') || ''}
-                onChange={(e) => setFormData({ ...formData, subjects: e.target.value.split(', ') })}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
-              />
+            <div className="relative" ref={subjectDropdownRef}>
+              <FaBook className="absolute left-3 top-4 text-gray-400 dark:text-gray-500 z-10" />
+              <div
+                onClick={() => setShowSubjectDropdown(!showSubjectDropdown)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all cursor-pointer min-h-[50px] flex flex-wrap gap-1"
+              >
+                {formData.subjects && formData.subjects.length > 0 ? (
+                  formData.subjects.map(s => (
+                    <span key={s} className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded text-xs flex items-center">
+                      {s}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleSubject(s); }}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-gray-400">Sélectionnez vos matières</span>
+                )}
+              </div>
+
+              {showSubjectDropdown && (
+                <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  {SUBJECTS.map(subject => (
+                    <div
+                      key={subject}
+                      onClick={() => toggleSubject(subject)}
+                      className={`px-4 py-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 flex items-center justify-between text-sm ${formData.subjects?.includes(subject) ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                    >
+                      {subject}
+                      {formData.subjects?.includes(subject) && <span className="text-purple-600">✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}

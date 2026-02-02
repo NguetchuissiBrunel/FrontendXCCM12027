@@ -21,6 +21,7 @@ import Chapitre from '../../extensions/Chapitre';
 import Paragraphe from '../../extensions/Paragraphe';
 import Notion from '../../extensions/Notion';
 import Exercice from '../../extensions/Exercice';
+import MathNode from '../../extensions/Math';
 import {
   FaAlignLeft,
   FaAlignCenter,
@@ -44,6 +45,7 @@ import {
   FaFont,
   FaHighlighter
 } from 'react-icons/fa';
+import { Sigma } from 'lucide-react';
 
 interface MainEditorProps {
   initialContent?: string;
@@ -220,6 +222,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       Paragraphe,
       Notion,
       Exercice,
+      MathNode,
     ],
     content: initialContent,
     editorProps: {
@@ -616,6 +619,14 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               isActive={false}
             >
               <FaImage />
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().setMath().run()}
+              title="Insérer Formule (Math)"
+              isActive={editor?.isActive('math')}
+            >
+              <Sigma size={16} />
             </ToolbarButton>
 
             <ToolbarButton

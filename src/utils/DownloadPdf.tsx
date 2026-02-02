@@ -235,30 +235,29 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       });
     }
 
-    // Conclusion
-    doc.addPage();
-    y = margin * 2;
+    // Conclusion - Check if it contains actual text (not just empty tags)
+    const conclusionText = extractTextFromContent(courseData.conclusion || '');
+    if (conclusionText.trim() !== "") {
+      doc.addPage();
+      y = margin * 2;
 
-    doc.setLineWidth(1);
-    doc.setDrawColor(...colors.primary);
-    doc.line(margin, y - 10, pageWidth - margin, y - 10);
+      doc.setLineWidth(1);
+      doc.setDrawColor(...colors.primary);
+      doc.line(margin, y - 10, pageWidth - margin, y - 10);
 
-    doc.setFontSize(fontSize.partie);
-    doc.setTextColor(...colors.primary);
-    doc.setFont("helvetica", "bold");
-    const conclusionTitle = "Conclusion";
-    doc.text(conclusionTitle, margin, y + 20);
+      doc.setFontSize(fontSize.partie);
+      doc.setTextColor(...colors.primary);
+      doc.setFont("helvetica", "bold");
+      const conclusionTitle = "Conclusion";
+      doc.text(conclusionTitle, margin, y + 20);
 
-    doc.setLineWidth(1);
-    doc.line(margin, y + 30, margin + doc.getTextWidth(conclusionTitle) * 1.5, y + 30);
+      doc.setLineWidth(1);
+      doc.line(margin, y + 30, margin + doc.getTextWidth(conclusionTitle) * 1.5, y + 30);
 
-    y = y + 60;
+      y = y + 60;
 
-    doc.setFontSize(fontSize.normal);
-    doc.setTextColor(0, 0, 0);
-
-    if (courseData.conclusion) {
-      const splitConclusion = doc.splitTextToSize(courseData.conclusion, pageWidth - 2 * margin);
+      // Use the extracted text for rendering, not the raw HTML
+      const splitConclusion = doc.splitTextToSize(conclusionText, pageWidth - 2 * margin);
       doc.text(splitConclusion, margin, y);
       y += splitConclusion.length * (fontSize.normal * lineSpacing) + 25;
     }

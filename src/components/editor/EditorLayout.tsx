@@ -43,6 +43,7 @@ import {
 import TableOfContents from './TableOfContents';
 import MainEditor from './MainEditor';
 import StructureDeCours from './StructureDeCours';
+import PdfPreview from './PdfPreview';
 import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
@@ -66,7 +67,7 @@ interface EditorLayoutProps {
 /**
  * Right panel types matching original implementation
  */
-type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | null;
+type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | 'preview' | null;
 
 /**
  * EditorLayout Component
@@ -399,7 +400,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       return;
     }
 
-  const jsonContent = editorInstance.getJSON();
+    const jsonContent = editorInstance.getJSON();
 
     try {
       if (currentCourseId) {
@@ -504,9 +505,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       <EditorEntranceModal
         isOpen={isEntranceModalOpen}
         onClose={() => setIsEntranceModalOpen(false)}
-        onCreateNew={() => {
+        onCreateNew={(title) => {
+          setCourseTitle(title);
           setIsEntranceModalOpen(false);
-          setIsCreateModalOpen(true);
+          if (editorInstance) editorInstance.commands.setContent('');
         }}
         onModifyExisting={() => {
           setIsEntranceModalOpen(false);
@@ -583,6 +585,17 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
         {/* RIGHT SECTION - IconBar + Panel */}
         <div className="flex">
+          {/* IconBar */}
+          <div className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-4 print:hidden">
+            <IconButton icon={<FaList />} label="Structure" panelType="structure" />
+            <IconButton icon={<FaInfo />} label="Infos" panelType="info" />
+            <IconButton icon={<FaEye />} label="Aperçu PDF" panelType="preview" colorClass="text-blue-600 dark:text-blue-400" />
+            <div className="flex-grow" />
+            <IconButton icon={<FaFolderOpen />} label="Mes Cours" panelType="author" colorClass="text-orange-600 dark:text-orange-400" />
+            <IconButton icon={<FaTasks />} label="Exercices" panelType="exercises" badge={exercises.length} colorClass="text-green-600 dark:text-green-400" />
+            <IconButton icon={<FaGraduationCap />} label="Correction" panelType="grading" badge={exerciseStats.pendingGrading} colorClass="text-indigo-600 dark:text-indigo-400" />
+            <IconButton icon={<FaCog />} label="Propriétés" panelType="properties" colorClass="text-gray-600 dark:text-gray-400" />
+          </div>
           {/* Panel Area - Slides based on activePanel */}
           <div
             className={`overflow-y-auto border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-300 ${activePanel ? 'w-96' : 'w-0 overflow-hidden'
@@ -591,6 +604,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {/* PANEL 1: Structure de cours */}
             {activePanel === 'structure' && (
               <StructureDeCours onClose={() => setActivePanel(null)} />
+            )}
+
+            {/* PANEL 1.5: Aperçu PDF */}
+            {activePanel === 'preview' && (
+              <PdfPreview
+                content={editorInstance?.getJSON()}
+                title={courseTitle}
+              />
             )}
 
             {/* PANEL 2: Infos */}

@@ -19,6 +19,7 @@
 
 import React, { useState } from 'react';
 import { FaTimes, FaBook, FaChevronRight, FaChevronDown } from 'react-icons/fa';
+import { Sparkles } from 'lucide-react';
 import { mockCourseData, flattenCourseStructure } from '@/data/mockEditorData';
 import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS } from '@/types/editor.types';
 
@@ -101,7 +102,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const shouldShowType = (type: ItemType): boolean => {
     // No filter = show all
     if (!activeFilter) return true;
-    
+
     // Show the filtered type and all its children
     const hierarchy: Record<ItemType, ItemType[]> = {
       'course': ['course', 'section', 'chapter', 'paragraph', 'notion', 'exercise'],
@@ -111,14 +112,14 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       'notion': ['notion'],
       'exercise': ['exercise'],
     };
-    
+
     return hierarchy[activeFilter].includes(type);
   };
 
   // Render notion (no search filtering)
   const renderNotion = (notion: string, parentId: string, index: number) => {
     const itemId = `${parentId}-notion-${index}`;
-    
+
     // Check filter only (no search when rendering as child)
     if (!shouldShowType('notion')) return null;
 
@@ -134,8 +135,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           }
         }}
       >
-        <div 
-          className="h-2 w-2 shrink-0 rounded-full" 
+        <div
+          className="h-2 w-2 shrink-0 rounded-full"
           style={{ backgroundColor: ITEM_COLORS.notion }}
         />
         <span className="flex-1 text-xs font-medium" style={{ color: ITEM_COLORS.notion }}>
@@ -350,19 +351,19 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       case 'course':
         return mockCourseData.map((course, idx) => renderCourse(course, idx));
       case 'section':
-        return mockCourseData.flatMap(course => 
+        return mockCourseData.flatMap(course =>
           course.sections.map((sec, idx) => renderSectionChild(sec, `course-${mockCourseData.indexOf(course)}`, idx))
         );
       case 'chapter':
-        return mockCourseData.flatMap(course => 
-          course.sections.flatMap(sec => 
+        return mockCourseData.flatMap(course =>
+          course.sections.flatMap(sec =>
             sec.chapters.map((chap, idx) => renderChapterChild(chap, `course-${mockCourseData.indexOf(course)}-section-${course.sections.indexOf(sec)}`, idx))
           )
         );
       case 'paragraph':
-        return mockCourseData.flatMap(course => 
-          course.sections.flatMap(sec => 
-            sec.chapters.flatMap(chap => 
+        return mockCourseData.flatMap(course =>
+          course.sections.flatMap(sec =>
+            sec.chapters.flatMap(chap =>
               chap.paragraphs.map((para, idx) => renderParagraphChild(para, `course-${mockCourseData.indexOf(course)}-section-${course.sections.indexOf(sec)}-chapter-${sec.chapters.indexOf(chap)}`, idx))
             )
           )
@@ -477,6 +478,25 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       <div className="flex-1 overflow-y-auto px-4 py-3">
         <div className="space-y-2">
           {renderFilteredContent()}
+        </div>
+      </div>
+
+      {/* Expert Corner / Personalities */}
+      <div className="border-t border-gray-200 dark:border-gray-700 bg-purple-50/50 dark:bg-purple-900/10 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <span className="text-xs font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">Coin des Experts</span>
+        </div>
+        <div className="space-y-3">
+          {[
+            { name: "Structure Optimale", advice: "Alternez entre notions théoriques et exercices pour maximiser la rétention." },
+            { name: "Engagement", advice: "Gardez vos paragraphes courts (< 300 mots) pour une lecture fluide." }
+          ].map((expert, i) => (
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-purple-100 dark:border-purple-800">
+              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-1">{expert.name}</p>
+              <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-tight">{expert.advice}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

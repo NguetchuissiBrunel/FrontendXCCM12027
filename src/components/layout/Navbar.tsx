@@ -113,6 +113,14 @@ const Navbar = () => {
   const getNavLinks = () => {
     const links = [...baseNavLinks];
 
+    // Ne montrer la bibliothèque que si l'utilisateur est connecté
+    if (!currentUser) {
+      const biblioIndex = links.findIndex(link => link.href === '/bibliotheque');
+      if (biblioIndex !== -1) {
+        links.splice(biblioIndex, 1);
+      }
+    }
+
     // Ajouter "Éditer" seulement pour les enseignants
     if (userRole === 'teacher') {
       links.push(teacherNavLink);

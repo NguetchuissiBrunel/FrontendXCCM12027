@@ -72,17 +72,22 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
             }
         });
 
-        body += `
+        const conclusionText = extractTextFromContent(courseData.conclusion || '');
+        if (conclusionText.trim() !== "") {
+            body += `
                 <div style="margin-top: 50px; border-top: 2px solid #5B21B6; padding-top: 20px;">
                     <h2>Conclusion</h2>
-                    <p>${courseData.conclusion || 'Merci d\'avoir suivi ce cours.'}</p>
+                    <p>${conclusionText}</p>
                 </div>
+            `;
+        }
+        body += `
             </body>
             </html>
         `;
 
         const footer = "</body></html>";
-        const sourceHTML = header + body + footer;
+        const sourceHTML = header + body; // footer is now included in body
 
         // Create a blob with the correct Word MIME type
         const blob = new Blob([sourceHTML], { type: 'application/msword' });

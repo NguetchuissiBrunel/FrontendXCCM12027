@@ -46,7 +46,7 @@ export interface Exercise {
   courseTitle?: string;           // Titre du cours (optionnel)
   
   // Statut et dates
-  status: 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
+  status: 'PUBLISHED' | 'CLOSED' | 'ARCHIVED' | 'DRAFT';
   createdAt: string;
   updatedAt?: string;
   publishedAt?: string;

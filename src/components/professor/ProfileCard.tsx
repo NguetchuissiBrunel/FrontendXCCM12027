@@ -707,7 +707,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 Les statistiques apparaîtront une fois que vos cours auront des étudiants inscrits.
               </p>
               <button
-                onClick={() => window.location.href = '/create-course'}
+                onClick={() => window.location.href = '/editor'}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 dark:bg-purple-500 text-white text-sm rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

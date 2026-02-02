@@ -211,6 +211,8 @@ const SignupPage = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           photoUrl: formData.photoUrl,
+          city: formData.city,
+          university: formData.university,
           grade: formData.grade,
           subjects: formData.subjects || [],
           certification: formData.certification,

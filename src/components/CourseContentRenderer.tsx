@@ -19,9 +19,10 @@ import Exercice from '../extensions/Exercice';
 
 interface CourseContentRendererProps {
     content: any;
+    forceLight?: boolean;
 }
 
-const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content }) => {
+const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, forceLight = false }) => {
     // Helper to ensure content is a valid Doc structure
     const [validContent, setValidContent] = useState<JSONContent>({ type: 'doc', content: [] });
 
@@ -101,7 +102,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content }
         ],
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert max-w-none focus:outline-none',
+                class: `prose ${forceLight ? '' : 'dark:prose-invert'} max-w-none focus:outline-none`,
             },
         },
     });

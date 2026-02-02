@@ -16,7 +16,7 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
             try {
                 katex.render(node.attrs.tex, containerRef.current, {
                     throwOnError: false,
-                    displayMode: true,
+                    displayMode: false,
                 });
             } catch (e) {
                 console.error('KaTeX error:', e);
@@ -29,52 +29,80 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
         setIsEditing(false);
     };
 
-    return (
-        <NodeViewWrapper className={`math-node-wrapper my-6 p-4 rounded-xl border-2 transition-all ${selected ? 'border-purple-500 bg-purple-50/10' : 'border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800 bg-white dark:bg-gray-800'}`}>
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
-                    <Sigma size={16} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Formule Mathématique</span>
-                </div>
-                {selected && !isEditing && (
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-md font-bold uppercase"
-                    >
-                        Modifier TeX
-                    </button>
-                )}
-            </div>
+    const insertTemplate = (template: string) => {
+        setTex(prev => prev + template);
+    };
 
-            {isEditing ? (
-                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+    const mathTemplates = [
+        { label: 'Fraction', tex: '\\frac{}{}', icon: '÷' },
+        { label: 'Puissance', tex: '^{}', icon: 'xⁿ' },
+        { label: 'Indice', tex: '_{}', icon: 'xₙ' },
+        { label: 'Racine', tex: '\\sqrt{}', icon: '√' },
+        { label: 'Somme', tex: '\\sum_{}^{}', icon: '∑' },
+        { label: 'Intégrale', tex: '\\int_{}^{}', icon: '∫' },
+    ];
+
+    if (isEditing) {
+        return (
+            <NodeViewWrapper className="inline-block relative z-50">
+                <div className="absolute bottom-full mb-2 left-0 w-80 bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg p-3 z-50 animate-in fade-in zoom-in duration-200">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-purple-600 uppercase tracking-tighter">Assistant de Formule</span>
+                        <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-red-500"><X size={14} /></button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 mb-3">
+                        {mathTemplates.map((t, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => insertTemplate(t.tex)}
+                                className="flex flex-col items-center justify-center p-2 bg-gray-50 dark:bg-gray-900 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded border border-gray-100 dark:border-gray-800 transition-colors"
+                                title={t.label}
+                            >
+                                <span className="text-sm font-serif">{t.icon}</span>
+                                <span className="text-[8px] text-gray-500 mt-1">{t.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
                     <textarea
                         value={tex}
                         onChange={(e) => setTex(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && e.ctrlKey) handleSave();
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSave();
+                            }
                             if (e.key === 'Escape') setIsEditing(false);
                         }}
                         autoFocus
-                        className="w-full p-4 font-mono text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-purple-500 text-gray-900 dark:text-white"
-                        rows={3}
+                        className="w-full p-2 font-mono text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded outline-none focus:border-purple-500"
+                        rows={2}
+                        placeholder="Syntaxe TeX..."
                     />
-                    <div className="flex justify-end gap-2">
-                        <button onClick={() => setIsEditing(false)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                            <X size={20} />
-                        </button>
-                        <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-sm shadow-sm hover:bg-purple-700 transition-all">
-                            <Check size={16} /> Appliquer
+
+                    <div className="flex justify-end gap-2 mt-2">
+                        <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded text-[10px] font-bold shadow-sm hover:bg-purple-700">
+                            <Check size={12} /> Appliquer
                         </button>
                     </div>
                 </div>
-            ) : (
-                <div
-                    ref={containerRef}
-                    className="py-4 cursor-pointer overflow-x-auto min-h-[50px] flex items-center justify-center text-gray-900 dark:text-white"
-                    onClick={() => setIsEditing(true)}
-                />
-            )}
+                <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1 rounded blur-[1px]">
+                    {tex || '...'}
+                </span>
+            </NodeViewWrapper>
+        );
+    }
+
+    return (
+        <NodeViewWrapper
+            className={`inline-block mx-1 transition-all rounded-sm ${selected ? 'ring-2 ring-purple-400 bg-purple-50 dark:bg-purple-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            onClick={() => setIsEditing(true)}
+        >
+            <span
+                ref={containerRef}
+                className="cursor-pointer px-1 py-0.5"
+            />
         </NodeViewWrapper>
     );
 }

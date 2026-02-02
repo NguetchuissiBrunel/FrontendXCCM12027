@@ -112,7 +112,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
         doc.setFontSize(fontSize.partie);
         doc.setTextColor(...colors.partie);
         doc.setFont("helvetica", "bold");
-        const sectionText = `Partie ${sIdx + 1}: ${section.title}`;
+        const sectionText = section.title;
         const sectionLines = doc.splitTextToSize(sectionText, pageWidth - margin - 100);
         doc.text(sectionLines, margin, y);
         y += sectionLines.length * (fontSize.partie * 1.8) + 10;
@@ -127,7 +127,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
             doc.setFontSize(fontSize.chapitre);
             doc.setTextColor(...colors.chapitre);
             doc.setFont("helvetica", "bold");
-            const chapterText = `   Chapitre ${sIdx + 1}.${cIdx + 1}: ${chapter.title}`;
+            const chapterText = `   ${chapter.title}`;
             const chapterLines = doc.splitTextToSize(chapterText, pageWidth - margin - 15 - 100);
             doc.text(chapterLines, margin + 15, y);
             y += chapterLines.length * (fontSize.chapitre * 1.6) + 8;
@@ -142,7 +142,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
                 doc.setFontSize(fontSize.paragraphe);
                 doc.setTextColor(...colors.paragraphe);
                 doc.setFont("helvetica", "normal");
-                const paraText = `      ${sIdx + 1}.${cIdx + 1}.${pIdx + 1}: ${paragraph.title}`;
+                const paraText = `      ${paragraph.title}`;
                 const paraLines = doc.splitTextToSize(paraText, pageWidth - margin - 30 - 100);
                 doc.text(paraLines, margin + 30, y);
                 y += paraLines.length * (fontSize.paragraphe * 1.4) + 5;
@@ -162,7 +162,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
         doc.setFontSize(fontSize.partie);
         doc.setTextColor(...colors.partie);
         doc.setFont("helvetica", "bold");
-        doc.text(`Partie ${sIdx + 1}: ${section.title}`, margin, y);
+        doc.text(section.title, margin, y);
         y += fontSize.partie * 1.5 + 20;
 
         doc.setDrawColor(...colors.partie);
@@ -180,7 +180,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
             doc.setFontSize(fontSize.chapitre);
             doc.setTextColor(...colors.chapitre);
             doc.setFont("helvetica", "bold");
-            doc.text(`Chapitre ${sIdx + 1}.${cIdx + 1}: ${chapter.title}`, margin, y);
+            doc.text(chapter.title, margin, y);
             y += fontSize.chapitre * 1.5 + 15;
 
             if (chapter.paragraphs) {
@@ -193,7 +193,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
                 doc.setFontSize(fontSize.paragraphe);
                 doc.setTextColor(...colors.paragraphe);
                 doc.setFont("helvetica", "bold");
-                doc.text(`${sIdx + 1}.${cIdx + 1}.${pIdx + 1} ${paragraph.title}`, margin, y);
+                doc.text(paragraph.title, margin, y);
                 y += fontSize.paragraphe * 1.5 + 10;
 
                 doc.setFontSize(fontSize.normal);
@@ -207,7 +207,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
                   doc.setFontSize(fontSize.normal);
                   doc.setTextColor(...colors.notion);
                   doc.setFont("helvetica", "bold");
-                  doc.text("Notions clés :", margin, y);
+                  // doc.text("Notions clés :", margin, y); - Removed
                   y += fontSize.normal * 1.5 + 10;
 
                   paragraph.notions.forEach((notion: string) => {
@@ -266,7 +266,7 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       doc.setFontSize(fontSize.paragraphe);
       doc.setTextColor(...colors.notion);
       doc.setFont("helvetica", "bold");
-      doc.text("Objectifs d'apprentissage :", margin, y);
+      // doc.text("Objectifs d'apprentissage :", margin, y); - Removed
       y += fontSize.paragraphe * 1.5 + 10;
 
       doc.setFontSize(fontSize.normal);

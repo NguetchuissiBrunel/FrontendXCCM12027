@@ -12,7 +12,8 @@ import { useLoading } from '@/contexts/LoadingContext';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
 import toast from 'react-hot-toast';
-import { BookOpen, X, FileText, Plus, ChevronRight, Upload } from 'lucide-react';
+import { BookOpen, X, FileText, Plus, ChevronRight, Upload, Users as LucideUsers, Activity } from 'lucide-react';
+import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
 
 // Définir les interfaces
 interface Course {
@@ -398,9 +399,9 @@ export default function ProfessorDashboard() {
     }
   }, [dashboardError, loading]);
 
-  // Si on charge ou que le loader global est actif, on ne rend rien (le loader s'en occupe)
-  if (authLoading || loading || globalLoading) {
-    return null;
+  // Si on charge, on rend le skeleton pour donner un retour visuel immédiat
+  if (authLoading || loading) {
+    return <DashboardSkeleton />;
   }
 
   if (!user) return null;
@@ -561,7 +562,7 @@ export default function ProfessorDashboard() {
               onClick={() => router.push('/teacher/inscriptions')}
               className="relative flex items-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-100 dark:border-gray-600 font-bold hover:bg-purple-50 dark:hover:bg-gray-600 transition-all shadow-sm"
             >
-              <Users size={20} />
+              <LucideUsers size={20} />
               Inscriptions
               {pendingInscriptionsCount > 0 && (
                 <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-gray-800 animate-bounce">
@@ -575,7 +576,7 @@ export default function ProfessorDashboard() {
         {/* Desktop Quick Stats Grid */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
           {[
-            { label: 'Étudiants Totaux', value: professor.totalStudents, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+            { label: 'Étudiants Totaux', value: professor.totalStudents, icon: LucideUsers, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
             { label: 'Cours Actifs', value: professor.publications, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
             { label: 'À Corriger', value: professor.pendingSubmissions, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
             { label: 'Score Global', value: `${professor.averageProgress}%`, icon: Activity, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },

@@ -608,9 +608,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
               {renderItemIcon(item.type)}
             </div>
 
-            <div className="whitespace-nowrap text-sm mr-2 font-medium text-gray-700 dark:text-gray-300">
-              {item.number}:
-            </div>
+            {/* {item.number}: - Removed as requested */}
 
             {renamingItemId === item.id ? (
               <div className="flex-grow flex">
@@ -705,7 +703,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
   return (
     <div
-      className={`relative h-full z-50 flex transition-all duration-300 ease-in-out`}
+      className={`relative h-full flex transition-all duration-300 ease-in-out`}
       style={{ width: '100%' }}
     >
       <div

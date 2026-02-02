@@ -50,55 +50,72 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
         }).join(' ').trim();
     };
 
-    const sections: Section[] = [];
+    // 2. Parcourir l'arbre TOC pour construire la structure (récursif pour gérer l'imbrication)
+    const processItems = (items: TableOfContentsItem[]): any[] => {
+        const sections: Section[] = [];
 
-    // 2. Parcourir l'arbre TOC pour construire la structure Sections > Chapters > Paragraphs
-    toc.forEach(item => {
-        if (item.type === 'section') {
-            const section: Section = {
-                title: item.title,
-                chapters: [],
-                paragraphs: []
-            };
+        items.forEach(item => {
+            if (item.type === 'section') {
+                const section: Section = {
+                    title: item.title || "Section sans titre",
+                    chapters: [],
+                    paragraphs: []
+                };
 
-            item.children.forEach(child => {
-                if (child.type === 'chapter') {
-                    const chapter: Chapter = {
-                        title: child.title,
-                        paragraphs: []
-                    };
+                // Split children into chapters and paragraphs
+                item.children.forEach(child => {
+                    if (child.type === 'chapter') {
+                        const chapter: Chapter = {
+                            title: child.title || "Chapitre sans titre",
+                            paragraphs: []
+                        };
 
-                    child.children.forEach(grandChild => {
-                        // On traite les paragraphes, les notions et les exercices
-                        if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice', 'chapter', 'chapitre'].includes(grandChild.type)) {
+                        // Paragraphs inside chapter
+                        child.children.forEach(grandChild => {
+                            if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice'].includes(grandChild.type)) {
+                                chapter.paragraphs.push({
+                                    title: grandChild.title || "",
+                                    content: grandChild.content || [],
+                                    notions: grandChild.type === 'notion' ? [grandChild.title] : [],
+                                    exercise: (grandChild.type === 'exercise' || grandChild.type === 'exercice') ? { questions: [] } : undefined
+                                });
+                            }
+                        });
+                        section.chapters!.push(chapter);
+                    } else if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice'].includes(child.type)) {
+                        section.paragraphs!.push({
+                            title: child.title || "",
+                            content: child.content || [],
+                            notions: child.type === 'notion' ? [child.title] : [],
+                            exercise: (child.type === 'exercise' || child.type === 'exercice') ? { questions: [] } : undefined
+                        });
+                    }
+                });
+                sections.push(section);
+            } else if (item.type === 'chapter') {
+                // If chapter is at top level, wrap it in a dummy section or handle it
+                const chapter: Chapter = {
+                    title: item.title || "Chapitre sans titre",
+                    paragraphs: []
+                };
+                item.children.forEach(child => {
+                    if (['paragraph', 'paragraphe', 'notion', 'exercise', 'exercice'].includes(child.type)) {
+                        chapter.paragraphs.push({
+                            title: child.title || "",
+                            content: child.content || [],
+                            notions: child.type === 'notion' ? [child.title] : [],
+                            exercise: (child.type === 'exercise' || child.type === 'exercice') ? { questions: [] } : undefined
+                        });
+                    }
+                });
+                sections.push({ title: "", chapters: [chapter], paragraphs: [] });
+            }
+        });
 
-                            // Pour une "notion", le texte est souvent dans son propre content
-                            const textContent = getRawText(grandChild.content);
+        return sections;
+    };
 
-                            const para: Paragraph = {
-                                title: grandChild.title,
-                                content: grandChild.content || [],
-                                notions: grandChild.type === 'notion' ? [grandChild.title] : [],
-                                exercise: (grandChild.type === 'exercise')
-                                    ? { questions: [] }
-                                    : undefined
-                            };
-                            chapter.paragraphs.push(para);
-                        }
-                    });
-                    section.chapters!.push(chapter);
-                }
-                else if (child.type === 'paragraph') {
-                    section.paragraphs!.push({
-                        title: child.title,
-                        content: child.content || [],
-                        notions: []
-                    });
-                }
-            });
-            sections.push(section);
-        }
-    });
+    const sections = processItems(toc);
 
     // 3. Retourner l'objet final formaté
     return {

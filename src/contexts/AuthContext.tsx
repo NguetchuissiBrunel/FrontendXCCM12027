@@ -191,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Configurer le token
       setAuthToken(authData.token);
       setToken(authData.token);
-      console.log('authdata object:',authData);
+      console.log('authdata object:', authData);
 
       // Créer l'objet utilisateur
       const rawRole = String(authData.role || '').toLowerCase();
@@ -250,8 +250,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userRole');
 
-    // Rediriger vers la page de connexion appropriée
-    router.push(isAdmin ? '/admindashboard/login' : '/login');
+    // Rediriger vers la page d'accueil (landing page)
+    router.push('/');
   };
 
   // ==========================================

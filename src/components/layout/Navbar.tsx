@@ -7,12 +7,14 @@ import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
 import { MdHelpOutline } from 'react-icons/md';
 import { clearAuthToken } from '@/utils/authHelpers';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'student' | 'teacher' | null>(null);
+  const { logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -63,14 +65,7 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('studentInfo');
-    localStorage.removeItem('teacherInfo');
-    setCurrentUser(null);
-    setUserRole(null);
-    clearAuthToken();
-    window.location.href = '/';
+    logout();
   };
 
   const handleMyAccount = () => {

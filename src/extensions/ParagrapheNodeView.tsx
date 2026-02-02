@@ -21,23 +21,14 @@ import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewProps) {
   // const [isHovered, setIsHovered] = useState(false);
 
-  const titleRef = useRef<HTMLInputElement>(null);
-    const measureRef = useRef<HTMLSpanElement>(null);
-    
-    useLayoutEffect(() => {
-      const resize = () => {
-        if (titleRef.current && measureRef.current) {
-          const width = measureRef.current.offsetWidth + 16;
-          titleRef.current.style.width = `${Math.max(width, 70)}px`;
-        }
-      };
-    
-      // Run immediately
-      resize();
-    
-      // Run again after paint (important for initial drop)
-      requestAnimationFrame(resize);
-    }, [node.attrs.title]);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    if (titleRef.current) {
+      titleRef.current.style.height = 'auto';
+      titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
+    }
+  }, [node.attrs.title]);
 
   return (
     <NodeViewWrapper
@@ -50,33 +41,41 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
         padding: '16px',
         margin: '16px 0',
         borderRadius: '0 4px 4px 0',
+        maxWidth: '100%',
+        overflow: 'hidden'
       }}
     >
       {/* Editable Label Badge */}
-      {/* Editable Label Badge */}
-      <div contentEditable={false}>
-        <input
-          type="text"
+      <div contentEditable={false} className="flex flex-col gap-1 mb-2">
+        <textarea
+          ref={titleRef}
           value={node.attrs.title}
           onChange={(e) => updateAttributes({ title: e.target.value })}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
+          rows={1}
           style={{
             display: 'block',
             width: '100%',
             border: 'none',
             outline: 'none',
             backgroundColor: 'transparent',
+            resize: 'none',
+            overflow: 'hidden',
+            minHeight: '1.2em',
 
             // Old project style for 'node-paragraph'
             fontSize: '25px',
             fontWeight: 'bold',
             lineHeight: '1.4',
-            marginTop: '1rem',
-            marginBottom: '0.5rem',
             color: '#D97706', // orange-700
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            padding: 0,
+            margin: 0
           }}
           className="node-paragraph-input placeholder-gray-400"
+          placeholder="Titre du paragraphe..."
         />
       </div>
 

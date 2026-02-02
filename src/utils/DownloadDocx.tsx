@@ -38,7 +38,7 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                 <p>Auteur : ${courseData.author.name}</p>
             </div>
             
-            <p><strong>Introduction :</strong> ${courseData.introduction || ''}</p>
+            <p>${courseData.introduction || ''}</p>
         `;
 
         // Loop through sections
@@ -54,7 +54,7 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                         body += `<p>${extractTextFromContent(para.content)}</p>`;
 
                         if (para.notions && para.notions.length > 0) {
-                            body += `<div class="notion"><strong>Notions clés :</strong> ${para.notions.join(', ')}</div>`;
+                            body += `<div class="notion">${para.notions.join(', ')}</div>`;
                         }
                     });
                 });
@@ -66,7 +66,7 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                     body += `<p>${extractTextFromContent(para.content)}</p>`;
 
                     if (para.notions && para.notions.length > 0) {
-                        body += `<div class="notion"><strong>Notions clés :</strong> ${para.notions.join(', ')}</div>`;
+                        body += `<div class="notion">${para.notions.join(', ')}</div>`;
                     }
                 });
             }

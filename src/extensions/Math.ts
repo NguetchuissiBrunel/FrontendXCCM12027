@@ -20,14 +20,15 @@ declare module '@tiptap/core' {
 export default Node.create<MathOptions>({
     name: 'math',
 
-    group: 'block',
+    group: 'inline',
+    inline: true,
 
     atom: true,
 
     addOptions() {
         return {
             HTMLAttributes: {
-                class: 'math-node',
+                class: 'math-node inline-block',
             },
         };
     },
@@ -47,13 +48,13 @@ export default Node.create<MathOptions>({
     parseHTML() {
         return [
             {
-                tag: 'div[data-type="math"]',
+                tag: 'span[data-type="math"]',
             },
         ];
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { 'data-type': 'math' })];
+        return ['span', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { 'data-type': 'math' })];
     },
 
     addCommands() {

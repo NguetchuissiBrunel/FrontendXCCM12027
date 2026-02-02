@@ -12,6 +12,25 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
     const [tex, setTex] = useState(node.attrs.tex);
     const editorRef = useRef<HTMLDivElement>(null);
 
+    // Close on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (editorRef.current && !editorRef.current.contains(event.target as Node)) {
+                setIsEditing(false);
+            }
+        };
+
+        if (isEditing) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isEditing]);
+
     // Safer rendering with dangerouslySetInnerHTML
     const getRenderedHtml = (texString: string) => {
         try {
@@ -79,39 +98,42 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
             <NodeViewWrapper as="span" className="inline relative">
                 <div
                     ref={editorRef}
-                    className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-80 bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 rounded-xl p-0 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-hidden"
+                    className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-80 bg-white dark:bg-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-gray-700 rounded-2xl p-0 z-[9999] animate-in fade-in zoom-in duration-200 overflow-hidden ring-1 ring-black/5"
+                    onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
-                        <div className="flex items-center gap-1.5">
-                            <Sigma size={14} className="text-purple-600" />
-                            <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Éditeur d'Équation</span>
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded-md">
+                                <Sigma size={14} className="text-purple-600" />
+                            </div>
+                            <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 uppercase tracking-widest">Assistant Équation</span>
                         </div>
                         <button
                             onClick={() => setIsEditing(false)}
-                            className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 rounded-full transition-colors"
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 rounded-full transition-colors"
                         >
-                            <X size={14} />
+                            <X size={16} />
                         </button>
                     </div>
 
-                    {/* LIVE PREVIEW AREA inside Assistant */}
-                    <div className="p-4 flex items-center justify-center bg-gray-50/30 dark:bg-gray-900/30 min-h-[60px] border-b border-gray-100 dark:border-gray-800">
+                    {/* LIVE PREVIEW AREA */}
+                    <div className="p-5 flex items-center justify-center bg-white dark:bg-gray-800 min-h-[70px] border-b border-gray-50 dark:border-gray-900/50">
                         <div
-                            className="text-lg transition-all duration-300"
+                            className="text-xl transition-all duration-300 transform"
                             dangerouslySetInnerHTML={{ __html: getRenderedHtml(tex) }}
                         />
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex p-1 gap-1 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <div className="flex p-1.5 gap-1 bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg transition-all ${activeTab === tab.id
-                                    ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                                        : 'text-gray-500 hover:bg-gray-200/50 dark:hover:bg-gray-800'
                                     }`}
                             >
                                 {tab.label}
@@ -120,29 +142,29 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
                     </div>
 
                     {/* Content Area */}
-                    <div className="p-3 max-h-40 overflow-y-auto bg-white dark:bg-gray-800">
+                    <div className="p-3 max-h-44 overflow-y-auto bg-white dark:bg-gray-800 custom-scrollbar">
                         {activeTab === 'templates' && (
-                            <div className="grid grid-cols-4 gap-1.5">
+                            <div className="grid grid-cols-4 gap-2">
                                 {mathTemplates.map((t, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => insertTemplate(t.tex)}
-                                        className="flex flex-col items-center justify-center p-1.5 bg-gray-50 dark:bg-gray-900 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg border border-gray-100 dark:border-gray-800 transition-all hover:border-purple-200 dark:hover:border-purple-800 group"
+                                        className="flex flex-col items-center justify-center p-2 bg-gray-50 dark:bg-gray-900/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl border border-gray-100 dark:border-gray-800 transition-all hover:border-purple-300 dark:hover:border-purple-700 group shadow-sm hover:shadow-md"
                                     >
-                                        <span className="text-sm font-serif group-hover:scale-110 transition-transform">{t.icon}</span>
-                                        <span className="text-[8px] text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-tighter">{t.label}</span>
+                                        <span className="text-base font-serif group-hover:scale-110 transition-transform">{t.icon}</span>
+                                        <span className="text-[8px] text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-tighter font-bold">{t.label}</span>
                                     </button>
                                 ))}
                             </div>
                         )}
 
                         {activeTab === 'greek' && (
-                            <div className="grid grid-cols-6 gap-1">
+                            <div className="grid grid-cols-6 gap-1.5">
                                 {greekSymbols.map((s, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => insertTemplate(s.tex)}
-                                        className="aspect-square flex items-center justify-center text-sm font-serif bg-gray-50 dark:bg-gray-900 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg border border-gray-100 dark:border-gray-800 transition-all"
+                                        className="aspect-square flex items-center justify-center text-base font-serif bg-gray-50 dark:bg-gray-900/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg border border-gray-100 dark:border-gray-800 transition-all hover:scale-105"
                                         title={s.tex}
                                     >
                                         {s.icon}
@@ -152,12 +174,12 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
                         )}
 
                         {activeTab === 'symbols' && (
-                            <div className="grid grid-cols-6 gap-1">
+                            <div className="grid grid-cols-6 gap-1.5">
                                 {commonSymbols.map((s, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => insertTemplate(s.tex)}
-                                        className="aspect-square flex items-center justify-center text-sm bg-gray-50 dark:bg-gray-900 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg border border-gray-100 dark:border-gray-800 transition-all"
+                                        className="aspect-square flex items-center justify-center text-base bg-gray-50 dark:bg-gray-900/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg border border-gray-100 dark:border-gray-800 transition-all hover:scale-105"
                                         title={s.tex}
                                     >
                                         {s.icon}
@@ -168,7 +190,7 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-3 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
+                    <div className="p-4 bg-gray-50/80 dark:bg-gray-900/80 border-t border-gray-100 dark:border-gray-700 backdrop-blur-sm">
                         <textarea
                             value={tex}
                             onChange={(e) => setTex(e.target.value)}
@@ -180,25 +202,28 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
                                 if (e.key === 'Escape') setIsEditing(false);
                             }}
                             autoFocus
-                            className="w-full p-2.5 font-mono text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all resize-none"
+                            className="w-full p-3 font-mono text-xs bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all resize-none shadow-inner"
                             rows={2}
                             placeholder="Syntaxe LaTeX..."
                         />
 
-                        <div className="flex items-center justify-between mt-3">
-                            <span className="text-[9px] text-gray-400 italic font-medium">Appuyez sur Entrée pour valider</span>
+                        <div className="flex items-center justify-between mt-4">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Usage</span>
+                                <span className="text-[9px] text-gray-400 font-medium">Entrée pour valider</span>
+                            </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setIsEditing(false)}
-                                    className="px-3 py-1.5 text-[10px] font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="px-4 py-2 text-[10px] font-bold text-gray-500 hover:bg-gray-200/80 dark:hover:bg-gray-800 rounded-xl transition-all"
                                 >
                                     Annuler
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-bold shadow-md shadow-purple-500/30 hover:bg-purple-700 transition-all active:scale-95"
+                                    className="flex items-center gap-2 px-5 py-2 bg-gradient-to-br from-purple-500 to-purple-700 text-white rounded-xl text-[10px] font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all active:scale-95"
                                 >
-                                    <Check size={12} /> Appliquer
+                                    <Check size={14} /> Appliquer
                                 </button>
                             </div>
                         </div>
@@ -207,7 +232,7 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
 
                 {/* Inline Placeholder (visible behind/during edit) */}
                 <span
-                    className="inline-block bg-purple-100/50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 px-1.5 rounded-md border border-purple-200 dark:border-purple-800 font-serif italic text-sm"
+                    className="inline-block bg-purple-100/50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-lg border border-purple-200 dark:border-purple-800 font-serif italic text-sm transition-all"
                     dangerouslySetInnerHTML={{ __html: getRenderedHtml(node.attrs.tex) }}
                 />
             </NodeViewWrapper>
@@ -217,11 +242,14 @@ export default function MathNodeView({ node, updateAttributes, selected }: NodeV
     return (
         <NodeViewWrapper
             as="span"
-            className={`inline mx-0.5 transition-all rounded-sm cursor-pointer border-b-2 border-transparent hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 ${selected ? 'ring-2 ring-purple-400 bg-purple-50 dark:bg-purple-900/20 border-purple-400' : ''}`}
-            onClick={() => setIsEditing(true)}
+            className={`inline mx-0.5 transition-all rounded-md cursor-pointer border-b-2 border-transparent hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 ${selected ? 'ring-2 ring-purple-400 bg-purple-50 dark:bg-purple-900/20 border-purple-400' : ''}`}
+            onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                setIsEditing(true);
+            }}
         >
             <span
-                className="px-1 py-0.5"
+                className="px-1.5 py-0.5"
                 dangerouslySetInnerHTML={{ __html: getRenderedHtml(node.attrs.tex) }}
             />
         </NodeViewWrapper>

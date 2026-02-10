@@ -114,6 +114,12 @@ const Navbar = () => {
       if (biblioIndex !== -1) {
         links.splice(biblioIndex, 1);
       }
+    } else {
+      // Masquer "Accueil" si l'utilisateur est connecté
+      const homeIndex = links.findIndex(link => link.href === '/');
+      if (homeIndex !== -1) {
+        links.splice(homeIndex, 1);
+      }
     }
 
     // Ajouter "Éditer" seulement pour les enseignants

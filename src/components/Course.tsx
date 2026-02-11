@@ -307,7 +307,62 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   );
 
   if (!hasSections || !section) {
-    return <div className="text-center py-20 text-xl text-gray-600 dark:text-gray-400">Aucun contenu disponible pour ce cours.</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-8">
+        <div className="max-w-2xl w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-12 border-2 border-dashed border-purple-200 dark:border-purple-900/30 text-center">
+            {/* Icône avec animation */}
+            <div className="relative mb-8 inline-block">
+              <div className="absolute inset-0 bg-purple-200 dark:bg-purple-900/30 rounded-full blur-3xl opacity-40 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-purple-100 to-white dark:from-gray-700 dark:to-gray-800 w-32 h-32 rounded-full flex items-center justify-center shadow-xl">
+                <BookOpen className="w-16 h-16 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+
+            {/* Titre */}
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Ce cours est en cours de préparation
+            </h2>
+
+            {/* Description */}
+            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-xl mx-auto">
+              Le contenu de ce cours n'est pas encore disponible. Notre équipe pédagogique travaille activement à sa création pour vous offrir la meilleure expérience d'apprentissage possible.
+            </p>
+
+            {/* Informations supplémentaires */}
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6 mb-8">
+              <div className="flex items-start justify-center text-left max-w-md mx-auto">
+                <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Que faire en attendant ?</h3>
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <li>• Explorez d'autres cours disponibles dans la bibliothèque</li>
+                    <li>• Revenez plus tard pour découvrir le nouveau contenu</li>
+                    <li>• Inscrivez-vous pour être notifié de sa publication</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Boutons d'action */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link href="/bibliotheque">
+                <button className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:from-purple-600 hover:to-purple-700 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour à la bibliothèque
+                </button>
+              </Link>
+
+              <EnrollmentButton
+                courseId={courseData.id}
+                size="md"
+                variant="secondary"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const canGoNext = !showExercise || isCurrentExerciseCompleted();
@@ -325,17 +380,17 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         setShowExercise={setShowExercise}
         onDownloadRequest={() => setShowDownloadModal(true)}
       />
-      
+
       {courseData.author?.id && (
-		  <div className="mb-3">
-			<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Par</p>
-			<TeacherLink
-			  teacherId={courseData.author.id}
-			  teacherName={courseData.author.name}
-			  teacherPhoto={courseData.author.image}
-			/>
-		  </div>
-		)}
+        <div className="mb-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Par</p>
+          <TeacherLink
+            teacherId={courseData.author.id}
+            teacherName={courseData.author.name}
+            teacherPhoto={courseData.author.image}
+          />
+        </div>
+      )}
 
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-20">

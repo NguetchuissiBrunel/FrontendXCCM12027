@@ -23,7 +23,7 @@ const Footer = () => {
 
           {/* Section 1: Brand & Contact Info */}
           <div className="space-y-6 md:col-span-2 lg:col-span-1 lg:border-r lg:border-gray-700 lg:pr-6 xl:pr-8">
-            <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex items-center gap-3 group cursor-default">
               <div className="w-10 h-10 lg:w-12 lg:h-12 relative overflow-hidden rounded-lg bg-gradient-to-br from-purple-600 to-purple-800 p-1">
                 <Image
                   src="/images/Capture.png"
@@ -40,7 +40,7 @@ const Footer = () => {
                 </span>
                 <p className="text-xs text-gray-400 mt-1">Plateforme pédagogique</p>
               </div>
-            </Link>
+            </div>
             <p className="text-gray-400 text-sm max-w-md leading-relaxed">
               Plateforme de création et de partage de contenu pédagogique.
               Innovez dans l'éducation avec nos outils modernes.

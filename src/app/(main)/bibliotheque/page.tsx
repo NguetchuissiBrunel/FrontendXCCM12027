@@ -99,8 +99,6 @@ const Bibliotheque = () => {
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [showOrientation, setShowOrientation] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-
   // Redirection si non authentifié
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -112,18 +110,7 @@ const Bibliotheque = () => {
   useEffect(() => {
     if (loading) {
       startLoading();
-      const interval = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev >= 95) {
-            clearInterval(interval);
-            return prev;
-          }
-          return prev + 5;
-        });
-      }, 100);
-      return () => clearInterval(interval);
     } else {
-      setLoadingProgress(100);
       setTimeout(() => stopLoading(), 500);
     }
   }, [loading, startLoading, stopLoading]);
@@ -212,22 +199,39 @@ const Bibliotheque = () => {
     return num > 999 ? (num / 1000).toFixed(1) + 'k' : num.toString();
   };
 
-  if (authLoading || (loading && loadingProgress < 100)) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900">
-        <div className="relative w-24 h-24">
-          <div className="absolute inset-0 border-4 border-purple-100 dark:border-purple-900/30 rounded-full"></div>
-          <div
-            className="absolute inset-0 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"
-            style={{ transition: 'all 0.3s ease-in-out' }}
-          ></div>
-          <div className="absolute inset-0 flex items-center justify-center font-bold text-purple-600">
-            {loadingProgress}%
-          </div>
+        <div className="relative mb-12">
+          {/* Anneau de chargement principal */}
+          <div className="w-24 h-24 border-4 border-purple-200 dark:border-purple-900/30 rounded-full" />
+          <div className="absolute top-0 left-0 w-24 h-24 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+
+          {/* Deuxième anneau pour un effet complexe */}
+          <div className="absolute top-2 left-2 w-20 h-20 border-4 border-blue-500/20 rounded-full" />
+          <div className="absolute top-2 left-2 w-20 h-20 border-4 border-blue-500 border-b-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+
+          {/* Logo ou icône centrale */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-gradient-to-br from-purple-600 to-blue-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
         </div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium animate-pulse">
-          Chargement des ressources en cours...
-        </p>
+
+        {/* Texte avec animation */}
+        <div className="text-center space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
+              Chargement de votre contenu
+            </h3>
+            <div className="flex justify-center space-x-1.5">
+              <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium animate-pulse">
+            Veuillez patienter un instant...
+          </p>
+        </div>
       </div>
     );
   }

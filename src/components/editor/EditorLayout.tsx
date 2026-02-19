@@ -1265,7 +1265,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                       <div>
                                         <h4 className="font-medium dark:text-white">{exercise.title}</h4>
                                         <p className="text-xs text-gray-500">
-                                          Échéance: {new Date(exercise.dueDate).toLocaleDateString()}
+                                          Échéance: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
                                         </p>
                                       </div>
                                       <div className="text-right">

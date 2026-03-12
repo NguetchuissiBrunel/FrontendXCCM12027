@@ -93,18 +93,18 @@ const SignupPage = () => {
   }, []);
 
   const router = useRouter();
-  const { registerStudent, registerTeacher, user } = useAuth();
+  const { registerStudent, registerTeacher, user, isAuthenticated } = useAuth();
 
   // Rediriger si déjà connecté
   useEffect(() => {
-    if (user) {
-      if (user.role === 'student') {
+    if (isAuthenticated) {
+      if (user?.role === 'student') {
         router.push('/etudashboard');
-      } else if (user.role === 'teacher') {
+      } else if (user?.role === 'teacher') {
         router.push('/profdashboard');
       }
     }
-  }, [user, router]);
+  }, [isAuthenticated, user, router]);
 
   // Validation en temps réel des mots de passe
   useEffect(() => {
@@ -141,6 +141,10 @@ const SignupPage = () => {
       newErrors.confirmPassword = "Veuillez confirmer votre mot de passe";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+    }
+
+    if (formData.role === 'teacher' && !formData.grade) {
+      newErrors.grade = "Veuillez sélectionner votre grade";
     }
 
     setErrors(newErrors);
@@ -342,6 +346,30 @@ const SignupPage = () => {
             <FaChalkboardTeacher className="mr-2" /> Enseignant
           </button>
         </div>
+
+        <AnimatePresence>
+          {formData.role === 'teacher' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="relative"
+            >
+              <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <select
+                value={formData.grade || ''}
+                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all appearance-none"
+              >
+                <option value="" disabled>Sélectionnez votre grade</option>
+                {GRADES.map(grade => (
+                  <option key={grade} value={grade}>{grade}</option>
+                ))}
+              </select>
+              {errors.grade && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.grade}</p>}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <button
@@ -440,19 +468,6 @@ const SignupPage = () => {
           </div>
         ) : (
           <>
-            <div className="relative">
-              <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <select
-                value={formData.grade || ''}
-                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all appearance-none"
-              >
-                <option value="" disabled>Sélectionnez votre grade</option>
-                {GRADES.map(grade => (
-                  <option key={grade} value={grade}>{grade}</option>
-                ))}
-              </select>
-            </div>
             <div className="relative" ref={subjectDropdownRef}>
               <FaBook className="absolute left-3 top-4 text-gray-400 dark:text-gray-500 z-10" />
               <div
@@ -482,7 +497,7 @@ const SignupPage = () => {
                     <div
                       key={subject}
                       onClick={() => toggleSubject(subject)}
-                      className={`px-4 py-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 flex items-center justify-between text-sm ${formData.subjects?.includes(subject) ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600' : 'text-gray-700 dark:text-gray-300'
+                      className={`px-4 py-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-100/10 flex items-center justify-between text-sm ${formData.subjects?.includes(subject) ? 'bg-purple-50 dark:bg-purple-100/10 text-purple-600' : 'text-gray-700 dark:text-gray-300'
                         }`}
                     >
                       {subject}
@@ -521,7 +536,7 @@ const SignupPage = () => {
 
       {/* Toaster - Supprimé car géré au niveau global RootLayout */}
     </motion.div>
-  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUploadComplete, handlePhotoUploadError, photoPreview]);
+  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUploadComplete, handlePhotoUploadError, photoPreview, showSubjectDropdown]);
 
   return (
     <div

@@ -114,6 +114,12 @@ const Navbar = () => {
       if (biblioIndex !== -1) {
         links.splice(biblioIndex, 1);
       }
+    } else {
+      // Masquer "Accueil" si l'utilisateur est connecté
+      const homeIndex = links.findIndex(link => link.href === '/');
+      if (homeIndex !== -1) {
+        links.splice(homeIndex, 1);
+      }
     }
 
     // Ajouter "Éditer" seulement pour les enseignants
@@ -141,7 +147,7 @@ const Navbar = () => {
 
           {/* GROUPE GAUCHE : Logo + Nom */}
           <div className="flex items-center flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
                 <Image
                   src="/images/Capture.png"
@@ -154,7 +160,7 @@ const Navbar = () => {
 
 
               <span className="text-lg lg:text-xl font-bold text-gray-800 dark:text-white hidden sm:block">XCCM1</span>
-            </Link>
+            </div>
           </div>
 
           {/* GROUPE CENTRE : Navigation Centrée */}

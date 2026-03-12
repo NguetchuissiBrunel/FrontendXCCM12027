@@ -250,8 +250,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userRole');
 
-    // Rediriger vers la page d'accueil (landing page)
-    router.push('/');
+    // Rediriger immédiatement vers la page d'accueil (landing page)
+    // On utilise window.location.href pour forcer un rechargement complet
+    // et éviter que les useEffect des dashboards ne redirigent vers /login
+    window.location.href = '/';
   };
 
   // ==========================================
@@ -278,12 +280,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: authData.id || '',
           email: authData.email || data.email,
           role: 'student',
-          firstName: authData.firstName,
-          lastName: authData.lastName,
-          photoUrl: authData.photoUrl,
-          city: authData.city,
-          university: authData.university,
-          specialization: authData.specialization,
+          firstName: authData.firstName || data.firstName,
+          lastName: authData.lastName || data.lastName,
+          photoUrl: authData.photoUrl || data.photoUrl,
+          city: authData.city || data.city,
+          university: authData.university || data.university,
+          specialization: authData.specialization || data.specialization,
         };
 
         setUser(newUser);
@@ -325,11 +327,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: authData.id || '',
           email: authData.email || data.email,
           role: 'teacher',
-          firstName: authData.firstName,
-          lastName: authData.lastName,
-          photoUrl: authData.photoUrl,
-          subjects: authData.subjects,
-          certification: authData.certification,
+          firstName: authData.firstName || data.firstName,
+          lastName: authData.lastName || data.lastName,
+          photoUrl: authData.photoUrl || data.photoUrl,
+          city: authData.city || data.city,
+          university: authData.university || data.university,
+          grade: authData.grade || data.grade,
+          subjects: authData.subjects || data.subjects,
+          certification: authData.certification || data.certification,
         };
 
         setUser(newUser);

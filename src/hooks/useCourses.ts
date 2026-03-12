@@ -26,6 +26,7 @@ export interface Course {
     viewCount?: number;
     likeCount?: number;
     downloadCount?: number;
+    followersCount?: number;
     isLiked?: boolean;
 }
 
@@ -88,13 +89,13 @@ export function useCourses(): UseCoursesReturn {
 
             if (response && response.success && Array.isArray(response.data)) {
                 const coursesData = response.data as Course[];
-                
+
                 // Ajouter l'état isLiked depuis localStorage
                 const coursesWithLikes = coursesData.map(course => ({
                     ...course,
                     isLiked: isLiked(course.id)
                 }));
-                
+
                 setCourses(coursesWithLikes);
                 console.log(`✅ ${coursesData.length} cours chargés`);
             } else {
@@ -115,7 +116,7 @@ export function useCourses(): UseCoursesReturn {
      */
     const toggleLike = useCallback(async (courseId: number) => {
         const currentlyLiked = isLiked(courseId);
-        
+
         if (currentlyLiked) {
             await decrementLike(courseId);
         } else {
@@ -127,6 +128,8 @@ export function useCourses(): UseCoursesReturn {
      * Incrémente le compteur de likes d'un cours AVEC localStorage
      */
     const incrementLike = useCallback(async (courseId: number) => {
+        if (isLiked(courseId)) return; // Empêcher le like multiple
+
         try {
             // Mise à jour du localStorage
             setLocalLikes(prev => {
@@ -139,8 +142,8 @@ export function useCourses(): UseCoursesReturn {
             // Optimistic update de l'UI
             setCourses(prev => prev.map(course =>
                 course.id === courseId
-                    ? { 
-                        ...course, 
+                    ? {
+                        ...course,
                         likeCount: (course.likeCount || 0) + 1,
                         isLiked: true  // Ajoute cette ligne
                     }
@@ -150,7 +153,7 @@ export function useCourses(): UseCoursesReturn {
             await CourseControllerService.incrementLikeCount(courseId);
         } catch (err) {
             console.error(`❌ Erreur lors de l'incrémentation des likes pour le cours ${courseId}:`, err);
-            
+
             // Rollback du localStorage en cas d'erreur
             setLocalLikes(prev => {
                 const newSet = new Set(prev);
@@ -158,18 +161,18 @@ export function useCourses(): UseCoursesReturn {
                 saveLikes(newSet);
                 return newSet;
             });
-            
+
             // Rollback de l'UI
             setCourses(prev => prev.map(course =>
                 course.id === courseId
-                    ? { 
-                        ...course, 
+                    ? {
+                        ...course,
                         likeCount: Math.max(0, (course.likeCount || 0) - 1),
                         isLiked: false
                     }
                     : course
             ));
-            
+
             await fetchAllCourses();
             throw err;
         }
@@ -191,8 +194,8 @@ export function useCourses(): UseCoursesReturn {
             // Optimistic update de l'UI
             setCourses(prev => prev.map(course =>
                 course.id === courseId
-                    ? { 
-                        ...course, 
+                    ? {
+                        ...course,
                         likeCount: Math.max(0, (course.likeCount || 0) - 1),
                         isLiked: false  // Ajoute cette ligne
                     }
@@ -202,7 +205,7 @@ export function useCourses(): UseCoursesReturn {
             await CourseControllerService.decrementLikeCount(courseId);
         } catch (err) {
             console.error(`❌ Erreur lors de la décrémentation des likes pour le cours ${courseId}:`, err);
-            
+
             // Rollback du localStorage en cas d'erreur
             setLocalLikes(prev => {
                 const newSet = new Set(prev);
@@ -210,18 +213,18 @@ export function useCourses(): UseCoursesReturn {
                 saveLikes(newSet);
                 return newSet;
             });
-            
+
             // Rollback de l'UI
             setCourses(prev => prev.map(course =>
                 course.id === courseId
-                    ? { 
-                        ...course, 
+                    ? {
+                        ...course,
                         likeCount: (course.likeCount || 0) + 1,
                         isLiked: true
                     }
                     : course
             ));
-            
+
             await fetchAllCourses();
         }
     }, [fetchAllCourses, saveLikes]);
@@ -250,9 +253,12 @@ export function useCourses(): UseCoursesReturn {
     }, [isLiked]);
 
     /**
-     * Incrémente le compteur de vues d'un cours
+     * Incrémente le compteur de vues d'un cours (avec protection contre les incréments successifs)
      */
     const incrementView = useCallback(async (courseId: number) => {
+        const viewedKey = `viewed_${courseId}`;
+        if (sessionStorage.getItem(viewedKey)) return;
+
         try {
             // Optimistic update
             setCourses(prev => prev.map(course =>
@@ -262,6 +268,7 @@ export function useCourses(): UseCoursesReturn {
             ));
 
             await CourseControllerService.incrementViewCount(courseId);
+            sessionStorage.setItem(viewedKey, 'true');
         } catch (err) {
             console.error(`❌ Erreur lors de l'incrémentation des vues pour le cours ${courseId}:`, err);
             await fetchAllCourses();
@@ -327,9 +334,9 @@ export function useCourse(courseId: number) {
     const [error, setError] = useState<string | null>(null);
 
     const { isAuthenticated, loading: authLoading } = useAuth();
-    const { 
-        incrementLike: globalIncrementLike, 
-        decrementLike: globalDecrementLike, 
+    const {
+        incrementLike: globalIncrementLike,
+        decrementLike: globalDecrementLike,
         incrementDownload: globalIncrementDownload,
         isLiked: globalIsLiked // Ajoute cette ligne
     } = useCourses();
@@ -371,8 +378,12 @@ export function useCourse(courseId: number) {
         };
 
         const incrementView = async () => {
+            const viewedKey = `viewed_${courseId}`;
+            if (sessionStorage.getItem(viewedKey)) return;
+
             try {
                 await CourseControllerService.incrementViewCount(courseId);
+                sessionStorage.setItem(viewedKey, 'true');
                 // Mise à jour locale
                 setCourse(prev => prev ? { ...prev, viewCount: (prev.viewCount || 0) + 1 } : prev);
             } catch (err) {
@@ -390,8 +401,8 @@ export function useCourse(courseId: number) {
         try {
             // Optimistic update locally
             setCourse(prev => prev && String(prev.id) === String(id)
-                ? { 
-                    ...prev, 
+                ? {
+                    ...prev,
                     likeCount: (prev.likeCount || 0) + 1,
                     isLiked: true // Ajoute cette ligne
                 }
@@ -407,8 +418,8 @@ export function useCourse(courseId: number) {
         try {
             // Optimistic update locally
             setCourse(prev => prev && String(prev.id) === String(id)
-                ? { 
-                    ...prev, 
+                ? {
+                    ...prev,
                     likeCount: Math.max(0, (prev.likeCount || 0) - 1),
                     isLiked: false // Ajoute cette ligne
                 }

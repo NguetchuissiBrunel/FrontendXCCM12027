@@ -11,6 +11,7 @@ import { useCourses } from '@/hooks/useCourses';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { EnrichedCourse } from '@/types/enrollment';
 import { toast } from 'react-hot-toast';
+import StudentDashboardSkeleton from '@/components/student/StudentDashboardSkeleton';
 
 interface User {
   id: string;
@@ -300,9 +301,9 @@ export default function StudentHome() {
     router.push(`/etudashboard/courses/${courseId}/exercises`);
   };
 
-  // Composant de chargement
+  // Composant de chargement - Retourne le skeleton pour un meilleur UX
   if (loading || globalLoading || coursesLoading) {
-    return null;
+    return <StudentDashboardSkeleton />;
   }
 
   if (!user) return null;

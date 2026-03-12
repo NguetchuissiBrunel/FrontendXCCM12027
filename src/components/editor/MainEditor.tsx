@@ -21,6 +21,7 @@ import Chapitre from '../../extensions/Chapitre';
 import Paragraphe from '../../extensions/Paragraphe';
 import Notion from '../../extensions/Notion';
 import Exercice from '../../extensions/Exercice';
+import MathNode from '../../extensions/Math';
 import {
   FaAlignLeft,
   FaAlignCenter,
@@ -42,8 +43,12 @@ import {
   FaIndent,
   FaOutdent,
   FaFont,
-  FaHighlighter
+  FaHighlighter,
+  FaSearchPlus,
+  FaSearchMinus,
+  FaExpand
 } from 'react-icons/fa';
+import { Sigma } from 'lucide-react';
 
 interface MainEditorProps {
   initialContent?: string;
@@ -94,6 +99,11 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   onContentChange,
   onEditorReady
 }, ref) => {
+  const [zoom, setZoom] = useState(100);
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
+  const handleZoomReset = () => setZoom(100);
 
   const TextAlignWithShortcuts = TextAlign.extend({
     addKeyboardShortcuts() {
@@ -220,6 +230,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       Paragraphe,
       Notion,
       Exercice,
+      MathNode,
     ],
     content: initialContent,
     editorProps: {
@@ -517,7 +528,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
   return (
     <>
-      <div className="w-full h-screen flex flex-col bg-white dark:bg-gray-900">
+      <div className="w-full h-full flex flex-col bg-white dark:bg-gray-900">
 
         {/* Toolbar */}
         <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
@@ -616,6 +627,17 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               isActive={false}
             >
               <FaImage />
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => editor?.chain().focus().setMath().run()}
+              title="Insérer Équation (Math)"
+              isActive={editor?.isActive('math')}
+            >
+              <div className="flex items-center gap-1">
+                <Sigma size={16} />
+                <span className="text-xs font-bold hidden xl:inline">Équation</span>
+              </div>
             </ToolbarButton>
 
             <ToolbarButton
@@ -765,21 +787,77 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             >
               <FaRedo />
             </ToolbarButton>
+
           </div>
         </div>
 
         {/* Editor Area */}
-        <div className="flex-1 p-8 overflow-auto bg-gray-100 dark:bg-gray-900 flex justify-center">
+        <div className="flex-1 p-8 overflow-auto bg-gray-100 dark:bg-gray-900 flex justify-center items-start">
           <div
-            className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 mx-auto transition-all duration-200"
+            className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200 origin-top"
             style={{
-              width: '21cm',
-              minHeight: '29.7cm',
-              fontFamily: 'Arial, sans-serif'
+              width: `${21 * (zoom / 100)}cm`,
+              minHeight: `${29.7 * (zoom / 100)}cm`,
+              fontFamily: 'Arial, sans-serif',
+              transform: `scale(1)`
             }}
             onClick={() => editor?.chain().focus().run()}
           >
-            <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
+            <div style={{
+              transform: `scale(${zoom / 100})`,
+              transformOrigin: 'top left',
+              width: '21cm',
+              height: 'auto'
+            }}>
+              <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
+            </div>
+          </div>
+        </div>
+        {/* Status Bar - Zoom & Info */}
+        <div className="h-10 flex-none bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-4">
+            <span className="font-medium">XCCM Editor</span>
+            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
+            <span>A4 Layout</span>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                className="hover:text-purple-600 transition-colors"
+              >
+                <FaSearchMinus size={14} />
+              </button>
+
+              <input
+                type="range"
+                min="50"
+                max="200"
+                step="5"
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-32 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+              />
+
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                className="hover:text-purple-600 transition-colors"
+              >
+                <FaSearchPlus size={14} />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleZoomReset}
+              className="min-w-[45px] font-bold hover:text-purple-600 transition-colors text-right"
+              title="Reset Zoom (100%)"
+            >
+              {zoom}%
+            </button>
           </div>
         </div>
       </div>

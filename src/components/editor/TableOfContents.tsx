@@ -46,6 +46,10 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   const [startWidth, setStartWidth] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // History for Undo (Ctrl+Z)
+  const [history, setHistory] = useState<TableOfContentsItem[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
   // État pour l'élément en cours de glissement
   const [draggedItem, setDraggedItem] = useState<TableOfContentsItem | null>(null);
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
@@ -96,6 +100,44 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     };
   }, [contextMenu.visible]);
 
+  // Save to history when tocItems change from any action (except initial load or undo)
+  const addToHistory = useCallback((items: TableOfContentsItem[]) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      return [...newHistory, JSON.parse(JSON.stringify(items))];
+    });
+    setHistoryIndex(prev => prev + 1);
+  }, [historyIndex]);
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const previousItems = history[historyIndex - 1];
+      setTocItems(JSON.parse(JSON.stringify(previousItems)));
+      setHistoryIndex(prev => prev - 1);
+      if (onSave) onSave(previousItems);
+    }
+  }, [history, historyIndex, onSave]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo]);
+
+  // Handle initial items and first history entry
+  useEffect(() => {
+    if (initialItems && tocItems.length === 0) {
+      setTocItems(initialItems);
+      setHistory([JSON.parse(JSON.stringify(initialItems))]);
+      setHistoryIndex(0);
+    }
+  }, [initialItems]);
+
   // Focus sur l'input de renommage quand il devient visible
   useEffect(() => {
     if (renamingItemId && renameInputRef.current) {
@@ -141,6 +183,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     const updatedItems = removeItemRecursively(tocItems);
     const renumberedItems = recomputeAllNumbers(updatedItems);
     setTocItems(renumberedItems);
+    addToHistory(renumberedItems);
 
     if (onSave) onSave(renumberedItems);
     if (onItemDelete) onItemDelete(itemId);
@@ -289,7 +332,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
       const updatedItems = pasteRecursively(prevItems, targetId);
       const renumberedItems = recomputeAllNumbers(updatedItems);
-
+      addToHistory(renumberedItems);
       if (onSave) onSave(renumberedItems);
       return renumberedItems;
     });
@@ -327,7 +370,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
       const { items: updatedItems } = findAndDuplicate(prevItems);
       const renumberedItems = recomputeAllNumbers(updatedItems);
-
+      addToHistory(renumberedItems);
       if (onSave) onSave(renumberedItems);
       return renumberedItems;
     });
@@ -374,7 +417,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       };
 
       const updatedItems = updateItemTitle(prevItems);
-
+      addToHistory(updatedItems);
       if (onSave) onSave(updatedItems);
       return updatedItems;
     });
@@ -435,7 +478,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       setDropPosition(null);
       e.dataTransfer.dropEffect = 'none';
     }
-  }, [draggedItem]);
+  }, [draggedItem, dropPosition]);
 
   const handleItemDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -456,11 +499,12 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     const isChild = getAllowedChildTypes(targetItem.type).includes(draggedItem.type);
 
     if (isSibling || isChild) {
-      if (onItemMove) {
-        // Use the position calculated during dragOver
-        const position = dropPosition || (isChild ? 'inside' : 'after');
-        onItemMove(draggedItem.id, targetItem.id, position);
-      }
+      // Use the position calculated during dragOver
+      const position = dropPosition || (isChild ? 'inside' : 'after');
+      onItemMove(draggedItem.id, targetItem.id, position);
+      // Note: onItemMove caller should update items which will trigger tocItems update via prop
+      // However, if we want Ctrl+Z to work locally even before parent update, we might need more logic.
+      // For now, assuming parent update is fast. 
     }
 
     setDraggedItem(null);
@@ -472,7 +516,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     document.querySelectorAll('.dragging').forEach(el => {
       el.classList.remove('dragging');
     });
-  }, [draggedItem, onItemMove]);
+  }, [draggedItem, onItemMove, dropPosition]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -564,9 +608,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
               {renderItemIcon(item.type)}
             </div>
 
-            <div className="whitespace-nowrap text-sm mr-2 font-medium text-gray-700 dark:text-gray-300">
-              {item.number}:
-            </div>
+            {/* {item.number}: - Removed as requested */}
 
             {renamingItemId === item.id ? (
               <div className="flex-grow flex">
@@ -661,7 +703,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
   return (
     <div
-      className={`relative h-full z-50 flex transition-all duration-300 ease-in-out`}
+      className={`relative h-full flex transition-all duration-300 ease-in-out`}
       style={{ width: '100%' }}
     >
       <div

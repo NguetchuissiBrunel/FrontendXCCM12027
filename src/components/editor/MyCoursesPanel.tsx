@@ -6,7 +6,6 @@ import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { toast } from 'react-hot-toast';
-import { useLoading } from '@/contexts/LoadingContext';
 
 interface MyCoursesPanelProps {
   onClose: () => void;
@@ -17,15 +16,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
 
-  useEffect(() => {
-    if (loading) {
-      startLoading();
-    } else {
-      stopLoading();
-    }
-  }, [loading, startLoading, stopLoading]);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: number | null }>({
     isOpen: false,
     id: null
@@ -150,8 +141,21 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
 
       {/* Course List */}
       <div className="flex-1 overflow-y-auto p-4">
-        {loading || globalLoading ? (
-          null
+        {loading ? (
+          <div className="space-y-3 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 bg-gray-50/50 dark:bg-gray-700/50">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-md flex-shrink-0"></div>
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-100 dark:bg-gray-600 rounded w-1/2"></div>
+                    <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded-full w-20 mt-4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : courses.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-8">
             Aucun cours sauvegardé pour le moment.

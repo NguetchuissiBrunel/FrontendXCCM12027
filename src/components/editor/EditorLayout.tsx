@@ -43,6 +43,7 @@ import {
 import TableOfContents from './TableOfContents';
 import MainEditor from './MainEditor';
 import StructureDeCours from './StructureDeCours';
+import PdfPreview from './PdfPreview';
 import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
 import Navbar from '../layout/Navbar';
@@ -66,7 +67,7 @@ interface EditorLayoutProps {
 /**
  * Right panel types matching original implementation
  */
-type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | null;
+type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | 'preview' | null;
 
 /**
  * EditorLayout Component
@@ -110,6 +111,46 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+
+  // Panel resizing states
+  const [panelWidth, setPanelWidth] = useState(384); // Default to w-96 (24rem = 384px)
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResizing = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  const stopResizing = React.useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = React.useCallback((e: MouseEvent) => {
+    if (isResizing) {
+      // Correct width calculation:
+      // Distance from right edge of window to mouse, minus the narrow icon bar (64px)
+      const newWidth = window.innerWidth - e.clientX - 64;
+
+      // Enforce min/max constraints
+      if (newWidth > 320 && newWidth < window.innerWidth * 0.7) {
+        setPanelWidth(newWidth);
+      }
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', resize);
+      window.addEventListener('mouseup', stopResizing);
+    } else {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    }
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [isResizing, resize, stopResizing]);
 
   useEffect(() => {
     if (isLoadingCourse || exerciseLoading || gradingLoading) {
@@ -399,7 +440,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       return;
     }
 
-  const jsonContent = editorInstance.getJSON();
+    const jsonContent = editorInstance.getJSON();
 
     try {
       if (currentCourseId) {
@@ -504,9 +545,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       <EditorEntranceModal
         isOpen={isEntranceModalOpen}
         onClose={() => setIsEntranceModalOpen(false)}
-        onCreateNew={() => {
+        onCreateNew={(title) => {
+          setCourseTitle(title);
           setIsEntranceModalOpen(false);
-          setIsCreateModalOpen(true);
+          if (editorInstance) editorInstance.commands.setContent('');
         }}
         onModifyExisting={() => {
           setIsEntranceModalOpen(false);
@@ -581,16 +623,115 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           />
         </main>
 
-        {/* RIGHT SECTION - IconBar + Panel */}
-        <div className="flex">
+        {/* Resizer Handle */}
+        {activePanel && (
+          <div
+            className={`w-1.5 cursor-col-resize hover:bg-purple-400 active:bg-purple-600 transition-colors h-full flex-none z-30 ${isResizing ? 'bg-purple-600' : 'bg-gray-100 dark:bg-gray-800'}`}
+            onMouseDown={startResizing}
+          />
+        )}
+
+        {/* RIGHT SECTION - Unified Sidebar + Panel Area */}
+        <div className="flex print:hidden relative">
+          {/* Main Sidebar - Unified */}
+          <div className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-3 z-20">
+            <IconButton
+              icon={<FaList />}
+              label="Structure"
+              panelType="structure"
+              colorClass="text-purple-600 dark:text-purple-400"
+            />
+            <IconButton
+              icon={<FaInfo />}
+              label="Infos"
+              panelType="info"
+              colorClass="text-blue-600 dark:text-blue-400"
+            />
+            <IconButton
+              icon={<FaEye />}
+              label="Aperçu PDF"
+              panelType="preview"
+              colorClass="text-cyan-600 dark:text-cyan-400"
+            />
+            <IconButton
+              icon={<FaComments />}
+              label="Appréciations"
+              panelType="feedback"
+              colorClass="text-green-600 dark:text-green-400"
+            />
+
+            <div className="flex-grow" />
+
+            <IconButton
+              icon={<FaFolderOpen />}
+              label="Mes Cours"
+              panelType="author"
+              colorClass="text-orange-600 dark:text-orange-400"
+            />
+            <IconButton
+              icon={<FaTasks />}
+              label="Exercices"
+              panelType="exercises"
+              badge={exercises.length}
+              colorClass="text-blue-600 dark:text-blue-400"
+              disabled={!currentCourseId}
+            />
+            <IconButton
+              icon={<FaGraduationCap />}
+              label="Correction"
+              panelType="grading"
+              badge={exerciseStats.pendingGrading}
+              colorClass="text-indigo-600 dark:text-indigo-400"
+              disabled={!currentCourseId}
+            />
+            <IconButton
+              icon={<FaChalkboardTeacher />}
+              label="Travaux Dirigés"
+              panelType="worksheet"
+              colorClass="text-indigo-600 dark:text-indigo-400"
+            />
+            <IconButton
+              icon={<FaCog />}
+              label="Propriétés"
+              panelType="properties"
+              colorClass="text-gray-600 dark:text-gray-400"
+            />
+
+            <div className="border-t border-gray-100 dark:border-gray-700 w-8 my-2" />
+
+            {/* Bottom Actions */}
+            <button
+              onClick={() => triggerSaveConfirm(false)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Sauvegarder"
+            >
+              <FaSave className="text-lg" />
+            </button>
+            <button
+              onClick={() => triggerSaveConfirm(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 transition-colors"
+              title="Publier"
+            >
+              <FaPaperPlane className="text-lg" />
+            </button>
+          </div>
           {/* Panel Area - Slides based on activePanel */}
           <div
-            className={`overflow-y-auto border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-300 ${activePanel ? 'w-96' : 'w-0 overflow-hidden'
+            className={`overflow-y-auto border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all ease-in-out ${activePanel ? '' : 'w-0 overflow-hidden'
               }`}
+            style={{ width: activePanel ? `${panelWidth}px` : '0px', transition: isResizing ? 'none' : 'width 300ms' }}
           >
             {/* PANEL 1: Structure de cours */}
             {activePanel === 'structure' && (
               <StructureDeCours onClose={() => setActivePanel(null)} />
+            )}
+
+            {/* PANEL 1.5: Aperçu PDF */}
+            {activePanel === 'preview' && (
+              <PdfPreview
+                content={editorInstance?.getJSON()}
+                title={courseTitle}
+              />
             )}
 
             {/* PANEL 2: Infos */}
@@ -1149,79 +1290,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             )}
           </div>
 
-          {/* Icon Bar - Always visible */}
-          <div className="flex w-16 flex-col items-center gap-3 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-6">
-            {/* Panel toggle icons */}
-            <IconButton
-              icon={<FaCloudUploadAlt />}
-              label="Importer des connaissances"
-              panelType="structure"
-              colorClass="text-purple-600 dark:text-purple-400"
-            />
-            <IconButton
-              icon={<FaInfo />}
-              label="Infos du cours"
-              panelType="info"
-              colorClass="text-blue-600 dark:text-blue-400"
-            />
-            <IconButton
-              icon={<FaComments />}
-              label="Appréciations"
-              panelType="feedback"
-              colorClass="text-green-600 dark:text-green-400"
-            />
-            <IconButton
-              icon={<FaFolderOpen />}
-              label="Mes Cours"
-              panelType="author"
-              colorClass="text-orange-600 dark:text-orange-400"
-            />
-            <IconButton
-              icon={<FaTasks />}
-              label="Exercices"
-              panelType="exercises"
-              colorClass="text-blue-600 dark:text-blue-400"
-              disabled={!currentCourseId}
-              badge={exerciseStats.pendingGrading}
-            />
-            <IconButton
-              icon={<FaGraduationCap />}
-              label="Correction"
-              panelType="grading"
-              colorClass="text-green-600 dark:text-green-400"
-              disabled={!currentCourseId}
-            />
-            <IconButton
-              icon={<FaChalkboardTeacher />}
-              label="Travaux Dirigés"
-              panelType="worksheet"
-              colorClass="text-indigo-600 dark:text-indigo-400"
-            />
-            <IconButton
-              icon={<FaCog />}
-              label="Propriétés"
-              panelType="properties"
-              colorClass="text-gray-600 dark:text-gray-400"
-            />
-
-            <div className="flex-1"></div>
-
-            {/* Bottom action buttons */}
-            <button
-              onClick={() => triggerSaveConfirm(false)}
-              className="flex h-12 w-12 items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="Sauvegarder"
-            >
-              <FaSave className="text-xl" />
-            </button>
-            <button
-              onClick={() => triggerSaveConfirm(true)}
-              className="flex h-12 w-12 items-center justify-center rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors"
-              title="Publier"
-            >
-              <FaPaperPlane className="text-xl" />
-            </button>
-          </div>
         </div>
       </div>
     </div>

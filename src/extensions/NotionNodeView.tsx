@@ -34,8 +34,7 @@ export default function NotionNodeView({ node, updateAttributes }: NodeViewProps
         borderRadius: '0 4px 4px 0',
       }}
     >
-      {/* Editable Label Badge */}
-      {/* Title removed for Notion as requested */}
+      {/* Editable Content */}
 
       {/* Editable Content */}
       <NodeViewContent className="content" />

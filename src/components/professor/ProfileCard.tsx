@@ -58,6 +58,17 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
   const defaultAvatar = '/images/prof.jpeg';
 
   const handleEdit = () => {
+    // On garde les valeurs actuelles pour les noms mais on peut vider le reste si souhaité
+    // ou simplement s'assurer que l'utilisateur n'est pas "gêné" par les anciennes données.
+    // L'utilisateur dit : "qu'il ne voit plus les ses anciens input car c'est gênant"
+    // On va initialiser editedProfessor avec des chaines vides pour les champs optionnels.
+    setEditedProfessor({
+      ...professor,
+      city: '',
+      university: '',
+      grade: '',
+      certification: '',
+    });
     setIsEditing(true);
   };
 
@@ -335,10 +346,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                     value={editedProfessor.city}
                     onChange={(e) => handleChange('city', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={editedProfessor.city || "Ex: Paris"}
+                    placeholder={`Actuel: ${professor.city || 'Non spécifié'}`}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.city || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.city || professor.city || 'Non Spécifié'}</p>
                 )}
               </div>
 
@@ -350,10 +361,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                     value={editedProfessor.university}
                     onChange={(e) => handleChange('university', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={editedProfessor.university || "Ex: Sorbonne Université"}
+                    placeholder={`Actuel: ${professor.university || 'Non spécifié'}`}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.university || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.university || professor.university || 'Non Spécifié'}</p>
                 )}
               </div>
 
@@ -365,10 +376,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                     value={editedProfessor.grade}
                     onChange={(e) => handleChange('grade', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={editedProfessor.grade || "Ex: Professeur des Universités"}
+                    placeholder={`Actuel: ${professor.grade || 'Non spécifié'}`}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.grade || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.grade || professor.grade || 'Non Spécifié'}</p>
                 )}
               </div>
 
@@ -380,10 +391,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                     value={editedProfessor.certification}
                     onChange={(e) => handleChange('certification', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={editedProfessor.certification || "Ex: PhD en Mathématiques"}
+                    placeholder={`Actuel: ${professor.certification || 'Non spécifié'}`}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.certification || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.certification || professor.certification || 'Non Spécifié'}</p>
                 )}
               </div>
             </div>

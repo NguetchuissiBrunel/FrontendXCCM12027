@@ -21,6 +21,9 @@ interface TableOfContentsProps {
   onAddItem?: (type: ItemType, title?: string, parentId?: string) => void;
   onItemRename?: (itemId: string, newTitle: string) => void;
   onItemDelete?: (itemId: string) => void;
+  onItemDuplicate?: (itemId: string) => void;
+  onItemPaste?: (targetId: string, item: TableOfContentsItem) => void;
+  onItemCopy?: (item: TableOfContentsItem) => void;
   selectedText?: string;
 }
 
@@ -32,6 +35,9 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   onAddItem,
   onItemRename,
   onItemDelete,
+  onItemDuplicate,
+  onItemPaste,
+  onItemCopy,
   onItemMove,
   selectedText = ''
 }) => {
@@ -163,9 +169,30 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       // Trying to handle drop from external source or internal reorder
       // If it's internal reorder, it's specific item drop, handled by handleItemDrop usually
       // But if dropped on the container generally?
-      const data = e.dataTransfer.getData('application/json');
+      const data = e.dataTransfer.getData('application/xccm-knowledge');
       if (data) {
-        // Implementation dependent on what we drag
+        const item = JSON.parse(data);
+        // Add item as a root level item if possible
+        const rootAllowed = ['course', 'section'].includes(item.type);
+        if (rootAllowed) {
+          setTocItems(prev => {
+            const newItem: TableOfContentsItem = {
+              id: `${item.id}-${Date.now()}`,
+              title: item.title || item.data?.title || 'Sans titre',
+              type: item.type,
+              level: item.type === 'course' ? 0 : 1,
+              number: '',
+              children: [],
+              collapsed: false,
+              content: item.content
+            };
+            const updatedItems = [...prev, newItem];
+            const renumbered = recomputeAllNumbers(updatedItems);
+            addToHistory(renumbered);
+            if (onSave) onSave(renumbered);
+            return renumbered;
+          });
+        }
       }
     } catch (error) {
       console.error('Error parsing dropped data:', error);
@@ -289,94 +316,29 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     };
 
     const itemToCopy = findItem(tocItems);
-    if (itemToCopy) setClipboard(itemToCopy);
+    if (itemToCopy) {
+      setClipboard(itemToCopy);
+      if (onItemCopy) {
+        onItemCopy(itemToCopy);
+      }
+    }
     closeContextMenu();
-  }, [tocItems, closeContextMenu]);
+  }, [tocItems, onItemCopy, closeContextMenu]);
 
   const pasteItem = useCallback((targetId: string) => {
     if (!clipboard) return;
-
-    const deepCloneItem = (item: TableOfContentsItem): TableOfContentsItem => {
-      return {
-        ...item,
-        id: `${item.id}-copy-${Date.now()}`,
-        children: item.children.map(child => deepCloneItem(child))
-      };
-    };
-
-    const clonedItem = deepCloneItem(clipboard);
-
-    setTocItems(prevItems => {
-      const pasteRecursively = (items: TableOfContentsItem[], targetId: string): TableOfContentsItem[] => {
-        return items.map(item => {
-          if (item.id === targetId) {
-            const isAllowedChild = getAllowedChildTypes(item.type).includes(clonedItem.type);
-
-            if (isAllowedChild) {
-              const adjustLevel = (item: TableOfContentsItem, newLevel: number): TableOfContentsItem => {
-                return {
-                  ...item,
-                  level: newLevel,
-                  children: item.children.map(child => adjustLevel(child, newLevel + 1))
-                };
-              };
-
-              const adjustedItem = adjustLevel(clonedItem, item.level + 1);
-              return { ...item, children: [...item.children, adjustedItem] };
-            }
-            return item;
-          }
-          return { ...item, children: pasteRecursively(item.children, targetId) };
-        });
-      };
-
-      const updatedItems = pasteRecursively(prevItems, targetId);
-      const renumberedItems = recomputeAllNumbers(updatedItems);
-      addToHistory(renumberedItems);
-      if (onSave) onSave(renumberedItems);
-      return renumberedItems;
-    });
-
+    if (onItemPaste) {
+      onItemPaste(targetId, clipboard);
+    }
     closeContextMenu();
-  }, [clipboard, onSave, closeContextMenu]);
+  }, [clipboard, onItemPaste, closeContextMenu]);
 
   const duplicateItem = useCallback((itemId: string) => {
-    setTocItems(prevItems => {
-      const findAndDuplicate = (items: TableOfContentsItem[]): { items: TableOfContentsItem[], duplicated: boolean } => {
-        const result: TableOfContentsItem[] = [];
-        let duplicated = false;
-
-        for (const item of items) {
-          result.push({ ...item });
-
-          if (item.id === itemId) {
-            const duplicate = {
-              ...item,
-              id: `${item.id}-duplicate-${Date.now()}`,
-              title: `${item.title} (copie)`,
-              children: [...item.children]
-            };
-            result.push(duplicate);
-            duplicated = true;
-          } else {
-            const childResult = findAndDuplicate(item.children);
-            result[result.length - 1].children = childResult.items;
-            duplicated = duplicated || childResult.duplicated;
-          }
-        }
-
-        return { items: result, duplicated };
-      };
-
-      const { items: updatedItems } = findAndDuplicate(prevItems);
-      const renumberedItems = recomputeAllNumbers(updatedItems);
-      addToHistory(renumberedItems);
-      if (onSave) onSave(renumberedItems);
-      return renumberedItems;
-    });
-
+    if (onItemDuplicate) {
+      onItemDuplicate(itemId);
+    }
     closeContextMenu();
-  }, [onSave, closeContextMenu]);
+  }, [onItemDuplicate, closeContextMenu]);
 
   const viewItem = useCallback((itemId: string) => {
     if (onItemClick) {
@@ -434,7 +396,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   const handleDragStart = useCallback((e: React.DragEvent, item: TableOfContentsItem) => {
     e.stopPropagation();
     setDraggedItem(item);
-    e.dataTransfer.setData('text/plain', item.id);
+    e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(item));
+    e.dataTransfer.setData('internal-xccm-id', item.id);
     e.dataTransfer.effectAllowed = 'move';
 
     if (e.currentTarget instanceof HTMLElement) {
@@ -462,12 +425,13 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       const rect = e.currentTarget.getBoundingClientRect();
       const relativeY = e.clientY - rect.top;
 
+      // UX Improvement: For better "upwards" drag feeling, we use a larger zone for 'before' (40%)
       if (isSibling && isChild) {
-        // Both allowed? Unusual but if so, top/bottom = before/after, middle = inside
-        if (relativeY < rect.height * 0.25) setDropPosition('before');
-        else if (relativeY > rect.height * 0.75) setDropPosition('after');
+        if (relativeY < rect.height * 0.4) setDropPosition('before');
+        else if (relativeY > rect.height * 0.7) setDropPosition('after');
         else setDropPosition('inside');
       } else if (isSibling) {
+        // Larger buffer for before/after for siblings
         if (relativeY < rect.height / 2) setDropPosition('before');
         else setDropPosition('after');
       } else {
@@ -501,7 +465,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     if (isSibling || isChild) {
       // Use the position calculated during dragOver
       const position = dropPosition || (isChild ? 'inside' : 'after');
-      onItemMove(draggedItem.id, targetItem.id, position);
+      onItemMove?.(draggedItem.id, targetItem.id, position);
       // Note: onItemMove caller should update items which will trigger tocItems update via prop
       // However, if we want Ctrl+Z to work locally even before parent update, we might need more logic.
       // For now, assuming parent update is fast. 
@@ -532,12 +496,13 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   }, []);
 
   const canDropItem = useCallback((sourceItem: TableOfContentsItem, targetItem: TableOfContentsItem): boolean => {
+    if (!sourceItem || !targetItem) return false;
     // Check if source can be child of target
     const allowedChildTypes = getAllowedChildTypes(targetItem.type);
     // OR if they are siblings (same type) for reordering
     const isSibling = sourceItem.type === targetItem.type;
 
-    return allowedChildTypes.includes(sourceItem.type) || isSibling;
+    return (allowedChildTypes && allowedChildTypes.includes(sourceItem.type)) || isSibling;
   }, []);
 
   const renderItemIcon = (itemType: ItemType) => {

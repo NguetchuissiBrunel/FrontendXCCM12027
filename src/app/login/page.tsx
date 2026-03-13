@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
-import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock, FaEye , FaEyeSlash } from "react-icons/fa";
+import { FaChalkboardTeacher, FaEnvelope, FaGraduationCap, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -31,16 +31,16 @@ const SigninPage = () => {
   useEffect(() => {
     if (user) {
       // Si un callbackUrl existe, on pourrait l'utiliser, sinon dashboard par défaut
-    const params = new URLSearchParams(window.location.search);
-    const callback = params.get('callbackUrl');
+      const params = new URLSearchParams(window.location.search);
+      const callback = params.get('callbackUrl');
 
-    if (callback) {
-      router.push(callback);
-    } else {
-      if (user.role === 'student') router.push('/etudashboard');
-      else if (user.role === 'teacher') router.push('/profdashboard');
+      if (callback) {
+        router.push(callback);
+      } else {
+        if (user.role === 'student') router.push('/etudashboard');
+        else if (user.role === 'teacher') router.push('/profdashboard');
+      }
     }
-  }
   }, [user, router]);
 
   // Charger le rôle sauvegardé
@@ -180,7 +180,7 @@ const SigninPage = () => {
               <FaEye size={20} className="text-gray-500 dark:text-gray-400" />
             )}
           </button>
-          
+
           {errors.password && (
             <motion.p
               initial={{ opacity: 0 }}
@@ -192,7 +192,7 @@ const SigninPage = () => {
           )}
         </motion.div>
 
-       
+
 
         <motion.div
           className="text-center mt-4"
@@ -241,8 +241,7 @@ const SigninPage = () => {
       </motion.div>
 
 
-      {/* Toaster */}
-      <Toaster position="top-right" reverseOrder={false} />
+      {/* Toaster - Supprimé car géré au niveau global RootLayout */}
     </motion.div>
   ), [formData, errors, handleSubmit, isSubmitting, showPassword]);
 

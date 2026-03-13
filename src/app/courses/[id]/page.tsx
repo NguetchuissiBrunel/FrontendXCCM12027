@@ -1,60 +1,34 @@
 // src/app/courses/[id]/page.tsx
 'use client';
-import React from "react";
+import React, { useEffect } from "react";
 import Course from "@/components/Course";
 import { useCourse } from "@/hooks/useCourses";
-import { CourseData } from "@/types/course";
+import { useLoading } from "@/contexts/LoadingContext";
+import { transformTiptapToCourseData } from "@/utils/courseTransformer";
 import { AlertCircle } from "lucide-react";
 
 interface CoursePageProps {
   params: Promise<{ id: string }>;
 }
 
-// Fonction pour valider et normaliser les données du cours
-const validateCourseData = (course: any): CourseData | null => {
-  if (!course || typeof course !== 'object') return null;
-
-  return {
-    id: course.id || 0,
-    title: course.title || "Titre non disponible",
-    category: course.category || "Formation",
-    image: course.image || "",
-    views: course.views || 0,
-    likes: course.likes || 0,
-    downloads: course.downloads || 0,
-    author: {
-      name: course.author?.name || "Auteur inconnu",
-      image: course.author?.image || "",
-      designation: course.author?.designation
-    },
-    conclusion: course.conclusion || "",
-    learningObjectives: course.learningObjectives || [],
-    sections: course.sections || [],
-    introduction: course.introduction,
-    prerequisites: course.prerequisites,
-    duration: course.duration,
-    level: course.level,
-    rating: course.rating,
-    students: course.students,
-    lastUpdated: course.lastUpdated,
-    previewImage: course.previewImage
-  };
-};
-
 const CoursePage = ({ params }: CoursePageProps) => {
   const resolvedParams = React.use(params);
   const courseId = parseInt(resolvedParams.id, 10);
   const { course, loading, error } = useCourse(courseId);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement du cours...</p>
-        </div>
-      </div>
-    );
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
+
+  // Si on est déjà en cours de chargement global (depuis le clic sur le lien)
+  // on retourne null pour laisser RouteLoading s'afficher
+  if (loading || globalLoading) {
+    return null;
   }
 
   if (error || !course) {
@@ -75,7 +49,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
     );
   }
 
-  const courseData = validateCourseData(course);
+  const courseData = course ? transformTiptapToCourseData(course) : null;
 
   if (!courseData) {
     return <div className="text-center py-20 text-xl text-gray-600 dark:text-gray-400">Données du cours invalides</div>;

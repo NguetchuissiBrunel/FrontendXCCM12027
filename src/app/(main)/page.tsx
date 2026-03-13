@@ -40,7 +40,7 @@ export default function HomePage() {
       likes: course?.likes || 0,
       downloads: course?.downloads || 0,
       author: {
-        name: course.author ? `${course.author.firstName} ${course.author.lastName}` : "Auteur inconnu",
+        name: course.author ? `${course.author.name}` : "Auteur inconnu",
         image: course.author?.image || course.author?.photoUrl || "/images/prof.jpeg",
         designation: course.author?.designation || course.author?.university || "Enseignant"
       },

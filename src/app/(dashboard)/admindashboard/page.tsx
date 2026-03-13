@@ -4,6 +4,8 @@ import { FaUsers, FaChalkboardTeacher, FaBook, FaChartBar, FaUserShield, FaCheck
 import { useState, useEffect } from 'react';
 import { AdminService } from '@/lib';
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
     <motion.div
         whileHover={{ y: -5 }}
@@ -37,6 +39,15 @@ export default function AdminOverview() {
         rejectedEnrollments: 0,
     });
     const [loading, setLoading] = useState(true);
+    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
+
+    useEffect(() => {
+        if (loading) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [loading, startLoading, stopLoading]);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -79,6 +90,10 @@ export default function AdminOverview() {
 
         fetchStats();
     }, []);
+
+    if (loading || globalLoading) {
+        return null;
+    }
 
     return (
         <div className="space-y-8">

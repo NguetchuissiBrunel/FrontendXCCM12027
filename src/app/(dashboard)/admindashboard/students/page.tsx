@@ -6,9 +6,12 @@ import { AdminService, AuthControllerService, RegisterRequest, User } from '@/li
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 function StudentsList() {
     const [students, setStudents] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,6 +19,14 @@ function StudentsList() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const searchParams = useSearchParams();
     const router = useRouter();
+
+    useEffect(() => {
+        if (loading) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [loading, startLoading, stopLoading]);
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -153,15 +164,8 @@ function StudentsList() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {loading ? (
-                            Array(3).fill(0).map((_, i) => (
-                                <tr key={i} className="animate-pulse">
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-40"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32"></div></td>
-                                    <td className="px-6 py-4"></td>
-                                </tr>
-                            ))
+                        {loading || globalLoading ? (
+                            null
                         ) : filteredStudents.length === 0 ? (
                             <tr>
                                 <td colSpan={4} className="px-6 py-8 text-center text-slate-500">Aucun étudiant trouvé</td>

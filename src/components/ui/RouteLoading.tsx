@@ -1,16 +1,24 @@
-// components/RouteLoading.tsx
 'use client';
+
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function RouteLoading() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { isLoading: contextLoading, stopLoading } = useLoading();
+  const [internalLoading, setInternalLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isMounted, setIsMounted] = useState(false); // Fix Hydration
+  
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const activeLoading = internalLoading || contextLoading;
+
+  // 1. Gestion du montage et des clics
   useEffect(() => {
-    // Détecter les clics sur les liens
+    setIsMounted(true);
+
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       const link = target.closest('a');
@@ -23,7 +31,7 @@ export default function RouteLoading() {
         !link.classList.contains('no-loading') &&
         link.getAttribute('href')?.startsWith('/')
       ) {
-        setIsLoading(true);
+        setInternalLoading(true);
         setProgress(0);
       }
     };
@@ -32,74 +40,76 @@ export default function RouteLoading() {
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  // Animation de progression réaliste
+  // 2. Animation de progression réaliste
   useEffect(() => {
-    if (!isLoading) return;
+    if (!activeLoading) return;
 
     const interval = setInterval(() => {
       setProgress(prev => {
-        // Progression non-linéaire : rapide au début, lent à la fin
         let increment;
-        if (prev < 30) {
-          increment = 4; // Très rapide au début
-        } else if (prev < 70) {
-          increment = 2; // Moyen au milieu
-        } else if (prev < 90) {
-          increment = 1; // Lent vers la fin
-        } else {
-          increment = 0.5; // Très lent à la fin
-        }
-        
+        if (prev < 30) increment = 4;
+        else if (prev < 70) increment = 2;
+        else if (prev < 90) increment = 1;
+        else increment = 0.5;
+
         const newProgress = Math.min(prev + increment, 99);
-        
-        // Ne pas dépasser 99% avant que la navigation soit terminée
-        if (newProgress >= 99) {
-          clearInterval(interval);
-        }
+        if (newProgress >= 99) clearInterval(interval);
         return newProgress;
       });
     }, 30);
 
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [activeLoading]);
 
-  // Détection du changement d'URL (quand la navigation est terminée)
+  // 3. Détection du changement d'URL
   useEffect(() => {
-    if (isLoading) {
-      // Quand l'URL change, on suppose que la navigation est terminée
+    if (internalLoading) {
+      setInternalLoading(false);
+    }
+  }, [pathname, searchParams]); // Retrait de internalLoading des dépendances pour éviter des boucles
+
+  // 4. Détection de fin de chargement globale
+  useEffect(() => {
+    if (!internalLoading && !contextLoading && progress > 0) {
       setProgress(100);
-      
+
       // Petit délai pour laisser l'animation se terminer
       const timer = setTimeout(() => {
-        setIsLoading(false);
         setProgress(0);
-      }, 300);
-      
+      }, 500); // Un peu plus de temps pour voir le 100%
       return () => clearTimeout(timer);
     }
-  }, [pathname, searchParams, isLoading]);
+  }, [internalLoading, contextLoading, progress]);
 
-  // S'assurer que le chargement s'arrête après un délai maximum (sécurité)
+  // 5. Sécurité : timeout maximum
   useEffect(() => {
-    if (isLoading) {
+    if (activeLoading) {
       const safetyTimer = setTimeout(() => {
-        setIsLoading(false);
+        setInternalLoading(false);
+        stopLoading?.();
         setProgress(0);
-      }, 10000); // 10 secondes max
-      
+      }, 15000);
+
       return () => clearTimeout(safetyTimer);
     }
-  }, [isLoading]);
+  }, [activeLoading, stopLoading]);
 
-  if (!isLoading) return null;
+  // --- LOGIQUE DE RENDU ---
 
-  // Calcul pour la barre circulaire (SVG)
+  // Important: Ne rien rendre tant que le client n'a pas fini son premier rendu (isMounted)
+  // pour correspondre exactement au HTML vide envoyé par le serveur.
+  if (!isMounted || (!activeLoading && progress === 0)) return null;
+
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div 
+      className={`fixed inset-0 z-[60] transition-opacity duration-500 ${
+        !activeLoading && progress === 100 ? 'opacity-0' : 'opacity-100'
+      }`}
+    >
       {/* Overlay flouté */}
       <div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
 
@@ -182,20 +192,17 @@ export default function RouteLoading() {
             Chargement en cours
           </h3>
 
-          {/* Points animés */}
           <div className="flex justify-center space-x-1">
             <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
             <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
             <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
 
-          {/* Message subtil */}
           <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
             La patience est une vertu de l&apos;esprit...
           </p>
         </div>
 
-        {/* Cercle externe animé */}
         <div className="absolute">
           <div className="w-48 h-48 border-4 border-purple-200/30 rounded-full animate-ping" />
         </div>

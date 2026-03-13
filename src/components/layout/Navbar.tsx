@@ -193,7 +193,7 @@ const Navbar = () => {
           </div>
 
           {/* GROUPE DROITE : Mode Sombre/Clair + Boutons selon connexion */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="hidden lg:flex items-center space-x-4 flex-shrink-0">
 
             {/* Icône Mode Sombre/Clair */}
             <button

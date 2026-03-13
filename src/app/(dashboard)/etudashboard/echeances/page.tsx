@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 interface User {
   id: string;
   firstName: string;
@@ -16,11 +18,20 @@ interface User {
 export default function StudentDeadlines() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const router = useRouter();
 
   useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
+
+  useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
-    
+
     if (!currentUser) {
       router.push('/login');
       return;
@@ -28,12 +39,12 @@ export default function StudentDeadlines() {
 
     try {
       const userData = JSON.parse(currentUser);
-      
+
       if (userData.role !== 'student') {
         router.push('/profdashboard');
         return;
       }
-      
+
       setUser(userData);
     } catch (error) {
       console.error('Erreur lors du chargement des données utilisateur:', error);
@@ -43,15 +54,8 @@ export default function StudentDeadlines() {
     }
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
-      </div>
-    );
+  if (loading || globalLoading) {
+    return null;
   }
 
   if (!user) return null;
@@ -61,13 +65,13 @@ export default function StudentDeadlines() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-      <Sidebar 
-        userRole="student" 
+      <Sidebar
+        userRole="student"
         userName={displayName}
         userLevel={userLevel}
         activeTab="echeances"
       />
-      
+
       <main className="flex-1 p-8">
         <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-8">Échéances</h1>
 
@@ -75,10 +79,10 @@ export default function StudentDeadlines() {
           <div className="flex flex-col items-center justify-center">
             {/* Image sans overlay pour affichage simple */}
             <div className="relative w-full max-w-2xl h-96 mb-8 rounded-2xl overflow-hidden">
-              <img 
-                src="/images/open2.jpg" 
-                alt="Aucune échéance" 
-                className="w-full h-full object-cover" 
+              <img
+                src="/images/open2.jpg"
+                alt="Aucune échéance"
+                className="w-full h-full object-cover"
               />
             </div>
 

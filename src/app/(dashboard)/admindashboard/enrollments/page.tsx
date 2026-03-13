@@ -5,6 +5,8 @@ import { AdminService } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
     <motion.div
         whileHover={{ y: -5 }}
@@ -26,6 +28,7 @@ const StatsCard = ({ title, value, icon, color, subtitle }: any) => (
 export default function AdminEnrollmentsPage() {
     const [enrollments, setEnrollments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [stats, setStats] = useState({
@@ -34,6 +37,14 @@ export default function AdminEnrollmentsPage() {
         approved: 0,
         rejected: 0,
     });
+
+    useEffect(() => {
+        if (loading) {
+            startLoading();
+        } else {
+            stopLoading();
+        }
+    }, [loading, startLoading, stopLoading]);
 
     useEffect(() => {
         fetchEnrollments();
@@ -228,11 +239,8 @@ export default function AdminEnrollmentsPage() {
             </div>
 
             {/* Table/Content */}
-            {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-                    <p className="text-slate-500 dark:text-slate-400 mt-4">Chargement des enrollements...</p>
-                </div>
+            {loading || globalLoading ? (
+                null
             ) : filteredEnrollments.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <FaUserGraduate className="mx-auto text-slate-300 dark:text-slate-700 mb-4" size={48} />

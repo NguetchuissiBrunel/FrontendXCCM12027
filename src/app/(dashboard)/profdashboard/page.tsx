@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProfileCard from '@/components/professor/ProfileCard';
 import CompositionsCard, { Composition } from '@/components/professor/CompositionsCard';
-import TeachersCard from '@/components/professor/TeachersCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { CourseResponse } from '@/lib/models/CourseResponse';
-import CreateCourseModal from '@/./components/create-course/page'; 
+import CreateCourseModal from '@/./components/create-course/page';
+import { EnrollmentService } from '@/utils/enrollmentService';
+
 
 interface User {
   id: string;
@@ -34,13 +35,26 @@ interface Teacher {
   university?: string;
 }
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 export default function ProfessorDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
+
+
+  useEffect(() => {
+    if (authLoading || loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [authLoading, loading, startLoading, stopLoading]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -74,9 +88,12 @@ export default function ProfessorDashboard() {
         }
 
         // 2. Fetch other teachers (optional feature, if API exists)
-        // For now, let's keep it empty or mock it if there's no "get all teachers" endpoint
-        // or just use public courses authors
         setTeachers([]);
+
+        // 3. Fetch pending inscriptions count
+        const pendingData = await EnrollmentService.getPendingEnrollments();
+        setPendingInscriptionsCount(pendingData.length);
+
 
       } catch (error) {
         console.error('Erreur lors du chargement des données du tableau de bord:', error);
@@ -90,15 +107,8 @@ export default function ProfessorDashboard() {
     }
   }, [user, authLoading, isAuthenticated, router]);
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
-      </div>
-    );
+  if (authLoading || loading || globalLoading) {
+    return null;
   }
 
   if (!user) return null;
@@ -108,7 +118,7 @@ export default function ProfessorDashboard() {
     : user.email.split('@')[0];
 
   const professor = {
-    id: user.id,
+    id: user.email,
     name: displayName,
     city: user.city || 'Non spécifiée',
     university: user.university || 'Non spécifiée',
@@ -139,9 +149,9 @@ export default function ProfessorDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
       {/* Modale de création de cours */}
-      <CreateCourseModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <CreateCourseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
 
       {/* Top Section with Welcome */}
@@ -156,15 +166,23 @@ export default function ProfessorDashboard() {
         </div>
         <div>
           <div className="flex items-center gap-6">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white">
+            <button
+              onClick={() => router.push('/teacher/inscriptions')}
+              className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Gérer les inscriptions
+              {pendingInscriptionsCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-gray-800 animate-bounce">
+                  {pendingInscriptionsCount}
+                </span>
+              )}
             </button>
 
-            
+
           </div>
         </div>
       </div>
@@ -185,7 +203,7 @@ export default function ProfessorDashboard() {
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               Vous n'avez pas encore créé de cours.
             </p>
-            <button 
+            <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold shadow-lg hover:bg-purple-700 transition mx-auto"
             >
@@ -197,22 +215,7 @@ export default function ProfessorDashboard() {
           </div>
         )}
 
-        {/* Teachers Network Card */}
-        {teachersList.length > 0 && (
-          <TeachersCard teachers={teachersList} />
-        )}
 
-        {/* Message si pas d'autres enseignants */}
-        {teachersList.length === 0 && teachers.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Rencontrez d'autres enseignants
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Aucun autre enseignant inscrit pour le moment. Invitez vos collègues à rejoindre la plateforme !
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

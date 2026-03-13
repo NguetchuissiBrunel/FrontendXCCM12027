@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // HYBRID APPROACH: Use localStorage data if available, otherwise token
             const restoredUser: User = {
-              id: decoded.sub || decoded.id || savedUser?.id || '',
+              id: decoded.id || savedUser?.id || '',
               email: decoded.email || savedUser?.email || '',
               role: isAdmin ? 'admin' : (isTeacher ? 'teacher' : 'student'),
               // Merge missing fields from savedUser

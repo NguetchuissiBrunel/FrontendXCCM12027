@@ -4,6 +4,7 @@ import RouteLoading from '@/components/ui/RouteLoading';
 import { AuthProvider } from "@/contexts/AuthContext";
 import './globals.css';
 import { Suspense } from 'react';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'XCCM1 - Plateforme de création de contenu pédagogique',
@@ -13,6 +14,8 @@ export const metadata: Metadata = {
 // Force le rendu dynamique pour éviter que Next.js n'essaie de 
 // pré-générer des pages nécessitant des données privées au build
 export const dynamic = 'force-dynamic';
+
+import { LoadingProvider } from "@/contexts/LoadingContext";
 
 export default function RootLayout({
   children,
@@ -27,12 +30,15 @@ export default function RootLayout({
       <body className="antialiased font-sans">
         <div className="min-h-screen flex flex-col">
           <main className="grow">
-            <Suspense fallback={null}>
-              <RouteLoading />
-            </Suspense>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <LoadingProvider>
+              <Suspense fallback={null}>
+                <RouteLoading />
+              </Suspense>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </LoadingProvider>
+            <Toaster position="top-right" />
           </main>
         </div>
       </body>

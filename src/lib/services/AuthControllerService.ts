@@ -2,8 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ApiResponse } from '../models/ApiResponse';
 import type { ApiResponseAuthenticationResponse } from '../models/ApiResponseAuthenticationResponse';
-import type { ApiResponseObject } from '../models/ApiResponseObject';
 import type { AuthenticationRequest } from '../models/AuthenticationRequest';
 import type { PasswordResetRequest } from '../models/PasswordResetRequest';
 import type { PasswordUpdateRequest } from '../models/PasswordUpdateRequest';
@@ -16,12 +16,12 @@ import { request as __request } from '../core/request';
 export class AuthControllerService {
     /**
      * @param requestBody
-     * @returns ApiResponseObject OK
+     * @returns ApiResponse OK
      * @throws ApiError
      */
     public static resetPassword(
         requestBody: PasswordUpdateRequest,
-    ): CancelablePromise<ApiResponseObject> {
+    ): CancelablePromise<ApiResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/reset-password',
@@ -92,12 +92,12 @@ export class AuthControllerService {
     }
     /**
      * @param requestBody
-     * @returns ApiResponseObject OK
+     * @returns ApiResponse OK
      * @throws ApiError
      */
     public static forgotPassword(
         requestBody: PasswordResetRequest,
-    ): CancelablePromise<ApiResponseObject> {
+    ): CancelablePromise<ApiResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/forgot-password',

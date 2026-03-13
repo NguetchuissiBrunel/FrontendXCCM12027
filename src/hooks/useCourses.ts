@@ -14,14 +14,18 @@ export interface Course {
     // Updated to match your JSON
     author?: {
         id: string;
-        firstName: string;
-        lastName: string;
+        name: string;
         email: string;
         university?: string;
         photoUrl?: string;
+        image?: string;
+        designation?: string;
     };
     content?: string;
     coverImage?: string | null;
+    views?: number;
+    likes?: number;
+    downloads?: number;
 }
 
 interface UseCoursesReturn {
@@ -109,6 +113,8 @@ export function useCourses(): UseCoursesReturn {
     };
 }
 
+import { useAuth } from '@/contexts/AuthContext';
+
 /**
  * Hook pour récupérer un cours spécifique
  */
@@ -117,19 +123,34 @@ export function useCourse(courseId: number) {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Attendre que l'authentification soit initialisée
+    const { loading: authLoading } = useAuth();
+
     useEffect(() => {
+        // Si l'auth est encore en cours de chargement, on attend
+        if (authLoading) return;
+
         const loadCourse = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                console.log(`📖 Chargement du cours ${courseId}...`);
+                const enrichedResponse: any = await CourseControllerService.getEnrichedCourse(courseId);
+                const allResponse: any = await CourseControllerService.getAllCourses();
 
-                const response = await CourseControllerService.getEnrichedCourse(courseId);
+                if (enrichedResponse && enrichedResponse.success && enrichedResponse.data) {
+                    const enrichedData = enrichedResponse.data;
 
-                if (response) {
-                    setCourse(response as Course);
-                    console.log(`✅ Cours ${courseId} chargé`);
+                    // Find the course in the full list to get the content
+                    // (The enriched endpoint doesn't seem to return the content body)
+                    const fullCourse = allResponse?.data?.find((c: any) => c.id === courseId);
+
+                    setCourse({
+                        ...enrichedData,
+                        content: fullCourse?.content || enrichedData.content
+                    } as Course);
+                } else {
+                    console.warn('⚠️ Échec du chargement du cours:', enrichedResponse);
                 }
             } catch (err) {
                 console.error(`❌ Erreur lors du chargement du cours ${courseId}:`, err);
@@ -142,7 +163,7 @@ export function useCourse(courseId: number) {
         if (courseId) {
             loadCourse();
         }
-    }, [courseId]);
+    }, [courseId, authLoading]);
 
-    return { course, loading, error };
+    return { course, loading: loading || authLoading, error };
 }

@@ -6,6 +6,8 @@ import Sidebar from '@/components/Sidebar';
 import { Award, BookOpen, Clock } from 'lucide-react';
 import { OpenAPI } from '@/lib/core/OpenAPI';
 
+import { useLoading } from '@/contexts/LoadingContext';
+
 interface User {
   id: string;
   firstName: string;
@@ -30,9 +32,18 @@ export default function StudentProfile() {
   const [user, setUser] = useState<User | null>(null);
   const [editedUser, setEditedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, startLoading, stopLoading]);
 
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');

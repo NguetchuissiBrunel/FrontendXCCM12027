@@ -37,9 +37,9 @@ declare module '@tiptap/core' {
 export default Node.create<SectionOptions>({
   name: 'section',
 
-  group: 'block',
+  group: 'xccm-section',
 
-  content: 'block+',
+  content: 'chapitre+',
 
   defining: true,
 
@@ -103,11 +103,11 @@ export default Node.create<SectionOptions>({
     return {
       setSection:
         () =>
-        ({ commands }) => {
-          // Generate unique ID for this section
-          const id = `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.wrapIn(this.name, { id });
-        },
+          ({ commands }) => {
+            // Generate unique ID for this section
+            const id = `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return commands.wrapIn(this.name, { id });
+          },
     };
   },
 

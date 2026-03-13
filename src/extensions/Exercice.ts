@@ -37,7 +37,7 @@ declare module '@tiptap/core' {
 export default Node.create<ExerciceOptions>({
   name: 'exercice',
 
-  group: 'block',
+  group: 'xccm-granule',
 
   content: 'block+',
 

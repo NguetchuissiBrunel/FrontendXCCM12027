@@ -593,6 +593,20 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             onItemClick={handleTOCItemClick}
             onItemRename={handleTOCItemRename}
             onItemDelete={handleTOCItemDelete}
+            onItemDuplicate={(itemId) => {
+              if (editorRef.current) {
+                editorRef.current.handleTOCAction('duplicate', itemId);
+              }
+            }}
+            onItemPaste={(targetId, item) => {
+              if (editorRef.current) {
+                editorRef.current.handleTOCAction('paste', targetId, item);
+              }
+            }}
+            onItemCopy={(item) => {
+              // Optionnel: peut-être afficher un toast
+              console.log('Item copié dans TOC:', item.title);
+            }}
             onItemMove={(itemId, targetId, position) => {
               if (editorRef.current) {
                 editorRef.current.handleTOCAction('move', itemId, { targetId, position });

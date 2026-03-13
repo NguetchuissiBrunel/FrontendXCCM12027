@@ -1,4 +1,6 @@
 'use client';
+import toast from 'react-hot-toast';
+import './tiptap-editor.css';
 
 import React, { useRef, useState } from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
@@ -11,12 +13,13 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Dropcursor from '@tiptap/extension-dropcursor';
+import Gapcursor from '@tiptap/extension-gapcursor';
 import FontFamily from '@tiptap/extension-font-family';
-import { Extension } from '@tiptap/core';
+import { Fragment, Slice, Node as PMNode, Schema } from '@tiptap/pm/model';
 import { QuickExerciseModal, QuestionData } from './QuickExerciseModal';
 import { QuestionType } from '@/types/exercise';
-
 // Custom XCCM Hierarchy Nodes
+import Heading from '../../extensions/Heading';
 import ResizableImage from '../../extensions/ResizableImage';
 import Section from '../../extensions/Section';
 import Chapitre from '../../extensions/Chapitre';
@@ -92,9 +95,137 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
+const itemTypeFrench: Record<string, string> = {
+  course: 'Cours',
+  section: 'Partie',
+  chapter: 'Chapitre',
+  paragraph: 'Paragraphe',
+  notion: 'Notion',
+  exercise: 'Exercice'
+};
+
+const nodeTypeFrench: Record<string, string> = {
+  heading: 'Titre de cours',
+  section: 'Partie',
+  chapitre: 'Chapitre',
+  paragraphe: 'Paragraphe',
+  notion: 'Notion',
+  exercice: 'Exercice'
+};
+
 export interface MainEditorRef {
-  handleTOCAction: (action: 'rename' | 'delete' | 'move', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' }) => void;
+  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any) => void;
 }
+
+let globalIdCounter = 0;
+
+/**
+ * Recursively clones a node and all its children, assigning new unique IDs.
+ * Use this when pasting or dropping content to avoid React key collisions.
+ */
+const regenerateIds = (node: PMNode): PMNode => {
+  if (node.isText) {
+    return node;
+  }
+
+  const children: PMNode[] = [];
+  node.content.forEach(child => {
+    children.push(regenerateIds(child));
+  });
+
+  const attrs = { ...node.attrs };
+  if (attrs.id !== undefined) {
+    // Combine timestamp, session counter, and a UUID/long random string for absolute uniqueness
+    const timestamp = Date.now();
+    const sessionIdx = ++globalIdCounter;
+    const entropy = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID().split('-')[0] // Short UUID part
+      : Math.random().toString(36).substring(2, 11);
+
+    attrs.id = `${node.type.name}-${timestamp}-${sessionIdx}-${entropy}`;
+  }
+
+  return node.type.create(attrs, Fragment.fromArray(children), node.marks);
+};
+
+const typeMap: Record<string, string> = {
+  course: 'heading',
+  section: 'section',
+  chapter: 'chapitre',
+  paragraph: 'paragraphe',
+  notion: 'notion',
+  exercise: 'exercice'
+};
+
+/**
+ * Converts a TOC item (JSON) into a TipTap node JSON.
+ * This is used for both Drag & Drop and TOC Paste.
+ */
+const transformTOCItemToNodeJson = (item: any): any => {
+  const nodeType = typeMap[item.type] || 'paragraph';
+
+  const attrs: any = {
+    id: `tmp-${Math.random().toString(36).substr(2, 5)}`,
+    title: item.title || item.data?.title || 'Sans titre',
+  };
+
+  if (item.type === 'course') {
+    attrs.level = 1;
+    return {
+      type: 'heading',
+      attrs,
+      content: [{ type: 'text', text: attrs.title }]
+    };
+  }
+
+  let content: any[] = [];
+
+  // Notion content restoration
+  if (item.type === 'notion') {
+    content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
+    if (item.content) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = item.content.trim();
+      const parsed: any[] = [];
+      tempDiv.childNodes.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+          parsed.push({ type: 'text', text: node.textContent });
+        } else if (node.nodeName === 'P') {
+          const pContent: any[] = [];
+          node.childNodes.forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+              pContent.push({ type: 'text', text: child.textContent });
+            }
+          });
+          if (pContent.length > 0) {
+            parsed.push({ type: 'paragraph', content: pContent });
+          }
+        }
+      });
+      content = [...content, ...parsed];
+    }
+  }
+
+  // Exercise content restoration
+  if (item.type === 'exercise' && item.data?.questions) {
+    const questionsText = item.data.questions
+      .map((q: any, i: number) => `${i + 1}. ${q.question}`)
+      .join('\n\n');
+    content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+  }
+
+  return {
+    type: nodeType,
+    attrs,
+    content: [...content, ...(item.children || []).map(transformTOCItemToNodeJson)]
+  };
+};
+
+import Document from '@tiptap/extension-document';
+
+const CustomDocument = Document.extend({
+  content: '(heading | section)+',
+});
 
 export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   initialContent,
@@ -120,40 +251,58 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   })
 
   React.useImperativeHandle(ref, () => ({
-    handleTOCAction: (action, itemId, payload) => {
+    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste', itemId: string, payload?: any) => {
       if (!editor) return;
 
       if (action === 'rename' && typeof payload === 'string') {
         const newTitle = payload;
-        // Find node with data-id or id attribute matching itemId
-        // TipTap doesn't have a direct "find node by attribute" index, so we traverse.
-        editor.state.doc.descendants((node, pos) => {
+        editor.state.doc.descendants((node: PMNode, pos: number) => {
           if (node.attrs.id === itemId) {
-            // Found it. Update title.
-            // Check if it's a heading or custom node that stores title in attrs
             if (node.attrs.title !== undefined) {
               editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'title', newTitle));
-              return false; // Stop traversal
+              return false;
             }
           }
         });
       } else if (action === 'delete') {
-        editor.state.doc.descendants((node, pos) => {
+        editor.state.doc.descendants((node: PMNode, pos: number) => {
           if (node.attrs.id === itemId) {
             editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
-            return false; // Stop traversal
+            return false;
+          }
+        });
+      } else if (action === 'duplicate') {
+        editor.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            const newNode = regenerateIds(node);
+            const finalAttrs = { ...newNode.attrs };
+            let finalContent = newNode.content;
+
+            if (finalAttrs.title) {
+              finalAttrs.title = `${finalAttrs.title} (copie)`;
+            }
+
+            // If it's a heading (Course), we need to update the text content as well
+            if (newNode.type.name === 'heading') {
+              const text = newNode.textContent;
+              finalContent = (editor.state.schema as any).Fragment.fromArray([
+                editor.state.schema.text(`${text} (copie)`)
+              ]);
+            }
+
+            const finalNode = newNode.type.create(finalAttrs, finalContent, newNode.marks);
+            editor.view.dispatch(editor.state.tr.insert(pos + node.nodeSize, finalNode));
+            return false;
           }
         });
       } else if (action === 'move' && typeof payload === 'object') {
         const { targetId, position } = payload as { targetId: string, position: 'before' | 'after' | 'inside' };
-
         let sourcePos: number | null = null;
-        let sourceNode: any = null;
+        let sourceNode: PMNode | null = null;
         let targetPos: number | null = null;
-        let targetNode: any = null;
+        let targetNode: PMNode | null = null;
 
-        // Pass 1: Find items
-        editor.state.doc.descendants((node, pos) => {
+        editor.state.doc.descendants((node: PMNode, pos: number) => {
           if (node.attrs.id === itemId) {
             sourcePos = pos;
             sourceNode = node;
@@ -166,50 +315,69 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
         if (sourcePos !== null && targetPos !== null && sourceNode && targetNode) {
           const tr = editor.state.tr;
-
-          // If moving to same position, do nothing
-          if (sourcePos === targetPos) return;
-
-          // Delete source first? 
-          // Better to clone, insert, then delete original.
-          // But if we insert first, positions change.
-          // If we delete first, positions change.
-          // Deleting first is easier if we adjust targetPos.
-
-          tr.delete(sourcePos as number, (sourcePos as number) + sourceNode.nodeSize);
-
-          // Adjust targetPos if source was before target
+          tr.delete(sourcePos, sourcePos + (sourceNode as PMNode).nodeSize);
           let adjustedTargetPos = targetPos as number;
-          if ((sourcePos as number) < (targetPos as number)) {
-            adjustedTargetPos -= sourceNode.nodeSize;
-          }
+          if (sourcePos < (targetPos as number)) adjustedTargetPos -= (sourceNode as PMNode).nodeSize;
 
-          // Calculate insert position relative to adjusted target
           let insertPos = adjustedTargetPos;
-          if (position === 'after') {
-            insertPos = adjustedTargetPos + targetNode.nodeSize;
-          } else if (position === 'inside') {
-            // Insert at end of content
-            insertPos = adjustedTargetPos + targetNode.nodeSize - 1;
-          } else {
-            // before
-            insertPos = adjustedTargetPos;
-          }
+          if (position === 'after') insertPos = adjustedTargetPos + (targetNode as PMNode).nodeSize;
+          else if (position === 'inside') insertPos = adjustedTargetPos + (targetNode as PMNode).nodeSize - 1;
 
           tr.insert(insertPos, sourceNode);
           editor.view.dispatch(tr);
         }
+      } else if (action === 'paste') {
+        const itemToPaste = payload;
+        editor.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            const interimNode = editor.state.schema.nodeFromJSON(transformTOCItemToNodeJson(itemToPaste));
+            const finalNode = regenerateIds(interimNode);
+
+            // Smart insertion for TOC paste
+            let $pos = editor.state.doc.resolve(pos + node.nodeSize - 1); // End of target node
+            let insertPos = pos + node.nodeSize - 1;
+
+            let targetDepth = -1;
+            for (let d = $pos.depth; d >= 0; d--) {
+              const parent = $pos.node(d);
+              const index = $pos.index(d);
+              if (parent.canReplaceWith(index, index, finalNode.type)) {
+                targetDepth = d;
+                break;
+              }
+            }
+
+            if (targetDepth !== -1) {
+              if (targetDepth < $pos.depth) {
+                insertPos = $pos.after(targetDepth + 1);
+              }
+              editor.view.dispatch(editor.state.tr.insert(insertPos, finalNode));
+            } else {
+              // Append anyway if targetDepth is -1 (shouldn't happen with valid schema)
+              editor.view.dispatch(editor.state.tr.insert(pos + node.nodeSize - 1, finalNode));
+            }
+            return false;
+          }
+        });
       }
     }
   }));
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      CustomDocument,
+      StarterKit.configure({
+        document: false,
+        heading: false, // Disable default heading to use our custom one
+      }),
+      Heading.configure({
+        levels: [1, 2, 3, 4, 5, 6],
+      }),
       Dropcursor.configure({
         color: '#a78bfa', // Purple to match your theme
         width: 3,
       }),
+      Gapcursor,
       FontFamily.configure({
         types: ['textStyle'],
       }),
@@ -258,85 +426,20 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             exercise: 'exercice'
           };
 
-          const buildNode = (item: any): any => {
-            const nodeType = typeMap[item.type] || 'paragraph';
-            const attrs: any = {
-              id: item.id,
-              title: item.title || item.data?.title || 'Sans titre',
-            };
-
-            if (item.type === 'course') {
-              attrs.level = 1;
-              // For course, we return the heading node itself, children handled separately
-              return {
-                type: 'heading',
-                attrs,
-                content: [{ type: 'text', text: attrs.title }]
-              };
-            }
-
-            const children = (item.children || []).map(buildNode);
-
-            // Default: empty for structural nodes
-            let content: any[] = [];
-
-            // Special handling for notion: title text + full content
-            if (item.type === 'notion') {
-              // Title as first text
-              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
-
-              // Add actual content if present
-              if (item.content) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = item.content.trim();
-
-                const parsed: any[] = [];
-                tempDiv.childNodes.forEach((node) => {
-                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-                    parsed.push({ type: 'text', text: node.textContent });
-                  } else if (node.nodeName === 'P') {
-                    const pContent: any[] = [];
-                    node.childNodes.forEach((child) => {
-                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
-                        pContent.push({ type: 'text', text: child.textContent });
-                      }
-                    });
-                    if (pContent.length > 0) {
-                      parsed.push({ type: 'paragraph', content: pContent });
-                    }
-                  }
-                });
-
-                content = [...content, ...parsed];
-              }
-            }
-
-            // Exercise: simple question list
-            if (item.type === 'exercise' && item.data?.questions) {
-              const questionsText = item.data.questions
-                .map((q: any, i: number) => `${i + 1}. ${q.question}`)
-                .join('\n\n');
-              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
-            }
-
-            return {
-              type: nodeType,
-              attrs,
-              content: [...content, ...children]
-            };
-          };
-
-          // Main handling logic
           const coords = { left: event.clientX, top: event.clientY };
           const posResult = view.posAtCoords(coords);
           if (!posResult) return false;
 
           if (draggedItem.type === 'course') {
             // Flatten logic for Course: Heading -> Siblings
-            const courseHeading = buildNode(draggedItem);
-            const childrenNodes = (draggedItem.children || []).map((child: any) => buildNode(child));
+            const courseHeadingJson = transformTOCItemToNodeJson(draggedItem);
+            const courseHeading = view.state.schema.nodeFromJSON(courseHeadingJson);
 
-            const nodesToInsert = [courseHeading, ...childrenNodes].map(n => view.state.schema.nodeFromJSON(n));
+            const childrenNodes = (draggedItem.children || []).map((child: any) => {
+              return view.state.schema.nodeFromJSON(transformTOCItemToNodeJson(child));
+            });
+
+            const nodesToInsert = [courseHeading, ...childrenNodes].map(n => regenerateIds(n));
 
             // Insert all nodes sequentially
             let currentPos = posResult.pos;
@@ -348,9 +451,38 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             view.dispatch(tr);
           } else {
             // Standard nested insertion for other types
-            const contentToInsert = buildNode(draggedItem);
-            const node = view.state.schema.nodeFromJSON(contentToInsert);
-            view.dispatch(view.state.tr.insert(posResult.pos, node));
+            const contentToInsertJson = transformTOCItemToNodeJson(draggedItem);
+            const node = view.state.schema.nodeFromJSON(contentToInsertJson);
+            const finalNode = regenerateIds(node);
+
+            // Smart insertion: find the nearest depth that accepts this node type
+            // This prevents splitting parents that shouldn't be split (e.g. dropping chapter between notions)
+            let $pos = view.state.doc.resolve(posResult.pos);
+            let insertPos = posResult.pos;
+
+            // Check if current position allows this node. If not, move up.
+            // We start from the deepest level and work our way up.
+            let targetDepth = -1;
+            for (let d = $pos.depth; d >= 0; d--) {
+              const parent = $pos.node(d);
+              const index = $pos.index(d);
+              if (parent.canReplaceWith(index, index, finalNode.type)) {
+                targetDepth = d;
+                break;
+              }
+            }
+
+            if (targetDepth !== -1) {
+              // If we are moving up, we usually want to insert after the current node at that depth
+              // to avoid splitting the child we were originally inside.
+              if (targetDepth < $pos.depth) {
+                insertPos = $pos.after(targetDepth + 1);
+              }
+              view.dispatch(view.state.tr.insert(insertPos, finalNode));
+            } else {
+              // Last resort: let Prosemirror try to handle it (might split or fail)
+              view.dispatch(view.state.tr.insert(posResult.pos, finalNode));
+            }
           }
 
           return true;
@@ -358,6 +490,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           console.error('Drop error:', error);
           return false;
         }
+      },
+      transformPasted: (slice) => {
+        const nodes: PMNode[] = [];
+        slice.content.forEach(node => {
+          nodes.push(regenerateIds(node));
+        });
+        return new Slice(Fragment.fromArray(nodes), slice.openStart, slice.openEnd);
       },
     },
     onCreate: ({ editor }) => {
@@ -412,6 +551,66 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     },
   });
 
+  const smartInsertNode = (type: string, attrs: any = {}) => {
+    if (!editor) return;
+    const { state, view } = editor;
+    const { schema, tr, selection } = state;
+    const nodeType = schema.nodes[type];
+    if (!nodeType) return;
+
+    // Standard title if not provided
+    const finalAttrs = { ...attrs };
+    if (!finalAttrs.id) {
+      const timestamp = Date.now();
+      const sessionIdx = ++globalIdCounter;
+      const entropy = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID().split('-')[0]
+        : Math.random().toString(36).substring(2, 11);
+      finalAttrs.id = `${type}-${timestamp}-${sessionIdx}-${entropy}`;
+    }
+
+    if (!finalAttrs.title && type !== 'heading') {
+      finalAttrs.title = nodeTypeFrench[type] || 'Sans titre';
+    }
+
+    // Special case for Course (heading level 1)
+    if (type === 'heading') {
+      const node = nodeType.createAndFill({ ...finalAttrs, level: 1 }, schema.text(finalAttrs.title || 'Nouveau Cours'));
+      if (node) {
+        view.dispatch(tr.replaceSelectionWith(node).scrollIntoView());
+      }
+      return;
+    }
+
+    const node = nodeType.createAndFill(finalAttrs);
+    if (!node) return;
+
+    const $pos = selection.$from;
+    let targetDepth = -1;
+
+    // Look for a depth that accepts this node type
+    for (let d = $pos.depth; d >= 0; d--) {
+      const parent = $pos.node(d);
+      const index = $pos.index(d);
+      if (parent.canReplaceWith(index, index, nodeType)) {
+        targetDepth = d;
+        break;
+      }
+    }
+
+    if (targetDepth !== -1) {
+      let insertPos = selection.from;
+      // If we are nested too deep, insert after the current node at the target depth
+      if (targetDepth < $pos.depth) {
+        insertPos = $pos.after(targetDepth + 1);
+      }
+      view.dispatch(tr.insert(insertPos, node).scrollIntoView());
+    } else {
+      // Fallback: standard Tiptap insertion which might split (but usually schema forbids it now)
+      editor.chain().focus().insertContent(node.toJSON()).run();
+    }
+  };
+
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -439,8 +638,8 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       const itemContent: any[] = [
         {
           type: 'paragraph',
-          content: [{ 
-            type: 'text', 
+          content: [{
+            type: 'text',
             text: q.text,
             marks: [{ type: 'bold' }] // Bold the question text
           }]
@@ -519,17 +718,19 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       if (value === 'paragraph') {
         editor?.chain().focus().setParagraph().run();
       } else if (value === 'section') {
-        editor?.chain().focus().setSection().run();
+        smartInsertNode('section');
       } else if (value === 'chapitre') {
-        editor?.chain().focus().setChapitre().run();
+        smartInsertNode('chapitre');
       } else if (value === 'paragraphe') {
-        editor?.chain().focus().setParagraphe().run();
+        smartInsertNode('paragraphe');
       } else if (value === 'notion') {
-        editor?.chain().focus().setNotion().run();
+        smartInsertNode('notion');
       } else if (value === 'exercice') {
-        editor?.chain().focus().setExercice().run();
+        smartInsertNode('exercice');
+      } else if (typeof value === 'number' && value === 1) {
+        smartInsertNode('heading', { level: 1 });
       } else if (typeof value === 'number') {
-        editor?.chain().focus().toggleHeading({ level: value as 1 | 2 | 3 | 4 | 5 | 6 }).run();
+        editor?.chain().focus().toggleHeading({ level: value as any }).run();
       }
     };
 

@@ -70,11 +70,7 @@ export default function DownloadOptions({
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Format PDF</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Idéal pour l'impression et la lecture stable</p>
                                 </div>
-                                {isPdfLoading && (
-                                    <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 rounded-[2rem] flex items-center justify-center">
-                                        <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
-                                    </div>
-                                )}
+                                {isPdfLoading && null}
                             </button>
 
                             {/* Word Option */}
@@ -90,11 +86,7 @@ export default function DownloadOptions({
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Format Word</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Idéal pour l'édition et la prise de notes</p>
                                 </div>
-                                {isWordLoading && (
-                                    <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 rounded-[2rem] flex items-center justify-center">
-                                        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
-                                    </div>
-                                )}
+                                {isWordLoading && null}
                             </button>
                         </div>
                     ) : (

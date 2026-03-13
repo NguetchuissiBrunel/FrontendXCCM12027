@@ -21,24 +21,15 @@ import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 export default function ExerciceNodeView({ node, updateAttributes }: NodeViewProps) {
   // const [isHovered, setIsHovered] = useState(false);
 
-  const titleRef = useRef<HTMLInputElement>(null);
-  const measureRef = useRef<HTMLSpanElement>(null);
-  
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
   useLayoutEffect(() => {
-    const resize = () => {
-      if (titleRef.current && measureRef.current) {
-        const width = measureRef.current.offsetWidth + 16;
-        titleRef.current.style.width = `${Math.max(width, 70)}px`;
-      }
-    };
-  
-    // Run immediately
-    resize();
-  
-    // Run again after paint (important for initial drop)
-    requestAnimationFrame(resize);
+    if (titleRef.current) {
+      titleRef.current.style.height = 'auto';
+      titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
+    }
   }, [node.attrs.title]);
-  
+
   return (
     <NodeViewWrapper
       className="exercice-node"
@@ -53,29 +44,36 @@ export default function ExerciceNodeView({ node, updateAttributes }: NodeViewPro
       }}
     >
       {/* Editable Label Badge */}
-      {/* Editable Label Badge */}
-      <div contentEditable={false}>
-        <input
-          type="text"
+      <div contentEditable={false} className="flex flex-col gap-1 mb-2">
+        <textarea
+          ref={titleRef}
           value={node.attrs.title}
           onChange={(e) => updateAttributes({ title: e.target.value })}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
+          rows={1}
           style={{
             display: 'block',
             width: '100%',
             border: 'none',
             outline: 'none',
             backgroundColor: 'transparent',
+            resize: 'none',
+            overflow: 'hidden',
+            minHeight: '1.2em',
 
-            // Style for 'node-exercise' (inferred)
+            // Style for 'node-exercise'
             fontSize: '20px',
             fontWeight: 'bold',
             lineHeight: '1.5',
-            marginBottom: '0.5rem',
-            color: '#6366F1', // indigo-500
+            color: '#4F46E5', // indigo-600
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            padding: 0,
+            margin: 0
           }}
           className="node-exercise-input placeholder-gray-400"
+          placeholder="Titre de l'exercice..."
         />
       </div>
 

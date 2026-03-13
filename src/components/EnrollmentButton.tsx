@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useEnrollment } from '@/hooks/useEnrollment';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLoading } from '@/contexts/LoadingContext';
 import { Play, Check, Loader2, BookOpen, Lock } from 'lucide-react';
 
 interface EnrollmentButtonProps {
@@ -26,14 +27,14 @@ export default function EnrollmentButton({
   onUnenroll
 }: EnrollmentButtonProps) {
   const { user, isAuthenticated } = useAuth();
+  const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
   const { isEnrolled, progress, loading, enroll, unenroll, enrollment } = useEnrollment(courseId);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Vérifier si l'utilisateur peut s'inscrire
   const canEnroll = isAuthenticated && user?.role === 'student';
 
   const handleClick = async () => {
-    if (loading || isLoading) return;
+    if (loading || globalLoading) return;
 
     // Empêcher l'inscription si non autorisé
     if (!canEnroll) {
@@ -41,7 +42,7 @@ export default function EnrollmentButton({
       return;
     }
 
-    setIsLoading(true);
+    startLoading();
 
     try {
       if (isEnrolled) {
@@ -55,7 +56,7 @@ export default function EnrollmentButton({
       console.error('Erreur lors de l\'inscription:', error);
     } finally {
       // Petit délai pour l'animation
-      setTimeout(() => setIsLoading(false), 300);
+      setTimeout(stopLoading, 300);
     }
   };
 
@@ -107,7 +108,7 @@ export default function EnrollmentButton({
     <div className={fullWidth ? 'w-full' : ''}>
       <button
         onClick={handleClick}
-        disabled={isLoading || !canEnroll}
+        disabled={globalLoading || !canEnroll}
         className={`
           ${sizeClasses[size]}
           ${variantClasses[variant]}
@@ -119,7 +120,7 @@ export default function EnrollmentButton({
         `}
         title={!canEnroll ? (user?.role === 'teacher' ? 'Enseignants ne peuvent pas s\'inscrire' : 'Connectez-vous en tant qu\'étudiant') : undefined}
       >
-        {isLoading ? (
+        {globalLoading ? (
           <Loader2 className={`${iconSizes[size]} animate-spin`} />
         ) : !canEnroll ? (
           <>

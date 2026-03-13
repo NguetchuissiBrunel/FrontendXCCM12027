@@ -3,7 +3,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export type AuthorDTO = {
+    id?: string;
     name?: string;
+    email?: string;
     image?: string;
     designation?: string;
 };

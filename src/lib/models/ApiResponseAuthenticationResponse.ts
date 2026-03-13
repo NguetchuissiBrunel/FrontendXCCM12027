@@ -10,7 +10,11 @@ export type ApiResponseAuthenticationResponse = {
     /**
      * Code de statut HTTP
      */
-    status?: number;
+    code?: number;
+    /**
+     * Indique si l'opération a réussi
+     */
+    success?: boolean;
     /**
      * Message décrivant le résultat de l'opération
      */
@@ -28,6 +32,5 @@ export type ApiResponseAuthenticationResponse = {
      * Horodatage de la réponse
      */
     timestamp?: string;
-    success?: boolean;
 };
 

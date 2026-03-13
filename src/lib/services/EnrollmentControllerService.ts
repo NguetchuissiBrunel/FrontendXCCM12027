@@ -2,6 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ApiResponseEnrollmentDTO } from '../models/ApiResponseEnrollmentDTO';
+import type { ApiResponseListEnrollmentDTO } from '../models/ApiResponseListEnrollmentDTO';
+import type { ApiResponseVoid } from '../models/ApiResponseVoid';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -9,13 +12,13 @@ export class EnrollmentControllerService {
     /**
      * @param enrollmentId
      * @param status
-     * @returns any OK
+     * @returns ApiResponseEnrollmentDTO OK
      * @throws ApiError
      */
     public static validateEnrollment(
         enrollmentId: number,
         status: 'PENDING' | 'APPROVED' | 'REJECTED',
-    ): CancelablePromise<Record<string, any>> {
+    ): CancelablePromise<ApiResponseEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/enrollments/{enrollmentId}/validate',
@@ -30,13 +33,13 @@ export class EnrollmentControllerService {
     /**
      * @param enrollmentId
      * @param progress
-     * @returns any OK
+     * @returns ApiResponseEnrollmentDTO OK
      * @throws ApiError
      */
     public static updateProgress(
         enrollmentId: number,
         progress: number,
-    ): CancelablePromise<Record<string, any>> {
+    ): CancelablePromise<ApiResponseEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/enrollments/{enrollmentId}/progress',
@@ -50,12 +53,12 @@ export class EnrollmentControllerService {
     }
     /**
      * @param enrollmentId
-     * @returns any OK
+     * @returns ApiResponseEnrollmentDTO OK
      * @throws ApiError
      */
     public static markAsCompleted(
         enrollmentId: number,
-    ): CancelablePromise<Record<string, any>> {
+    ): CancelablePromise<ApiResponseEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/enrollments/{enrollmentId}/complete',
@@ -66,12 +69,12 @@ export class EnrollmentControllerService {
     }
     /**
      * @param courseId
-     * @returns any OK
+     * @returns ApiResponseEnrollmentDTO OK
      * @throws ApiError
      */
     public static getEnrollmentForCourse(
         courseId: number,
-    ): CancelablePromise<Record<string, any>> {
+    ): CancelablePromise<ApiResponseEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/enrollments/courses/{courseId}',
@@ -82,12 +85,12 @@ export class EnrollmentControllerService {
     }
     /**
      * @param courseId
-     * @returns any OK
+     * @returns ApiResponseEnrollmentDTO OK
      * @throws ApiError
      */
     public static enrollInCourse(
         courseId: number,
-    ): CancelablePromise<Record<string, any>> {
+    ): CancelablePromise<ApiResponseEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/enrollments/courses/{courseId}',
@@ -97,23 +100,55 @@ export class EnrollmentControllerService {
         });
     }
     /**
-     * @returns any OK
+     * @returns ApiResponseListEnrollmentDTO OK
      * @throws ApiError
      */
-    public static getPendingEnrollments(): CancelablePromise<Record<string, any>> {
+    public static getPendingEnrollments(): CancelablePromise<ApiResponseListEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/enrollments/pending',
         });
     }
     /**
-     * @returns any OK
+     * @returns ApiResponseListEnrollmentDTO OK
      * @throws ApiError
      */
-    public static getMyEnrollments(): CancelablePromise<Record<string, any>> {
+    public static getMyEnrollments(): CancelablePromise<ApiResponseListEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/enrollments/my-courses',
+        });
+    }
+    /**
+     * @param enrollmentId
+     * @returns ApiResponseVoid OK
+     * @throws ApiError
+     */
+    public static unenroll(
+        enrollmentId: number,
+    ): CancelablePromise<ApiResponseVoid> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/enrollments/{enrollmentId}',
+            path: {
+                'enrollmentId': enrollmentId,
+            },
+        });
+    }
+    /**
+     * @param enrollmentId
+     * @returns ApiResponseVoid OK
+     * @throws ApiError
+     */
+    public static cancelPendingEnrollment(
+        enrollmentId: number,
+    ): CancelablePromise<ApiResponseVoid> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/enrollments/pending/{enrollmentId}',
+            path: {
+                'enrollmentId': enrollmentId,
+            },
         });
     }
 }

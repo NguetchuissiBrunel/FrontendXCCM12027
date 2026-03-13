@@ -37,9 +37,9 @@ declare module '@tiptap/core' {
 export default Node.create<ParagrapheOptions>({
   name: 'paragraphe',
 
-  group: 'block',
+  group: 'xccm-paragraph',
 
-  content: 'block+',
+  content: '(notion | exercice)+',
 
   defining: true,
 
@@ -103,11 +103,11 @@ export default Node.create<ParagrapheOptions>({
     return {
       setParagraphe:
         () =>
-        ({ commands }) => {
-          // Generate unique ID for this paragraphe
-          const id = `paragraphe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.wrapIn(this.name, { id });
-        },
+          ({ commands }) => {
+            // Generate unique ID for this paragraphe
+            const id = `paragraphe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return commands.wrapIn(this.name, { id });
+          },
     };
   },
 

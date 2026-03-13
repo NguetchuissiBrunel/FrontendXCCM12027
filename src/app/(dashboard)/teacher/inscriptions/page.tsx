@@ -25,7 +25,8 @@ export default function TeacherEnrollmentsPage() {
         }
     }, [authLoading, isMounted, startLoading, stopLoading]);
 
-    if (authLoading || !isMounted || globalLoading) {
+    // Ne rien afficher tant que l'authentification est en cours (le loader global s'en occupe via l'useEffect ci-dessus)
+    if (authLoading || !isMounted) {
         return null;
     }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import Calendar from '@/components/Calendar';
 
 import { useLoading } from '@/contexts/LoadingContext';
 
@@ -73,24 +74,15 @@ export default function StudentDeadlines() {
       />
 
       <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-8">Échéances</h1>
-
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-          <div className="flex flex-col items-center justify-center">
-            {/* Image sans overlay pour affichage simple */}
-            <div className="relative w-full max-w-2xl h-96 mb-8 rounded-2xl overflow-hidden">
-              <img
-                src="/images/open2.jpg"
-                alt="Aucune échéance"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Aucune échéance à venir</h2>
-            <p className="text-gray-500 dark:text-gray-400 text-center max-w-2xl text-lg">
-              Profitez de ce temps libre pour explorer de nouveaux cours ou revoir vos notes !
-            </p>
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-2">Échéances</h1>
+            <p className="text-gray-500 dark:text-gray-400">Gérez votre emploi du temps et vos deadlines personnelles</p>
           </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl shadow-purple-100/50 dark:shadow-none border border-purple-100 dark:border-gray-700">
+          <Calendar userId={user.id} />
         </div>
       </main>
     </div>

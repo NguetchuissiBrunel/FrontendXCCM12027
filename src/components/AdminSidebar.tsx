@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { FaUsers, FaChalkboardTeacher, FaBook, FaThLarge, FaSignOutAlt, FaUserGraduate } from 'react-icons/fa';
+import { FaUsers, FaChalkboardTeacher, FaBook, FaThLarge, FaSignOutAlt, FaUserGraduate, FaUser } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
@@ -16,6 +16,7 @@ const AdminSidebar = () => {
         { name: 'Enseignants', icon: <FaChalkboardTeacher />, path: '/admindashboard/teachers' },
         { name: 'Cours', icon: <FaBook />, path: '/admindashboard/courses' },
         { name: 'Enrollements', icon: <FaUserGraduate />, path: '/admindashboard/enrollments' },
+        { name: 'Administrateurs', icon: <FaUser />, path: '/admindashboard/admins' },
     ];
 
     return (

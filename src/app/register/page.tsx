@@ -1,11 +1,12 @@
 'use client';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket, FaEyeSlash, FaEye } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import ImageUploader from '@/components/upload/ImageUploader';
 
 type FormData = {
   email: string;
@@ -33,6 +34,33 @@ type FormData = {
   teachingGoal?: string;
 };
 
+const GRADES = [
+  "Professeur des écoles",
+  "Certifié (CAPES)",
+  "Agrégé",
+  "Enseignant-Chercheur",
+  "Maître de Conférences",
+  "Professeur des Universités",
+  "Doctorant"
+];
+
+const SUBJECTS = [
+  "Mathématiques",
+  "Physique-Chimie",
+  "SVT",
+  "Informatique",
+  "Français",
+  "Anglais",
+  "Histoire-Géographie",
+  "Philosophie",
+  "Économie",
+  "Gestion",
+  "Droit",
+  "Médecine",
+  "Génie Civil",
+  "Génie Électrique"
+];
+
 const SignupPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
@@ -51,20 +79,32 @@ const SignupPage = () => {
   const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
+  const subjectDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (subjectDropdownRef.current && !subjectDropdownRef.current.contains(event.target as Node)) {
+        setShowSubjectDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const router = useRouter();
-  const { registerStudent, registerTeacher, user } = useAuth();
+  const { registerStudent, registerTeacher, user, isAuthenticated } = useAuth();
 
   // Rediriger si déjà connecté
   useEffect(() => {
-    if (user) {
-      if (user.role === 'student') {
+    if (isAuthenticated) {
+      if (user?.role === 'student') {
         router.push('/etudashboard');
-      } else if (user.role === 'teacher') {
+      } else if (user?.role === 'teacher') {
         router.push('/profdashboard');
       }
     }
-  }, [user, router]);
+  }, [isAuthenticated, user, router]);
 
   // Validation en temps réel des mots de passe
   useEffect(() => {
@@ -103,6 +143,10 @@ const SignupPage = () => {
       newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
     }
 
+    if (formData.role === 'teacher' && !formData.grade) {
+      newErrors.grade = "Veuillez sélectionner votre grade";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
@@ -113,29 +157,27 @@ const SignupPage = () => {
     }
   }, [currentStep, validateStep1]);
 
-  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setErrors({ ...errors, photo: 'Veuillez sélectionner une image valide' });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors({ ...errors, photo: 'L\'image ne doit pas dépasser 5MB' });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPhotoPreview(base64String);
-        setFormData({ ...formData, photoUrl: base64String });
-        setErrors({ ...errors, photo: '' });
-      };
-      reader.readAsDataURL(file);
-    }
+  const handlePhotoUploadComplete = useCallback((url: string) => {
+    setPhotoPreview(url);
+    setFormData({ ...formData, photoUrl: url });
+    setErrors({ ...errors, photo: '' });
+    toast.success('Photo uploadée avec succès');
   }, [formData, errors]);
+
+  const handlePhotoUploadError = useCallback((error: string) => {
+    setErrors({ ...errors, photo: error });
+    toast.error(error);
+  }, [errors]);
+
+  const toggleSubject = (subject: string) => {
+    setFormData(prev => {
+      const currentSubjects = prev.subjects || [];
+      const newSubjects = currentSubjects.includes(subject)
+        ? currentSubjects.filter(s => s !== subject)
+        : [...currentSubjects, subject];
+      return { ...prev, subjects: newSubjects };
+    });
+  };
 
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
@@ -147,6 +189,7 @@ const SignupPage = () => {
           confirmPassword: formData.confirmPassword,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          photoUrl: formData.photoUrl,
           city: formData.city,
           university: formData.university,
           specialization: formData.specialization,
@@ -171,6 +214,9 @@ const SignupPage = () => {
           confirmPassword: formData.confirmPassword,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          photoUrl: formData.photoUrl,
+          city: formData.city,
+          university: formData.university,
           grade: formData.grade,
           subjects: formData.subjects || [],
           certification: formData.certification,
@@ -300,6 +346,30 @@ const SignupPage = () => {
             <FaChalkboardTeacher className="mr-2" /> Enseignant
           </button>
         </div>
+
+        <AnimatePresence>
+          {formData.role === 'teacher' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="relative"
+            >
+              <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <select
+                value={formData.grade || ''}
+                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all appearance-none"
+              >
+                <option value="" disabled>Sélectionnez votre grade</option>
+                {GRADES.map(grade => (
+                  <option key={grade} value={grade}>{grade}</option>
+                ))}
+              </select>
+              {errors.grade && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.grade}</p>}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <button
@@ -354,34 +424,12 @@ const SignupPage = () => {
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center space-x-4">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 dark:border-purple-900/30 shadow-lg">
-              <img
-                src={photoPreview}
-                alt="Prévisualisation"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <div className="flex-1">
-              <label
-                htmlFor="photo-upload"
-                className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg cursor-pointer hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg"
-              >
-                <FaCamera className="mr-2" />
-                Choisir une photo
-              </label>
-              <input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">JPG, PNG ou JPEG (Max. 5MB)</p>
-              {errors.photo && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.photo}</p>}
-            </div>
-          </div>
+          <ImageUploader
+            currentImageUrl={photoPreview}
+            onUploadComplete={handlePhotoUploadComplete}
+            onUploadError={handlePhotoUploadError}
+            placeholder="Cliquez ou glissez votre photo ici"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -420,25 +468,44 @@ const SignupPage = () => {
           </div>
         ) : (
           <>
-            <div className="relative">
-              <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <input
-                type="text"
-                placeholder="Grade"
-                value={formData.grade || ''}
-                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
-              />
-            </div>
-            <div className="relative">
-              <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <input
-                type="text"
-                placeholder="Matières enseignées (séparer par des virgules)"
-                value={formData.subjects?.join(', ') || ''}
-                onChange={(e) => setFormData({ ...formData, subjects: e.target.value.split(', ') })}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
-              />
+            <div className="relative" ref={subjectDropdownRef}>
+              <FaBook className="absolute left-3 top-4 text-gray-400 dark:text-gray-500 z-10" />
+              <div
+                onClick={() => setShowSubjectDropdown(!showSubjectDropdown)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all cursor-pointer min-h-[50px] flex flex-wrap gap-1"
+              >
+                {formData.subjects && formData.subjects.length > 0 ? (
+                  formData.subjects.map(s => (
+                    <span key={s} className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded text-xs flex items-center">
+                      {s}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleSubject(s); }}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-gray-400">Sélectionnez vos matières</span>
+                )}
+              </div>
+
+              {showSubjectDropdown && (
+                <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  {SUBJECTS.map(subject => (
+                    <div
+                      key={subject}
+                      onClick={() => toggleSubject(subject)}
+                      className={`px-4 py-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-100/10 flex items-center justify-between text-sm ${formData.subjects?.includes(subject) ? 'bg-purple-50 dark:bg-purple-100/10 text-purple-600' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                    >
+                      {subject}
+                      {formData.subjects?.includes(subject) && <span className="text-purple-600">✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -469,7 +536,7 @@ const SignupPage = () => {
 
       {/* Toaster - Supprimé car géré au niveau global RootLayout */}
     </motion.div>
-  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUpload, photoPreview]);
+  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUploadComplete, handlePhotoUploadError, photoPreview, showSubjectDropdown]);
 
   return (
     <div

@@ -130,3 +130,8 @@ export function isTokenExpired(token: string): boolean {
     const expirationDate = decoded.exp * 1000;
     return Date.now() >= expirationDate;
 }
+
+// Initialisation immédiate au chargement du module si on est dans le navigateur
+if (typeof window !== 'undefined') {
+    initializeAuth();
+}

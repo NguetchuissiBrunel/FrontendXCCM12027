@@ -38,7 +38,7 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                 <p>Auteur : ${courseData.author.name}</p>
             </div>
             
-            <p><strong>Introduction :</strong> ${courseData.introduction || ''}</p>
+            <p>${courseData.introduction || ''}</p>
         `;
 
         // Loop through sections
@@ -54,7 +54,7 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                         body += `<p>${extractTextFromContent(para.content)}</p>`;
 
                         if (para.notions && para.notions.length > 0) {
-                            body += `<div class="notion"><strong>Notions clés :</strong> ${para.notions.join(', ')}</div>`;
+                            body += `<div class="notion">${para.notions.join(', ')}</div>`;
                         }
                     });
                 });
@@ -66,23 +66,28 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                     body += `<p>${extractTextFromContent(para.content)}</p>`;
 
                     if (para.notions && para.notions.length > 0) {
-                        body += `<div class="notion"><strong>Notions clés :</strong> ${para.notions.join(', ')}</div>`;
+                        body += `<div class="notion">${para.notions.join(', ')}</div>`;
                     }
                 });
             }
         });
 
-        body += `
+        const conclusionText = extractTextFromContent(courseData.conclusion || '');
+        if (conclusionText.trim() !== "") {
+            body += `
                 <div style="margin-top: 50px; border-top: 2px solid #5B21B6; padding-top: 20px;">
                     <h2>Conclusion</h2>
-                    <p>${courseData.conclusion || 'Merci d\'avoir suivi ce cours.'}</p>
+                    <p>${conclusionText}</p>
                 </div>
+            `;
+        }
+        body += `
             </body>
             </html>
         `;
 
         const footer = "</body></html>";
-        const sourceHTML = header + body + footer;
+        const sourceHTML = header + body; // footer is now included in body
 
         // Create a blob with the correct Word MIME type
         const blob = new Blob([sourceHTML], { type: 'application/msword' });

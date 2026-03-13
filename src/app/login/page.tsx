@@ -25,11 +25,11 @@ const SigninPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
 
   // Rediriger si déjà connecté
   useEffect(() => {
-    if (user) {
+    if (isAuthenticated) {
       // Si un callbackUrl existe, on pourrait l'utiliser, sinon dashboard par défaut
       const params = new URLSearchParams(window.location.search);
       const callback = params.get('callbackUrl');
@@ -37,11 +37,11 @@ const SigninPage = () => {
       if (callback) {
         router.push(callback);
       } else {
-        if (user.role === 'student') router.push('/etudashboard');
-        else if (user.role === 'teacher') router.push('/profdashboard');
+        if (user?.role === 'student') router.push('/etudashboard');
+        else if (user?.role === 'teacher') router.push('/profdashboard');
       }
     }
-  }, [user, router]);
+  }, [isAuthenticated, user, router]);
 
   // Charger le rôle sauvegardé
   useEffect(() => {

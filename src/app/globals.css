@@ -492,3 +492,34 @@ body {
   color: #9ca3af !important;
   border-left-color: #A78BFA !important;
 }
+
+/* Exercice Node Content Styles */
+.exercice-node .content ol {
+  list-style-type: decimal !important;
+}
+
+/* Specificity override for nested MCQ options */
+.ProseMirror.prose .exercice-node .content li > ol {
+  list-style-type: lower-alpha !important;
+  font-weight: normal !important;
+  margin-top: 0.5rem;
+  padding-left: 2rem !important;
+}
+
+/* Ensure bold questions are very visible */
+.exercice-node .content strong {
+  font-weight: 800 !important;
+  color: #111827; /* Gray-900 */
+}
+
+.dark .exercice-node .content strong {
+  color: #f3f4f6; /* Gray-100 */
+}
+
+.exercice-node .content > ol > li {
+  margin-bottom: 1rem !important;
+}
+
+.exercice-node .content > ol > li > ol > li {
+  margin-bottom: 0.25rem !important;
+}

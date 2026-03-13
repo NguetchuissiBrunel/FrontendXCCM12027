@@ -433,6 +433,13 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   // Fonctions pour le glisser-déposer
   const handleDragStart = useCallback((e: React.DragEvent, item: TableOfContentsItem) => {
     e.stopPropagation();
+    
+    // Prevent dragging exercises as they are "fixed"
+    if (item.type === 'exercise') {
+      e.preventDefault();
+      return;
+    }
+
     setDraggedItem(item);
     e.dataTransfer.setData('text/plain', item.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -451,6 +458,22 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     if (!draggedItem || draggedItem.id === item.id) return;
 
     // Vérifier si l'élément peut être déposé à cet endroit
+    // Exercises are fixed, so we don't allow dropping items relative to them if that would move them.
+    // However, the request is specifically that EXERCISES cannot be moved.
+    // Usually that means they are not a drag source. 
+    // If they shouldn't be moved by others dropping near them, we can also check target type.
+    const isTargetExercise = item.type === 'exercise';
+    
+    // If target is exercise, we only allow "inside" if it's a valid parent (but it's not)
+    // Actually exercises are leaf nodes. So better to disable any drop near them if we want them TRULY fixed.
+    if (isTargetExercise) {
+      setDragOverItemId(item.id);
+      setDropAllowed(false);
+      setDropPosition(null);
+      e.dataTransfer.dropEffect = 'none';
+      return;
+    }
+
     const isSibling = draggedItem.type === item.type;
     const isChild = getAllowedChildTypes(item.type).includes(draggedItem.type);
     const canDrop = isSibling || isChild;
@@ -501,7 +524,9 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     if (isSibling || isChild) {
       // Use the position calculated during dragOver
       const position = dropPosition || (isChild ? 'inside' : 'after');
-      onItemMove(draggedItem.id, targetItem.id, position);
+      if (onItemMove) {
+        onItemMove(draggedItem.id, targetItem.id, position);
+      }
       // Note: onItemMove caller should update items which will trigger tocItems update via prop
       // However, if we want Ctrl+Z to work locally even before parent update, we might need more logic.
       // For now, assuming parent update is fast. 
@@ -577,7 +602,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             className={`group flex items-center p-2 border-l-4 ${getItemColor(item.type)} rounded-r shadow-sm transition-all duration-200 hover:shadow-md ${getIndentation(item.level)} ${dragClasses} ${!isDragTarget ? 'bg-white dark:bg-gray-800' : ''}`}
             onContextMenu={(e) => handleContextMenu(e, item)}
             onClick={() => onItemClick && onItemClick(item.id)}
-            draggable
+            draggable={item.type !== 'exercise'}
             onDragStart={(e) => handleDragStart(e, item)}
             onDragOver={(e) => handleItemDragOver(e, item)}
             onDragLeave={handleItemDragLeave}

@@ -13,6 +13,8 @@ import Link from '@tiptap/extension-link';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import FontFamily from '@tiptap/extension-font-family';
 import { Extension } from '@tiptap/core';
+import { QuickExerciseModal, QuestionData } from './QuickExerciseModal';
+import { QuestionType } from '@/types/exercise';
 
 // Custom XCCM Hierarchy Nodes
 import ResizableImage from '../../extensions/ResizableImage';
@@ -100,6 +102,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   onEditorReady
 }, ref) => {
   const [zoom, setZoom] = useState(100);
+  const [showQuickExerciseModal, setShowQuickExerciseModal] = useState(false);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
@@ -426,6 +429,59 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
 
+  const handleCreateQuickExercise = (data: { title: string; type: QuestionType; questions: QuestionData[] }) => {
+    if (!editor) return;
+
+    const { title, type, questions } = data;
+
+    // Formatting the exercise content as TipTap nodes
+    const questionsItems = questions.map((q) => {
+      const itemContent: any[] = [
+        {
+          type: 'paragraph',
+          content: [{ 
+            type: 'text', 
+            text: q.text,
+            marks: [{ type: 'bold' }] // Bold the question text
+          }]
+        }
+      ];
+
+      // If MCQ, add the options as an ordered list (for alpha numbering a, b, c...)
+      if (type === 'MULTIPLE_CHOICE' && q.options && q.options.length > 0) {
+        itemContent.push({
+          type: 'orderedList',
+          content: q.options.filter((opt: string) => opt.trim() !== '').map((opt: string) => ({
+            type: 'listItem',
+            content: [{
+              type: 'paragraph',
+              content: [{ type: 'text', text: opt }]
+            }]
+          }))
+        });
+      }
+
+      return {
+        type: 'listItem',
+        content: itemContent
+      };
+    });
+
+    const exerciseNode = {
+      type: 'exercice',
+      attrs: {
+        id: `exercice-${Date.now()}`,
+        title: title,
+      },
+      content: [{
+        type: 'orderedList',
+        content: questionsItems
+      }]
+    };
+
+    editor.chain().focus().insertContent(exerciseNode).run();
+  };
+
   const ToolbarButton = ({
     onClick,
     children,
@@ -637,6 +693,17 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               <div className="flex items-center gap-1">
                 <Sigma size={16} />
                 <span className="text-xs font-bold hidden xl:inline">Équation</span>
+              </div>
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => setShowQuickExerciseModal(true)}
+              title="Créer un Exercice Rapide"
+              isActive={false}
+            >
+              <div className="flex items-center gap-1">
+                <FaListOl size={16} />
+                <span className="text-xs font-bold hidden xl:inline">Exercice</span>
               </div>
             </ToolbarButton>
 
@@ -876,12 +943,14 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             />
             <div className="flex gap-2 justify-end">
               <button
+                type="button"
                 onClick={() => setShowLinkModal(false)}
                 className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => {
                   if (linkUrl) {
                     editor?.chain().focus().setLink({ href: linkUrl }).run();
@@ -897,6 +966,12 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           </div>
         </div>
       )}
+
+      <QuickExerciseModal
+        isOpen={showQuickExerciseModal}
+        onClose={() => setShowQuickExerciseModal(false)}
+        onSave={handleCreateQuickExercise}
+      />
     </>
   );
 });

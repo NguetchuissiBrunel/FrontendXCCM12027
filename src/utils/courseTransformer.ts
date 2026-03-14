@@ -136,7 +136,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                     title: grandChild.title || "Paragraphe sans titre",
                                     introduction: grandChild.attrs?.introduction || "",
                                     content: filterSpecialNodes(grandChild.content || []),
-                                    notions: (grandChild.children || []).filter(c => c.type === 'notion').map(c => c.title) || [],
+                                    notions: (grandChild.children || []).filter(c => c.type === 'notion').map(c => extractTextFromContent(c.content)) || [],
                                     exerciseContent: grandChild.children.find(c => c.type === 'exercise')?.content || null
                                 });
                             }
@@ -147,7 +147,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                             title: child.title || "Paragraphe sans titre",
                             introduction: child.attrs?.introduction || "",
                             content: filterSpecialNodes(child.content || []),
-                            notions: (child.children || []).filter(c => c.type === 'notion').map(c => c.title) || [],
+                            notions: (child.children || []).filter(c => c.type === 'notion').map(c => extractTextFromContent(c.content)) || [],
                             exerciseContent: child.children.find(c => c.type === 'exercise')?.content || null
                         });
                     }

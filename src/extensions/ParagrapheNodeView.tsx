@@ -32,8 +32,12 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
       }
     };
 
-    adjustHeight(titleRef);
-    adjustHeight(introRef);
+    const timeout = setTimeout(() => {
+      adjustHeight(titleRef);
+      adjustHeight(introRef);
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [node.attrs.title, node.attrs.introduction]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

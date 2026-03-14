@@ -33,8 +33,13 @@ export default function SectionNodeView({ node, updateAttributes }: NodeViewProp
       }
     };
 
-    adjustHeight(titleRef);
-    adjustHeight(introRef);
+    // Use requestAnimationFrame to ensure layout has stabilize
+    const timeout = setTimeout(() => {
+      adjustHeight(titleRef);
+      adjustHeight(introRef);
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [node.attrs.title, node.attrs.introduction]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

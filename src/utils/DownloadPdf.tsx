@@ -22,14 +22,14 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
     };
 
     const colors = {
-      primary: [49, 46, 129],    // Indigo-900
-      partie: [49, 46, 129],     // Indigo-900
-      chapitre: [6, 78, 59],      // Emerald-900
-      paragraphe: [154, 52, 18],  // Orange-900
-      notion: [153, 27, 27],      // Red-800
-      exercise: [30, 64, 175],    // Blue-800
+      primary: [91, 33, 182],    // Violet-800 (#5B21B6)
+      partie: [124, 58, 237],     // Violet-600 (#7C3AED)
+      chapitre: [16, 185, 129],    // Emerald-500 (#10B981)
+      paragraphe: [234, 88, 12],  // Orange-600 (#ea580c)
+      notion: [220, 38, 38],      // Red-600 (#dc2626)
+      exercise: [79, 70, 229],    // Indigo-600 (#4f46e5)
       dark: [31, 41, 55],         // Gray-800
-      light: [107, 114, 128],     // Gray-500
+      light: [107, 114, 128],     // Gray-50
       bgLight: [249, 250, 251]    // Gray-50
     } as const;
 
@@ -195,13 +195,13 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
         y = margin;
       }
       
-      // Fond léger (en utilisant une couleur RGB très claire au lieu de setAlpha)
-      doc.setFillColor(245, 247, 250); 
-      doc.roundedRect(xPos - 5, y - 10, maxWidth + 25, boxHeight, 3, 3, 'F');
+      // Fond léger correspondant au style Word
+      doc.setFillColor(249, 250, 251); // #f9fafb
+      doc.rect(xPos - 5, y - 10, maxWidth + 25, boxHeight, 'F');
 
-      // Bordure gauche
+      // Bordure gauche colorée
       doc.setDrawColor(color[0], color[1], color[2]);
-      doc.setLineWidth(3);
+      doc.setLineWidth(4);
       doc.line(xPos - 5, y - 10, xPos - 5, y - 10 + boxHeight);
 
       y = renderWrappedText(introText, xPos + 5, y, fontSize.normal, colors.dark, "italic", maxWidth);
@@ -231,18 +231,14 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       const maxWidth = pageWidth - xPos - margin;
 
       // Card header background
-      doc.setFillColor(...colors.bgLight);
-      doc.roundedRect(xPos - 5, y - 5, maxWidth + 10, headerHeight, 5, 5, 'F');
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(xPos - 5, y - 5, maxWidth + 10, headerHeight, 5, 5, 'S');
+      doc.setFillColor(243, 244, 246); // #f3f4f6
+      doc.rect(xPos - 5, y - 5, maxWidth + 10, headerHeight, 'F');
+      
+      doc.setDrawColor(229, 231, 235); // #e5e7eb
+      doc.setLineWidth(1);
+      doc.rect(xPos - 5, y - 5, maxWidth + 10, headerHeight, 'S');
 
-      // Blue top line
-      doc.setDrawColor(...colors.exercise);
-      doc.setLineWidth(2);
-      doc.line(xPos - 5, y - 5, xPos + maxWidth + 5, y - 5);
-
-      y = renderWrappedText(exerciseTitle.toUpperCase(), xPos + 5, y + 15, fontSize.paragraphe, colors.exercise, "bold", maxWidth);
+      y = renderWrappedText(exerciseTitle, xPos + 5, y + 15, fontSize.paragraphe, colors.exercise, "bold", maxWidth);
       y += 10;
 
       if (exerciseContent) {
@@ -315,20 +311,20 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
       const startY = y;
       
-      // Fond léger rouge
-      doc.setFillColor(254, 242, 242); 
-      doc.roundedRect(notionBoxX, y - 5, notionMaxWidth, boxHeight, 3, 3, 'F');
+      // Fond léger correspondant au style Word
+      doc.setFillColor(243, 244, 246); // #F3F4F6
+      doc.rect(notionBoxX, y - 5, notionMaxWidth, boxHeight, 'F');
       
-      // Bordure gauche crimson
-      doc.setDrawColor(153, 27, 27);
-      doc.setLineWidth(2);
+      // Bordure gauche bleue légère comme dans Word
+      doc.setDrawColor(219, 234, 254); // #DBEAFE
+      doc.setLineWidth(4);
       doc.line(notionBoxX, y - 5, notionBoxX, y - 5 + boxHeight);
 
       y += 10;
-      doc.setFontSize(fontSize.small);
-      doc.setTextColor(153, 27, 27);
+      doc.setFontSize(fontSize.normal);
+      doc.setTextColor(220, 38, 38); // Red-600 matching notions in Word
       doc.setFont("helvetica", "bold");
-      doc.text("POINT CLÉ", notionBoxX + 10, y);
+      doc.text("Notions :", notionBoxX + 10, y);
       y += 15;
 
       doc.setTextColor(...colors.dark);
@@ -522,8 +518,8 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       doc.text(formattedDate, pageWidth / 2, pageHeight - 15, { align: 'center' });
     }
 
-    const safeTitle = courseData.title.replace(/\s+/g, '_').replace(/[^\w-]/g, '') || 'cours';
-    doc.save(`${safeTitle}.pdf`);
+    const fileName = `Cours_${courseData.title.replace(/\s+/g, '_')}.pdf`;
+    doc.save(fileName);
 
     return true;
   } catch (error) {

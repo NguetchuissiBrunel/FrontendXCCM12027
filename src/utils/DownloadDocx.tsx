@@ -234,7 +234,7 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${courseData.title.replace(/\s+/g, '_')}.doc`;
+        link.download = `Cours_${courseData.title.replace(/\s+/g, '_')}.doc`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

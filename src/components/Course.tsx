@@ -1,9 +1,10 @@
 // src/components/Course.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, BookUp, Tv, FileText } from "lucide-react";
 import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
 import { downloadCourseAsDocx } from "@/utils/DownloadDocx";
+import { downloadCertificationPDF } from "@/utils/DownloadCertification";
 import CourseSidebar from "@/components/CourseSidebar";
 import SmartNotes from "@/components/SmartNotes";
 import DownloadOptions from './DownloadOptions';
@@ -26,6 +27,7 @@ interface CourseProps {
 
 const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
   const { user } = useAuth();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState<number>(0);
@@ -37,6 +39,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const [docxGenerating, setDocxGenerating] = useState<boolean>(false);
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const [isLiking, setIsLiking] = useState<boolean>(false);
+  const [isCertifying, setIsCertifying] = useState<boolean>(false);
   const [currentExerciseLevel, setCurrentExerciseLevel] = useState<'section' | 'chapter' | 'paragraph' | null>(null);
   const [evaluation, setEvaluation] = useState<{
     rating: number;
@@ -51,12 +54,20 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const { startLoading, stopLoading } = useLoading();
 
   useEffect(() => {
-    if (pdfGenerating || docxGenerating || isLiking) {
+    if (pdfGenerating || docxGenerating || isLiking || isCertifying) {
       startLoading();
     } else {
       stopLoading();
     }
-  }, [pdfGenerating, docxGenerating, isLiking, startLoading, stopLoading]);
+  }, [pdfGenerating, docxGenerating, isLiking, isCertifying, startLoading, stopLoading]);
+
+  // Scroll to top when topic changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, showExercise]);
 
   // Helper functions to safely access data
   const getCurrentSection = (): Section | null => {
@@ -97,25 +108,8 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const hasChapters = Boolean(section?.chapters?.length);
   const hasParagraphs = Boolean(chapter?.paragraphs?.length);
 
-  useEffect(() => {
-    if (!hasSections || !section) {
-      setCourseCompleted(false);
-      return;
-    }
-
-    const isLastSection = currentSectionIndex === courseData.sections.length - 1;
-
-    if (hasChapters && chapter) {
-      const isLastChapter = currentChapterIndex === section.chapters!.length - 1;
-      const isLastParagraph = currentParagraphIndex === chapter.paragraphs.length - 1;
-      setCourseCompleted(isLastSection && isLastChapter && isLastParagraph);
-    } else if (section.paragraphs?.length) {
-      const isLastParagraph = currentParagraphIndex === section.paragraphs.length - 1;
-      setCourseCompleted(isLastSection && isLastParagraph);
-    } else {
-      setCourseCompleted(isLastSection);
-    }
-  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, courseData, hasSections, hasChapters, section, chapter]);
+  // Course completion is now handled manually by clicking "Next" on the very last thing.
+  // This prevents the conclusion from showing prematurely.
 
   const handleDownloadPDF = () => {
     setShowOrientationSelector(true);
@@ -276,10 +270,18 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
       setCurrentSectionIndex(currentSectionIndex + 1);
       setCurrentChapterIndex(0);
       setCurrentParagraphIndex(0);
+    } else {
+      // Very end of course
+      setCourseCompleted(true);
+      // Ensure we scroll to top to see conclusion
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
   const prevParagraph = () => {
+    setCourseCompleted(false);
     if (showExercise) {
       setShowExercise(false);
       return;
@@ -287,38 +289,35 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
     if (!hasSections || !section) return;
 
-    if (hasChapters && chapter) {
-      // Navigation avec chapitres
-      if (currentParagraphIndex > 0) {
-        setCurrentParagraphIndex(currentParagraphIndex - 1);
-      } else if (currentChapterIndex > 0) {
-        const prevChapter = section.chapters![currentChapterIndex - 1];
-        if (prevChapter?.paragraphs?.length) {
-          setCurrentChapterIndex(currentChapterIndex - 1);
-          setCurrentParagraphIndex(prevChapter.paragraphs.length - 1);
-        }
-      } else if (currentSectionIndex > 0) {
-        const prevSection = courseData.sections[currentSectionIndex - 1];
-        if (prevSection?.chapters?.length) {
-          setCurrentSectionIndex(currentSectionIndex - 1);
-          const lastChapterIndex = prevSection.chapters.length - 1;
-          const lastChapter = prevSection.chapters[lastChapterIndex];
-          if (lastChapter?.paragraphs?.length) {
-            setCurrentChapterIndex(lastChapterIndex);
-            setCurrentParagraphIndex(lastChapter.paragraphs.length - 1);
-          }
-        }
-      }
-    } else if (section.paragraphs && section.paragraphs.length > 0) {
-      // Navigation directe avec paragraphes dans la section
-      if (currentParagraphIndex > 0) {
-        setCurrentParagraphIndex(currentParagraphIndex - 1);
-      } else if (currentSectionIndex > 0) {
-        const prevSection = courseData.sections[currentSectionIndex - 1];
-        if (prevSection?.paragraphs?.length) {
-          setCurrentSectionIndex(currentSectionIndex - 1);
-          setCurrentParagraphIndex(prevSection.paragraphs.length - 1);
-        }
+    // 1. Same Chapter back nav
+    if (currentParagraphIndex > 0) {
+      setCurrentParagraphIndex(currentParagraphIndex - 1);
+      return;
+    }
+
+    // 2. Cross Chapter back nav (current chapter is at index 0)
+    if (currentChapterIndex > 0) {
+      const prevChapter = section.chapters![currentChapterIndex - 1];
+      setCurrentChapterIndex(currentChapterIndex - 1);
+      setCurrentParagraphIndex((prevChapter.paragraphs?.length || 1) - 1);
+      return;
+    }
+
+    // 3. Cross Section back nav (current section start)
+    if (currentSectionIndex > 0) {
+      const prevSection = courseData.sections[currentSectionIndex - 1];
+      setCurrentSectionIndex(currentSectionIndex - 1);
+
+      if (prevSection.chapters?.length) {
+        // Go to last paragraph of last chapter
+        const lastChapterIdx = prevSection.chapters.length - 1;
+        const lastChapter = prevSection.chapters[lastChapterIdx];
+        setCurrentChapterIndex(lastChapterIdx);
+        setCurrentParagraphIndex((lastChapter.paragraphs?.length || 1) - 1);
+      } else {
+        // Go to last paragraph of section
+        setCurrentChapterIndex(0);
+        setCurrentParagraphIndex((prevSection.paragraphs?.length || 1) - 1);
       }
     }
   };
@@ -364,8 +363,36 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     }
   };
 
-  const handleCertificationClick = () => {
-    console.log("Certification requested");
+  const handleCertificationClick = async () => {
+    if (!user) {
+      toast.error("Veuillez vous connecter pour obtenir un certificat.");
+      return;
+    }
+
+    setIsCertifying(true);
+    const toastId = toast.loading("Génération de votre certificat...");
+    
+    try {
+      const studentName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || "Étudiant XCCM";
+      const success = await downloadCertificationPDF(courseData, studentName);
+      
+      if (success) {
+        toast.success("Certificat généré avec succès !", { id: toastId });
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#A855F7', '#8B5CF6', '#D946EF']
+        });
+      } else {
+        toast.error("Échec de la génération du certificat.", { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Une erreur est survenue.", { id: toastId });
+    } finally {
+      setIsCertifying(false);
+    }
   };
 
   const handleEvaluationChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -478,6 +505,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         setCurrentChapterIndex={setCurrentChapterIndex}
         setCurrentParagraphIndex={setCurrentParagraphIndex}
         setShowExercise={setShowExercise}
+        setCourseCompleted={setCourseCompleted}
         onDownloadRequest={() => setShowDownloadModal(true)}
       />
 
@@ -492,7 +520,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         </div>
       )}
 
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-20">
           {/* Header */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -701,7 +729,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
             <button
               onClick={nextParagraph}
-              disabled={!canGoNext}
+              disabled={!canGoNext || courseCompleted}
               className="px-5 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-md hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-medium"
               type="button"
             >
@@ -807,11 +835,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <button
                   onClick={handleCertificationClick}
-                  className="bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center"
+                  disabled={isCertifying}
+                  className={`bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center ${isCertifying ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700 active:scale-95'}`}
                   type="button"
                 >
-                  <Award className="h-7 w-7 mr-2" />
-                  Obtenir votre certification
+                  <Award className={`h-7 w-7 mr-2 ${isCertifying ? 'animate-spin' : ''}`} />
+                  {isCertifying ? 'Génération...' : 'Obtenir votre certification'}
                 </button>
                 <button
                   onClick={() => setShowDownloadModal(true)}

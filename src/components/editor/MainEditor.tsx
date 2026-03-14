@@ -176,7 +176,7 @@ const transformTOCItemToNodeJson = (item: any): any => {
   }
 
   let content: any[] = [];
-  
+
   // Intro text restoration if any
   if (item.data?.introduction || item.introduction) {
     attrs.introduction = item.data?.introduction || item.introduction;
@@ -186,9 +186,9 @@ const transformTOCItemToNodeJson = (item: any): any => {
   if (item.type === 'notion') {
     // Initial paragraph with notion content if it was flat text
     if (typeof item.data === 'string') {
-       content.push({ type: 'paragraph', content: [{ type: 'text', text: item.data }] });
+      content.push({ type: 'paragraph', content: [{ type: 'text', text: item.data }] });
     }
-    
+
     if (item.content) {
       // If we have HTML content, we should ideally parse it, but for now fallback to simple text
       // to avoid complex browser dep in this helper if possible.
@@ -439,18 +439,18 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           const parts = itemId.split('-');
           const itemTypeCode = parts[0];
           const config = hierarchyInfo[itemTypeCode];
-          
+
           if (config) {
             let counters = [0, 0, 0, 0, 0, 0];
             editor.view.state.doc.descendants((node: PMNode, pos: number) => {
               if (deleted) return false;
-              
+
               const nodeConfig = Object.values(hierarchyInfo).find(c => c.typeName === node.type.name);
               if (nodeConfig) {
                 const level = nodeConfig.level;
                 counters[level]++;
                 for (let i = level + 1; i < counters.length; i++) counters[i] = 0;
-                
+
                 const currentId = `${itemTypeCode}-${counters.slice(0, config.level + 1).join('-')}`;
                 if (currentId === itemId) {
                   editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
@@ -690,8 +690,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           type: 'paragraph',
           content: [{
             type: 'text',
-            text: q.text,
-            marks: [{ type: 'bold' }] // Bold the question text
+            text: q.text
           }]
         }
       ];

@@ -521,7 +521,7 @@ body {
   content: counter(mcq-option, lower-alpha) ") ";
   position: absolute;
   left: 0;
-  font-weight: 600;
+  font-weight: normal;
   color: var(--color-exercise-dark);
 }
 
@@ -543,6 +543,10 @@ body {
 
 .exercice-node .content > ol > li {
   margin-bottom: 1rem !important;
+}
+
+.exercice-node .content > ol > li::marker {
+  font-weight: normal !important;
 }
 
 .exercice-node .content > ol > li > ol > li {

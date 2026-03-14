@@ -34,27 +34,27 @@ export const courses = [
                   "La théorie des langages est étroitement liée à la théorie des automates"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "La théorie des langages est principalement utilisée pour :",
+                      "text": "La théorie des langages est principalement utilisée pour :",
                       "options": [
                         "Créer des interfaces utilisateur",
                         "Définir la syntaxe des langages de programmation",
                         "Gérer les bases de données",
                         "Développer des applications mobiles"
-                      ],
-                      "réponse": "Définir la syntaxe des langages de programmation"
-                    },
+                      ],},
                     {
-                      "question": "Les langages formels sont des ensembles de :",
+                      "text": "Les langages formels sont des ensembles de :",
                       "options": [
                         "Nombres",
                         "Chaînes de symboles",
                         "Objets",
                         "Fonctions"
-                      ],
-                      "réponse": "Chaînes de symboles"
-                    }
+                      ],}
                   ]
                 }
               },
@@ -67,27 +67,27 @@ export const courses = [
                   "Notion 3 : Les langages peuvent être finis ou infinis"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Qu'est-ce qu'un alphabet en théorie des langages ?",
+                      "text": "Qu'est-ce qu'un alphabet en théorie des langages ?",
                       "options": [
                         "Un ensemble infini de symboles",
                         "Un ensemble fini de symboles",
                         "Un ensemble de nombres",
                         "Un ensemble de fonctions"
-                      ],
-                      "réponse": "Un ensemble fini de symboles"
-                    },
+                      ],},
                     {
-                      "question": "Un langage est un ensemble de :",
+                      "text": "Un langage est un ensemble de :",
                       "options": [
                         "Nombres",
                         "Chaînes de symboles",
                         "Objets",
                         "Fonctions"
-                      ],
-                      "réponse": "Chaînes de symboles"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -105,27 +105,27 @@ export const courses = [
                   "Les automates finis peuvent être déterministes ou non déterministes"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel type de langage un automate fini reconnaît-il ?",
+                      "text": "Quel type de langage un automate fini reconnaît-il ?",
                       "options": [
                         "Langages contextuels",
                         "Langages réguliers",
                         "Langages récursifs",
                         "Langages récursivement énumérables"
-                      ],
-                      "réponse": "Langages réguliers"
-                    },
+                      ],},
                     {
-                      "question": "Un automate fini peut être :",
+                      "text": "Un automate fini peut être :",
                       "options": [
                         "Déterministe uniquement",
                         "Non déterministe uniquement",
                         "Déterministe ou non déterministe",
                         "Ni déterministe ni non déterministe"
-                      ],
-                      "réponse": "Déterministe ou non déterministe"
-                    }
+                      ],}
                   ]
                 }
               },
@@ -138,27 +138,27 @@ export const courses = [
                   "Les AFD reconnaissent les mêmes langages que les automates non déterministes"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Dans un AFD, combien de transitions existent pour chaque symbole et chaque état ?",
+                      "text": "Dans un AFD, combien de transitions existent pour chaque symbole et chaque état ?",
                       "options": [
                         "Zéro",
                         "Une",
                         "Plusieurs",
                         "Un nombre quelconque"
-                      ],
-                      "réponse": "Une"
-                    },
+                      ],},
                     {
-                      "question": "Les AFD reconnaissent :",
+                      "text": "Les AFD reconnaissent :",
                       "options": [
                         "Uniquement les langages contextuels",
                         "Uniquement les langages réguliers",
                         "Tous les langages récursifs",
                         "Tous les langages récursivement énumérables"
-                      ],
-                      "réponse": "Uniquement les langages réguliers"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -181,27 +181,27 @@ export const courses = [
                   "Les grammaires formelles sont classées selon la hiérarchie de Chomsky"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est l'objectif principal d'une grammaire formelle ?",
+                      "text": "Quel est l'objectif principal d'une grammaire formelle ?",
                       "options": [
                         "Définir la sémantique d'un langage",
                         "Générer des chaînes valides dans un langage",
                         "Optimiser les performances d'un programme",
                         "Gérer les erreurs de compilation"
-                      ],
-                      "réponse": "Générer des chaînes valides dans un langage"
-                    },
+                      ],},
                     {
-                      "question": "Les grammaires formelles sont classées selon :",
+                      "text": "Les grammaires formelles sont classées selon :",
                       "options": [
                         "La hiérarchie de Chomsky",
                         "La théorie des ensembles",
                         "La théorie des graphes",
                         "La théorie des nombres"
-                      ],
-                      "réponse": "La hiérarchie de Chomsky"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -246,27 +246,27 @@ export const courses = [
                   "L'IA cognitive vise à résoudre des problèmes complexes et contextuels"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est l'objectif principal de l'IA cognitive ?",
+                      "text": "Quel est l'objectif principal de l'IA cognitive ?",
                       "options": [
                         "Automatiser les tâches répétitives",
                         "Imiter les processus de pensée humains",
                         "Optimiser les performances des ordinateurs",
                         "Créer des interfaces utilisateur intuitives"
-                      ],
-                      "réponse": "Imiter les processus de pensée humains"
-                    },
+                      ],},
                     {
-                      "question": "Quelle technique est couramment utilisée en IA cognitive ?",
+                      "text": "Quelle technique est couramment utilisée en IA cognitive ?",
                       "options": [
                         "Réseaux de neurones artificiels",
                         "Bases de données relationnelles",
                         "Algorithmes de tri",
                         "Systèmes de gestion de fichiers"
-                      ],
-                      "réponse": "Réseaux de neurones artificiels"
-                    }
+                      ],}
                   ]
                 }
               },
@@ -279,27 +279,27 @@ export const courses = [
                   "L'IA cognitive a bénéficié des progrès en big data et en calcul haute performance"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quand l'IA cognitive a-t-elle émergé ?",
+                      "text": "Quand l'IA cognitive a-t-elle émergé ?",
                       "options": [
                         "Années 1920",
                         "Années 1950",
                         "Années 1980",
                         "Années 2000"
-                      ],
-                      "réponse": "Années 1950"
-                    },
+                      ],},
                     {
-                      "question": "Quel domaine a influencé le développement de l'IA cognitive ?",
+                      "text": "Quel domaine a influencé le développement de l'IA cognitive ?",
                       "options": [
                         "Biologie moléculaire",
                         "Neurosciences",
                         "Chimie organique",
                         "Physique quantique"
-                      ],
-                      "réponse": "Neurosciences"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -317,27 +317,27 @@ export const courses = [
                   "Les RNA sont entraînés par des algorithmes d'apprentissage profond"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est l'élément de base d'un réseau de neurones artificiels ?",
+                      "text": "Quel est l'élément de base d'un réseau de neurones artificiels ?",
                       "options": [
                         "Processeur",
                         "Neurone artificiel",
                         "Base de données",
                         "Algorithme de tri"
-                      ],
-                      "réponse": "Neurone artificiel"
-                    },
+                      ],},
                     {
-                      "question": "Quel type d'apprentissage est utilisé pour entraîner les RNA ?",
+                      "text": "Quel type d'apprentissage est utilisé pour entraîner les RNA ?",
                       "options": [
                         "Apprentissage supervisé",
                         "Apprentissage non supervisé",
                         "Apprentissage profond",
                         "Toutes les réponses ci-dessus"
-                      ],
-                      "réponse": "Toutes les réponses ci-dessus"
-                    }
+                      ],}
                   ]
                 }
               },
@@ -350,27 +350,27 @@ export const courses = [
                   "Les modèles cognitifs ajoutent une dimension humaine à la prise de décision"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est le but de l'apprentissage par renforcement ?",
+                      "text": "Quel est le but de l'apprentissage par renforcement ?",
                       "options": [
                         "Maximiser les récompenses",
                         "Minimiser les erreurs",
                         "Classer des données",
                         "Générer du texte"
-                      ],
-                      "réponse": "Maximiser les récompenses"
-                    },
+                      ],},
                     {
-                      "question": "Dans quel domaine l'apprentissage par renforcement est-il couramment utilisé ?",
+                      "text": "Dans quel domaine l'apprentissage par renforcement est-il couramment utilisé ?",
                       "options": [
                         "Robotique",
                         "Gestion de bases de données",
                         "Développement web",
                         "Design graphique"
-                      ],
-                      "réponse": "Robotique"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -393,27 +393,27 @@ export const courses = [
                   "La protection des données est essentielle pour préserver la vie privée"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est un des principaux défis éthiques de l'IA cognitive ?",
+                      "text": "Quel est un des principaux défis éthiques de l'IA cognitive ?",
                       "options": [
                         "Transparence des décisions",
                         "Optimisation des performances",
                         "Création de jeux vidéo",
                         "Développement de matériel informatique"
-                      ],
-                      "réponse": "Transparence des décisions"
-                    },
+                      ],},
                     {
-                      "question": "Que peuvent causer les biais algorithmiques ?",
+                      "text": "Que peuvent causer les biais algorithmiques ?",
                       "options": [
                         "Améliorer la précision des modèles",
                         "Renforcer les inégalités",
                         "Réduire les coûts de développement",
                         "Accélérer les calculs"
-                      ],
-                      "réponse": "Renforcer les inégalités"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -431,27 +431,27 @@ export const courses = [
                   "Elle optimise la gestion des ressources médicales"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est un avantage de l'IA cognitive en santé ?",
+                      "text": "Quel est un avantage de l'IA cognitive en santé ?",
                       "options": [
                         "Diagnostics plus précis",
                         "Réduction des coûts de matériel",
                         "Création de médicaments",
                         "Gestion des réseaux sociaux"
-                      ],
-                      "réponse": "Diagnostics plus précis"
-                    },
+                      ],},
                     {
-                      "question": "Quelle application utilise l'IA cognitive en médecine ?",
+                      "text": "Quelle application utilise l'IA cognitive en médecine ?",
                       "options": [
                         "Analyse d'images médicales",
                         "Gestion de bases de données",
                         "Développement de jeux vidéo",
                         "Conception de vêtements"
-                      ],
-                      "réponse": "Analyse d'images médicales"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -497,17 +497,19 @@ export const courses = [
                   "Principe d'éco-conception"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quelle caractéristique différencie l'économie circulaire du modèle linéaire ?",
+                      "text": "Quelle caractéristique différencie l'économie circulaire du modèle linéaire ?",
                       "options": [
                         "Production de masse",
                         "Valorisation des déchets comme ressources",
                         "Utilisation intensive d'énergie",
                         "Standardisation des produits"
-                      ],
-                      "réponse": "Valorisation des déchets comme ressources"
-                    }
+                      ],}
                   ]
                 }
               },
@@ -520,17 +522,19 @@ export const courses = [
                   "Indicateurs de circularité"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel pourcentage de déchets municipaux l'UE vise-t-elle à recycler d'ici 2035 ?",
+                      "text": "Quel pourcentage de déchets municipaux l'UE vise-t-elle à recycler d'ici 2035 ?",
                       "options": [
                         "45%",
                         "55%",
                         "65%",
                         "75%"
-                      ],
-                      "réponse": "65%"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -553,17 +557,19 @@ export const courses = [
                   "Écologie industrielle"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est le principal bénéfice de la symbiose industrielle ?",
+                      "text": "Quel est le principal bénéfice de la symbiose industrielle ?",
                       "options": [
                         "Réduction des coûts logistiques",
                         "Création d'écosystèmes interdépendants",
                         "Diminution des déchets totaux",
                         "Augmentation de la production"
-                      ],
-                      "réponse": "Diminution des déchets totaux"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1020,27 +1026,27 @@ export const courses = [
                   "La théorie des langages est étroitement liée à la théorie des automates"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "La théorie des langages est principalement utilisée pour :",
+                      "text": "La théorie des langages est principalement utilisée pour :",
                       "options": [
                         "Créer des interfaces utilisateur",
                         "Définir la syntaxe des langages de programmation",
                         "Gérer les bases de données",
                         "Développer des applications mobiles"
-                      ],
-                      "réponse": "Définir la syntaxe des langages de programmation"
-                    },
+                      ],},
                     {
-                      "question": "Les langages formels sont des ensembles de :",
+                      "text": "Les langages formels sont des ensembles de :",
                       "options": [
                         "Nombres",
                         "Chaînes de symboles",
                         "Objets",
                         "Fonctions"
-                      ],
-                      "réponse": "Chaînes de symboles"
-                    }
+                      ],}
                   ]
                 }
               },
@@ -1053,27 +1059,27 @@ export const courses = [
                   "Les langages peuvent être finis ou infinis"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Qu'est-ce qu'un alphabet en théorie des langages ?",
+                      "text": "Qu'est-ce qu'un alphabet en théorie des langages ?",
                       "options": [
                         "Un ensemble infini de symboles",
                         "Un ensemble fini de symboles",
                         "Un ensemble de nombres",
                         "Un ensemble de fonctions"
-                      ],
-                      "réponse": "Un ensemble fini de symboles"
-                    },
+                      ],},
                     {
-                      "question": "Un langage est un ensemble de :",
+                      "text": "Un langage est un ensemble de :",
                       "options": [
                         "Nombres",
                         "Chaînes de symboles",
                         "Objets",
                         "Fonctions"
-                      ],
-                      "réponse": "Chaînes de symboles"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1091,27 +1097,27 @@ export const courses = [
                   "Les automates finis peuvent être déterministes ou non déterministes"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel type de langage un automate fini reconnaît-il ?",
+                      "text": "Quel type de langage un automate fini reconnaît-il ?",
                       "options": [
                         "Langages contextuels",
                         "Langages réguliers",
                         "Langages récursifs",
                         "Langages récursivement énumérables"
-                      ],
-                      "réponse": "Langages réguliers"
-                    },
+                      ],},
                     {
-                      "question": "Un automate fini peut être :",
+                      "text": "Un automate fini peut être :",
                       "options": [
                         "Déterministe uniquement",
                         "Non déterministe uniquement",
                         "Déterministe ou non déterministe",
                         "Ni déterministe ni non déterministe"
-                      ],
-                      "réponse": "Déterministe ou non déterministe"
-                    }
+                      ],}
                   ]
                 }
               },
@@ -1124,27 +1130,27 @@ export const courses = [
                   "Les AFD reconnaissent les mêmes langages que les automates non déterministes"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Dans un AFD, combien de transitions existent pour chaque symbole et chaque état ?",
+                      "text": "Dans un AFD, combien de transitions existent pour chaque symbole et chaque état ?",
                       "options": [
                         "Zéro",
                         "Une",
                         "Plusieurs",
                         "Un nombre quelconque"
-                      ],
-                      "réponse": "Une"
-                    },
+                      ],},
                     {
-                      "question": "Les AFD reconnaissent :",
+                      "text": "Les AFD reconnaissent :",
                       "options": [
                         "Uniquement les langages contextuels",
                         "Uniquement les langages réguliers",
                         "Tous les langages récursifs",
                         "Tous les langages récursivement énumérables"
-                      ],
-                      "réponse": "Uniquement les langages réguliers"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1167,27 +1173,27 @@ export const courses = [
                   "Les grammaires formelles sont classées selon la hiérarchie de Chomsky"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est l'objectif principal d'une grammaire formelle ?",
+                      "text": "Quel est l'objectif principal d'une grammaire formelle ?",
                       "options": [
                         "Définir la sémantique d'un langage",
                         "Générer des chaînes valides dans un langage",
                         "Optimiser les performances d'un programme",
                         "Gérer les erreurs de compilation"
-                      ],
-                      "réponse": "Générer des chaînes valides dans un langage"
-                    },
+                      ],},
                     {
-                      "question": "Les grammaires formelles sont classées selon :",
+                      "text": "Les grammaires formelles sont classées selon :",
                       "options": [
                         "La hiérarchie de Chomsky",
                         "La théorie des ensembles",
                         "La théorie des graphes",
                         "La théorie des nombres"
-                      ],
-                      "réponse": "La hiérarchie de Chomsky"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1463,17 +1469,19 @@ export const courses = [
                   "Backlinks et autorité"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est l'objectif principal du SEO?",
+                      "text": "Quel est l'objectif principal du SEO?",
                       "options": [
                         "Augmenter la vitesse du site",
                         "Améliorer le classement dans les moteurs de recherche",
                         "Créer du contenu viral",
                         "Augmenter les abonnés sur les réseaux sociaux"
-                      ],
-                      "réponse": "Améliorer le classement dans les moteurs de recherche"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1573,17 +1581,19 @@ export const courses = [
                   "Décision d'investissement"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quand un projet est-il considéré comme rentable avec la méthode VAN?",
+                      "text": "Quand un projet est-il considéré comme rentable avec la méthode VAN?",
                       "options": [
                         "Quand la VAN est positive",
                         "Quand la VAN est négative",
                         "Quand la VAN est nulle",
                         "Quand la VAN est supérieure à 1"
-                      ],
-                      "réponse": "Quand la VAN est positive"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1655,17 +1665,19 @@ export const courses = [
                   "Espaces de travail ergonomiques"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est un bénéfice des programmes de bien-être en entreprise?",
+                      "text": "Quel est un bénéfice des programmes de bien-être en entreprise?",
                       "options": [
                         "Réduction de l'absentéisme",
                         "Augmentation des coûts",
                         "Diminution de la productivité",
                         "Augmentation du stress"
-                      ],
-                      "réponse": "Réduction de l'absentéisme"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1718,17 +1730,19 @@ export const courses = [
                   "ISO et bruit numérique"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel paramètre contrôle la profondeur de champ?",
+                      "text": "Quel paramètre contrôle la profondeur de champ?",
                       "options": [
                         "Ouverture",
                         "Vitesse d'obturation",
                         "ISO",
                         "Balance des blancs"
-                      ],
-                      "réponse": "Ouverture"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1819,17 +1833,19 @@ export const courses = [
                   "Négociation des termes"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est l'élément le plus important dans un pitch?",
+                      "text": "Quel est l'élément le plus important dans un pitch?",
                       "options": [
                         "Le design des slides",
                         "La solution au problème",
                         "La longueur de la présentation",
                         "Le nombre d'investisseurs"
-                      ],
-                      "réponse": "La solution au problème"
-                    }
+                      ],}
                   ]
                 }
               }
@@ -1901,17 +1917,19 @@ export const courses = [
                   "Applications pratiques"
                 ],
                 "exercise": {
-                  "questions": [
+                  
+
+                    "title": "Exercice d'application",
+
+                    "type": "MULTIPLE_CHOICE","questions": [
                     {
-                      "question": "Quel est le bénéfice principal de la répétition espacée?",
+                      "text": "Quel est le bénéfice principal de la répétition espacée?",
                       "options": [
                         "Réduire le temps d'étude",
                         "Améliorer la rétention à long terme",
                         "Apprendre plus vite initialement",
                         "Diminuer l'effort mental"
-                      ],
-                      "réponse": "Améliorer la rétention à long terme"
-                    }
+                      ],}
                   ]
                 }
               }

@@ -72,7 +72,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     { type: 'chapter', label: 'Chapitre', color: ITEM_COLORS.chapter },
     { type: 'paragraph', label: 'Paragraphe', color: ITEM_COLORS.paragraph },
     { type: 'notion', label: 'Notion', color: ITEM_COLORS.notion },
-    { type: 'exercise', label: 'Exercice', color: ITEM_COLORS.exercise },
   ];
 
   const toggleFilter = (type: ItemType) => {
@@ -105,12 +104,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
     // Show the filtered type and all its children
     const hierarchy: Record<ItemType, ItemType[]> = {
-      'course': ['course', 'section', 'chapter', 'paragraph', 'notion', 'exercise'],
-      'section': ['section', 'chapter', 'paragraph', 'notion', 'exercise'],
-      'chapter': ['chapter', 'paragraph', 'notion', 'exercise'],
-      'paragraph': ['paragraph', 'notion', 'exercise'],
+      'course': ['course', 'section', 'chapter', 'paragraph', 'notion'],
+      'section': ['section', 'chapter', 'paragraph', 'notion'],
+      'chapter': ['chapter', 'paragraph', 'notion'],
+      'paragraph': ['paragraph', 'notion'],
       'notion': ['notion'],
-      'exercise': ['exercise'],
+      'exercise': [],
     };
 
     return hierarchy[activeFilter].includes(type);
@@ -151,7 +150,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     const itemId = `${parentId}-paragraph-${index}`;
     const isExpanded = expandedItems.has(itemId);
     const hasNotions = paragraph.notions && paragraph.notions.length > 0;
-    const hasExercise = !!paragraph.exercise;
 
     if (!shouldShowType('paragraph')) return null;
 
@@ -159,7 +157,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       <div key={itemId}>
         <div
           className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md ${getItemBgClass('paragraph')}`}
-          onClick={() => (hasNotions || hasExercise) ? toggleExpansion(itemId) : null}
+          onClick={() => hasNotions ? toggleExpansion(itemId) : null}
           draggable
           onDragStart={(e) => {
             const fullItem = getItemWithHierarchy(itemId);
@@ -174,35 +172,16 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
               {paragraph.title}
             </span>
           </div>
-          {(hasNotions || hasExercise) && (
+          {hasNotions && (
             <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.paragraph }}>
               {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
             </button>
           )}
         </div>
 
-        {isExpanded && (hasNotions || hasExercise) && (
+        {isExpanded && hasNotions && (
           <div className="mt-2 space-y-1.5 pl-4">
             {paragraph.notions?.map((notion, idx) => renderNotion(notion, itemId, idx))}
-            {paragraph.exercise && (
-              <div
-                className={`rounded-lg border p-3 ${getItemBgClass('exercise')}`}
-                draggable
-                onDragStart={(e) => {
-                  const exerciseId = `${itemId}-exercise`;
-                  const fullItem = getItemWithHierarchy(exerciseId) || {
-                    id: exerciseId,
-                    title: `Exercice: ${paragraph.exercise?.questions.length ?? 0} question(s)`,
-                    type: 'exercise',
-                    parentId: itemId,
-                    data: paragraph.exercise
-                  };
-                  e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-                }}
-              >
-                Exercice: {paragraph.exercise.questions.length} question(s)
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -377,38 +356,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
                   renderNotion(notion, `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIdx}`, notionIdx)
                 )
               )
-            )
-          )
-        );
-      case 'exercise':
-        return mockCourseData.flatMap((course, courseIdx) =>
-          course.sections.flatMap((sec, secIdx) =>
-            sec.chapters.flatMap((chap, chapIdx) =>
-              chap.paragraphs
-                .filter(para => !!para.exercise)
-                .map((para, paraIdx) => {
-                  const paraIndex = chap.paragraphs.indexOf(para);
-                  const exerciseId = `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIndex}-exercise`;
-                  return (
-                    <div
-                      key={exerciseId}
-                      className={`rounded-lg border p-3 ${getItemBgClass('exercise')}`}
-                      draggable
-                      onDragStart={(e) => {
-                        const fullItem = getItemWithHierarchy(exerciseId) || {
-                          id: exerciseId,
-                          title: `Exercice: ${para.exercise!.questions.length} question(s)`,
-                          type: 'exercise',
-                          parentId: `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIndex}`,
-                          data: para.exercise
-                        };
-                        e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-                      }}
-                    >
-                      Exercice: {para.exercise!.questions.length} question(s)
-                    </div>
-                  );
-                })
             )
           )
         );

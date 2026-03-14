@@ -499,11 +499,36 @@ body {
 }
 
 /* Specificity override for nested MCQ options */
-.ProseMirror.prose .exercice-node .content li > ol {
-  list-style-type: lower-alpha !important;
+.ProseMirror.prose .exercice-node .content li > ol,
+.qcm-content ol > li > ol {
+  list-style-type: none !important;
   font-weight: normal !important;
   margin-top: 0.5rem;
-  padding-left: 2rem !important;
+  padding-left: 1.5rem !important;
+  counter-reset: mcq-option;
+}
+
+.ProseMirror.prose .exercice-node .content li > ol > li,
+.qcm-content ol > li > ol > li {
+  counter-increment: mcq-option;
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 0.5rem !important;
+}
+
+.ProseMirror.prose .exercice-node .content li > ol > li::before,
+.qcm-content ol > li > ol > li::before {
+  content: counter(mcq-option, lower-alpha) ") ";
+  position: absolute;
+  left: 0;
+  font-weight: 600;
+  color: var(--color-exercise-dark);
+}
+
+/* Clear default markers from Tailwind prose */
+.ProseMirror.prose .exercice-node .content li > ol > li::marker,
+.qcm-content ol > li > ol > li::marker {
+  content: none !important;
 }
 
 /* Ensure bold questions are very visible */

@@ -322,7 +322,7 @@ export default function StudentHome() {
 
       <main className="flex-1 p-4 md:p-8">
         {/* Section de bienvenue et statistiques */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+        <div id="welcome-section" className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="max-w-3xl">
               <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
@@ -336,7 +336,7 @@ export default function StudentHome() {
             {/* Statistiques rapides */}
             <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
               <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-                <div className="text-center">
+                <div id="stats-overview" className="text-center">
                   <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
                     {stats.averageScore}%
                   </div>
@@ -369,7 +369,7 @@ export default function StudentHome() {
           {/* Colonne gauche : Mes Cours */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <h2 id="my-courses" className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <BookOpen className="text-purple-600 w-5 h-5 md:w-6 md:h-6" />
                 Mes Cours ({enrolledCourses.length})
               </h2>
@@ -471,7 +471,7 @@ export default function StudentHome() {
             {/* Exercices en attente */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <h3 id="pending-exercises" className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
                   <Clock className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
                   <span className="text-sm md:text-base">Exercices en attente</span>
                   <span className="bg-pur-100 border-2 border-radius-full border-purple-700 text-xs px-2 py-0.5 rounded-full">

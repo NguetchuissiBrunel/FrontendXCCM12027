@@ -540,7 +540,7 @@ export default function ProfessorDashboard() {
       )}
 
       {/* Top Section with Welcome and Quick Stats */}
-      <div className="bg-white dark:bg-gray-800 px-8 py-8 mb-8 border-b border-purple-200 dark:border-gray-700">
+      <div id="dashboard-header" className="bg-white dark:bg-gray-800 px-8 py-8 mb-8 border-b border-purple-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-3xl">
             <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
@@ -550,7 +550,7 @@ export default function ProfessorDashboard() {
               Ravi de vous revoir, <span className="font-bold text-purple-600">{user.firstName}</span>. Voici l'état de vos enseignements aujourd'hui.
             </p>
           </div>
-          <div className="flex items-center gap-4 flex-wrap">
+          <div id="quick-actions" className="flex items-center gap-4 flex-wrap">
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
@@ -581,7 +581,7 @@ export default function ProfessorDashboard() {
             { label: 'À Corriger', value: professor.pendingSubmissions, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
             { label: 'Score Global', value: `${professor.averageProgress}%`, icon: Activity, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
           ].map((stat, idx) => (
-            <div key={idx} className={`${stat.bg} rounded-2xl p-6 border border-white dark:border-gray-700 shadow-sm flex items-center gap-4`}>
+            <div key={idx} id={idx === 0 ? "teacher-stats" : undefined} className={`${stat.bg} rounded-2xl p-6 border border-white dark:border-gray-700 shadow-sm flex items-center gap-4`}>
               <div className={`p-3 rounded-xl bg-white dark:bg-gray-800 shadow-sm ${stat.color}`}>
                 <stat.icon size={24} />
               </div>
@@ -597,14 +597,16 @@ export default function ProfessorDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 pb-8 space-y-8">
         {/* Profile Card */}
+        {/* Profile Card */}
         <ProfileCard
           professor={professor}
           coursesStats={coursesStatsForProfile}
         />
 
         {/* Actions rapides pour les exercices sous le profil */}
+        {/* Actions rapides pour les exercices sous le profil */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 id="exercise-actions" className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
             <span className="flex items-center gap-2">
               <Upload className="text-purple-600 dark:text-purple-400" size={22} />
               Actions rapides sur les exercices

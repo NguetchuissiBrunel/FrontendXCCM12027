@@ -33,6 +33,7 @@ export default function ExerciceNodeView({ node, updateAttributes }: NodeViewPro
   return (
     <NodeViewWrapper
       className="exercice-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',

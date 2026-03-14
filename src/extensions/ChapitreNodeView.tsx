@@ -56,6 +56,7 @@ export default function ChapitreNodeView({ node, updateAttributes }: NodeViewPro
   return (
     <NodeViewWrapper
       className="chapitre-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',

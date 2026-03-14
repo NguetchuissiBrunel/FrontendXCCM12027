@@ -59,6 +59,7 @@ export default function SectionNodeView({ node, updateAttributes }: NodeViewProp
   return (
     <NodeViewWrapper
       className="section-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',

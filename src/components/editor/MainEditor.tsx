@@ -113,7 +113,7 @@ const nodeTypeFrench: Record<string, string> = {
 };
 
 export interface MainEditorRef {
-  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any) => void;
+  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any) => void;
 }
 
 let globalIdCounter = 0;
@@ -400,8 +400,10 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });
 
+  const copiedNodeJsonRef = useRef<any>(null);
+
   React.useImperativeHandle(ref, () => ({
-    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste', itemId: string, payload?: any) => {
+    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: any) => {
       if (!editor) return;
 
       if (action === 'rename' && typeof payload === 'string') {
@@ -515,11 +517,23 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           tr.insert(insertPos, sourceNode);
           editor.view.dispatch(tr);
         }
+      } else if (action === 'copy') {
+        editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            copiedNodeJsonRef.current = node.toJSON();
+            return false;
+          }
+        });
       } else if (action === 'paste') {
         const itemToPaste = payload;
         editor.view.state.doc.descendants((node: PMNode, pos: number) => {
           if (node.attrs.id === itemId) {
-            const interimNode = editor.state.schema.nodeFromJSON(transformTOCItemToNodeJson(itemToPaste));
+            let interimNode;
+            if (copiedNodeJsonRef.current && copiedNodeJsonRef.current.attrs?.id === itemToPaste?.id) {
+              interimNode = editor.state.schema.nodeFromJSON(copiedNodeJsonRef.current);
+            } else {
+              interimNode = editor.state.schema.nodeFromJSON(transformTOCItemToNodeJson(itemToPaste));
+            }
             const finalNode = regenerateIds(interimNode);
 
             let $pos = editor.view.state.doc.resolve(pos + node.nodeSize - 1);

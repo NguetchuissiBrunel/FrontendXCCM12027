@@ -24,6 +24,7 @@ export default function NotionNodeView({ node, updateAttributes }: NodeViewProps
   return (
     <NodeViewWrapper
       className="notion-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',

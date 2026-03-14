@@ -638,7 +638,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               }
             }}
             onItemCopy={(item) => {
-              // Optionnel: peut-être afficher un toast
+              if (editorRef.current) {
+                editorRef.current.handleTOCAction('copy', item.id);
+              }
               console.log('Item copié dans TOC:', item.title);
             }}
             onItemMove={(itemId, targetId, position) => {

@@ -55,6 +55,7 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
   return (
     <NodeViewWrapper
       className="paragraphe-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',

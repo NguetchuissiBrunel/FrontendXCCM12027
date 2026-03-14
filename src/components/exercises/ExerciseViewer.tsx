@@ -210,7 +210,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full font-bold">
+                      <div className="flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full">
                         {index + 1}
                       </div>
                       <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                         </span>
                       </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-800">{questionText}</h3>
+                    <h3 className="text-lg text-gray-800">{questionText}</h3>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
@@ -251,7 +251,9 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                           disabled={readOnly || submitted}
                         />
                         <div className="flex-1">
-                          <span className="text-gray-800">{option}</span>
+                          <span className="text-gray-800">
+                            {String.fromCharCode(97 + optIndex)}) {option}
+                          </span>
                         </div>
                         {question.correctAnswer === option && submitted && (
                           <div className="ml-4 text-green-600">

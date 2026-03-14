@@ -492,3 +492,63 @@ body {
   color: #9ca3af !important;
   border-left-color: #A78BFA !important;
 }
+
+/* Exercice Node Content Styles */
+.exercice-node .content ol {
+  list-style-type: decimal !important;
+}
+
+/* Specificity override for nested MCQ options */
+.ProseMirror.prose .exercice-node .content li > ol,
+.qcm-content ol > li > ol {
+  list-style-type: none !important;
+  font-weight: normal !important;
+  margin-top: 0.5rem;
+  padding-left: 1.5rem !important;
+  counter-reset: mcq-option;
+}
+
+.ProseMirror.prose .exercice-node .content li > ol > li,
+.qcm-content ol > li > ol > li {
+  counter-increment: mcq-option;
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 0.5rem !important;
+}
+
+.ProseMirror.prose .exercice-node .content li > ol > li::before,
+.qcm-content ol > li > ol > li::before {
+  content: counter(mcq-option, lower-alpha) ") ";
+  position: absolute;
+  left: 0;
+  font-weight: normal;
+  color: var(--color-exercise-dark);
+}
+
+/* Clear default markers from Tailwind prose */
+.ProseMirror.prose .exercice-node .content li > ol > li::marker,
+.qcm-content ol > li > ol > li::marker {
+  content: none !important;
+}
+
+/* Ensure bold questions are very visible */
+.exercice-node .content strong {
+  font-weight: 800 !important;
+  color: #111827; /* Gray-900 */
+}
+
+.dark .exercice-node .content strong {
+  color: #f3f4f6; /* Gray-100 */
+}
+
+.exercice-node .content > ol > li {
+  margin-bottom: 1rem !important;
+}
+
+.exercice-node .content > ol > li::marker {
+  font-weight: normal !important;
+}
+
+.exercice-node .content > ol > li > ol > li {
+  margin-bottom: 0.25rem !important;
+}

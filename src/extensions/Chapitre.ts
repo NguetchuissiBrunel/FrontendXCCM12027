@@ -39,7 +39,7 @@ export default Node.create<ChapitreOptions>({
 
   group: 'xccm-chapter',
 
-  content: 'paragraphe+',
+  content: '(paragraphe | exercice)+',
 
   defining: true,
 
@@ -81,6 +81,15 @@ export default Node.create<ChapitreOptions>({
           }
           return {
             'data-number': attributes.number,
+          };
+        },
+      },
+      introduction: {
+        default: '',
+        parseHTML: element => element.getAttribute('data-introduction'),
+        renderHTML: attributes => {
+          return {
+            'data-introduction': attributes.introduction,
           };
         },
       },

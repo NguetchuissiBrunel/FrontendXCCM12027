@@ -84,6 +84,15 @@ export default Node.create<ParagrapheOptions>({
           };
         },
       },
+      introduction: {
+        default: '',
+        parseHTML: element => element.getAttribute('data-introduction'),
+        renderHTML: attributes => {
+          return {
+            'data-introduction': attributes.introduction,
+          };
+        },
+      },
     };
   },
 

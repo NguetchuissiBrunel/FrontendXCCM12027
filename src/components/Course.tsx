@@ -1,13 +1,14 @@
 // src/components/Course.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, BookUp, Tv, FileText } from "lucide-react";
 import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
 import { downloadCourseAsDocx } from "@/utils/DownloadDocx";
+import { downloadCertificationPDF } from "@/utils/DownloadCertification";
 import CourseSidebar from "@/components/CourseSidebar";
 import SmartNotes from "@/components/SmartNotes";
 import DownloadOptions from './DownloadOptions';
-import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/types/course";
+import { CourseData, Section, Chapter, Paragraph, QuestionData } from "@/types/course";
 import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,9 +27,11 @@ interface CourseProps {
 
 const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
   const { user } = useAuth();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState<number>(0);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
   const [exerciseScore, setExerciseScore] = useState<{ [key: string]: number }>({});
   const [showExercise, setShowExercise] = useState<boolean>(false);
   const [courseCompleted, setCourseCompleted] = useState<boolean>(false);
@@ -37,6 +40,8 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const [docxGenerating, setDocxGenerating] = useState<boolean>(false);
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const [isLiking, setIsLiking] = useState<boolean>(false);
+  const [isCertifying, setIsCertifying] = useState<boolean>(false);
+  const [currentExerciseLevel, setCurrentExerciseLevel] = useState<'section' | 'chapter' | 'paragraph' | null>(null);
   const [evaluation, setEvaluation] = useState<{
     rating: number;
     feedback: string;
@@ -50,12 +55,20 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const { startLoading, stopLoading } = useLoading();
 
   useEffect(() => {
-    if (pdfGenerating || docxGenerating || isLiking) {
+    if (pdfGenerating || docxGenerating || isLiking || isCertifying) {
       startLoading();
     } else {
       stopLoading();
     }
-  }, [pdfGenerating, docxGenerating, isLiking, startLoading, stopLoading]);
+  }, [pdfGenerating, docxGenerating, isLiking, isCertifying, startLoading, stopLoading]);
+
+  // Scroll to top when topic changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, showExercise, currentExerciseIndex]);
 
   // Helper functions to safely access data
   const getCurrentSection = (): Section | null => {
@@ -75,10 +88,37 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
   const getCurrentParagraph = (): Paragraph | null => {
     const chapter = getCurrentChapter();
-    if (!chapter?.paragraphs?.length || currentParagraphIndex >= chapter.paragraphs.length) {
-      return null;
+    if (chapter?.paragraphs?.length && currentParagraphIndex < chapter.paragraphs.length) {
+      return chapter.paragraphs[currentParagraphIndex];
     }
-    return chapter.paragraphs[currentParagraphIndex];
+
+    // Fallback to direct section paragraphs if chapter is missing or empty
+    const section = getCurrentSection();
+    if (section?.paragraphs?.length && currentParagraphIndex < section.paragraphs.length) {
+      return section.paragraphs[currentParagraphIndex];
+    }
+
+    return null;
+  };
+
+  const getExercisesAtCurrentLevel = (): any[] => {
+    let items: any[] = [];
+    if (currentExerciseLevel === 'paragraph' && paragraph) items = paragraph.exercises || [];
+    else if (currentExerciseLevel === 'chapter' && chapter) items = chapter.exercises || [];
+    else if (currentExerciseLevel === 'section' && section) items = section.exercises || [];
+
+    if (items.length === 0) {
+      const activeItem = currentExerciseLevel === 'paragraph' ? paragraph : (currentExerciseLevel === 'chapter' ? chapter : section);
+      if (activeItem?.exercise || activeItem?.exerciseContent) {
+        items = [{
+          title: activeItem.exercise?.title || "Exercice",
+          questions: activeItem.exercise?.questions,
+          content: activeItem.exerciseContent,
+          id: (activeItem as any).exercise?.id || "legacy-ex"
+        }];
+      }
+    }
+    return items;
   };
 
   const section = getCurrentSection();
@@ -89,25 +129,8 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const hasChapters = Boolean(section?.chapters?.length);
   const hasParagraphs = Boolean(chapter?.paragraphs?.length);
 
-  useEffect(() => {
-    if (!hasSections || !section) {
-      setCourseCompleted(false);
-      return;
-    }
-
-    const isLastSection = currentSectionIndex === courseData.sections.length - 1;
-
-    if (hasChapters && chapter) {
-      const isLastChapter = currentChapterIndex === section.chapters!.length - 1;
-      const isLastParagraph = currentParagraphIndex === chapter.paragraphs.length - 1;
-      setCourseCompleted(isLastSection && isLastChapter && isLastParagraph);
-    } else if (section.paragraphs?.length) {
-      const isLastParagraph = currentParagraphIndex === section.paragraphs.length - 1;
-      setCourseCompleted(isLastSection && isLastParagraph);
-    } else {
-      setCourseCompleted(isLastSection);
-    }
-  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, courseData, hasSections, hasChapters, section, chapter]);
+  // Course completion is now handled manually by clicking "Next" on the very last thing.
+  // This prevents the conclusion from showing prematurely.
 
   const handleDownloadPDF = () => {
     setShowOrientationSelector(true);
@@ -164,9 +187,25 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   };
 
   const isCurrentExerciseCompleted = (): boolean => {
-    if (!paragraph || !paragraph.exercise) return true;
+    // Current active exercise based on currentExerciseLevel
+    const activeExercises = getExercisesAtCurrentLevel();
+    const activeExercise = activeExercises[currentExerciseIndex];
+    let exerciseId = "";
 
-    const exerciseId = `${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`;
+    if (currentExerciseLevel === 'paragraph' && paragraph) {
+      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
+    } else if (currentExerciseLevel === 'chapter' && chapter) {
+      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
+    } else if (currentExerciseLevel === 'section' && section) {
+      exerciseId = `s-${currentSectionIndex}-${currentExerciseIndex}`;
+    }
+
+    if (!activeExercise && !paragraph?.exercises?.length && !chapter?.exercises?.length && !section?.exercises?.length && !paragraph?.exerciseContent && !chapter?.exerciseContent && !section?.exerciseContent) return true;
+
+    // If it's a free-form exercise (exerciseContent), we consider it completed once opened then next is clicked
+    // unless there are questions.
+    if (!activeExercise?.questions?.length) return true;
+
     return exerciseScore[exerciseId] !== undefined && exerciseScore[exerciseId] >= 70;
   };
 
@@ -175,75 +214,148 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
     if (showExercise) {
       if (!isCurrentExerciseCompleted()) return;
+      
+      const activeExercises = getExercisesAtCurrentLevel();
+      if (currentExerciseIndex < activeExercises.length - 1) {
+        setCurrentExerciseIndex(currentExerciseIndex + 1);
+        setCurrentExerciseAnswers({}); // Reset answers for next sub-exercise
+        return;
+      }
+      
       setShowExercise(false);
-    } else if (paragraph?.exercise) {
+      setCurrentExerciseIndex(0);
+      setCurrentExerciseLevel(null);
+      setCurrentExerciseAnswers({});
+
+      // Move to next item after completing an exercise
+      if (currentExerciseLevel === 'paragraph') {
+        // If we completed paragraph exercise, move to next item
+        proceedToNextAfterParagraph();
+      } else if (currentExerciseLevel === 'chapter') {
+        // If we completed chapter exercise, move to next chapter or section exercise
+        proceedToNextAfterChapter();
+      } else if (currentExerciseLevel === 'section') {
+        // If we completed section exercise, move to next section
+        proceedToNextAfterSection();
+      }
+      return;
+    }
+
+    // Check if current level has an exercise before moving on
+    if (paragraph?.exercises?.length || paragraph?.exercise || paragraph?.exerciseContent) {
+      setCurrentExerciseLevel('paragraph');
+      setCurrentExerciseIndex(0);
       setShowExercise(true);
       return;
     }
 
+    proceedToNextAfterParagraph();
+  };
+
+  const proceedToNextAfterParagraph = () => {
     if (hasChapters && chapter) {
-      // Navigation avec chapitres
       if (currentParagraphIndex < chapter.paragraphs.length - 1) {
         setCurrentParagraphIndex(currentParagraphIndex + 1);
-      } else if (currentChapterIndex < section.chapters!.length - 1) {
-        setCurrentChapterIndex(currentChapterIndex + 1);
-        setCurrentParagraphIndex(0);
-      } else if (currentSectionIndex < courseData.sections.length - 1) {
-        setCurrentSectionIndex(currentSectionIndex + 1);
-        setCurrentChapterIndex(0);
-        setCurrentParagraphIndex(0);
+      } else {
+        // End of paragraphs in chapter - check chapter exercise
+        if (chapter.exercises?.length || chapter.exercise || chapter.exerciseContent) {
+          setCurrentExerciseLevel('chapter');
+          setCurrentExerciseIndex(0);
+          setShowExercise(true);
+        } else {
+          proceedToNextAfterChapter();
+        }
       }
-    } else if (section.paragraphs && section.paragraphs.length > 0) {
-      // Navigation directe avec paragraphes dans la section
+    } else if (section?.paragraphs && section.paragraphs.length > 0) {
       if (currentParagraphIndex < section.paragraphs.length - 1) {
         setCurrentParagraphIndex(currentParagraphIndex + 1);
-      } else if (currentSectionIndex < courseData.sections.length - 1) {
-        setCurrentSectionIndex(currentSectionIndex + 1);
-        setCurrentParagraphIndex(0);
+      } else {
+        // End of section paragraphs - check section exercise
+        if (section.exercises?.length || section.exercise || section.exerciseContent) {
+          setCurrentExerciseLevel('section');
+          setCurrentExerciseIndex(0);
+          setShowExercise(true);
+        } else {
+          proceedToNextAfterSection();
+        }
+      }
+    }
+  };
+
+  const proceedToNextAfterChapter = () => {
+    if (section && currentChapterIndex < section.chapters!.length - 1) {
+      setCurrentChapterIndex(currentChapterIndex + 1);
+      setCurrentParagraphIndex(0);
+    } else {
+      // End of chapters in section - check section exercise
+      if (section && (section.exercises?.length || section.exercise || section.exerciseContent)) {
+        setCurrentExerciseLevel('section');
+        setCurrentExerciseIndex(0);
+        setShowExercise(true);
+      } else {
+        proceedToNextAfterSection();
+      }
+    }
+  };
+
+  const proceedToNextAfterSection = () => {
+    if (currentSectionIndex < courseData.sections.length - 1) {
+      setCurrentSectionIndex(currentSectionIndex + 1);
+      setCurrentChapterIndex(0);
+      setCurrentParagraphIndex(0);
+    } else {
+      // Very end of course
+      setCourseCompleted(true);
+      // Ensure we scroll to top to see conclusion
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   };
 
   const prevParagraph = () => {
+    setCourseCompleted(false);
     if (showExercise) {
+      if (currentExerciseIndex > 0) {
+        setCurrentExerciseIndex(currentExerciseIndex - 1);
+        return;
+      }
       setShowExercise(false);
+      setCurrentExerciseIndex(0);
       return;
     }
 
     if (!hasSections || !section) return;
 
-    if (hasChapters && chapter) {
-      // Navigation avec chapitres
-      if (currentParagraphIndex > 0) {
-        setCurrentParagraphIndex(currentParagraphIndex - 1);
-      } else if (currentChapterIndex > 0) {
-        const prevChapter = section.chapters![currentChapterIndex - 1];
-        if (prevChapter?.paragraphs?.length) {
-          setCurrentChapterIndex(currentChapterIndex - 1);
-          setCurrentParagraphIndex(prevChapter.paragraphs.length - 1);
-        }
-      } else if (currentSectionIndex > 0) {
-        const prevSection = courseData.sections[currentSectionIndex - 1];
-        if (prevSection?.chapters?.length) {
-          setCurrentSectionIndex(currentSectionIndex - 1);
-          const lastChapterIndex = prevSection.chapters.length - 1;
-          const lastChapter = prevSection.chapters[lastChapterIndex];
-          if (lastChapter?.paragraphs?.length) {
-            setCurrentChapterIndex(lastChapterIndex);
-            setCurrentParagraphIndex(lastChapter.paragraphs.length - 1);
-          }
-        }
-      }
-    } else if (section.paragraphs && section.paragraphs.length > 0) {
-      // Navigation directe avec paragraphes dans la section
-      if (currentParagraphIndex > 0) {
-        setCurrentParagraphIndex(currentParagraphIndex - 1);
-      } else if (currentSectionIndex > 0) {
-        const prevSection = courseData.sections[currentSectionIndex - 1];
-        if (prevSection?.paragraphs?.length) {
-          setCurrentSectionIndex(currentSectionIndex - 1);
-          setCurrentParagraphIndex(prevSection.paragraphs.length - 1);
-        }
+    // 1. Same Chapter back nav
+    if (currentParagraphIndex > 0) {
+      setCurrentParagraphIndex(currentParagraphIndex - 1);
+      return;
+    }
+
+    // 2. Cross Chapter back nav (current chapter is at index 0)
+    if (currentChapterIndex > 0) {
+      const prevChapter = section.chapters![currentChapterIndex - 1];
+      setCurrentChapterIndex(currentChapterIndex - 1);
+      setCurrentParagraphIndex((prevChapter.paragraphs?.length || 1) - 1);
+      return;
+    }
+
+    // 3. Cross Section back nav (current section start)
+    if (currentSectionIndex > 0) {
+      const prevSection = courseData.sections[currentSectionIndex - 1];
+      setCurrentSectionIndex(currentSectionIndex - 1);
+
+      if (prevSection.chapters?.length) {
+        // Go to last paragraph of last chapter
+        const lastChapterIdx = prevSection.chapters.length - 1;
+        const lastChapter = prevSection.chapters[lastChapterIdx];
+        setCurrentChapterIndex(lastChapterIdx);
+        setCurrentParagraphIndex((lastChapter.paragraphs?.length || 1) - 1);
+      } else {
+        // Go to last paragraph of section
+        setCurrentChapterIndex(0);
+        setCurrentParagraphIndex((prevSection.paragraphs?.length || 1) - 1);
       }
     }
   };
@@ -253,28 +365,70 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   };
 
   const submitExercise = () => {
-    if (!paragraph?.exercise) return;
+    const activeExercises = getExercisesAtCurrentLevel();
+    const activeExercise = activeExercises[currentExerciseIndex];
+    let exerciseId = "";
+
+    if (currentExerciseLevel === 'paragraph' && paragraph) {
+      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
+    } else if (currentExerciseLevel === 'chapter' && chapter) {
+      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
+    } else if (currentExerciseLevel === 'section' && section) {
+      exerciseId = `s-${currentSectionIndex}-${currentExerciseIndex}`;
+    }
+
+    if (!activeExercise || !activeExercise.questions) return;
 
     let score = 0;
-    const totalQuestions = paragraph.exercise.questions.length;
+    const totalQuestions = activeExercise.questions.length;
 
-    paragraph.exercise.questions.forEach((q: ExerciseQuestion, idx: number) => {
-      if (currentExerciseAnswers[idx] === q.réponse) {
+    activeExercise.questions.forEach((q: QuestionData, idx: number) => {
+      if (currentExerciseAnswers[idx] === (q as any).réponse) {
         score++;
       }
     });
 
     const percentage = (score / totalQuestions) * 100;
-    const exerciseId = `${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`;
     setExerciseScore((prev) => ({ ...prev, [exerciseId]: percentage }));
 
     if (percentage >= 70) {
-      setShowExercise(false);
+      toast.success("Félicitations ! Exercice réussi.");
+      // setShowExercise(false); // Let user see result before clicking next
+    } else {
+      toast.error("Veuisillez réessayer pour atteindre au moins 70%.");
     }
   };
 
-  const handleCertificationClick = () => {
-    console.log("Certification requested");
+  const handleCertificationClick = async () => {
+    if (!user) {
+      toast.error("Veuillez vous connecter pour obtenir un certificat.");
+      return;
+    }
+
+    setIsCertifying(true);
+    const toastId = toast.loading("Génération de votre certificat...");
+    
+    try {
+      const studentName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || "Étudiant XCCM";
+      const success = await downloadCertificationPDF(courseData, studentName);
+      
+      if (success) {
+        toast.success("Certificat généré avec succès !", { id: toastId });
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#A855F7', '#8B5CF6', '#D946EF']
+        });
+      } else {
+        toast.error("Échec de la génération du certificat.", { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Une erreur est survenue.", { id: toastId });
+    } finally {
+      setIsCertifying(false);
+    }
   };
 
   const handleEvaluationChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -365,6 +519,26 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     );
   }
 
+  const getActiveExercise = () => {
+    const activeExercises = getExercisesAtCurrentLevel();
+    if (activeExercises.length > 0 && currentExerciseIndex < activeExercises.length) {
+      const ex = activeExercises[currentExerciseIndex];
+      let id = "";
+      if (currentExerciseLevel === 'paragraph') id = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
+      else if (currentExerciseLevel === 'chapter') id = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
+      else if (currentExerciseLevel === 'section') id = `s-${currentSectionIndex}-${currentExerciseIndex}`;
+
+      return {
+        id,
+        exercise: ex,
+        content: ex.content
+      };
+    }
+    return null;
+  };
+
+  const currentExercise = getActiveExercise();
+
   const canGoNext = !showExercise || isCurrentExerciseCompleted();
 
   return (
@@ -378,6 +552,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         setCurrentChapterIndex={setCurrentChapterIndex}
         setCurrentParagraphIndex={setCurrentParagraphIndex}
         setShowExercise={setShowExercise}
+        setCourseCompleted={setCourseCompleted}
         onDownloadRequest={() => setShowDownloadModal(true)}
       />
 
@@ -385,14 +560,14 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         <div className="mb-3">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Par</p>
           <TeacherLink
-            teacherId={courseData.author.id}
+            teacherId={String(courseData.author.id)}
             teacherName={courseData.author.name}
             teacherPhoto={courseData.author.image}
           />
         </div>
       )}
 
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-20">
           {/* Header */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -424,82 +599,178 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12">
             {!showExercise ? (
               <>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{paragraph?.title || "Titre non disponible"}</h2>
-                {paragraph?.content ? (
-                  <div className="mb-8">
-                    <CourseContentRenderer content={paragraph.content} />
-                  </div>
-                ) : (
-                  <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">Contenu non disponible</p>
-                )}
-
-                {paragraph?.notions && paragraph.notions.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                      <BookOpen className="h-6 w-6 mr-2 text-purple-600" />
-                      Notions clés
-                    </h3>
-                    <ul className="space-y-3">
-                      {paragraph.notions.map((notion: string, index: number) => (
-                        <li key={index} className="flex items-start bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-                          <CheckCircle className="h-5 w-5 text-purple-600 mt-0.5 mr-3 flex-shrink-0" />
-                          <span className="text-gray-700 dark:text-gray-300">{notion}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-                  <Award className="h-6 w-6 mr-2 text-purple-600" />
-                  Exercice
-                </h2>
-                <div className="space-y-8">
-                  {paragraph?.exercise?.questions.map((q: ExerciseQuestion, idx: number) => (
-                    <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl">
-                      <h4 className="font-semibold text-gray-800 dark:text-white mb-4">{q.question}</h4>
-                      <div className="space-y-3">
-                        {q.options.map((option: string, optIdx: number) => (
-                          <label key={optIdx} className="flex items-center">
-                            <input
-                              type="radio"
-                              name={`question-${idx}`}
-                              value={option}
-                              checked={currentExerciseAnswers[idx] === option}
-                              onChange={() => handleAnswerChange(idx, option)}
-                              className="form-radio text-purple-600 focus:ring-purple-500"
-                            />
-                            <span className="ml-2 text-gray-700 dark:text-gray-300">{option}</span>
-                          </label>
-                        ))}
+                {/* Hierarchical Breadcrumbs / Titles */}
+                <div className="mb-1 space-y-4">
+                  {/* Title Section */}
+                  <div className="space-y-3">
+                    <h2 className="text-4xl font-extrabold text-purple-700 dark:text-purple-400 tracking-tight">
+                      {section?.title}
+                    </h2>
+                    {section?.introduction && (
+                      <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl border-l-4 border-purple-500">
+                        <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed whitespace-pre-wrap">{section.introduction}</p>
                       </div>
-                    </div>
-                  ))}
-                  <button
-                    onClick={submitExercise}
-                    disabled={Object.keys(currentExerciseAnswers).length < (paragraph?.exercise?.questions.length || 0)}
-                    className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors font-medium"
-                    type="button"
-                  >
-                    Soumettre les réponses
-                  </button>
-                  {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] !== undefined && (
-                    <div className={`p-4 rounded-lg ${exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70
-                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                      : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                      }`}>
-                      <p className="font-semibold">Score: {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`]}%</p>
-                      {exerciseScore[`${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`] >= 70 ? (
-                        <p>Félicitations ! Vous pouvez continuer.</p>
-                      ) : (
-                        <p>Essayez à nouveau pour atteindre au moins 70%.</p>
+                    )}
+                  </div>
+
+                  {/* Title Chapter */}
+                  {chapter && (
+                    <div className="space-y-3 ml-4 border-l-2 border-green-100 dark:border-green-900/30 pl-6">
+                      <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {chapter.title}
+                      </h3>
+                      {chapter?.introduction && (
+                        <div className="p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border-l-4 border-green-500">
+                          <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed whitespace-pre-wrap">{chapter.introduction}</p>
+                        </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Title Paragraph */}
+                  <div className="space-y-3 ml-8 border-l-2 border-orange-100 dark:border-orange-900/30 pl-6">
+                    <h4 className="text-xl font-semibold text-orange-600 dark:text-orange-400 pb-2 border-b border-orange-100 dark:border-orange-900/30">
+                      {paragraph?.title || "Titre non disponible"}
+                    </h4>
+                    {paragraph?.introduction && (
+                      <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl border-l-4 border-amber-500">
+                        <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed whitespace-pre-wrap">{paragraph.introduction}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="ml-8 border-l-2 border-transparent pl-6">
+                  {paragraph?.content ? (
+                    <div className="mb-8">
+                      <CourseContentRenderer content={paragraph.content} />
+                    </div>
+                  ) : (
+                    <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">Contenu non disponible</p>
+                  )}
+
+                  {paragraph?.notions && paragraph.notions.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                      <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-6 flex items-center">
+                        <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg mr-3">
+                          <BookOpen className="h-5 w-5 text-red-600" />
+                        </div>
+                        Notions
+                      </h3>
+                      <ul className="space-y-3">
+                        {paragraph.notions.map((notion: string, index: number) => (
+                          <li key={index} className="flex items-start bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border-l-4 border-red-500">
+                            <CheckCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                            <span className="text-gray-700 dark:text-gray-300">{notion}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>
               </>
+            ) : (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-indigo-100 dark:border-indigo-900/30 border-l-4 border-l-blue-500 overflow-hidden mb-8 transition-all duration-300 hover:shadow-md">
+                <div className="px-6 py-5 flex items-center justify-between border-b border-indigo-100 dark:border-indigo-900/50">
+                  <div className="flex items-center text-indigo-900 dark:text-indigo-100">
+                    <Award className="h-6 w-6 mr-3 text-indigo-600 dark:text-indigo-400" />
+                    <h2 className="text-xl font-bold tracking-tight">
+                      Exercice : {currentExercise?.exercise?.title || "Application"}
+                    </h2>
+                  </div>
+                  {getExercisesAtCurrentLevel().length > 1 && (
+                    <span className="text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                      {currentExerciseIndex + 1} / {getExercisesAtCurrentLevel().length}
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-6 md:p-8">
+                  {currentExercise?.content && (
+                    <div className="mb-8 prose dark:prose-invert max-w-none qcm-content text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <CourseContentRenderer content={currentExercise.content} />
+                    </div>
+                  )}
+
+                  {currentExercise?.exercise?.questions && currentExercise.exercise.questions.length > 0 && (
+                    <div className="space-y-6">
+                      {currentExercise.exercise.questions.map((q: QuestionData, idx: number) => (
+                        <div key={idx} className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100/80 dark:border-indigo-800/30 p-6 rounded-2xl transition-all duration-300 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-700/50">
+                          <h4 className="text-lg font-semibold text-indigo-950 dark:text-indigo-100 mb-5 leading-snug">{q.text}</h4>
+                          <div className="space-y-3">
+                            {q.options && q.options.length > 0 ? (
+                              q.options.map((option: string, optIdx: number) => (
+                                <label 
+                                  key={optIdx} 
+                                  className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${
+                                    currentExerciseAnswers[idx] === option 
+                                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-sm' 
+                                      : 'border-transparent bg-white dark:bg-gray-800/60 hover:border-indigo-200 dark:hover:border-indigo-700/50 hover:bg-indigo-50/30 dark:hover:bg-gray-800 shadow-sm hover:shadow'
+                                  }`}
+                                >
+                                  <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 mr-4 transition-colors ${currentExerciseAnswers[idx] === option ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-400 dark:bg-indigo-400' : 'border-gray-300 group-hover:border-indigo-400 dark:border-gray-600 dark:group-hover:border-indigo-500'}`}>
+                                    {currentExerciseAnswers[idx] === option && <div className="h-2 w-2 rounded-full bg-white dark:bg-gray-900" />}
+                                  </div>
+                                  <input
+                                    type="radio"
+                                    name={`question-${idx}`}
+                                    value={option}
+                                    checked={currentExerciseAnswers[idx] === option}
+                                    onChange={() => handleAnswerChange(idx, option)}
+                                    className="hidden"
+                                  />
+                                  <span className={`transition-colors duration-200 ${
+                                    currentExerciseAnswers[idx] === option 
+                                      ? 'text-indigo-900 dark:text-indigo-100 font-semibold' 
+                                      : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
+                                  }`}>
+                                    <span className="inline-block w-6 font-medium text-indigo-400/70 dark:text-indigo-500/70">{String.fromCharCode(97 + optIdx)})</span> {option}
+                                  </span>
+                                </label>
+                            ))
+                          ) : (
+                            <textarea
+                              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                              rows={3}
+                              placeholder="Votre réponse..."
+                              value={currentExerciseAnswers[idx] || ""}
+                              onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      onClick={submitExercise}
+                      disabled={Object.keys(currentExerciseAnswers).length < (currentExercise.exercise.questions.length || 0)}
+                      className="w-full py-4 mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 font-bold text-lg focus:ring-4 focus:ring-indigo-500/30 outline-none"
+                      type="button"
+                    >
+                      Valider mes réponses
+                    </button>
+                    {currentExercise.id && exerciseScore[currentExercise.id] !== undefined && (
+                      <div className={`mt-6 p-6 rounded-xl border-2 ${exerciseScore[currentExercise.id] >= 70
+                        ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/30 text-green-700 dark:text-green-300'
+                        : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-300'
+                        }`}>
+                        <div className="flex items-center gap-3 mb-2">
+                          <Award className={`h-6 w-6 ${exerciseScore[currentExercise.id] >= 70 ? 'text-green-600' : 'text-red-600'}`} />
+                          <h4 className="text-xl font-bold">Résultat : {exerciseScore[currentExercise.id]}%</h4>
+                        </div>
+                        {exerciseScore[currentExercise.id] >= 70 ? (
+                          <p className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5" />
+                            Excellent ! Vous maîtrisez cette notion. Vous pouvez passer à la suite.
+                          </p>
+                        ) : (
+                          <p>N'ayez crainte ! Relisez le cours et essayez à nouveau pour atteindre les 70% requis.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                </div>
+              </div>
             )}
           </div>
 
@@ -517,7 +788,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
             <button
               onClick={nextParagraph}
-              disabled={!canGoNext}
+              disabled={!canGoNext || courseCompleted}
               className="px-5 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-md hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-medium"
               type="button"
             >
@@ -623,11 +894,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <button
                   onClick={handleCertificationClick}
-                  className="bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center"
+                  disabled={isCertifying}
+                  className={`bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center ${isCertifying ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700 active:scale-95'}`}
                   type="button"
                 >
-                  <Award className="h-7 w-7 mr-2" />
-                  Obtenir votre certification
+                  <Award className={`h-7 w-7 mr-2 ${isCertifying ? 'animate-spin' : ''}`} />
+                  {isCertifying ? 'Génération...' : 'Obtenir votre certification'}
                 </button>
                 <button
                   onClick={() => setShowDownloadModal(true)}

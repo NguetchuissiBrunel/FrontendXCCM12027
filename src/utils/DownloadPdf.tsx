@@ -406,14 +406,26 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
                 renderNotions(paragraph.notions, margin + 25);
 
-                renderExercise(paragraph.exerciseContent, (paragraph as any).exercise, colors.paragraphe, margin + 25);
+                if (paragraph.exercises && paragraph.exercises.length > 0) {
+                  paragraph.exercises.forEach(ex => {
+                    renderExercise(ex.content, ex, colors.paragraphe, margin + 25);
+                  });
+                } else {
+                  renderExercise(paragraph.exerciseContent, (paragraph as any).exercise, colors.paragraphe, margin + 25);
+                }
 
                 y += 20; // Augmenté de 10 à 20
               });
             }
             
             // Chapter level exercise at the end of the chapter
-            renderExercise(chapter.exerciseContent, (chapter as any).exercise, colors.chapitre, margin + 15);
+            if (chapter.exercises && chapter.exercises.length > 0) {
+              chapter.exercises.forEach(ex => {
+                renderExercise(ex.content, ex, colors.chapitre, margin + 15);
+              });
+            } else {
+              renderExercise(chapter.exerciseContent, (chapter as any).exercise, colors.chapitre, margin + 15);
+            }
             y += 25; // Espace après un chapitre
           });
         }
@@ -440,12 +452,24 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
             renderNotions(paragraph.notions, margin + 25);
 
             // Paragraph exercise for direct section paragraphs
-            renderExercise(paragraph.exerciseContent, (paragraph as any).exercise, colors.paragraphe, margin + 25);
+            if (paragraph.exercises && paragraph.exercises.length > 0) {
+              paragraph.exercises.forEach(ex => {
+                renderExercise(ex.content, ex, colors.paragraphe, margin + 25);
+              });
+            } else {
+              renderExercise(paragraph.exerciseContent, (paragraph as any).exercise, colors.paragraphe, margin + 25);
+            }
           });
         }
 
         // Section level exercise at the very end of the section
-        renderExercise(section.exerciseContent, (section as any).exercise, colors.partie, margin + 5);
+        if (section.exercises && section.exercises.length > 0) {
+          section.exercises.forEach(ex => {
+            renderExercise(ex.content, ex, colors.partie, margin + 5);
+          });
+        } else {
+          renderExercise(section.exerciseContent, (section as any).exercise, colors.partie, margin + 5);
+        }
       });
     }
 

@@ -31,6 +31,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState<number>(0);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
   const [exerciseScore, setExerciseScore] = useState<{ [key: string]: number }>({});
   const [showExercise, setShowExercise] = useState<boolean>(false);
   const [courseCompleted, setCourseCompleted] = useState<boolean>(false);
@@ -67,7 +68,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, showExercise]);
+  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, showExercise, currentExerciseIndex]);
 
   // Helper functions to safely access data
   const getCurrentSection = (): Section | null => {
@@ -98,6 +99,26 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     }
 
     return null;
+  };
+
+  const getExercisesAtCurrentLevel = (): any[] => {
+    let items: any[] = [];
+    if (currentExerciseLevel === 'paragraph' && paragraph) items = paragraph.exercises || [];
+    else if (currentExerciseLevel === 'chapter' && chapter) items = chapter.exercises || [];
+    else if (currentExerciseLevel === 'section' && section) items = section.exercises || [];
+
+    if (items.length === 0) {
+      const activeItem = currentExerciseLevel === 'paragraph' ? paragraph : (currentExerciseLevel === 'chapter' ? chapter : section);
+      if (activeItem?.exercise || activeItem?.exerciseContent) {
+        items = [{
+          title: activeItem.exercise?.title || "Exercice",
+          questions: activeItem.exercise?.questions,
+          content: activeItem.exerciseContent,
+          id: (activeItem as any).exercise?.id || "legacy-ex"
+        }];
+      }
+    }
+    return items;
   };
 
   const section = getCurrentSection();
@@ -167,21 +188,19 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
   const isCurrentExerciseCompleted = (): boolean => {
     // Current active exercise based on currentExerciseLevel
-    let activeExercise: any = null;
+    const activeExercises = getExercisesAtCurrentLevel();
+    const activeExercise = activeExercises[currentExerciseIndex];
     let exerciseId = "";
 
     if (currentExerciseLevel === 'paragraph' && paragraph) {
-      activeExercise = paragraph.exercise;
-      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`;
+      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
     } else if (currentExerciseLevel === 'chapter' && chapter) {
-      activeExercise = chapter.exercise;
-      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}`;
+      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
     } else if (currentExerciseLevel === 'section' && section) {
-      activeExercise = section.exercise;
-      exerciseId = `s-${currentSectionIndex}`;
+      exerciseId = `s-${currentSectionIndex}-${currentExerciseIndex}`;
     }
 
-    if (!activeExercise && !paragraph?.exerciseContent && !chapter?.exerciseContent && !section?.exerciseContent) return true;
+    if (!activeExercise && !paragraph?.exercises?.length && !chapter?.exercises?.length && !section?.exercises?.length && !paragraph?.exerciseContent && !chapter?.exerciseContent && !section?.exerciseContent) return true;
 
     // If it's a free-form exercise (exerciseContent), we consider it completed once opened then next is clicked
     // unless there are questions.
@@ -195,8 +214,18 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
     if (showExercise) {
       if (!isCurrentExerciseCompleted()) return;
+      
+      const activeExercises = getExercisesAtCurrentLevel();
+      if (currentExerciseIndex < activeExercises.length - 1) {
+        setCurrentExerciseIndex(currentExerciseIndex + 1);
+        setCurrentExerciseAnswers({}); // Reset answers for next sub-exercise
+        return;
+      }
+      
       setShowExercise(false);
+      setCurrentExerciseIndex(0);
       setCurrentExerciseLevel(null);
+      setCurrentExerciseAnswers({});
 
       // Move to next item after completing an exercise
       if (currentExerciseLevel === 'paragraph') {
@@ -213,8 +242,9 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     }
 
     // Check if current level has an exercise before moving on
-    if (paragraph?.exercise || paragraph?.exerciseContent) {
+    if (paragraph?.exercises?.length || paragraph?.exercise || paragraph?.exerciseContent) {
       setCurrentExerciseLevel('paragraph');
+      setCurrentExerciseIndex(0);
       setShowExercise(true);
       return;
     }
@@ -228,8 +258,9 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         setCurrentParagraphIndex(currentParagraphIndex + 1);
       } else {
         // End of paragraphs in chapter - check chapter exercise
-        if (chapter.exercise || chapter.exerciseContent) {
+        if (chapter.exercises?.length || chapter.exercise || chapter.exerciseContent) {
           setCurrentExerciseLevel('chapter');
+          setCurrentExerciseIndex(0);
           setShowExercise(true);
         } else {
           proceedToNextAfterChapter();
@@ -240,8 +271,9 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         setCurrentParagraphIndex(currentParagraphIndex + 1);
       } else {
         // End of section paragraphs - check section exercise
-        if (section.exercise || section.exerciseContent) {
+        if (section.exercises?.length || section.exercise || section.exerciseContent) {
           setCurrentExerciseLevel('section');
+          setCurrentExerciseIndex(0);
           setShowExercise(true);
         } else {
           proceedToNextAfterSection();
@@ -256,8 +288,9 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
       setCurrentParagraphIndex(0);
     } else {
       // End of chapters in section - check section exercise
-      if (section && (section.exercise || section.exerciseContent)) {
+      if (section && (section.exercises?.length || section.exercise || section.exerciseContent)) {
         setCurrentExerciseLevel('section');
+        setCurrentExerciseIndex(0);
         setShowExercise(true);
       } else {
         proceedToNextAfterSection();
@@ -283,7 +316,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const prevParagraph = () => {
     setCourseCompleted(false);
     if (showExercise) {
+      if (currentExerciseIndex > 0) {
+        setCurrentExerciseIndex(currentExerciseIndex - 1);
+        return;
+      }
       setShowExercise(false);
+      setCurrentExerciseIndex(0);
       return;
     }
 
@@ -327,21 +365,19 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   };
 
   const submitExercise = () => {
-    let activeExercise: any = null;
+    const activeExercises = getExercisesAtCurrentLevel();
+    const activeExercise = activeExercises[currentExerciseIndex];
     let exerciseId = "";
 
     if (currentExerciseLevel === 'paragraph' && paragraph) {
-      activeExercise = paragraph.exercise;
-      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}`;
+      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
     } else if (currentExerciseLevel === 'chapter' && chapter) {
-      activeExercise = chapter.exercise;
-      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}`;
+      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
     } else if (currentExerciseLevel === 'section' && section) {
-      activeExercise = section.exercise;
-      exerciseId = `s-${currentSectionIndex}`;
+      exerciseId = `s-${currentSectionIndex}-${currentExerciseIndex}`;
     }
 
-    if (!activeExercise) return;
+    if (!activeExercise || !activeExercise.questions) return;
 
     let score = 0;
     const totalQuestions = activeExercise.questions.length;
@@ -484,9 +520,20 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   }
 
   const getActiveExercise = () => {
-    if (currentExerciseLevel === 'paragraph' && paragraph) return { exercise: paragraph.exercise, content: paragraph.exerciseContent, id: `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}` };
-    if (currentExerciseLevel === 'chapter' && chapter) return { exercise: chapter.exercise, content: chapter.exerciseContent, id: `c-${currentSectionIndex}-${currentChapterIndex}` };
-    if (currentExerciseLevel === 'section' && section) return { exercise: section.exercise, content: section.exerciseContent, id: `s-${currentSectionIndex}` };
+    const activeExercises = getExercisesAtCurrentLevel();
+    if (activeExercises.length > 0 && currentExerciseIndex < activeExercises.length) {
+      const ex = activeExercises[currentExerciseIndex];
+      let id = "";
+      if (currentExerciseLevel === 'paragraph') id = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
+      else if (currentExerciseLevel === 'chapter') id = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
+      else if (currentExerciseLevel === 'section') id = `s-${currentSectionIndex}-${currentExerciseIndex}`;
+
+      return {
+        id,
+        exercise: ex,
+        content: ex.content
+      };
+    }
     return null;
   };
 
@@ -612,7 +659,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                       </h3>
                       <ul className="space-y-3">
                         {paragraph.notions.map((notion: string, index: number) => (
-                          <li key={index} className="flex items-start bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                          <li key={index} className="flex items-start bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border-l-4 border-red-500">
                             <CheckCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
                             <span className="text-gray-700 dark:text-gray-300">{notion}</span>
                           </li>
@@ -623,52 +670,63 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                 </div>
               </>
             ) : (
-              <>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-                  <Award className="h-7 w-7 mr-3 text-indigo-600" />
-                  Exercice : {currentExercise?.exercise?.title || "Application"}
-                </h2>
-
-                {currentExercise?.content && (
-                  <div className="mb-10 prose dark:prose-invert max-w-none qcm-content">
-                    <CourseContentRenderer content={currentExercise.content} />
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-indigo-100 dark:border-indigo-900/30 border-l-4 border-l-blue-500 overflow-hidden mb-8 transition-all duration-300 hover:shadow-md">
+                <div className="px-6 py-5 flex items-center justify-between border-b border-indigo-100 dark:border-indigo-900/50">
+                  <div className="flex items-center text-indigo-900 dark:text-indigo-100">
+                    <Award className="h-6 w-6 mr-3 text-indigo-600 dark:text-indigo-400" />
+                    <h2 className="text-xl font-bold tracking-tight">
+                      Exercice : {currentExercise?.exercise?.title || "Application"}
+                    </h2>
                   </div>
-                )}
+                  {getExercisesAtCurrentLevel().length > 1 && (
+                    <span className="text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                      {currentExerciseIndex + 1} / {getExercisesAtCurrentLevel().length}
+                    </span>
+                  )}
+                </div>
 
-                {currentExercise?.exercise?.questions && currentExercise.exercise.questions.length > 0 && (
-                  <div className="space-y-8">
-                    {currentExercise.exercise.questions.map((q: QuestionData, idx: number) => (
-                      <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl">
-                        <h4 className="font-semibold text-gray-800 dark:text-white mb-4">{q.text}</h4>
-                        <div className="space-y-3">
-                          {q.options && q.options.length > 0 ? (
-                            q.options.map((option: string, optIdx: number) => (
-                              <label 
-                                key={optIdx} 
-                                className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                                  currentExerciseAnswers[idx] === option 
-                                    ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/10 shadow-sm' 
-                                    : 'border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-900/30 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                                }`}
-                              >
-                                <div className="flex items-center h-5">
+                <div className="p-6 md:p-8">
+                  {currentExercise?.content && (
+                    <div className="mb-8 prose dark:prose-invert max-w-none qcm-content text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <CourseContentRenderer content={currentExercise.content} />
+                    </div>
+                  )}
+
+                  {currentExercise?.exercise?.questions && currentExercise.exercise.questions.length > 0 && (
+                    <div className="space-y-6">
+                      {currentExercise.exercise.questions.map((q: QuestionData, idx: number) => (
+                        <div key={idx} className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100/80 dark:border-indigo-800/30 p-6 rounded-2xl transition-all duration-300 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-700/50">
+                          <h4 className="text-lg font-semibold text-indigo-950 dark:text-indigo-100 mb-5 leading-snug">{q.text}</h4>
+                          <div className="space-y-3">
+                            {q.options && q.options.length > 0 ? (
+                              q.options.map((option: string, optIdx: number) => (
+                                <label 
+                                  key={optIdx} 
+                                  className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${
+                                    currentExerciseAnswers[idx] === option 
+                                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-sm' 
+                                      : 'border-transparent bg-white dark:bg-gray-800/60 hover:border-indigo-200 dark:hover:border-indigo-700/50 hover:bg-indigo-50/30 dark:hover:bg-gray-800 shadow-sm hover:shadow'
+                                  }`}
+                                >
+                                  <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 mr-4 transition-colors ${currentExerciseAnswers[idx] === option ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-400 dark:bg-indigo-400' : 'border-gray-300 group-hover:border-indigo-400 dark:border-gray-600 dark:group-hover:border-indigo-500'}`}>
+                                    {currentExerciseAnswers[idx] === option && <div className="h-2 w-2 rounded-full bg-white dark:bg-gray-900" />}
+                                  </div>
                                   <input
                                     type="radio"
                                     name={`question-${idx}`}
                                     value={option}
                                     checked={currentExerciseAnswers[idx] === option}
                                     onChange={() => handleAnswerChange(idx, option)}
-                                    className="h-4 w-4 text-purple-600 border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                    className="hidden"
                                   />
-                                </div>
-                                <span className={`ml-3 transition-colors duration-200 ${
-                                  currentExerciseAnswers[idx] === option 
-                                    ? 'text-purple-700 dark:text-purple-300 font-medium' 
-                                    : 'text-gray-700 dark:text-gray-300'
-                                }`}>
-                                  {String.fromCharCode(97 + optIdx)}) {option}
-                                </span>
-                              </label>
+                                  <span className={`transition-colors duration-200 ${
+                                    currentExerciseAnswers[idx] === option 
+                                      ? 'text-indigo-900 dark:text-indigo-100 font-semibold' 
+                                      : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
+                                  }`}>
+                                    <span className="inline-block w-6 font-medium text-indigo-400/70 dark:text-indigo-500/70">{String.fromCharCode(97 + optIdx)})</span> {option}
+                                  </span>
+                                </label>
                             ))
                           ) : (
                             <textarea
@@ -685,7 +743,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                     <button
                       onClick={submitExercise}
                       disabled={Object.keys(currentExerciseAnswers).length < (currentExercise.exercise.questions.length || 0)}
-                      className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 transition-all font-bold text-lg"
+                      className="w-full py-4 mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 font-bold text-lg focus:ring-4 focus:ring-indigo-500/30 outline-none"
                       type="button"
                     >
                       Valider mes réponses
@@ -711,7 +769,8 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                     )}
                   </div>
                 )}
-              </>
+                </div>
+              </div>
             )}
           </div>
 

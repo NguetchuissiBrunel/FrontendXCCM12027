@@ -173,10 +173,22 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                             body += `</div>`;
                         }
 
-                        body += getExerciseHtml(para.exerciseContent, (para as any).exercise, 55);
+                        if (para.exercises && para.exercises.length > 0) {
+                            para.exercises.forEach(ex => {
+                                body += getExerciseHtml(ex.content, ex, 55);
+                            });
+                        } else {
+                            body += getExerciseHtml(para.exerciseContent, (para as any).exercise, 55);
+                        }
                     });
 
-                    body += getExerciseHtml(chapter.exerciseContent, (chapter as any).exercise, 35);
+                    if (chapter.exercises && chapter.exercises.length > 0) {
+                        chapter.exercises.forEach(ex => {
+                            body += getExerciseHtml(ex.content, ex, 35);
+                        });
+                    } else {
+                        body += getExerciseHtml(chapter.exerciseContent, (chapter as any).exercise, 35);
+                    }
                 });
             }
 
@@ -203,11 +215,23 @@ export const downloadCourseAsDocx = async (courseData: CourseData) => {
                         body += `</div>`;
                     }
 
-                    body += getExerciseHtml(para.exerciseContent, (para as any).exercise, 55);
+                    if (para.exercises && para.exercises.length > 0) {
+                        para.exercises.forEach(ex => {
+                            body += getExerciseHtml(ex.content, ex, 55);
+                        });
+                    } else {
+                        body += getExerciseHtml(para.exerciseContent, (para as any).exercise, 55);
+                    }
                 });
             }
 
-            body += getExerciseHtml(section.exerciseContent, (section as any).exercise, 15);
+            if (section.exercises && section.exercises.length > 0) {
+                section.exercises.forEach(ex => {
+                    body += getExerciseHtml(ex.content, ex, 15);
+                });
+            } else {
+                body += getExerciseHtml(section.exerciseContent, (section as any).exercise, 15);
+            }
         });
 
         const conclusionText = extractTextFromContent(courseData.conclusion || '');

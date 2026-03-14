@@ -22,6 +22,7 @@ export interface Paragraph {
     questions: QuestionData[];
   };
   exerciseContent?: any;
+  exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
 }
 
 export interface Chapter {
@@ -34,6 +35,7 @@ export interface Chapter {
     questions: QuestionData[];
   };
   exerciseContent?: any;
+  exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
 }
 
 export interface Section {
@@ -47,6 +49,7 @@ export interface Section {
     questions: QuestionData[];
   };
   exerciseContent?: any;
+  exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
 }
 
 export interface CourseData {

@@ -39,7 +39,7 @@ export default Node.create<SectionOptions>({
 
   group: 'xccm-section',
 
-  content: 'chapitre+',
+  content: '(chapitre | exercice)+',
 
   defining: true,
 
@@ -81,6 +81,15 @@ export default Node.create<SectionOptions>({
           }
           return {
             'data-number': attributes.number,
+          };
+        },
+      },
+      introduction: {
+        default: '',
+        parseHTML: element => element.getAttribute('data-introduction'),
+        renderHTML: attributes => {
+          return {
+            'data-introduction': attributes.introduction,
           };
         },
       },

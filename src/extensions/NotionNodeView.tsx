@@ -24,6 +24,7 @@ export default function NotionNodeView({ node, updateAttributes }: NodeViewProps
   return (
     <NodeViewWrapper
       className="notion-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',
@@ -35,9 +36,42 @@ export default function NotionNodeView({ node, updateAttributes }: NodeViewProps
       }}
     >
       {/* Editable Content */}
-
-      {/* Editable Content */}
       <NodeViewContent className="content" />
+
+      {/* Add Exercise Button */}
+      <div contentEditable={false} style={{ marginTop: '8px' }}>
+        <button
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.dispatchEvent(
+              new CustomEvent('xccm:open-exercise-modal', {
+                detail: { nodeId: node.attrs.id }
+              })
+            );
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 12px',
+            fontSize: '12px',
+            fontWeight: 600,
+            color: '#EF4444',
+            border: '1px dashed #fca5a5',
+            borderRadius: '6px',
+            background: 'transparent',
+            cursor: 'pointer',
+            opacity: 0.7,
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+          title="Ajouter un exercice dans cette notion"
+        >
+          ＋ Exercice
+        </button>
+      </div>
     </NodeViewWrapper>
   );
 }

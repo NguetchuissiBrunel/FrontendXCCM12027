@@ -31,6 +31,7 @@ interface CourseSidebarProps {
   setCurrentChapterIndex: (index: number) => void;
   setCurrentParagraphIndex: (index: number) => void;
   setShowExercise: (show: boolean) => void;
+  setCourseCompleted: (completed: boolean) => void;
   onDownloadRequest: () => void;
 }
 
@@ -43,6 +44,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   setCurrentChapterIndex,
   setCurrentParagraphIndex,
   setShowExercise,
+  setCourseCompleted,
   onDownloadRequest
 }) => {
   const [expandedParts, setExpandedParts] = useState<{ [key: number]: boolean }>({});
@@ -94,6 +96,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
     setCurrentParagraphIndex(paragraphIndex);
     setActiveParagraph(`${sectionIndex}-${chapterIndex}-${paragraphIndex}`);
     setShowExercise(false);
+    setCourseCompleted(false);
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +158,8 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   };
 
   const handleResultClick = (result: SearchResult) => {
+    setShowExercise(false);
+    setCourseCompleted(false);
     if (result.type === 'section') {
       const sectionIndex = result.path[0]!;
       setCurrentSectionIndex(sectionIndex);
@@ -337,6 +342,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                             setCurrentParagraphIndex(paragraphIndex);
                             setActiveParagraph(`${sectionIndex}-0-${paragraphIndex}`);
                             setShowExercise(false);
+                            setCourseCompleted(false);
                           }}
                         >
                           <FileText className="h-3 w-3 mr-2 flex-shrink-0" />

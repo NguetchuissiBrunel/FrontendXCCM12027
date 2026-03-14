@@ -222,7 +222,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">Profil de l&apos;Enseignant</h2>
+        <h2 id="profile-card" className="text-2xl font-bold text-purple-700 dark:text-purple-400">Profil de l&apos;Enseignant</h2>
         {!isEditing ? (
           <button
             onClick={handleEdit}
@@ -260,8 +260,8 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
         <button
           onClick={() => setActiveTab('overview')}
           className={`px-6 py-3 font-semibold transition-colors ${activeTab === 'overview'
-              ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
+            ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
             }`}
         >
           Aperçu
@@ -269,8 +269,8 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
         <button
           onClick={() => setActiveTab('courses')}
           className={`px-6 py-3 font-semibold transition-colors ${activeTab === 'courses'
-              ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
+            ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
             }`}
         >
           Statistiques par Cours

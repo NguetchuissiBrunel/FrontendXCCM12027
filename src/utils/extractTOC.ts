@@ -148,6 +148,7 @@ function extractTOCRecursive(
           number: numberStr,
           children: [],
           content: node.content,
+          attrs: node.attrs,
         };
 
         if (node.content && Array.isArray(node.content)) {

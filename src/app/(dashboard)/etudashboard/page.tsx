@@ -11,6 +11,7 @@ import { CourseControllerService } from '@/lib/services/CourseControllerService'
 import { EnrichedCourse } from '@/types/enrollment';
 import { toast } from 'react-hot-toast';
 import StudentDashboardSkeleton from '@/components/student/StudentDashboardSkeleton';
+import Sidebar from '@/components/Sidebar';
 
 interface User {
   id: string;
@@ -311,66 +312,74 @@ export default function StudentHome() {
   const userLevel = user.specialization || user.level || 'Étudiant';
 
   return (
-    <>
-      {/* Section de bienvenue et statistiques */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="max-w-3xl">
-            <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Bienvenue {user.firstName} !
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300 italic">
-              "Le succès n'est pas final, l'échec n'est pas fatal : c'est le courage de continuer qui compte."
-            </p>
-          </div>
+    <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
+      <Sidebar
+        userRole="student"
+        userName={displayName}
+        userLevel={userLevel}
+        activeTab="accueil"
+      />
 
-          {/* Statistiques rapides */}
-          <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
-                  {stats.averageScore}%
+      <main className="flex-1 p-4 md:p-8">
+        {/* Section de bienvenue et statistiques */}
+        <div id="welcome-section" className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="max-w-3xl">
+              <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+                Bienvenue {user.firstName} !
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300 italic">
+                "Le succès n'est pas final, l'échec n'est pas fatal : c'est le courage de continuer qui compte."
+              </p>
+            </div>
+
+            {/* Statistiques rapides */}
+            <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+                <div id="stats-overview" className="text-center">
+                  <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
+                    {stats.averageScore}%
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Moyenne</div>
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Moyenne</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
-                  {stats.totalSubmissions}
+                <div className="text-center">
+                  <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
+                    {stats.totalSubmissions}
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Soumissions</div>
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Soumissions</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl md:text-2xl font-bold text-red-600">
-                  {stats.pendingExercises}
+                <div className="text-center">
+                  <div className="text-xl md:text-2xl font-bold text-red-600">
+                    {stats.pendingExercises}
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">En attente</div>
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">En attente</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl md:text-2xl font-bold text-green-600">
-                  {stats.completedExercises}
+                <div className="text-center">
+                  <div className="text-xl md:text-2xl font-bold text-green-600">
+                    {stats.completedExercises}
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Terminés</div>
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Terminés</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        {/* Colonne gauche : Mes Cours */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-              <BookOpen className="text-purple-600 w-5 h-5 md:w-6 md:h-6" />
-              Mes Cours ({enrolledCourses.length})
-            </h2>
-            <button
-              onClick={() => router.push('/bibliotheque')}
-              className="text-purple-600 hover:text-purple-700 font-medium hover:underline text-sm md:text-base"
-            >
-              Explorer la bibliothèque →
-            </button>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+          {/* Colonne gauche : Mes Cours */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 id="my-courses" className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <BookOpen className="text-purple-600 w-5 h-5 md:w-6 md:h-6" />
+                Mes Cours ({enrolledCourses.length})
+              </h2>
+              <button
+                onClick={() => router.push('/bibliotheque')}
+                className="text-purple-600 hover:text-purple-700 font-medium hover:underline text-sm md:text-base"
+              >
+                Explorer la bibliothèque →
+              </button>
+            </div>
 
           {enrolledCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -457,19 +466,19 @@ export default function StudentHome() {
           )}
         </div>
 
-        {/* Colonne droite : Exercices et Soumissions */}
-        <div className="space-y-6">
-          {/* Exercices en attente */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                <Clock className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-sm md:text-base">Exercices en attente</span>
-                <span className="bg-pur-100 border-2 border-radius-full border-purple-700 text-xs px-2 py-0.5 rounded-full">
-                  {pendingExercises.length}
-                </span>
-              </h3>
-            </div>
+          {/* Colonne droite : Exercices et Soumissions */}
+          <div className="space-y-6">
+            {/* Exercices en attente */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 id="pending-exercises" className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                  <Clock className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-sm md:text-base">Exercices en attente</span>
+                  <span className="bg-pur-100 border-2 border-radius-full border-purple-700 text-xs px-2 py-0.5 rounded-full">
+                    {pendingExercises.length}
+                  </span>
+                </h3>
+              </div>
 
             {pendingExercises.length > 0 ? (
               <div className="space-y-3">
@@ -625,7 +634,8 @@ export default function StudentHome() {
             </div>
           </div>
         </div>
-      </div>
-    </>
+        </div>
+      </main>
+    </div>
   );
 }

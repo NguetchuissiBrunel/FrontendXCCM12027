@@ -548,7 +548,41 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         onCreateNew={(title) => {
           setCourseTitle(title);
           setIsEntranceModalOpen(false);
-          if (editorInstance) editorInstance.commands.setContent('');
+          if (editorInstance) {
+            // Insérer une structure par défaut complète pour faciliter la saisie
+            const timestamp = Date.now();
+            const defaultContent = {
+              type: 'doc',
+              content: [
+                {
+                  type: 'section',
+                  attrs: { id: `section-${timestamp}`, title: 'Partie' },
+                  content: [
+                    {
+                      type: 'chapitre',
+                      attrs: { id: `chapitre-${timestamp}`, title: 'Chapitre' },
+                      content: [
+                        {
+                          type: 'paragraphe',
+                          attrs: { id: `paragraphe-${timestamp}`, title: 'Paragraphe' },
+                          content: [
+                            {
+                              type: 'notion',
+                              attrs: { id: `notion-${timestamp}`, title: 'Notion' },
+                              content: [
+                                { type: 'paragraph', content: [{ type: 'text', text: 'Contenu de la notion...' }] }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            };
+            editorInstance.commands.setContent(defaultContent);
+          }
         }}
         onModifyExisting={() => {
           setIsEntranceModalOpen(false);
@@ -604,7 +638,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               }
             }}
             onItemCopy={(item) => {
-              // Optionnel: peut-être afficher un toast
+              if (editorRef.current) {
+                editorRef.current.handleTOCAction('copy', item.id);
+              }
               console.log('Item copié dans TOC:', item.title);
             }}
             onItemMove={(itemId, targetId, position) => {

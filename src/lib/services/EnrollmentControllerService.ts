@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { ApiResponseEnrollmentDTO } from '../models/ApiResponseEnrollmentDTO';
 import type { ApiResponseListEnrollmentDTO } from '../models/ApiResponseListEnrollmentDTO';
+import type { ApiResponseVoid } from '../models/ApiResponseVoid';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -116,6 +117,38 @@ export class EnrollmentControllerService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/enrollments/my-courses',
+        });
+    }
+    /**
+     * @param enrollmentId
+     * @returns ApiResponseVoid OK
+     * @throws ApiError
+     */
+    public static unenroll(
+        enrollmentId: number,
+    ): CancelablePromise<ApiResponseVoid> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/enrollments/{enrollmentId}',
+            path: {
+                'enrollmentId': enrollmentId,
+            },
+        });
+    }
+    /**
+     * @param enrollmentId
+     * @returns ApiResponseVoid OK
+     * @throws ApiError
+     */
+    public static cancelPendingEnrollment(
+        enrollmentId: number,
+    ): CancelablePromise<ApiResponseVoid> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/enrollments/pending/{enrollmentId}',
+            path: {
+                'enrollmentId': enrollmentId,
+            },
         });
     }
 }

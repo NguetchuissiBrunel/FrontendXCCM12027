@@ -17,7 +17,7 @@ interface CoursePageProps {
 const CoursePage = ({ params }: CoursePageProps) => {
   const resolvedParams = React.use(params);
   const courseId = parseInt(resolvedParams.id, 10);
-  const { course, loading, error } = useCourse(courseId);
+  const { course, loading, error, incrementLike, incrementDownload } = useCourse(courseId);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -91,7 +91,13 @@ const CoursePage = ({ params }: CoursePageProps) => {
     return <div className="text-center py-20 text-xl text-gray-600 dark:text-gray-400">Données du cours invalides</div>;
   }
 
-  return <Course courseData={courseData} />;
+  return (
+    <Course
+      courseData={courseData}
+      incrementLike={incrementLike}
+      incrementDownload={incrementDownload}
+    />
+  );
 };
 
 export default CoursePage;

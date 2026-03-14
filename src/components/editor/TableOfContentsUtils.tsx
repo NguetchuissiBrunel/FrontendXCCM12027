@@ -7,19 +7,9 @@ import {
     LucideIcon
 } from 'lucide-react';
 
-// Types et interfaces
-export type ItemType = 'course' | 'section' | 'chapter' | 'paragraph' | 'notion' | 'exercise';
+import { TableOfContentsItem, ItemType } from '@/types/editor.types';
 
-export interface TableOfContentsItem {
-    id: string;
-    title: string;
-    type: ItemType;
-    level: number;
-    number: string;
-    children: TableOfContentsItem[];
-    collapsed?: boolean;
-    content?: string;
-}
+export type { TableOfContentsItem, ItemType };
 
 export interface ContextMenuPosition {
     x: number;

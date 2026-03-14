@@ -8,17 +8,23 @@ import CourseSidebar from "@/components/CourseSidebar";
 import SmartNotes from "@/components/SmartNotes";
 import DownloadOptions from './DownloadOptions';
 import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from "@/types/course";
+import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLoading } from '@/contexts/LoadingContext';
 import Link from 'next/link';
 import CourseContentRenderer from './CourseContentRenderer';
+import confetti from 'canvas-confetti';
+import TeacherLink from '@/components/TeacherLink';
 
 
 interface CourseProps {
   courseData: CourseData;
+  incrementLike: (id: number) => Promise<void>;
+  incrementDownload: (id: number) => Promise<void>;
 }
 
-const Course: React.FC<CourseProps> = ({ courseData }) => {
+const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
   const { user } = useAuth();
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
@@ -30,6 +36,7 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
   const [pdfGenerating, setPdfGenerating] = useState<boolean>(false);
   const [docxGenerating, setDocxGenerating] = useState<boolean>(false);
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
+  const [isLiking, setIsLiking] = useState<boolean>(false);
   const [evaluation, setEvaluation] = useState<{
     rating: number;
     feedback: string;
@@ -40,6 +47,15 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
     submitted: false,
   });
   const [showOrientationSelector, setShowOrientationSelector] = useState<boolean>(false);
+  const { startLoading, stopLoading } = useLoading();
+
+  useEffect(() => {
+    if (pdfGenerating || docxGenerating || isLiking) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [pdfGenerating, docxGenerating, isLiking, startLoading, stopLoading]);
 
   // Helper functions to safely access data
   const getCurrentSection = (): Section | null => {
@@ -97,22 +113,54 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
     setShowOrientationSelector(true);
   };
 
-  const handleOrientationSelect = (orientation: 'p' | 'l') => {
+  const handleOrientationSelect = async (orientation: 'p' | 'l') => {
     setPdfGenerating(true);
 
-    downloadCourseAsPDF(courseData, orientation)
-      .then(() => {
-        setPdfGenerating(false);
-        setShowDownloadModal(false);
-      })
-      .catch(() => setPdfGenerating(false));
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsPDF(courseData, orientation);
+      setPdfGenerating(false);
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error("Error generating PDF or incrementing count:", error);
+      setPdfGenerating(false);
+    }
   };
 
   const handleDownloadDocx = async () => {
     setDocxGenerating(true);
-    await downloadCourseAsDocx(courseData);
-    setDocxGenerating(false);
-    setShowDownloadModal(false);
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsDocx(courseData);
+      setDocxGenerating(false);
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error("Error generating DOCX or incrementing count:", error);
+      setDocxGenerating(false);
+    }
+  };
+
+  const handleLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
+    try {
+      await incrementLike(courseData.id);
+
+      // Wow factor: Confetti!
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#8B5CF6', '#EC4899', '#3B82F6']
+      });
+
+      toast.success("Cours ajouté à vos favoris !");
+    } catch (error) {
+      console.error("Error liking course:", error);
+      toast.error("Impossible d'aimer ce cours");
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const isCurrentExerciseCompleted = (): boolean => {
@@ -259,7 +307,62 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
   );
 
   if (!hasSections || !section) {
-    return <div className="text-center py-20 text-xl text-gray-600 dark:text-gray-400">Aucun contenu disponible pour ce cours.</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-8">
+        <div className="max-w-2xl w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-12 border-2 border-dashed border-purple-200 dark:border-purple-900/30 text-center">
+            {/* Icône avec animation */}
+            <div className="relative mb-8 inline-block">
+              <div className="absolute inset-0 bg-purple-200 dark:bg-purple-900/30 rounded-full blur-3xl opacity-40 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-purple-100 to-white dark:from-gray-700 dark:to-gray-800 w-32 h-32 rounded-full flex items-center justify-center shadow-xl">
+                <BookOpen className="w-16 h-16 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+
+            {/* Titre */}
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Ce cours est en cours de préparation
+            </h2>
+
+            {/* Description */}
+            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-xl mx-auto">
+              Le contenu de ce cours n'est pas encore disponible. Notre équipe pédagogique travaille activement à sa création pour vous offrir la meilleure expérience d'apprentissage possible.
+            </p>
+
+            {/* Informations supplémentaires */}
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6 mb-8">
+              <div className="flex items-start justify-center text-left max-w-md mx-auto">
+                <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Que faire en attendant ?</h3>
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <li>• Explorez d'autres cours disponibles dans la bibliothèque</li>
+                    <li>• Revenez plus tard pour découvrir le nouveau contenu</li>
+                    <li>• Inscrivez-vous pour être notifié de sa publication</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Boutons d'action */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link href="/bibliotheque">
+                <button className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:from-purple-600 hover:to-purple-700 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour à la bibliothèque
+                </button>
+              </Link>
+
+              <EnrollmentButton
+                courseId={courseData.id}
+                size="md"
+                variant="secondary"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const canGoNext = !showExercise || isCurrentExerciseCompleted();
@@ -278,6 +381,17 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
         onDownloadRequest={() => setShowDownloadModal(true)}
       />
 
+      {courseData.author?.id && (
+        <div className="mb-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Par</p>
+          <TeacherLink
+            teacherId={courseData.author.id}
+            teacherName={courseData.author.name}
+            teacherPhoto={courseData.author.image}
+          />
+        </div>
+      )}
+
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-20">
           {/* Header */}
@@ -286,9 +400,22 @@ const Course: React.FC<CourseProps> = ({ courseData }) => {
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
               <p className="text-xl text-purple-600 dark:text-purple-400 mb-4">{courseData.category}</p>
               <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400">
-                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.views} vues</span>
-                <span className="flex items-center"><ThumbsUp className="h-5 w-5 mr-2" /> {courseData.likes} likes</span>
-                <span className="flex items-center"><Download className="h-5 w-5 mr-2" /> {courseData.downloads} téléchargements</span>
+                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.viewCount} vues</span>
+                <button
+                  onClick={handleLike}
+                  disabled={isLiking}
+                  className="flex items-center hover:text-red-500 transition-colors cursor-pointer group"
+                >
+                  <ThumbsUp className={`h-5 w-5 mr-2 ${isLiking ? 'animate-pulse text-red-400' : 'group-hover:scale-110 transition-transform'}`} />
+                  {courseData.likeCount} likes
+                </button>
+                <button
+                  onClick={() => setShowDownloadModal(true)}
+                  className="flex items-center hover:text-purple-500 transition-colors cursor-pointer group"
+                >
+                  <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                  {courseData.downloadCount} téléchargements
+                </button>
               </div>
             </div>
           </div>

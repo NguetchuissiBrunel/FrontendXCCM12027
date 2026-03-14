@@ -124,7 +124,7 @@ const AdminLoginPage = () => {
             </button>
 
             <div className="text-center mt-6 space-y-4">
-                <Link href="/admin/register" className="block text-sm text-purple-600 hover:text-purple-700 font-semibold transition-colors">
+                <Link href="/admindashboard/register" className="block text-sm text-purple-600 hover:text-purple-700 font-semibold transition-colors">
                     Créer un compte administrateur
                 </Link>
             </div>

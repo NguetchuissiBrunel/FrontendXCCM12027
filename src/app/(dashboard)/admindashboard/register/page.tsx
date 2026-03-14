@@ -200,7 +200,7 @@ const AdminRegisterPage = () => {
             </button>
 
             <div className="text-center mt-6">
-                <Link href="/admin/login" className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                <Link href="/admindashboard/login" className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                     Déjà un compte ? <span className="font-semibold text-purple-600 dark:text-purple-400">Connectez-vous</span>
                 </Link>
             </div>

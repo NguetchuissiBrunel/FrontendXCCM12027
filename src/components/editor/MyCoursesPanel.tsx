@@ -16,6 +16,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: number | null }>({
     isOpen: false,
     id: null
@@ -141,9 +142,19 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
       {/* Course List */}
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
-          <div className="flex flex-col items-center justify-center mt-12 text-gray-500 dark:text-gray-400">
-            <FaSpinner className="animate-spin text-2xl mb-2" />
-            <p className="text-sm">Chargement de vos cours...</p>
+          <div className="space-y-3 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 bg-gray-50/50 dark:bg-gray-700/50">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-md flex-shrink-0"></div>
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-100 dark:bg-gray-600 rounded w-1/2"></div>
+                    <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded-full w-20 mt-4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : courses.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-8">
@@ -172,8 +183,8 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                         />
                       </div>
                     )}
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 dark:text-white truncate pr-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 dark:text-white truncate pr-2" title={course.title}>
                         {course.title || "Sans titre"}
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -189,7 +200,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 flex-shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleLoad(course)}
                         className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"

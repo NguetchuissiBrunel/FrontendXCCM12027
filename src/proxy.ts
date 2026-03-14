@@ -21,7 +21,7 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get('authToken')?.value;
 
   // Route categories
-  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/admin/login' || pathname === '/admin/register';
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/admindashboard/login' || pathname === '/admindashboard/register';
   const isDashboardStudent = pathname.startsWith('/etudashboard');
   const isDashboardAdmin = pathname.startsWith('/admindashboard');
   const isDashboardTeacher = pathname.startsWith('/profdashboard') || pathname.startsWith('/editor');
@@ -31,7 +31,7 @@ export function proxy(request: NextRequest) {
   // 1. No token case
   if (!token) {
     if (isProtected) {
-      const loginPath = isDashboardAdmin ? '/admin/login' : '/login';
+      const loginPath = isDashboardAdmin ? '/admindashboard/login' : '/login';
       const loginUrl = new URL(loginPath, request.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -44,7 +44,7 @@ export function proxy(request: NextRequest) {
 
   if (!payload || isExpired) {
     if (isProtected) {
-      const loginPath = isDashboardAdmin ? '/admin/login' : '/login';
+      const loginPath = isDashboardAdmin ? '/admindashboard/login' : '/login';
       const response = NextResponse.redirect(new URL(loginPath, request.url));
       response.cookies.delete('authToken');
       return response;
@@ -78,7 +78,7 @@ export function proxy(request: NextRequest) {
 
   // Admin dashboard protection removed - anyone can access
   // if (isDashboardAdmin && !isAdmin) {
-  //   return NextResponse.redirect(new URL('/admin/login', request.url));
+  //   return NextResponse.redirect(new URL('/admindashboard/login', request.url));
   // }
 
   return NextResponse.next();
@@ -92,7 +92,7 @@ export const config = {
     '/editor/:path*',
     '/login',
     '/register',
-    '/admin/login',
-    '/admin/register'
+    '/admindashboard/login',
+    '/admindashboard/register'
   ],
 };

@@ -37,7 +37,7 @@ declare module '@tiptap/core' {
 export default Node.create<NotionOptions>({
   name: 'notion',
 
-  group: 'block',
+  group: 'xccm-granule',
 
   content: 'block+',
 

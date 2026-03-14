@@ -7,12 +7,14 @@ import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
 import { MdHelpOutline } from 'react-icons/md';
 import { clearAuthToken } from '@/utils/authHelpers';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'student' | 'teacher' | null>(null);
+  const { logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -63,14 +65,7 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('studentInfo');
-    localStorage.removeItem('teacherInfo');
-    setCurrentUser(null);
-    setUserRole(null);
-    clearAuthToken();
-    window.location.href = '/';
+    logout();
   };
 
   const handleMyAccount = () => {
@@ -113,6 +108,20 @@ const Navbar = () => {
   const getNavLinks = () => {
     const links = [...baseNavLinks];
 
+    // Ne montrer la bibliothèque que si l'utilisateur est connecté
+    if (!currentUser) {
+      const biblioIndex = links.findIndex(link => link.href === '/bibliotheque');
+      if (biblioIndex !== -1) {
+        links.splice(biblioIndex, 1);
+      }
+    } else {
+      // Masquer "Accueil" si l'utilisateur est connecté
+      const homeIndex = links.findIndex(link => link.href === '/');
+      if (homeIndex !== -1) {
+        links.splice(homeIndex, 1);
+      }
+    }
+
     // Ajouter "Éditer" seulement pour les enseignants
     if (userRole === 'teacher') {
       links.push(teacherNavLink);
@@ -138,7 +147,7 @@ const Navbar = () => {
 
           {/* GROUPE GAUCHE : Logo + Nom */}
           <div className="flex items-center flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center relative">
                 <Image
                   src="/images/Capture.png"
@@ -151,7 +160,7 @@ const Navbar = () => {
 
 
               <span className="text-lg lg:text-xl font-bold text-gray-800 dark:text-white hidden sm:block">XCCM1</span>
-            </Link>
+            </div>
           </div>
 
           {/* GROUPE CENTRE : Navigation Centrée */}

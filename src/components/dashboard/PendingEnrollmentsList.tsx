@@ -17,6 +17,7 @@ export default function PendingEnrollmentsList() {
     const [studentNames, setStudentNames] = useState<Record<string, string>>({});
     const [courseTitles, setCourseTitles] = useState<Record<number, string>>({});
 
+
     useEffect(() => {
         fetchPendingEnrollments();
     }, []);
@@ -43,7 +44,7 @@ export default function PendingEnrollmentsList() {
         // Charger les noms des étudiants
         studentIds.forEach(async (id) => {
             try {
-                const response = await GestionDesUtilisateursService.getStudentById(id);
+                const response = await GestionDesUtilisateursService.getStudentById1(id);
                 if (response.data) {
                     const name = `Étudiant ${response.data.firstName || ''} ${response.data.lastName || ''}`.trim() || `Étudiant #${id}`;
                     setStudentNames(prev => ({ ...prev, [id]: name }));
@@ -88,8 +89,9 @@ export default function PendingEnrollmentsList() {
 
     if (loading) {
         return (
-            <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="h-10 w-10 text-purple-600 animate-spin mb-4" />
+                <p className="text-gray-500">Chargement des demandes...</p>
             </div>
         );
     }

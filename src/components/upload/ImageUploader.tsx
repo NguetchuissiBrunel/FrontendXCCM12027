@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Upload, CheckCircle, XCircle, Loader2, Image as ImageIcon } from 'lucide-react';
+import { useLoading } from '@/contexts/LoadingContext';
 import { CloudinaryService } from '@/lib/services/CloudinaryService';
 import type { UploadState, UploadConfig } from '@/types/upload';
 
@@ -26,6 +27,7 @@ export default function ImageUploader({
     className = '',
     placeholder = 'Cliquez ou glissez une image ici'
 }: ImageUploaderProps) {
+    const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
     const [uploadState, setUploadState] = useState<UploadState>('idle');
     const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
     const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export default function ImageUploader({
         // Reset states
         setError(null);
         setUploadState('uploading');
+        startLoading();
 
         // Validate file first
         const validation = CloudinaryService.validateFile(file, config);
@@ -73,6 +76,8 @@ export default function ImageUploader({
             if (onUploadError) {
                 onUploadError(errorMessage);
             }
+        } finally {
+            stopLoading();
         }
     };
 
@@ -158,7 +163,7 @@ export default function ImageUploader({
                 className={`
           relative border-2 border-dashed rounded-2xl transition-all h-40
           flex flex-col items-center justify-center overflow-hidden
-          ${uploadState === 'uploading' ? 'cursor-wait' : 'cursor-pointer'}
+          ${globalLoading ? 'cursor-wait' : 'cursor-pointer'}
           ${getBorderColor()}
           ${getBackgroundColor()}
           hover:border-purple-400 hover:bg-purple-50/30 dark:hover:bg-purple-900/20
@@ -174,7 +179,7 @@ export default function ImageUploader({
                 />
 
                 {/* Preview or upload UI */}
-                {previewUrl && uploadState !== 'uploading' ? (
+                {previewUrl && !globalLoading ? (
                     <div className="relative w-full h-full">
                         <img
                             src={previewUrl}
@@ -187,7 +192,7 @@ export default function ImageUploader({
                             </div>
                         )}
                     </div>
-                ) : uploadState === 'uploading' ? (
+                ) : globalLoading ? (
                     <div className="text-center p-4">
                         <Loader2 size={32} className="mx-auto mb-3 text-purple-500 animate-spin" />
                         <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">

@@ -14,7 +14,7 @@ export type StudentExerciseResponse = {
     score?: number;
     maxScore?: number;
     feedback?: string;
-    submissionUrl?: string;
+    content?: Record<string, Record<string, any>>;
     submittedAt?: string;
 };
 

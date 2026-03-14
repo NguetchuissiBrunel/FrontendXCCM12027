@@ -96,11 +96,11 @@ function generateNumber(counters: number[]): string {
 function extractTOCRecursive(
   nodes: any[],
   counters: number[] = [],
-  level: number = 0
+  level: number = 0,
+  idMap: Set<string> = new Set()
 ): TableOfContentsItem[] {
   const items: TableOfContentsItem[] = [];
 
-  // Safety check: ensure nodes is an array
   if (!nodes || !Array.isArray(nodes)) {
     return items;
   }
@@ -112,78 +112,57 @@ function extractTOCRecursive(
       const config = getNodeConfig(node);
 
       if (config) {
-        // Increment counter at current level
         while (levelCounters.length <= config.level) {
           levelCounters.push(0);
         }
 
-        // Increment counter at current level
         levelCounters[config.level]++;
 
-        // Reset all deeper levels to 0
         for (let i = config.level + 1; i < levelCounters.length; i++) {
           levelCounters[i] = 0;
         }
         levelCounters.splice(config.level + 1);
 
-        // Extract title from node
         let title = '';
-
-        // Try node.attrs.title first (stored attribute)
         if (node.attrs?.title && node.attrs.title !== config.itemType) {
           title = node.attrs.title;
         } else {
-          // Extract first line of text from content
           title = extractTextContent(node.content || []);
         }
 
-        // Fallback to type name with counter
-        const typeLabels: Record<ItemType, string> = {
-          course: 'Cours',
-          section: 'Partie',
-          chapter: 'Chapitre',
-          paragraph: 'Paragraphe',
-          notion: 'Notion',
-          exercise: 'Exercice',
-        };
-
-        // Generate number string
         const numberStr = generateNumber(levelCounters.slice(0, config.level + 1));
 
-        // Format title as "Type Number: Content"
-        // Format title
-        // We do NOT add Type Label or Number to the title anymore.
-        // The TableOfContents component handles display.
-        // We only return the raw title.
-        let displayTitle = title || ''; // Just the raw title, or empty string
+        let id = node.attrs?.id || `${config.itemType}-${levelCounters.join('-')}`;
+        // Dedup safety for TOC rendering
+        if (idMap.has(id)) {
+          console.warn(`Duplicate ID detected in TOC extraction: ${id}. Adding suffix for rendering stability.`);
+          id = `${id}-render-dup-${Math.random().toString(36).substring(2, 7)}`;
+        }
+        idMap.add(id);
 
-        // Generate unique ID
-        const id = node.attrs?.id || `${config.itemType}-${levelCounters.join('-')}`;
-
-        // Create TOC item
         const tocItem: TableOfContentsItem = {
           id,
-          title: displayTitle.substring(0, 100),
+          title: title.substring(0, 100),
           type: config.itemType,
           level: config.level,
           number: numberStr,
           children: [],
           content: node.content,
         };
-        // Recursively extract children
+
         if (node.content && Array.isArray(node.content)) {
           tocItem.children = extractTOCRecursive(
             node.content,
             levelCounters,
-            config.level + 1
+            config.level + 1,
+            idMap
           );
         }
 
         items.push(tocItem);
       }
     } else if (node.content && Array.isArray(node.content)) {
-      // Not a hierarchy node, but check its children
-      const childItems = extractTOCRecursive(node.content, levelCounters, level);
+      const childItems = extractTOCRecursive(node.content, levelCounters, level, idMap);
       items.push(...childItems);
     }
   }

@@ -12,7 +12,8 @@ import { useLoading } from '@/contexts/LoadingContext';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
 import toast from 'react-hot-toast';
-import { BookOpen, X, FileText, Plus, ChevronRight, Upload } from 'lucide-react';
+import { BookOpen, X, FileText, Plus, ChevronRight, Upload, Users as LucideUsers, Activity } from 'lucide-react';
+import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
 
 // Définir les interfaces
 interface Course {
@@ -78,9 +79,11 @@ export default function ProfessorDashboard() {
   // Statistiques pour ProfileCard
   const [coursesStatsForProfile, setCoursesStatsForProfile] = useState<CourseStat[]>([]);
 
-  // Mettre à jour le loading context
+  // Mettre à jour le loading context de manière synchronisée
   useEffect(() => {
-    if (authLoading || loading) {
+    const isActuallyLoading = authLoading || loading;
+
+    if (isActuallyLoading) {
       startLoading();
     } else {
       stopLoading();
@@ -92,10 +95,10 @@ export default function ProfessorDashboard() {
     try {
       console.log('🔍 Chargement manuel des statistiques...');
       const response = await EnseignantService.getAllCoursesStatistics();
-      
+
       if (response.success && response.data) {
         console.log('✅ Statistiques chargées avec succès');
-        
+
         // Transformer les données de l'API en format CourseStat
         const courseStats: CourseStat[] = response.data.map((course: any) => ({
           courseId: course.courseId || 0,
@@ -109,7 +112,7 @@ export default function ProfessorDashboard() {
           totalExercises: course.totalExercises || 0,
           completedStudents: course.completedStudents || Math.floor((course.totalEnrolled || 0) * 0.65)
         }));
-        
+
         return courseStats;
       }
       return [];
@@ -124,7 +127,7 @@ export default function ProfessorDashboard() {
     try {
       let totalPending = 0;
       let totalExercisesCount = 0;
-      
+
       for (const course of courses) {
         const courseId = parseCourseId(course.id);
         if (courseId > 0) {
@@ -132,7 +135,7 @@ export default function ProfessorDashboard() {
             const resp = await ExercicesService.getExercisesForCourse(courseId);
             const exercises = (resp as any)?.data || [];
             totalExercisesCount += exercises.length;
-            
+
             // Limiter les appels pour éviter les boucles
             if (exercises.length > 0) {
               // Prendre seulement le premier exercice pour vérifier
@@ -140,7 +143,7 @@ export default function ProfessorDashboard() {
               try {
                 const submissionsResp = await EnseignantService.getSubmissions(firstEx.id);
                 const submissions = (submissionsResp as any)?.data || [];
-                const pending = submissions.filter((s: any) => 
+                const pending = submissions.filter((s: any) =>
                   s.graded === undefined || s.graded === false || !s.graded
                 ).length;
                 totalPending += pending;
@@ -153,7 +156,7 @@ export default function ProfessorDashboard() {
           }
         }
       }
-      
+
       return {
         totalExercises: totalExercisesCount,
         pendingSubmissions: totalPending,
@@ -179,25 +182,25 @@ export default function ProfessorDashboard() {
       const poor = Math.round(totalStudents * 0.15);      // 15%
 
       return [
-        { 
-          range: 'Excellent', 
-          value: totalStudents > 0 ? Math.round((excellent / totalStudents) * 100) : 0, 
-          color: 'bg-purple-600 dark:bg-purple-500' 
+        {
+          range: 'Excellent',
+          value: totalStudents > 0 ? Math.round((excellent / totalStudents) * 100) : 0,
+          color: 'bg-purple-600 dark:bg-purple-500'
         },
-        { 
-          range: 'Bien', 
-          value: totalStudents > 0 ? Math.round((good / totalStudents) * 100) : 0, 
-          color: 'bg-purple-400' 
+        {
+          range: 'Bien',
+          value: totalStudents > 0 ? Math.round((good / totalStudents) * 100) : 0,
+          color: 'bg-purple-400'
         },
-        { 
-          range: 'Passable', 
-          value: totalStudents > 0 ? Math.round((average / totalStudents) * 100) : 0, 
-          color: 'bg-purple-300 dark:bg-purple-400' 
+        {
+          range: 'Passable',
+          value: totalStudents > 0 ? Math.round((average / totalStudents) * 100) : 0,
+          color: 'bg-purple-300 dark:bg-purple-400'
         },
-        { 
-          range: 'Faible', 
-          value: totalStudents > 0 ? Math.round((poor / totalStudents) * 100) : 0, 
-          color: 'bg-purple-200 dark:bg-purple-300' 
+        {
+          range: 'Faible',
+          value: totalStudents > 0 ? Math.round((poor / totalStudents) * 100) : 0,
+          color: 'bg-purple-200 dark:bg-purple-300'
         },
       ];
     } catch (error) {
@@ -220,19 +223,16 @@ export default function ProfessorDashboard() {
         return;
       }
 
-      if (!confirm('Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.')) {
-        return;
-      }
 
       startLoading();
-      
+
       await CourseControllerService.deleteCourse(courseIdNum);
-      
+
       toast.success('Cours supprimé avec succès');
-      
+
       // Recharger les données
       await loadDashboardData();
-      
+
     } catch (error: any) {
       console.error('Erreur lors de la suppression du cours:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Erreur lors de la suppression';
@@ -247,9 +247,9 @@ export default function ProfessorDashboard() {
     setIsModalOpen(false);
   };
 
-  const handleCreateCourseSubmit = (data: { 
-    title: string; 
-    category: string; 
+  const handleCreateCourseSubmit = (data: {
+    title: string;
+    category: string;
     description: string;
     image?: string;
     file?: any;
@@ -260,14 +260,14 @@ export default function ProfessorDashboard() {
     }
 
     setIsModalOpen(false);
-    
+
     const params = new URLSearchParams({
       new: 'true',
-      title: encodeURIComponent(data.title),
-      category: encodeURIComponent(data.category),
-      description: encodeURIComponent(data.description)
+      title: data.title,
+      category: data.category,
+      description: data.description
     });
-    
+
     router.push(`/editor?${params.toString()}`);
   };
 
@@ -289,15 +289,15 @@ export default function ProfessorDashboard() {
       setLoading(true);
       setDashboardError(null);
 
-      console.log('📊 Chargement des données du dashboard pour:', user.id);
+      console.log('📊 Chargement des données du dashboard pour:', user);
 
       // 1. Fetch courses (compositions) pour cet enseignant
       const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
-      
+
       if (coursesResponse.data) {
         const courses = coursesResponse.data as Course[];
         console.log(`📚 Cours trouvés: ${courses.length}`);
-        
+
         // 2. Calculer les statistiques d'exercices
         const exercisesData = await calculateExercisesStats(courses);
         setExercisesStats(exercisesData);
@@ -305,12 +305,12 @@ export default function ProfessorDashboard() {
         // 3. Charger les statistiques pour ProfileCard
         const statsData = await loadManualStats();
         setCoursesStatsForProfile(statsData);
-        
+
         // 4. Mapper les compositions avec les données réelles
         const mappedCompositions: Composition[] = courses.map((course: Course) => {
           const courseIdNum = parseCourseId(course.id);
           const courseStat = statsData.find((s: CourseStat) => s.courseId === courseIdNum);
-          
+
           if (!courseStat) {
             return {
               id: course.id?.toString() || Math.random().toString(),
@@ -323,14 +323,14 @@ export default function ProfessorDashboard() {
               courseStats: undefined
             };
           }
-          
+
           let totalLikes = 0;
           let totalDownloads = 0;
-          
+
           // Utiliser les valeurs des statistiques
           totalLikes = Math.round(courseStat.activeStudents * 0.3); // Estimation
           totalDownloads = Math.round(courseStat.completedStudents * 1.5); // Estimation
-          
+
           return {
             id: course.id?.toString() || Math.random().toString(),
             title: course.title || 'Sans titre',
@@ -345,9 +345,9 @@ export default function ProfessorDashboard() {
             }
           };
         });
-        
+
         setCompositions(mappedCompositions);
-        
+
       } else {
         console.log('⚠️ Aucun cours trouvé');
         setCompositions([]);
@@ -399,15 +399,9 @@ export default function ProfessorDashboard() {
     }
   }, [dashboardError, loading]);
 
-  if (authLoading || loading || globalLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des données du dashboard...</p>
-        </div>
-      </div>
-    );
+  // Si on charge, on rend le skeleton pour donner un retour visuel immédiat
+  if (authLoading || loading) {
+    return <DashboardSkeleton />;
   }
 
   if (!user) return null;
@@ -428,7 +422,7 @@ export default function ProfessorDashboard() {
   });
 
   // Calculer la progression moyenne (simplifiée)
-  const averageProgress = calculatedTotals.totalEnrolled > 0 
+  const averageProgress = calculatedTotals.totalEnrolled > 0
     ? Math.round((calculatedTotals.totalEnrolled * 0.7)) // Valeur simulée
     : 0;
 
@@ -441,7 +435,7 @@ export default function ProfessorDashboard() {
     certification: user.certification || 'Enseignement',
     totalStudents: calculatedTotals.totalEnrolled,
     activeStudents: Math.round(calculatedTotals.totalEnrolled * 0.6), // Valeur simulée
-    participationRate: calculatedTotals.totalEnrolled > 0 
+    participationRate: calculatedTotals.totalEnrolled > 0
       ? Math.round((calculatedTotals.totalEnrolled * 0.6) / calculatedTotals.totalEnrolled * 100)
       : 0,
     publications: calculatedTotals.totalCourses,
@@ -467,7 +461,7 @@ export default function ProfessorDashboard() {
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);
-    
+
     if (diffInMinutes < 1) return 'À l\'instant';
     if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
     if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)} h`;
@@ -498,11 +492,11 @@ export default function ProfessorDashboard() {
                 <X size={20} className="text-gray-500 dark:text-gray-400" />
               </button>
             </div>
-            
+
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               Choisissez le cours pour lequel vous souhaitez créer un exercice :
             </p>
-            
+
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
               {compositions.map((course) => (
                 <button
@@ -532,7 +526,7 @@ export default function ProfessorDashboard() {
                 </button>
               ))}
             </div>
-            
+
             <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setIsCourseSelectionModalOpen(false)}
@@ -545,67 +539,66 @@ export default function ProfessorDashboard() {
         </div>
       )}
 
-      {/* Top Section with Welcome */}
-      <div className="bg-white dark:bg-gray-800 px-8 py-6 mb-8 border-b border-purple-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="max-w-3xl">
-          <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-400 mb-3">
-            Bienvenue Professeur {user.firstName} !
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 italic">
-            "L'éducation est l'arme la plus puissante que vous puissiez utiliser pour changer le monde." - Nelson Mandela
-          </p>
-        </div>
-        <div>
+      {/* Top Section with Welcome and Quick Stats */}
+      <div className="bg-white dark:bg-gray-800 px-8 py-8 mb-8 border-b border-purple-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
+              Tableau de bord <span className="text-purple-600 dark:text-purple-400">Expert</span>
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              Ravi de vous revoir, <span className="font-bold text-purple-600">{user.firstName}</span>. Voici l'état de vos enseignements aujourd'hui.
+            </p>
+          </div>
           <div className="flex items-center gap-4 flex-wrap">
-            {/* Bouton Gérer les inscriptions */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
+            >
+              <Plus size={20} />
+              Nouveau Cours
+            </button>
             <button
               onClick={() => router.push('/teacher/inscriptions')}
-              className="relative flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg"
+              className="relative flex items-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-100 dark:border-gray-600 font-bold hover:bg-purple-50 dark:hover:bg-gray-600 transition-all shadow-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Gérer les inscriptions
+              <LucideUsers size={20} />
+              Inscriptions
               {pendingInscriptionsCount > 0 && (
                 <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-gray-800 animate-bounce">
                   {pendingInscriptionsCount}
                 </span>
               )}
             </button>
-            
-            {/* Bouton Corriger - UNIQUEMENT si besoin */}
-            {exercisesStats.pendingSubmissions > 0 && (
-              <button
-                onClick={() => {
-                  const courseWithPending = compositions.find(c => 
-                    c.courseStats?.totalExercises && c.courseStats.totalExercises > 0
-                  );
-                  if (courseWithPending) {
-                    router.push(`/profdashboard/exercises/${courseWithPending.id}/grading`);
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-md hover:shadow-lg relative"
-              >
-                <span className="absolute -top-2 -right-2 bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md">
-                  {exercisesStats.pendingSubmissions}
-                </span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Corriger ({exercisesStats.pendingSubmissions})
-              </button>
-            )}
           </div>
+        </div>
+
+        {/* Desktop Quick Stats Grid */}
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+          {[
+            { label: 'Étudiants Totaux', value: professor.totalStudents, icon: LucideUsers, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+            { label: 'Cours Actifs', value: professor.publications, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+            { label: 'À Corriger', value: professor.pendingSubmissions, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+            { label: 'Score Global', value: `${professor.averageProgress}%`, icon: Activity, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
+          ].map((stat, idx) => (
+            <div key={idx} className={`${stat.bg} rounded-2xl p-6 border border-white dark:border-gray-700 shadow-sm flex items-center gap-4`}>
+              <div className={`p-3 rounded-xl bg-white dark:bg-gray-800 shadow-sm ${stat.color}`}>
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{stat.label}</p>
+                <p className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 pb-8 space-y-8">
         {/* Profile Card */}
-        <ProfileCard 
-          professor={professor} 
+        <ProfileCard
+          professor={professor}
           coursesStats={coursesStatsForProfile}
         />
 
@@ -617,7 +610,7 @@ export default function ProfessorDashboard() {
               Actions rapides sur les exercices
             </span>
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Bouton Tous les exercices */}
             <button
@@ -631,12 +624,12 @@ export default function ProfessorDashboard() {
               className="group relative bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-6 border-2 border-blue-300/50 dark:border-blue-700/50 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-              
+
               <div className="relative flex items-start gap-4">
                 <div className="flex-shrink-0 p-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 shadow-md group-hover:shadow-lg transition-shadow duration-300">
                   <FileText size={24} className="text-white" />
                 </div>
-                
+
                 <div className="flex-1 text-left">
                   <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 mb-1">
                     Tous les exercices
@@ -644,7 +637,7 @@ export default function ProfessorDashboard() {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     Consultez, modifiez et gérez tous vos exercices
                   </p>
-                  
+
                   <div className="flex items-center gap-4 mt-2">
                     <div className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
                       {exercisesStats.totalExercises} exercices
@@ -654,10 +647,10 @@ export default function ProfessorDashboard() {
                     </div>
                   </div>
                 </div>
-                
+
                 <ChevronRight className="flex-shrink-0 text-blue-500 dark:text-blue-400 group-hover:translate-x-1 transition-transform duration-200" size={20} />
               </div>
-              
+
               <div className="absolute bottom-2 right-2 text-xs text-blue-600 dark:text-blue-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 Cliquer pour ouvrir →
               </div>
@@ -675,12 +668,12 @@ export default function ProfessorDashboard() {
               className="group relative bg-gradient-to-r from-green-500/10 to-green-600/10 dark:from-green-900/30 dark:to-green-800/30 rounded-xl p-6 border-2 border-green-300/50 dark:border-green-700/50 hover:border-green-400 dark:hover:border-green-500 hover:shadow-lg transition-all duration-300 overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-              
+
               <div className="relative flex items-start gap-4">
                 <div className="flex-shrink-0 p-3 rounded-lg bg-gradient-to-r from-green-500 to-green-600 shadow-md group-hover:shadow-lg transition-shadow duration-300">
                   <Plus size={24} className="text-white" />
                 </div>
-                
+
                 <div className="flex-1 text-left">
                   <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 mb-1">
                     Créer un exercice
@@ -688,7 +681,7 @@ export default function ProfessorDashboard() {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     Ajoutez un nouvel exercice à un de vos cours
                   </p>
-                  
+
                   <div className="flex items-center gap-4 mt-2">
                     <div className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full">
                       {compositions.length} cours disponibles
@@ -698,16 +691,16 @@ export default function ProfessorDashboard() {
                     </div>
                   </div>
                 </div>
-                
+
                 <ChevronRight className="flex-shrink-0 text-green-500 dark:text-green-400 group-hover:translate-x-1 transition-transform duration-200" size={20} />
               </div>
-              
+
               <div className="absolute bottom-2 right-2 text-xs text-green-600 dark:text-green-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 Cliquer pour commencer →
               </div>
             </button>
           </div>
-          
+
           {/* Indicateur de statut SIMPLIFIÉ */}
           <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -724,8 +717,8 @@ export default function ProfessorDashboard() {
 
         {/* Compositions Card */}
         {compositions.length > 0 ? (
-          <CompositionsCard 
-            compositions={compositions} 
+          <CompositionsCard
+            compositions={compositions}
             onDelete={handleDeleteCourse}
             onCreateClick={() => setIsModalOpen(true)}
             onManageExercises={(courseId) => router.push(`/profdashboard/exercises/${courseId}`)}
@@ -744,8 +737,8 @@ export default function ProfessorDashboard() {
               Mes Compositions
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {coursesStatsForProfile.length > 0 
-                ? `Vous avez ${coursesStatsForProfile.length} cours mais aucun étudiant n'est encore inscrit.` 
+              {coursesStatsForProfile.length > 0
+                ? `Vous avez ${coursesStatsForProfile.length} cours mais aucun étudiant n'est encore inscrit.`
                 : "Vous n'avez pas encore créé de cours. Créez votre premier cours pour commencer à suivre les statistiques de vos étudiants."}
             </p>
             <button

@@ -469,7 +469,7 @@ export default function ProfessorDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
+    <>
       {/* Modale de création de cours */}
       <CreateCourseModal
         isOpen={isModalOpen}
@@ -539,233 +539,176 @@ export default function ProfessorDashboard() {
         </div>
       )}
 
-      {/* Top Section with Welcome and Quick Stats */}
-      <div className="bg-white dark:bg-gray-800 px-8 py-8 mb-8 border-b border-purple-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* Section de bienvenue et statistiques */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
-              Tableau de bord <span className="text-purple-600 dark:text-purple-400">Expert</span>
+            <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+              Bienvenue {user.firstName} !
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Ravi de vous revoir, <span className="font-bold text-purple-600">{user.firstName}</span>. Voici l'état de vos enseignements aujourd'hui.
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
+              Ravi de vous revoir. Voici l'état de vos enseignements aujourd'hui.
             </p>
           </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
-            >
-              <Plus size={20} />
-              Nouveau Cours
-            </button>
-            <button
-              onClick={() => router.push('/teacher/inscriptions')}
-              className="relative flex items-center gap-2 px-6 py-3 rounded-xl bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-100 dark:border-gray-600 font-bold hover:bg-purple-50 dark:hover:bg-gray-600 transition-all shadow-sm"
-            >
-              <LucideUsers size={20} />
-              Inscriptions
-              {pendingInscriptionsCount > 0 && (
-                <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-gray-800 animate-bounce">
-                  {pendingInscriptionsCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
 
-        {/* Desktop Quick Stats Grid */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
-          {[
-            { label: 'Étudiants Totaux', value: professor.totalStudents, icon: LucideUsers, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-            { label: 'Cours Actifs', value: professor.publications, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-            { label: 'À Corriger', value: professor.pendingSubmissions, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-            { label: 'Score Global', value: `${professor.averageProgress}%`, icon: Activity, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
-          ].map((stat, idx) => (
-            <div key={idx} className={`${stat.bg} rounded-2xl p-6 border border-white dark:border-gray-700 shadow-sm flex items-center gap-4`}>
-              <div className={`p-3 rounded-xl bg-white dark:bg-gray-800 shadow-sm ${stat.color}`}>
-                <stat.icon size={24} />
+          {/* Statistiques rapides */}
+          <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  {professor.totalStudents}
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Étudiants</div>
               </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{stat.label}</p>
-                <p className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</p>
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  {professor.publications}
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Cours</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-orange-600">
+                  {professor.pendingSubmissions}
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">À corriger</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-green-600">
+                  {professor.averageProgress}%
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Score</div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 pb-8 space-y-8">
-        {/* Profile Card */}
-        <ProfileCard
-          professor={professor}
-          coursesStats={coursesStatsForProfile}
-        />
-
-        {/* Actions rapides pour les exercices sous le profil */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-            <span className="flex items-center gap-2">
-              <Upload className="text-purple-600 dark:text-purple-400" size={22} />
-              Actions rapides sur les exercices
-            </span>
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Bouton Tous les exercices */}
-            <button
-              onClick={() => {
-                if (compositions.length > 0) {
-                  router.push('/profdashboard/exercises');
-                } else {
-                  toast.error("Créez d'abord un cours pour gérer les exercices");
-                }
-              }}
-              className="group relative bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-6 border-2 border-blue-300/50 dark:border-blue-700/50 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-
-              <div className="relative flex items-start gap-4">
-                <div className="flex-shrink-0 p-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                  <FileText size={24} className="text-white" />
-                </div>
-
-                <div className="flex-1 text-left">
-                  <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 mb-1">
-                    Tous les exercices
-                  </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Consultez, modifiez et gérez tous vos exercices
-                  </p>
-
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
-                      {exercisesStats.totalExercises} exercices
-                    </div>
-                    <div className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
-                      {exercisesStats.pendingSubmissions} à corriger
-                    </div>
-                  </div>
-                </div>
-
-                <ChevronRight className="flex-shrink-0 text-blue-500 dark:text-blue-400 group-hover:translate-x-1 transition-transform duration-200" size={20} />
-              </div>
-
-              <div className="absolute bottom-2 right-2 text-xs text-blue-600 dark:text-blue-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                Cliquer pour ouvrir →
-              </div>
-            </button>
-
-            {/* Bouton Créer un exercice */}
-            <button
-              onClick={() => {
-                if (compositions.length > 0) {
-                  openCourseSelectionModal();
-                } else {
-                  toast.error("Créez d'abord un cours pour gérer les exercices");
-                }
-              }}
-              className="group relative bg-gradient-to-r from-green-500/10 to-green-600/10 dark:from-green-900/30 dark:to-green-800/30 rounded-xl p-6 border-2 border-green-300/50 dark:border-green-700/50 hover:border-green-400 dark:hover:border-green-500 hover:shadow-lg transition-all duration-300 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-
-              <div className="relative flex items-start gap-4">
-                <div className="flex-shrink-0 p-3 rounded-lg bg-gradient-to-r from-green-500 to-green-600 shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                  <Plus size={24} className="text-white" />
-                </div>
-
-                <div className="flex-1 text-left">
-                  <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 mb-1">
-                    Créer un exercice
-                  </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Ajoutez un nouvel exercice à un de vos cours
-                  </p>
-
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full">
-                      {compositions.length} cours disponibles
-                    </div>
-                    <div className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full">
-                      Nouveau
-                    </div>
-                  </div>
-                </div>
-
-                <ChevronRight className="flex-shrink-0 text-green-500 dark:text-green-400 group-hover:translate-x-1 transition-transform duration-200" size={20} />
-              </div>
-
-              <div className="absolute bottom-2 right-2 text-xs text-green-600 dark:text-green-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                Cliquer pour commencer →
-              </div>
-            </button>
-          </div>
-
-          {/* Indicateur de statut SIMPLIFIÉ */}
-          <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              <div className="inline-flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span>Système opérationnel</span>
-              </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                {compositions.length} cours • {exercisesStats.totalExercises} exercices
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Compositions Card */}
-        {compositions.length > 0 ? (
-          <CompositionsCard
-            compositions={compositions}
-            onDelete={handleDeleteCourse}
-            onCreateClick={() => setIsModalOpen(true)}
-            onManageExercises={(courseId) => router.push(`/profdashboard/exercises/${courseId}`)}
-            getCourseStats={(id) => {
-              const courseId = parseCourseId(id);
-              const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === courseId);
-              return stats ? {
-                totalExercises: stats.totalExercises || 0,
-                totalEnrolled: stats.totalEnrolled || 0
-              } : undefined;
-            }}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        {/* Colonne gauche : Profile et Compositions */}
+        <div className="lg:col-span-2 space-y-6">
+          <ProfileCard
+            professor={professor}
+            coursesStats={coursesStatsForProfile}
           />
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Mes Compositions
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {coursesStatsForProfile.length > 0
-                ? `Vous avez ${coursesStatsForProfile.length} cours mais aucun étudiant n'est encore inscrit.`
-                : "Vous n'avez pas encore créé de cours. Créez votre premier cours pour commencer à suivre les statistiques de vos étudiants."}
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
-            >
-              <Plus size={20} />
-              Créer un cours
-            </button>
-          </div>
-        )}
 
-        {/* Section de débogage optionnelle (à cacher en production) */}
-        {process.env.NODE_ENV === 'development' && dashboardError && (
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-900/30">
-            <p className="text-sm text-red-600 dark:text-red-400">
-              <strong>Erreur:</strong> {dashboardError}
-            </p>
-            <button
-              onClick={() => loadDashboardData()}
-              className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
-            >
-              Réessayer le chargement
-            </button>
+          {compositions.length > 0 ? (
+            <CompositionsCard
+              compositions={compositions}
+              onDelete={handleDeleteCourse}
+              onCreateClick={() => setIsModalOpen(true)}
+              onManageExercises={(courseId) => router.push(`/profdashboard/exercises/${courseId}`)}
+              getCourseStats={(id) => {
+                const courseId = parseCourseId(id);
+                const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === courseId);
+                return stats ? {
+                  totalExercises: stats.totalExercises || 0,
+                  totalEnrolled: stats.totalEnrolled || 0
+                } : undefined;
+              }}
+            />
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
+              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+                Mes Compositions
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {coursesStatsForProfile.length > 0
+                  ? `Vous avez ${coursesStatsForProfile.length} cours mais aucun étudiant n'est encore inscrit.`
+                  : "Vous n'avez pas encore créé de cours. Créez votre premier cours pour commencer à suivre les statistiques de vos étudiants."}
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
+              >
+                <Plus size={20} />
+                Créer un cours
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Colonne droite : Actions et Stats secondaires */}
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
+            <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+              <Activity className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
+              Actions rapides
+            </h3>
+            <div className="space-y-3">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-700 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                    <Plus size={18} />
+                  </div>
+                  <span className="text-sm font-medium">Nouveau Cours</span>
+                </div>
+                <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.push('/teacher/inscriptions')}
+                className="w-full flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-700 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                    <LucideUsers size={18} />
+                  </div>
+                  <span className="text-sm font-medium">Inscriptions ({pendingInscriptionsCount})</span>
+                </div>
+                <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => {
+                  if (compositions.length > 0) {
+                    openCourseSelectionModal();
+                  } else {
+                    toast.error("Créez d'abord un cours");
+                  }
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-700 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                    <Upload size={18} />
+                  </div>
+                  <span className="text-sm font-medium">Créer un exercice</span>
+                </div>
+                <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Status du système */}
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 md:p-5 border border-purple-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <h3 className="font-bold text-gray-800 dark:text-white text-sm">Status du système</h3>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              {compositions.length} cours actifs • {professor.totalExercises} exercices créés
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+
+      {/* Section de débogage optionnelle (à cacher en production) */}
+      {process.env.NODE_ENV === 'development' && dashboardError && (
+        <div className="mt-8 bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-900/30">
+          <p className="text-sm text-red-600 dark:text-red-400">
+            <strong>Erreur:</strong> {dashboardError}
+          </p>
+          <button
+            onClick={() => loadDashboardData()}
+            className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
+          >
+            Réessayer le chargement
+          </button>
+        </div>
+      )}
+    </>
   );
 }

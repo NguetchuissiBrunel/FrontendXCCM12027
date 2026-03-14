@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMySubmissions } from '@/hooks/useExercise';
 import { Exercise, Submission } from '@/types/exercise';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
-import Sidebar from '@/components/Sidebar';
 import { useLoading } from '@/contexts/LoadingContext';
 import {
   Search,
@@ -69,7 +68,7 @@ export default function StudentExercisesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
-  
+
   // États
   const [exercisesData, setExercisesData] = useState<StudentExerciseData[]>([]);
   const [filteredExercises, setFilteredExercises] = useState<StudentExerciseData[]>([]);
@@ -95,10 +94,10 @@ export default function StudentExercisesPage() {
    */
   const fetchStudentCourses = useCallback(async (): Promise<EnrichedCourse[]> => {
     if (!user?.id) return [];
-    
+
     try {
       console.log('📚 Récupération des cours de l\'étudiant via EnrollmentService...');
-      
+
       // Utiliser le service d'inscription existant (comme dans page.tsx)
       const { EnrollmentService } = await import('@/utils/enrollmentService');
       const enrollments = await EnrollmentService.getMyEnrollments();
@@ -114,19 +113,19 @@ export default function StudentExercisesPage() {
         try {
           // Récupérer les détails du cours via le service
           const resp = await CourseControllerService.getEnrichedCourse(enrollment.courseId);
-          
+
           if (resp.success && resp.data) {
             const courseDetail = resp.data as any;
-            
+
             return {
               id: courseDetail.id,
               title: courseDetail.title,
               category: courseDetail.category || 'Formation',
               image: courseDetail.photoUrl || courseDetail.image || courseDetail.coverImage || '',
               author: {
-                name: courseDetail.author ? 
-                  (typeof courseDetail.author === 'string' ? 
-                    courseDetail.author : 
+                name: courseDetail.author ?
+                  (typeof courseDetail.author === 'string' ?
+                    courseDetail.author :
                     `${courseDetail.author.firstName || courseDetail.author.name || ''} ${courseDetail.author.lastName || ''}`
                   ) : 'Inconnu',
                 image: courseDetail.author?.image || courseDetail.author?.photoUrl || '',
@@ -147,10 +146,10 @@ export default function StudentExercisesPage() {
 
       const enriched = (await Promise.all(enrichedPromises)).filter(Boolean) as EnrichedCourse[];
       setEnrolledCourses(enriched);
-      
+
       console.log(`✅ ${enriched.length} cours approuvés récupérés`);
       return enriched;
-      
+
     } catch (err) {
       console.error("❌ Erreur lors du chargement des inscriptions:", err);
       toast.error('Impossible de charger vos inscriptions');
@@ -165,17 +164,17 @@ export default function StudentExercisesPage() {
   const fetchExercisesForCourse = useCallback(async (courseId: number, courseTitle: string): Promise<Exercise[]> => {
     try {
       console.log(`📝 Récupération exercices pour cours ${courseId}...`);
-      
+
       // Utiliser ExercicesService qui utilise déjà le bon endpoint
       const exercises = await ExerciseService.getExercisesForCourse(courseId);
-      
+
       // Enrichir avec le titre du cours
       return exercises.map(exercise => ({
         ...exercise,
         courseTitle,
         courseId
       }));
-      
+
     } catch (error) {
       console.error(`❌ Erreur cours ${courseId}:`, error);
       return []; // Retourner tableau vide, ne pas bloquer les autres cours
@@ -191,10 +190,10 @@ export default function StudentExercisesPage() {
 
     try {
       console.log('🔄 Début récupération exercices étudiants...');
-      
+
       // 1. Récupérer les cours de l'étudiant (inscriptions approuvées)
       const courses = await fetchStudentCourses();
-      
+
       if (courses.length === 0) {
         console.warn('⚠️ Aucun cours approuvé trouvé pour l\'étudiant');
         toast('Vous n\'êtes inscrit à aucun cours approuvé', {
@@ -203,22 +202,22 @@ export default function StudentExercisesPage() {
         });
         return [];
       }
-      
+
       console.log(`📚 ${courses.length} cours approuvés à traiter`);
 
       // 2. Récupérer les exercices pour chaque cours (en parallèle)
-      const exercisePromises = courses.map(course => 
+      const exercisePromises = courses.map(course =>
         fetchExercisesForCourse(course.id, course.title)
       );
-      
+
       const exercisesArrays = await Promise.all(exercisePromises);
-      
+
       // 3. Fusionner tous les exercices
       const allExercises = exercisesArrays.flat();
-      
+
       console.log(`✅ Total: ${allExercises.length} exercices récupérés`);
       return allExercises;
-      
+
     } catch (error) {
       console.error('❌ Erreur récupération exercices étudiants:', error);
       throw new Error('Impossible de récupérer les exercices');
@@ -248,7 +247,7 @@ export default function StudentExercisesPage() {
         console.log('ℹ️ Aucun exercice disponible pour le moment');
         setExercisesData([]);
         setFilteredExercises([]);
-        
+
         // Toast informatif
         toast('Aucun exercice disponible pour le moment', {
           icon: '📭',
@@ -262,7 +261,7 @@ export default function StudentExercisesPage() {
       // 2. Enrichir avec les soumissions
       const enrichedData: StudentExerciseData[] = exercises.map(exercise => {
         const submission = submissions?.find(s => s.exerciseId === exercise.id);
-        
+
         // Déterminer le statut d'échéance
         let dueDateStatus: 'open' | 'closed' | 'no_due_date' = 'no_due_date';
         if (exercise.dueDate) {
@@ -284,7 +283,7 @@ export default function StudentExercisesPage() {
             canSubmit = false;
           }
         }
-        
+
         // Vérifier si l'exercice est accessible
         const isAccessible = exercise.status === 'PUBLISHED' && dueDateStatus !== 'closed';
 
@@ -496,7 +495,7 @@ export default function StudentExercisesPage() {
    */
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'Non définie';
-    
+
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('fr-FR', {
@@ -607,20 +606,10 @@ export default function StudentExercisesPage() {
   }
 
   const stats = calculateStats();
-  const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
-  const userSpecialization = user.specialization || 'Étudiant';
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <Sidebar
-        userRole="student"
-        userName={displayName}
-        userLevel={userSpecialization}
-        activeTab="exercices"
-      />
-
-      {/* MODIFICATION : Ajout de padding-top pour éviter le chevauchement avec le header */}
-      <main className="flex-1 p-4 md:p-6 lg:p-8 lg:ml-64 mt-16 md:mt-20">
+    <>
+      <div className="flex-1">
         {/* En-tête */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -1068,7 +1057,7 @@ export default function StudentExercisesPage() {
             </div>
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

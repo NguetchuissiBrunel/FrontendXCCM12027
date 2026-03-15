@@ -39,7 +39,7 @@ export default function UpdateExercisePage() {
   const params = useParams();
   const router = useRouter();
 
-  const courseId = parseInt(params.courseId as string);
+  const paramId = parseInt(params.courseId as string);
   const exerciseId = parseInt(params.exerciseId as string);
 
   // Hook pour récupérer et mettre à jour l'exercice
@@ -58,9 +58,9 @@ export default function UpdateExercisePage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [courseInfo, setCourseInfo] = useState<{
-    title: string;
-    category?: string;
+  const [classInfo, setClassInfo] = useState<{
+    name: string;
+    theme?: string;
   } | null>(null);
 
   // ============ INITIALISATION ============
@@ -75,17 +75,21 @@ export default function UpdateExercisePage() {
   }, [exercise]);
 
   useEffect(() => {
-    loadCourseInfo();
-  }, [courseId]);
+    loadClassInfo();
+  }, [paramId]);
 
-  const loadCourseInfo = async () => {
+  const loadClassInfo = async () => {
     try {
-      setCourseInfo({
-        title: `Cours #${courseId}`,
-        category: 'Informatique',
-      });
+      const { CourseClassService } = await import('@/lib/services/CourseClassService');
+      const response = await CourseClassService.getClassById(paramId);
+      if (response && response.data) {
+        setClassInfo({
+          name: response.data.name,
+          theme: response.data.theme,
+        });
+      }
     } catch (error) {
-      console.error('Erreur chargement infos cours:', error);
+      console.error('Erreur chargement infos classe:', error);
     }
   };
 
@@ -103,7 +107,7 @@ export default function UpdateExercisePage() {
     } else {
       questions.forEach((q, index) => {
         const questionNumber = index + 1;
-        
+
         // Validation du texte de la question
         if (!q.text?.trim()) {
           errors.push(`Question ${questionNumber}: L'énoncé est requis`);
@@ -175,7 +179,7 @@ export default function UpdateExercisePage() {
 
   const updateQuestion = (index: number, updates: Partial<Question>) => {
     const newQuestions = [...questions];
-    
+
     newQuestions[index] = {
       ...newQuestions[index],
       ...updates
@@ -194,7 +198,7 @@ export default function UpdateExercisePage() {
     const newQuestions = questions.filter((_, i) => i !== index);
     // Réorganiser l'ordre
     newQuestions.forEach((q, i) => { q.order = i; });
-    
+
     setQuestions(newQuestions);
     setHasUnsavedChanges(true);
   };
@@ -295,10 +299,10 @@ export default function UpdateExercisePage() {
         toast.success(result.message || '✅ Exercice mis à jour avec succès');
         setHasUnsavedChanges(false);
         setValidationErrors([]);
-        
+
         // Redirection après un délai
         setTimeout(() => {
-          router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`);
+          router.push(`/profdashboard/exercises/${paramId}/view/${exerciseId}`);
         }, 1500);
       } else {
         toast.error(result.message || '❌ Erreur lors de la mise à jour');
@@ -316,11 +320,11 @@ export default function UpdateExercisePage() {
         return;
       }
     }
-    router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`);
+    router.push(`/profdashboard/exercises/${paramId}/view/${exerciseId}`);
   };
 
   const handlePreview = () => {
-    window.open(`/profdashboard/exercises/${courseId}/preview/${exerciseId}`, '_blank');
+    window.open(`/profdashboard/exercises/${paramId}/preview/${exerciseId}`, '_blank');
   };
 
   const handleReset = () => {
@@ -341,7 +345,7 @@ export default function UpdateExercisePage() {
 
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return 'Non définie';
-    
+
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('fr-FR', {
@@ -376,7 +380,7 @@ export default function UpdateExercisePage() {
     if (!hasUnsavedChanges) return true;
     if (validationErrors.length > 0) return true;
     if (!localExercise?.title?.trim()) return true;
-    
+
     return false;
   };
 
@@ -417,11 +421,11 @@ export default function UpdateExercisePage() {
               Réessayer
             </button>
             <button
-              onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
+              onClick={() => router.push(`/profdashboard/exercises/${paramId}`)}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
             >
               <ArrowLeft size={18} />
-              Retour aux exercices
+              Retour à la classe
             </button>
           </div>
         </div>
@@ -456,14 +460,14 @@ export default function UpdateExercisePage() {
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <Link
-              href={`/profdashboard/exercises/${courseId}`}
+              href={`/profdashboard/exercises/${paramId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
-              {courseInfo?.title || `Cours #${courseId}`}
+              {classInfo?.name || `Classe #${paramId}`}
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <Link
-              href={`/profdashboard/exercises/${courseId}/view/${exerciseId}`}
+              href={`/profdashboard/exercises/${paramId}/view/${exerciseId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               {displayExercise.title}
@@ -528,16 +532,15 @@ export default function UpdateExercisePage() {
                     {displayExercise.title}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      displayExercise.status === 'PUBLISHED'
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${displayExercise.status === 'PUBLISHED'
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-                    }`}>
+                      }`}>
                       {displayExercise.status === 'PUBLISHED' ? 'Publié' : 'Fermé'}
                     </span>
-                    {courseInfo?.category && (
+                    {classInfo?.theme && (
                       <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-600 dark:text-gray-400">
-                        {courseInfo.category}
+                        {classInfo.theme}
                       </span>
                     )}
                   </div>
@@ -662,11 +665,10 @@ export default function UpdateExercisePage() {
 
               <div className="flex flex-wrap items-center gap-3">
                 {/* Indicateur de points */}
-                <div className={`px-3 py-1.5 rounded-full flex items-center gap-2 ${
-                  isPointsValid 
+                <div className={`px-3 py-1.5 rounded-full flex items-center gap-2 ${isPointsValid
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                     : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                }`}>
+                  }`}>
                   <Award className="w-4 h-4" />
                   <span className="text-sm font-medium">
                     {totalPoints}/{displayExercise.maxScore} points
@@ -793,8 +795,8 @@ export default function UpdateExercisePage() {
                   </div>
                 ) : (
                   questions.map((question, index) => (
-                    <div 
-                      key={question.id || index} 
+                    <div
+                      key={question.id || index}
                       className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:border-purple-300 dark:hover:border-purple-600 transition-colors"
                     >
                       {/* En-tête de la question */}
@@ -984,11 +986,10 @@ export default function UpdateExercisePage() {
               <button
                 onClick={handleSave}
                 disabled={isSaveDisabled()}
-                className={`px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all ${
-                  isSaveDisabled()
+                className={`px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all ${isSaveDisabled()
                     ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg'
-                }`}
+                  }`}
               >
                 {isUpdating ? (
                   <>
@@ -1008,109 +1009,109 @@ export default function UpdateExercisePage() {
 
         {/* Notes et informations */}
         <div className="bg-gradient-to-r from-purple-50/60 to-white rounded-2xl p-6 border border-purple-200 dark:bg-gradient-to-r dark:from-gray-900/50 dark:to-gray-800/50 dark:border-purple-800/30 shadow-sm">
-  <div className="flex items-center gap-3 mb-6">
-    <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
-      <NotepadText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-    </div>
-    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-      Notes importantes
-    </h3>
-  </div>
-
-  <div className="space-y-5">
-    {/* Validation en temps réel */}
-    <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-50/50 to-white dark:from-purple-900/10 dark:to-transparent">
-      <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-sm">
-        <Zap className="w-5 h-5 text-white" />
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-200">Validation en temps réel</h4>
-          <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full">
-            Auto-check
-          </span>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-          Les erreurs sont détectées automatiquement. Le bouton d'enregistrement s'active uniquement lorsque toutes les validations sont passées.
-        </p>
-      </div>
-    </div>
-
-    {/* Exercices déjà notés */}
-    <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-amber-50/30 to-white dark:from-amber-900/10 dark:to-transparent">
-      <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-sm">
-        <AlertTriangle className="w-5 h-5 text-white" />
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-200">Exercices déjà notés</h4>
-          <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded-full">
-            Attention
-          </span>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-          Si cet exercice a déjà été noté, modifiez les questions avec précaution pour ne pas invalider les scores existants.
-        </p>
-      </div>
-    </div>
-
-    {/* Publication automatique */}
-    <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50/30 to-white dark:from-emerald-900/10 dark:to-transparent">
-      <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg shadow-sm">
-        <Rocket className="w-5 h-5 text-white" />
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-200">Publication automatique</h4>
-          <span className="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 rounded-full">
-            Immédiat
-          </span>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-          Tous les exercices sont automatiquement publiés. Les modifications prennent effet immédiatement après enregistrement.
-        </p>
-      </div>
-    </div>
-  </div>
-
-  {/* Informations techniques */}
-  <div className="mt-8 pt-6 border-t border-purple-200/60 dark:border-purple-800/30">
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div className="flex flex-wrap items-center gap-4 text-sm">
-        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-          <CalendarDays className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-          <span>
-            <span className="font-medium text-gray-700 dark:text-gray-300">Créé le:</span>{' '}
-            {new Date(displayExercise.createdAt).toLocaleDateString('fr-FR')}
-          </span>
-        </div>
-        
-        {displayExercise.updatedAt && displayExercise.updatedAt !== displayExercise.createdAt && (
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <RefreshCw className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-            <span>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Modifié:</span>{' '}
-              {new Date(displayExercise.updatedAt).toLocaleDateString('fr-FR')}
-            </span>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+              <NotepadText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+              Notes importantes
+            </h3>
           </div>
-        )}
-      </div>
-      
-      <div className="flex items-center gap-3">
-        <div className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
-          <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-            ID: {displayExercise.id}
-          </span>
+
+          <div className="space-y-5">
+            {/* Validation en temps réel */}
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-50/50 to-white dark:from-purple-900/10 dark:to-transparent">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-sm">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200">Validation en temps réel</h4>
+                  <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full">
+                    Auto-check
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Les erreurs sont détectées automatiquement. Le bouton d'enregistrement s'active uniquement lorsque toutes les validations sont passées.
+                </p>
+              </div>
+            </div>
+
+            {/* Exercices déjà notés */}
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-amber-50/30 to-white dark:from-amber-900/10 dark:to-transparent">
+              <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-sm">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200">Exercices déjà notés</h4>
+                  <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded-full">
+                    Attention
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Si cet exercice a déjà été noté, modifiez les questions avec précaution pour ne pas invalider les scores existants.
+                </p>
+              </div>
+            </div>
+
+            {/* Publication automatique */}
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50/30 to-white dark:from-emerald-900/10 dark:to-transparent">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg shadow-sm">
+                <Rocket className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200">Publication automatique</h4>
+                  <span className="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 rounded-full">
+                    Immédiat
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Tous les exercices sont automatiquement publiés. Les modifications prennent effet immédiatement après enregistrement.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Informations techniques */}
+          <div className="mt-8 pt-6 border-t border-purple-200/60 dark:border-purple-800/30">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <CalendarDays className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                  <span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Créé le:</span>{' '}
+                    {new Date(displayExercise.createdAt).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+
+                {displayExercise.updatedAt && displayExercise.updatedAt !== displayExercise.createdAt && (
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <RefreshCw className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                    <span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Modifié:</span>{' '}
+                      {new Date(displayExercise.updatedAt).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                    ID: {displayExercise.id}
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    v{displayExercise.version || '2.0'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            v{displayExercise.version || '2.0'}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
       </div>
     </div>
   );

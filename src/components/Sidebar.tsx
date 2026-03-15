@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText } from 'lucide-react';
+import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText, FolderOpen } from 'lucide-react';
 
 interface SidebarProps {
   userRole: 'student' | 'professor';
@@ -39,8 +39,9 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
   const professorMenuItems = [
     { id: 'accueil', label: 'Accueil', icon: Home, href: '/profdashboard' },
     { id: 'inscriptions', label: 'Inscriptions', icon: LucideUsers, href: '/teacher/inscriptions' },
+    { id: 'classes', label: 'Mes Classes', icon: FolderOpen, href: '/teacher/classes' },
     { id: 'exercices', label: 'Mes Exercices', icon: FileText, href: '/profdashboard/exercises' },
-    { id: 'compositions', label: 'Mes Compositions', icon: BookOpen, href: '/profdashboard' },
+    { id: 'compositions', label: 'Mes Compositions', icon: BookOpen, href: '/teacher/compositions' },
   ];
 
   return (

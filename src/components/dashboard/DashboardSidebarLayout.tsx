@@ -35,6 +35,8 @@ export default function DashboardSidebarLayout({ children, role }: Props) {
         } else {
             if (pathname.includes('/inscriptions')) return 'inscriptions';
             if (pathname.includes('/exercises')) return 'exercices';
+            if (pathname.includes('/classes')) return 'classes';
+            if (pathname.includes('/compositions')) return 'compositions';
             if (pathname.endsWith('/profdashboard')) return 'accueil';
             return 'accueil';
         }

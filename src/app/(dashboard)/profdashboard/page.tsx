@@ -792,8 +792,49 @@ export default function ProfessorDashboard() {
           </div>
         </div>
 
+        {/* Mes Compositions (Cours) */}
+        {coursesStatsForProfile.length > 0 ? (
+          <CompositionsCard
+            title="Mes Compositions"
+            compositions={coursesStatsForProfile.map((stat) => ({
+              id: stat.courseId.toString(),
+              title: stat.courseTitle,
+              class: stat.courseCategory,
+              participants: stat.totalEnrolled,
+              likes: 12,
+              downloads: 5,
+              status: stat.completionRate && stat.completionRate > 0 ? 'PUBLISHED' : 'DRAFT',
+              courseStats: {
+                totalExercises: stat.totalExercises,
+                totalEnrolled: stat.totalEnrolled
+              }
+            }))}
+            onDelete={() => toast.info("La suppression s'effectue depuis la page de détails ou l'éditeur")}
+            onCreateClick={() => router.push('/courses/create')}
+            onManageExercises={() => toast.info("Gérez les exercices depuis vos classes")}
+          />
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center mb-8">
+            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+              Mes Compositions
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Vous n'avez pas encore créé de cours.
+            </p>
+            <button
+              onClick={() => router.push('/courses/create')}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
+            >
+              <Plus size={20} />
+              Créer un cours
+            </button>
+          </div>
+        )}
+
+        {/* Mes Classes de Cours */}
         {compositions.length > 0 ? (
           <CompositionsCard
+            title="Mes Classes de cours"
             compositions={compositions}
             onDelete={handleDeleteCourse}
             onCreateClick={() => setIsModalOpen(true)}

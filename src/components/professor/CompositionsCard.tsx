@@ -28,6 +28,7 @@ interface CompositionsCardProps {
   getCourseStats?: (id: string) => { totalExercises?: number; totalEnrolled?: number } | undefined;
   onManageClassCourses?: (classId: string) => void;
   onChangeStatus?: (classId: string, status: ClassStatus) => Promise<void>;
+  title?: string;
 }
 
 function StatusBadge({ status }: { status?: string }) {
@@ -67,6 +68,7 @@ export default function CompositionsCard({
   getCourseStats,
   onManageClassCourses,
   onChangeStatus,
+  title,
 }: CompositionsCardProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({
     isOpen: false,
@@ -109,7 +111,7 @@ export default function CompositionsCard({
       />
 
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">Mes Classes de cours</h2>
+        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">{title || 'Mes Classes de cours'}</h2>
         {onCreateClick && (
           <button
             onClick={onCreateClick}
@@ -118,7 +120,7 @@ export default function CompositionsCard({
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span className="hidden sm:inline">Créer une classe</span>
+            <span className="hidden sm:inline">Créer {title?.toLowerCase().includes('composition') || title?.toLowerCase().includes('cours') ? 'un cours' : 'une classe'}</span>
             <span className="sm:hidden">Créer</span>
           </button>
         )}
@@ -144,7 +146,7 @@ export default function CompositionsCard({
                 <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                   <span className="flex items-center gap-1.5">
                     <Layout size={14} className="text-purple-500" />
-                    <span className="font-semibold text-gray-500">Thème:</span> {composition.class}
+                    <span className="font-semibold text-gray-500">{title?.toLowerCase().includes('composition') || title?.toLowerCase().includes('cours') ? 'Catégorie:' : 'Thème:'}</span> {composition.class}
                   </span>
                   <span>
                     <span className="font-semibold text-purple-600 dark:text-purple-400">{composition.participants}</span> participants
@@ -194,7 +196,7 @@ export default function CompositionsCard({
                 <button
                   onClick={() => handleDeleteClick(composition.id)}
                   className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
-                  title="Supprimer la classe"
+                  title={title?.toLowerCase().includes('composition') || title?.toLowerCase().includes('cours') ? "Supprimer le cours" : "Supprimer la classe"}
                 >
                   <Trash2 size={20} />
                 </button>
@@ -209,7 +211,7 @@ export default function CompositionsCard({
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total : {compositions.length} classes • {
+              Total : {compositions.length} {title?.toLowerCase().includes('composition') || title?.toLowerCase().includes('cours') ? 'cours' : 'classes'} • {
                 compositions.reduce((total, comp) => {
                   const stats = comp.courseStats || (getCourseStats ? getCourseStats(comp.id) : undefined);
                   return total + (stats?.totalExercises || 0);

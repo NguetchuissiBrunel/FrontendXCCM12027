@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import ProfileCard, { CourseStat } from '@/components/professor/ProfileCard';
 import CompositionsCard, { Composition } from '@/components/professor/CompositionsCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { CourseClassService } from '@/lib/services/CourseClassService';
 import CreateCourseModal from '@/components/create-course/page';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { useLoading } from '@/contexts/LoadingContext';
@@ -14,6 +14,7 @@ import { EnseignantService } from '@/lib/services/EnseignantService';
 import toast from 'react-hot-toast';
 import { BookOpen, X, FileText, Plus, ChevronRight, Upload, Users as LucideUsers, Activity } from 'lucide-react';
 import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
+import ManageClassCoursesModal from '@/components/professor/ManageClassCoursesModal';
 
 // Définir les interfaces
 interface Course {
@@ -21,6 +22,18 @@ interface Course {
   title?: string;
   category?: string;
   status?: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
+}
+
+interface CourseClass {
+  id: number;
+  name: string;
+  theme?: string;
+  description?: string;
+  coverImage?: string;
+  status?: 'OPEN' | 'CLOSED' | 'ARCHIVED';
+  maxStudents?: number;
+  studentCount?: number;
+  courses?: Course[];
 }
 
 interface Teacher {
@@ -47,8 +60,8 @@ interface User {
   teachingGoal?: string;
 }
 
-// Fonction utilitaire pour parser l'ID du cours
-function parseCourseId(id: number | string | undefined): number {
+// Fonction utilitaire pour parser l'ID
+function parseId(id: number | string | undefined): number {
   if (typeof id === 'number') {
     return id;
   }
@@ -75,6 +88,8 @@ export default function ProfessorDashboard() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCourseSelectionModalOpen, setIsCourseSelectionModalOpen] = useState(false);
+  const [isManageCoursesModalOpen, setIsManageCoursesModalOpen] = useState(false);
+  const [selectedClassIdForCourses, setSelectedClassIdForCourses] = useState<number | null>(null);
 
   // Statistiques pour ProfileCard
   const [coursesStatsForProfile, setCoursesStatsForProfile] = useState<CourseStat[]>([]);
@@ -110,7 +125,10 @@ export default function ProfessorDashboard() {
           participationRate: course.participationRate || 0,
           averageProgress: course.averageProgress || 0,
           totalExercises: course.totalExercises || 0,
-          completedStudents: course.completedStudents || Math.floor((course.totalEnrolled || 0) * 0.65)
+          completedStudents: course.completedStudents || Math.floor((course.totalEnrolled || 0) * 0.65),
+          pendingEnrollments: course.pendingEnrollments,
+          acceptedEnrollments: course.acceptedEnrollments,
+          rejectedEnrollments: course.rejectedEnrollments,
         }));
 
         return courseStats;
@@ -123,36 +141,40 @@ export default function ProfessorDashboard() {
   }, []);
 
   // Fonction pour calculer les statistiques d'exercices
-  const calculateExercisesStats = useCallback(async (courses: Course[]) => {
+  const calculateExercisesStats = useCallback(async (classes: CourseClass[]) => {
     try {
       let totalPending = 0;
       let totalExercisesCount = 0;
 
-      for (const course of courses) {
-        const courseId = parseCourseId(course.id);
-        if (courseId > 0) {
-          try {
-            const resp = await ExercicesService.getExercisesForCourse(courseId);
-            const exercises = (resp as any)?.data || [];
-            totalExercisesCount += exercises.length;
+      // On itère sur toutes les classes et leurs cours imbriqués
+      for (const cls of classes) {
+        if (!cls.courses) continue;
+        for (const course of cls.courses) {
+          const courseId = parseId(course.id);
+          if (courseId > 0) {
+            try {
+              const resp = await ExercicesService.getExercisesForCourse(courseId);
+              const exercises = (resp as any)?.data || [];
+              totalExercisesCount += exercises.length;
 
-            // Limiter les appels pour éviter les boucles
-            if (exercises.length > 0) {
-              // Prendre seulement le premier exercice pour vérifier
-              const firstEx = exercises[0];
-              try {
-                const submissionsResp = await EnseignantService.getSubmissions(firstEx.id);
-                const submissions = (submissionsResp as any)?.data || [];
-                const pending = submissions.filter((s: any) =>
-                  s.graded === undefined || s.graded === false || !s.graded
-                ).length;
-                totalPending += pending;
-              } catch (err) {
-                console.error('Erreur chargement soumissions:', err);
+              // Limiter les appels pour éviter les boucles
+              if (exercises.length > 0) {
+                // Prendre seulement le premier exercice pour vérifier
+                const firstEx = exercises[0];
+                try {
+                  const submissionsResp = await EnseignantService.getSubmissions(firstEx.id);
+                  const submissions = (submissionsResp as any)?.data || [];
+                  const pending = submissions.filter((s: any) =>
+                    s.graded === undefined || s.graded === false || !s.graded
+                  ).length;
+                  totalPending += pending;
+                } catch (err) {
+                  console.error('Erreur chargement soumissions:', err);
+                }
               }
+            } catch (error) {
+              console.error(`Erreur chargement exercices cours ${courseId}:`, error);
             }
-          } catch (error) {
-            console.error(`Erreur chargement exercices cours ${courseId}:`, error);
           }
         }
       }
@@ -214,31 +236,48 @@ export default function ProfessorDashboard() {
     }
   }, []);
 
-  // Fonction de suppression d'un cours
-  const handleDeleteCourse = async (courseId: string) => {
+  // Fonction de suppression d'une classe de cours
+  const handleDeleteCourse = async (classId: string) => {
     try {
-      const courseIdNum = parseCourseId(courseId);
-      if (courseIdNum === 0) {
-        toast.error('ID de cours invalide');
+      const classIdNum = parseId(classId);
+      if (classIdNum === 0) {
+        toast.error('ID de classe invalide');
         return;
       }
 
-
       startLoading();
 
-      await CourseControllerService.deleteCourse(courseIdNum);
+      await CourseClassService.deleteClass(classIdNum);
 
-      toast.success('Cours supprimé avec succès');
+      toast.success('Classe supprimée avec succès');
 
       // Recharger les données
       await loadDashboardData();
 
     } catch (error: any) {
-      console.error('Erreur lors de la suppression du cours:', error);
+      console.error('Erreur lors de la suppression de la classe:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Erreur lors de la suppression';
       toast.error(`Échec de la suppression: ${errorMessage}`);
     } finally {
       stopLoading();
+    }
+  };
+
+  // Changer le statut d'une classe
+  const handleChangeClassStatus = async (classId: string, status: 'OPEN' | 'CLOSED' | 'ARCHIVED') => {
+    const classIdNum = parseId(classId);
+    if (classIdNum === 0) {
+      toast.error('ID de classe invalide');
+      return;
+    }
+    try {
+      await CourseClassService.changeClassStatus(classIdNum, status);
+      const labels: Record<string, string> = { OPEN: 'Ouverte', CLOSED: 'Fermée', ARCHIVED: 'Archivée' };
+      toast.success(`Statut de la classe mis à jour : ${labels[status]}`);
+      await loadDashboardData();
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Erreur lors du changement de statut';
+      toast.error(msg);
     }
   };
 
@@ -247,7 +286,7 @@ export default function ProfessorDashboard() {
     setIsModalOpen(false);
   };
 
-  const handleCreateCourseSubmit = (data: {
+  const handleCreateCourseSubmit = async (data: {
     title: string;
     category: string;
     description: string;
@@ -255,31 +294,60 @@ export default function ProfessorDashboard() {
     file?: any;
   }) => {
     if (!user) {
-      toast.error('Vous devez être connecté pour créer un cours');
+      toast.error('Vous devez être connecté pour créer une classe');
       return;
     }
 
     setIsModalOpen(false);
 
-    const params = new URLSearchParams({
-      new: 'true',
-      title: data.title,
-      category: data.category,
-      description: data.description
-    });
+    try {
+      startLoading();
 
-    router.push(`/editor?${params.toString()}`);
+      // On crée d'abord une classe
+      const newClassResponse = await CourseClassService.createClass({
+        name: data.title,
+        theme: data.category,
+        description: data.description,
+        maxStudents: 50 // valeur par défaut
+      });
+
+      if (newClassResponse?.data?.id) {
+        toast.success('Classe créée avec succès !');
+        // Optionnellement uploader l'image cover si dispo
+        if (data.file) {
+          await CourseClassService.uploadCoverImage(newClassResponse.data.id, data.file);
+        }
+        await loadDashboardData();
+      } else {
+        throw new Error("Impossible de récupérer l'id de la classe");
+      }
+    } catch (err) {
+      toast.error('Erreur lors de la création de la classe');
+      console.error(err);
+    } finally {
+      stopLoading();
+    }
   };
 
-  // Fonction pour ouvrir la modale de sélection de cours
+  // Fonction pour ouvrir la modale de sélection de cours (pour exercice)
   const openCourseSelectionModal = () => {
     setIsCourseSelectionModalOpen(true);
   };
 
-  // Fonction pour sélectionner un cours
-  const handleCourseSelect = (courseId: string) => {
+  const handleCourseSelect = (classId: string) => {
     setIsCourseSelectionModalOpen(false);
-    router.push(`/profdashboard/exercises/${courseId}`);
+    // TODO: Redirection modifiée pour pointer vers les détails de la classe ou un éditeur de cours
+    router.push(`/profdashboard/exercises/${classId}`); // Pour l'instant on garde le route existant, qui pointera vers la classe
+  };
+
+  const handleOpenManageCoursesForClass = (classIdString: string) => {
+    const classIdNum = parseId(classIdString);
+    if (classIdNum > 0) {
+      setSelectedClassIdForCourses(classIdNum);
+      setIsManageCoursesModalOpen(true);
+    } else {
+      toast.error("ID de classe invalide");
+    }
   };
 
   const loadDashboardData = useCallback(async () => {
@@ -291,57 +359,44 @@ export default function ProfessorDashboard() {
 
       console.log('📊 Chargement des données du dashboard pour:', user);
 
-      // 1. Fetch courses (compositions) pour cet enseignant
-      const coursesResponse = await CourseControllerService.getAuthorCourses(user.id);
+      // 1. Fetch classes pour cet enseignant
+      const classesResponse = await CourseClassService.getMyClasses();
 
-      if (coursesResponse.data) {
-        const courses = coursesResponse.data as Course[];
-        console.log(`📚 Cours trouvés: ${courses.length}`);
+      if (classesResponse.data) {
+        const classes = classesResponse.data as CourseClass[];
+        console.log(`📚 Classes trouvées: ${classes.length}`);
 
-        // 2. Calculer les statistiques d'exercices
-        const exercisesData = await calculateExercisesStats(courses);
+        // 2. Calculer les statistiques d'exercices à travers toutes les classes
+        const exercisesData = await calculateExercisesStats(classes);
         setExercisesStats(exercisesData);
 
         // 3. Charger les statistiques pour ProfileCard
         const statsData = await loadManualStats();
         setCoursesStatsForProfile(statsData);
 
-        // 4. Mapper les compositions avec les données réelles
-        const mappedCompositions: Composition[] = courses.map((course: Course) => {
-          const courseIdNum = parseCourseId(course.id);
-          const courseStat = statsData.find((s: CourseStat) => s.courseId === courseIdNum);
-
-          if (!courseStat) {
-            return {
-              id: course.id?.toString() || Math.random().toString(),
-              title: course.title || 'Sans titre',
-              class: course.category || 'Non spécifiée',
-              participants: 0,
-              likes: 0,
-              downloads: 0,
-              status: course.status || 'DRAFT',
-              courseStats: undefined
-            };
-          }
+        // 4. Mapper les "compositions" pour utiliser les classes de cours
+        const mappedCompositions: Composition[] = classes.map((cls: CourseClass) => {
 
           let totalLikes = 0;
           let totalDownloads = 0;
+          let totalExercisesClass = 0;
 
-          // Utiliser les valeurs des statistiques
-          totalLikes = Math.round(courseStat.activeStudents * 0.3); // Estimation
-          totalDownloads = Math.round(courseStat.completedStudents * 1.5); // Estimation
+          // Aggréger les stats depuis les cours
+          if (cls.courses) {
+            totalLikes = cls.courses.reduce((sum, c) => sum + (c.status === 'PUBLISHED' ? 10 : 0), 0); // Simulation
+          }
 
           return {
-            id: course.id?.toString() || Math.random().toString(),
-            title: course.title || 'Sans titre',
-            class: course.category || 'Non spécifiée',
-            participants: courseStat.totalEnrolled || 0,
+            id: cls.id?.toString() || Math.random().toString(),
+            title: cls.name || 'Classe Sans titre',
+            class: cls.theme || 'Général',
+            participants: cls.studentCount || 0,
             likes: totalLikes,
             downloads: totalDownloads,
-            status: course.status || 'DRAFT',
+            status: cls.status || 'OPEN',
             courseStats: {
-              totalExercises: courseStat.totalExercises || 0,
-              totalEnrolled: courseStat.totalEnrolled || 0
+              totalExercises: totalExercisesClass,
+              totalEnrolled: cls.studentCount || 0
             }
           };
         });
@@ -349,7 +404,7 @@ export default function ProfessorDashboard() {
         setCompositions(mappedCompositions);
 
       } else {
-        console.log('⚠️ Aucun cours trouvé');
+        console.log('⚠️ Aucune classe trouvée');
         setCompositions([]);
         setCoursesStatsForProfile([]);
       }
@@ -428,6 +483,7 @@ export default function ProfessorDashboard() {
 
   const professor = {
     id: user.email,
+    email: user.email,
     name: displayName,
     city: user.city || 'Non spécifiée',
     university: user.university || 'Non spécifiée',
@@ -470,11 +526,24 @@ export default function ProfessorDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-      {/* Modale de création de cours */}
+      {/* Modale de création de classe de cours */}
       <CreateCourseModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSubmit={handleCreateCourseSubmit}
+      />
+
+      {/* Modale de gestion des cours de la classe */}
+      <ManageClassCoursesModal
+        isOpen={isManageCoursesModalOpen}
+        onClose={() => {
+          setIsManageCoursesModalOpen(false);
+          setSelectedClassIdForCourses(null);
+        }}
+        classId={selectedClassIdForCourses}
+        onCourseUpdated={() => {
+          loadDashboardData();
+        }}
       />
 
       {/* Modale de sélection de cours */}
@@ -483,7 +552,7 @@ export default function ProfessorDashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-purple-700 dark:text-purple-400">
-                Sélectionnez un cours
+                Sélectionnez une Classe
               </h3>
               <button
                 onClick={() => setIsCourseSelectionModalOpen(false)}
@@ -494,7 +563,7 @@ export default function ProfessorDashboard() {
             </div>
 
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Choisissez le cours pour lequel vous souhaitez créer un exercice :
+              Choisissez la classe pour laquelle vous souhaitez gérer les exercices :
             </p>
 
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -517,7 +586,7 @@ export default function ProfessorDashboard() {
                         {course.participants} participants
                       </span>
                     </div>
-                    {course.courseStats?.totalExercises && (
+                    {course.courseStats?.totalExercises !== undefined && (
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {course.courseStats.totalExercises} exercice(s)
                       </div>
@@ -552,11 +621,18 @@ export default function ProfessorDashboard() {
           </div>
           <div id="quick-actions" className="flex items-center gap-4 flex-wrap">
             <button
+              onClick={() => router.push('/courses/create')}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+            >
+              <BookOpen size={20} />
+              Nouveau Cours
+            </button>
+            <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
             >
               <Plus size={20} />
-              Nouveau Cours
+              Nouvelle Classe
             </button>
             <button
               onClick={() => router.push('/teacher/inscriptions')}
@@ -577,7 +653,7 @@ export default function ProfessorDashboard() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
           {[
             { label: 'Étudiants Totaux', value: professor.totalStudents, icon: LucideUsers, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-            { label: 'Cours Actifs', value: professor.publications, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+            { label: 'Classes Actives', value: professor.publications, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
             { label: 'À Corriger', value: professor.pendingSubmissions, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
             { label: 'Score Global', value: `${professor.averageProgress}%`, icon: Activity, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
           ].map((stat, idx) => (
@@ -596,7 +672,6 @@ export default function ProfessorDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 pb-8 space-y-8">
-        {/* Profile Card */}
         {/* Profile Card */}
         <ProfileCard
           professor={professor}
@@ -717,16 +792,17 @@ export default function ProfessorDashboard() {
           </div>
         </div>
 
-        {/* Compositions Card */}
         {compositions.length > 0 ? (
           <CompositionsCard
             compositions={compositions}
             onDelete={handleDeleteCourse}
             onCreateClick={() => setIsModalOpen(true)}
-            onManageExercises={(courseId) => router.push(`/profdashboard/exercises/${courseId}`)}
+            onManageExercises={(classId) => router.push(`/profdashboard/exercises/${classId}`)}
+            onManageClassCourses={handleOpenManageCoursesForClass}
+            onChangeStatus={handleChangeClassStatus}
             getCourseStats={(id) => {
-              const courseId = parseCourseId(id);
-              const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === courseId);
+              const classId = parseId(id);
+              const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === classId);
               return stats ? {
                 totalExercises: stats.totalExercises || 0,
                 totalEnrolled: stats.totalEnrolled || 0
@@ -736,19 +812,19 @@ export default function ProfessorDashboard() {
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Mes Compositions
+              Mes Classes de Cours
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               {coursesStatsForProfile.length > 0
-                ? `Vous avez ${coursesStatsForProfile.length} cours mais aucun étudiant n'est encore inscrit.`
-                : "Vous n'avez pas encore créé de cours. Créez votre premier cours pour commencer à suivre les statistiques de vos étudiants."}
+                ? `Vous avez ${coursesStatsForProfile.length} classes mais aucun étudiant n'y est encore inscrit.`
+                : "Vous n'avez pas encore de classe de cours. Créez votre première classe."}
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
             >
               <Plus size={20} />
-              Créer un cours
+              Créer une classe
             </button>
           </div>
         )}

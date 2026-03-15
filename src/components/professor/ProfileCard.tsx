@@ -41,6 +41,10 @@ export interface CourseStat {
   averageProgress: number;
   completedStudents: number;
   totalExercises: number;
+  completionRate?: number;
+  pendingEnrollments?: number;
+  acceptedEnrollments?: number;
+  rejectedEnrollments?: number;
 }
 
 interface ProfileCardProps {
@@ -397,6 +401,14 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                   <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.certification || professor.certification || 'Non Spécifié'}</p>
                 )}
               </div>
+
+              {/* Adresse e-mail */}
+              {professor.email && (
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-100 dark:border-indigo-900/30">
+                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold mb-1">Adresse e-mail</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white break-all">{professor.email}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -682,6 +694,29 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                         </p>
                       </div>
                     </div>
+
+                    {/* Enrollment Breakdown */}
+                    {(courseItem.pendingEnrollments !== undefined ||
+                      courseItem.acceptedEnrollments !== undefined ||
+                      courseItem.rejectedEnrollments !== undefined) && (
+                        <div className="mt-2 rounded-xl bg-white dark:bg-gray-700 p-3 border border-gray-100 dark:border-gray-600">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">Inscriptions</p>
+                          <div className="grid grid-cols-3 gap-2 text-xs text-center">
+                            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg py-2">
+                              <p className="font-bold text-amber-700 dark:text-amber-400 text-lg">{courseItem.pendingEnrollments ?? 0}</p>
+                              <p className="text-amber-600 dark:text-amber-500">En attente</p>
+                            </div>
+                            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg py-2">
+                              <p className="font-bold text-green-700 dark:text-green-400 text-lg">{courseItem.acceptedEnrollments ?? 0}</p>
+                              <p className="text-green-600 dark:text-green-500">Acceptés</p>
+                            </div>
+                            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg py-2">
+                              <p className="font-bold text-red-700 dark:text-red-400 text-lg">{courseItem.rejectedEnrollments ?? 0}</p>
+                              <p className="text-red-600 dark:text-red-500">Rejetés</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                     <button
                       onClick={() => handleViewCourseDetails(courseItem.courseId)}

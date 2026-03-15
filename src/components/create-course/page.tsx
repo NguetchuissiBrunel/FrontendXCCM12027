@@ -165,7 +165,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
           >
             <X size={24} />
           </button>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Création d'un Cours</h1>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Création d'une Classe</h1>
           <p className="text-purple-100 mt-2 text-sm font-medium opacity-90">Partagez votre savoir avec vos étudiants</p>
         </div>
 
@@ -176,7 +176,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                Titre du cours
+                Titre de la classe
               </label>
               <input
                 type="text"
@@ -188,7 +188,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Catégorie</label>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Thème principal</label>
               <div className="relative group">
                 <select
                   value={formData.category}
@@ -210,7 +210,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
           {formData.category === 'custom' && (
             <input
               type="text"
-              placeholder="Saisissez votre catégorie personnalisée"
+              placeholder="Saisissez votre thème personnalisé"
               className="w-full bg-transparent text-gray-900 dark:text-gray-100 border-b-2 border-purple-400 p-2 outline-none animate-in slide-in-from-top-2"
               onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
             />
@@ -296,7 +296,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
             onClick={handleSubmit}
             className="order-1 sm:order-2 bg-purple-600 hover:bg-purple-700 text-white px-12 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-purple-200 dark:shadow-none transform hover:-translate-y-1 active:scale-95"
           >
-            Créer le cours
+            Créer la classe
           </button>
         </div>
       </div>

@@ -2,7 +2,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import { BookOpen, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,8 +82,8 @@ export default function StudentCourses() {
               ...enrollment,
               status: enrollment.status
             }
-          } as EnrichedCourse;
-        });
+          } as unknown as EnrichedCourse;
+        }).filter(Boolean);
 
         setEnrolledCourses(enriched);
       } catch (err: any) {
@@ -158,15 +157,8 @@ export default function StudentCourses() {
   const userLevel = user.specialization || (user as any).level || 'Étudiant';
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-      <Sidebar
-        userRole="student"
-        userName={displayName}
-        userLevel={userLevel}
-        activeTab="cours"
-      />
-
-      <main className="flex-1 p-8">
+    <>
+      <div className="flex-1 p-8">
         <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-8">Mes Cours</h1>
 
         {enrolledCourses.length > 0 ? (
@@ -248,8 +240,8 @@ export default function StudentCourses() {
                     <button
                       disabled={course.enrollment?.status !== 'APPROVED'}
                       className={`w-full py-2 rounded-lg font-semibold transition-colors text-sm ${course.enrollment?.status === 'APPROVED'
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         }`}
                     >
                       {course.enrollment?.status === 'APPROVED' ? 'Voir le cours' : 'En attente'}
@@ -291,7 +283,7 @@ export default function StudentCourses() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

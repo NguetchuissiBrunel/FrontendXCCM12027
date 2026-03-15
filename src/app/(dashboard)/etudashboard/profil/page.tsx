@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import Sidebar from '@/components/Sidebar';
 import { Award, BookOpen, Clock } from 'lucide-react';
 import { OpenAPI } from '@/lib/core/OpenAPI';
 
@@ -153,15 +152,8 @@ export default function StudentProfile() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-      <Sidebar
-        userRole="student"
-        userName={displayName}
-        userLevel={userLevel}
-        activeTab="profil"
-      />
-
-      <main className="flex-1 p-8">
+    <>
+      <div className="flex-1 p-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">Mon Profil Étudiant</h1>
           {!isEditing ? (
@@ -487,7 +479,7 @@ export default function StudentProfile() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

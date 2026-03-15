@@ -28,7 +28,7 @@ import type { User } from '@/lib/models/User'; // Ajustez le chemin selon votre 
 export default function SubmissionDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const submissionId = parseInt(params.submissionId as string);
+  const submissionId = params?.submissionId ? parseInt(params.submissionId as string) : NaN;
 
   const [user, setUser] = useState<User | null>(null);
 

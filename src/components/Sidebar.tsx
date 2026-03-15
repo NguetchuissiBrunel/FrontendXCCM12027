@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, User, BookOpen, Calendar } from 'lucide-react';
+import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText } from 'lucide-react';
 
 interface SidebarProps {
   userRole: 'student' | 'professor';
@@ -34,6 +34,13 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
     { id: 'profil', label: 'Mon Profil', icon: User, href: '/etudashboard/profil' },
     { id: 'cours', label: 'Mes Cours', icon: BookOpen, href: '/etudashboard/cours' },
     { id: 'echeances', label: 'Échéances', icon: Calendar, href: '/etudashboard/echeances' },
+  ];
+
+  const professorMenuItems = [
+    { id: 'accueil', label: 'Accueil', icon: Home, href: '/profdashboard' },
+    { id: 'inscriptions', label: 'Inscriptions', icon: LucideUsers, href: '/teacher/inscriptions' },
+    { id: 'exercices', label: 'Mes Exercices', icon: FileText, href: '/profdashboard/exercises' },
+    { id: 'compositions', label: 'Mes Compositions', icon: BookOpen, href: '/profdashboard' },
   ];
 
   return (
@@ -71,31 +78,29 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
       </div>
 
       {/* Menu Principal */}
-      {userRole === 'student' && (
-        <nav>
-          <p className="text-xs uppercase text-gray-500 dark:text-gray-400 mb-4 font-semibold">Menu Principal</p>
-          <ul className="space-y-2">
-            {studentMenuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <li key={item.id}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                      ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-lg'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'
-                      }`}
-                  >
-                    <Icon size={20} />
-                    <span>{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      )}
+      <nav>
+        <p className="text-xs uppercase text-gray-500 dark:text-gray-400 mb-4 font-semibold">Menu Principal</p>
+        <ul className="space-y-2">
+          {(userRole === 'student' ? studentMenuItems : professorMenuItems).map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <li key={item.id}>
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                    ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  <Icon size={20} />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </aside>
   );
 }

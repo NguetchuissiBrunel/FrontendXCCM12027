@@ -1,4 +1,4 @@
-import { CourseData, Section, Chapter, Paragraph, QuestionData } from '@/types/course';
+import { CourseData, Section, Chapter, Paragraph, QuestionData, SubItem } from '@/types/course';
 import { extractTOC } from './extractTOC';
 import { TableOfContentsItem } from '@/types/editor.types';
 
@@ -114,68 +114,142 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
         items.forEach(item => {
             if (item.type === 'section') {
                 const section: Section = {
+                    id: item.id,
                     title: item.title || "Section sans titre",
                     introduction: item.attrs?.introduction || "",
                     chapters: [],
                     paragraphs: [],
-                    exerciseContent: item.children.find(c => c.type === 'exercise')?.content || null,
-                    exercises: item.children.filter(c => c.type === 'exercise').map(c => ({
-                        title: c.title || "Exercice",
-                        content: c.content,
-                        questions: c.attrs?.questions,
-                        id: c.id
-                    }))
+                    exercises: [],
+                    children: [],
+                    subItems: []
                 };
 
                 item.children.forEach(child => {
                     if (child.type === 'chapter') {
                         const chapter: Chapter = {
+                            id: child.id,
                             title: child.title || "Chapitre sans titre",
                             introduction: child.attrs?.introduction || "",
                             paragraphs: [],
-                            exerciseContent: child.children.find(c => c.type === 'exercise')?.content || null,
-                            exercises: child.children.filter(c => c.type === 'exercise').map(c => ({
-                                title: c.title || "Exercice",
-                                content: c.content,
-                                questions: c.attrs?.questions,
-                                id: c.id
-                            }))
+                            exercises: [],
+                            children: [],
+                            subItems: []
                         };
 
                         child.children.forEach(grandChild => {
                             if (grandChild.type === 'paragraph') {
-                                chapter.paragraphs.push({
+                                const paragraph: Paragraph = {
+                                    id: grandChild.id,
                                     title: grandChild.title || "Paragraphe sans titre",
                                     introduction: grandChild.attrs?.introduction || "",
                                     content: filterSpecialNodes(grandChild.content || []),
-                                    notions: (grandChild.children || []).filter(c => c.type === 'notion').map(c => extractTextFromContent(c.content)) || [],
-                                    exerciseContent: grandChild.children.find(c => c.type === 'exercise')?.content || null,
-                                    exercises: (grandChild.children || []).filter(c => c.type === 'exercise').map(c => ({
-                                        title: c.title || "Exercice",
-                                        content: c.content,
-                                        questions: c.attrs?.questions,
-                                        id: c.id
-                                    }))
+                                    notions: [],
+                                    exercises: [],
+                                    children: [],
+                                    subItems: []
+                                };
+
+                                (grandChild.children || []).forEach(cc => {
+                                    if (cc.type === 'notion') {
+                                        const notionText = extractTextFromContent(cc.content);
+                                        paragraph.notions.push(notionText);
+                                        paragraph.subItems!.push({ type: 'notion', data: notionText });
+                                    } else if (cc.type === 'exercise') {
+                                        const exData = {
+                                            title: cc.title || "Exercice",
+                                            content: cc.content,
+                                            questions: cc.attrs?.questions,
+                                            id: cc.id
+                                        };
+                                        paragraph.exercises?.push(exData);
+                                        paragraph.subItems!.push({ type: 'exercise', data: exData });
+                                    }
                                 });
+
+                                chapter.paragraphs.push(paragraph);
+                                chapter.children?.push({ type: 'paragraph', data: paragraph });
+                            } else if (grandChild.type === 'exercise') {
+                                const exData = {
+                                    title: grandChild.title || "Exercice",
+                                    content: grandChild.content,
+                                    questions: grandChild.attrs?.questions,
+                                    id: grandChild.id
+                                };
+                                chapter.exercises?.push(exData);
+                                chapter.subItems!.push({ type: 'exercise', data: exData });
                             }
                         });
+                        chapter.subItems = (child.children || []).map(gc => {
+                            if (gc.type === 'paragraph') {
+                                const p = chapter.paragraphs.find(para => para.id === gc.id);
+                                return p ? { type: 'paragraph' as const, data: p } : null;
+                            } else if (gc.type === 'exercise') {
+                                const e = chapter.exercises?.find(ex => ex.id === gc.id);
+                                return e ? { type: 'exercise' as const, data: e } : null;
+                            }
+                            return null;
+                        }).filter(Boolean) as SubItem[];
+
                         section.chapters!.push(chapter);
+                        section.children?.push({ type: 'chapter', data: chapter });
                     } else if (child.type === 'paragraph') {
-                        section.paragraphs!.push({
+                        const paragraph: Paragraph = {
+                            id: child.id,
                             title: child.title || "Paragraphe sans titre",
                             introduction: child.attrs?.introduction || "",
                             content: filterSpecialNodes(child.content || []),
-                            notions: (child.children || []).filter(c => c.type === 'notion').map(c => extractTextFromContent(c.content)) || [],
-                            exerciseContent: child.children.find(c => c.type === 'exercise')?.content || null,
-                            exercises: (child.children || []).filter(c => c.type === 'exercise').map(c => ({
-                                title: c.title || "Exercice",
-                                content: c.content,
-                                questions: c.attrs?.questions,
-                                id: c.id
-                            }))
+                            notions: [],
+                            exercises: [],
+                            children: [],
+                            subItems: []
+                        };
+
+                        (child.children || []).forEach(cc => {
+                            if (cc.type === 'notion') {
+                                const notionText = extractTextFromContent(cc.content);
+                                paragraph.notions.push(notionText);
+                                paragraph.subItems!.push({ type: 'notion', data: notionText });
+                            } else if (cc.type === 'exercise') {
+                                const exData = {
+                                    title: cc.title || "Exercice",
+                                    content: cc.content,
+                                    questions: cc.attrs?.questions,
+                                    id: cc.id
+                                };
+                                paragraph.exercises?.push(exData);
+                                paragraph.subItems!.push({ type: 'exercise', data: exData });
+                            }
                         });
+
+                        section.paragraphs!.push(paragraph);
+                        section.children?.push({ type: 'paragraph', data: paragraph });
+                    } else if (child.type === 'exercise') {
+                        const exData = {
+                            title: child.title || "Exercice",
+                            content: child.content,
+                            questions: child.attrs?.questions,
+                            id: child.id
+                        };
+                        section.exercises?.push(exData);
+                        section.subItems!.push({ type: 'exercise', data: exData });
                     }
                 });
+                
+                // Final order for Section subItems
+                section.subItems = (item.children || []).map(child => {
+                    if (child.type === 'chapter') {
+                        const c = section.chapters?.find(ch => ch.id === child.id);
+                        return c ? { type: 'chapter' as const, data: c } : null;
+                    } else if (child.type === 'paragraph') {
+                        const p = section.paragraphs?.find(pa => pa.id === child.id);
+                        return p ? { type: 'paragraph' as const, data: p } : null;
+                    } else if (child.type === 'exercise') {
+                        const e = section.exercises?.find(ex => ex.id === child.id);
+                        return e ? { type: 'exercise' as const, data: e } : null;
+                    }
+                    return null;
+                }).filter(Boolean) as SubItem[];
+
                 sections.push(section);
             }
         });

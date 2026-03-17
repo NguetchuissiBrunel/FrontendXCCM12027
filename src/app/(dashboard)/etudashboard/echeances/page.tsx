@@ -65,26 +65,17 @@ export default function StudentDeadlines() {
   const userLevel = user.specialization || user.level || 'Étudiant';
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-15">
-      <Sidebar
-        userRole="student"
-        userName={displayName}
-        userLevel={userLevel}
-        activeTab="echeances"
-      />
-
-      <main className="flex-1 p-8">
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-2">Échéances</h1>
-            <p className="text-gray-500 dark:text-gray-400">Gérez votre emploi du temps et vos deadlines personnelles</p>
-          </div>
+    <div className="space-y-8">
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-2">Échéances</h1>
+          <p className="text-gray-500 dark:text-gray-400">Gérez votre emploi du temps et vos deadlines personnelles</p>
         </div>
+      </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl shadow-purple-100/50 dark:shadow-none border border-purple-100 dark:border-gray-700">
-          <Calendar userId={user.id} />
-        </div>
-      </main>
+      <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl shadow-purple-100/50 dark:shadow-none border border-purple-100 dark:border-gray-700">
+        <Calendar userId={user.id} />
+      </div>
     </div>
   );
 }

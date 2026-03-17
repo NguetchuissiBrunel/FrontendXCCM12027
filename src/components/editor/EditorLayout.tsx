@@ -188,7 +188,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   }, [searchParams]);
 
   // Extract TOC from editor in real-time
-  const tocItems = useTOC(editorInstance, 300);
+  const [tocItems, refreshTOC] = useTOC(editorInstance, 300);
 
   // Load exercises when course changes
   useEffect(() => {
@@ -781,6 +781,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               <PdfPreview
                 content={editorInstance?.getJSON()}
                 title={courseTitle}
+                onElementClick={handleTOCItemClick}
               />
             )}
 
@@ -931,6 +932,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(category) ? "" : category);
                     setCourseDescription(description);
                     setCourseImage(photoUrl);
+                    // Force refresh TOC after content change
+                    setTimeout(() => refreshTOC(), 100);
                   }
                 }}
               />

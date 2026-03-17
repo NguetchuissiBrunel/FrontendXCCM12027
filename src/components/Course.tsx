@@ -17,6 +17,7 @@ import Link from 'next/link';
 import CourseContentRenderer from './CourseContentRenderer';
 import confetti from 'canvas-confetti';
 import TeacherLink from '@/components/TeacherLink';
+import { useEnrollment } from '@/hooks/useEnrollment';
 
 
 interface CourseProps {
@@ -53,6 +54,87 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   });
   const [showOrientationSelector, setShowOrientationSelector] = useState<boolean>(false);
   const { startLoading, stopLoading } = useLoading();
+  const { isEnrolled, loading: enrollmentLoading, updateProgress: updateCourseProgress } = useEnrollment(courseData.id);
+
+  // Calculate total steps and current progress percentage
+  const getProgressPercentage = () => {
+    if (!courseData?.sections?.length) return 0;
+
+    const steps: { s: number, c: number, p: number, ex: boolean, exL: 'section'|'chapter'|'paragraph'|null, comp: boolean }[] = [];
+    
+    // Flatten the course structure into sequential steps
+    courseData.sections.forEach((s, sIdx) => {
+      // Step: Section Header
+      steps.push({ s: sIdx, c: 0, p: 0, ex: false, exL: null, comp: false });
+
+      const chapters = s.chapters || [];
+      if (chapters.length > 0) {
+        chapters.forEach((c, cIdx) => {
+          // Step: Chapter Header
+          steps.push({ s: sIdx, c: cIdx, p: 0, ex: false, exL: null, comp: false });
+          
+          const paragraphs = c.paragraphs || [];
+          paragraphs.forEach((p, pIdx) => {
+            // Step: Paragraph Content
+            steps.push({ s: sIdx, c: cIdx, p: pIdx, ex: false, exL: null, comp: false });
+            
+            // Step: Paragraph Exercise
+            if (p.exercises?.length || p.exercise || p.exerciseContent) {
+              steps.push({ s: sIdx, c: cIdx, p: pIdx, ex: true, exL: 'paragraph', comp: false });
+            }
+          });
+
+          // Step: Chapter Exercise
+          if (c.exercises?.length || c.exercise || c.exerciseContent) {
+            steps.push({ s: sIdx, c: cIdx, p: (c.paragraphs?.length || 1) - 1, ex: true, exL: 'chapter', comp: false });
+          }
+        });
+      } else if (s.paragraphs?.length) {
+          s.paragraphs.forEach((p, pIdx) => {
+              steps.push({ s: sIdx, c: 0, p: pIdx, ex: false, exL: null, comp: false });
+              if (p.exercises?.length || p.exercise || p.exerciseContent) {
+                  steps.push({ s: sIdx, c: 0, p: pIdx, ex: true, exL: 'paragraph', comp: false });
+              }
+          });
+      }
+
+      // Step: Section Exercise
+      if (s.exercises?.length || s.exercise || s.exerciseContent) {
+        steps.push({ s: sIdx, c: Math.max(0, (s.chapters?.length || 1) - 1), p: 0, ex: true, exL: 'section', comp: false });
+      }
+    });
+
+    // Step: Conclusion
+    steps.push({ s: courseData.sections.length - 1, c: 0, p: 0, ex: false, exL: null, comp: true });
+
+    const totalSteps = steps.length;
+    if (totalSteps <= 1) return courseCompleted ? 100 : 0;
+
+    // Find current step index
+    const currentStepIdx = steps.findIndex(step => 
+      step.comp === courseCompleted &&
+      (courseCompleted || (
+        step.s === currentSectionIndex &&
+        step.c === currentChapterIndex &&
+        step.p === currentParagraphIndex &&
+        step.ex === showExercise &&
+        step.exL === currentExerciseLevel
+      ))
+    );
+
+    if (currentStepIdx === -1) return 0;
+    
+    // Calculate percentage (0 to 100)
+    return Math.round((currentStepIdx / (totalSteps - 1)) * 100);
+  };
+
+  // Effect to update progress in backend
+  useEffect(() => {
+    if (isEnrolled && !enrollmentLoading) {
+      const percentage = getProgressPercentage();
+      updateCourseProgress(percentage);
+    }
+  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, showExercise, currentExerciseLevel, courseCompleted, isEnrolled, enrollmentLoading]);
 
   useEffect(() => {
     if (pdfGenerating || docxGenerating || isLiking || isCertifying) {

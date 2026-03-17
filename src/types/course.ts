@@ -11,7 +11,20 @@ export interface QuestionData {
   options: string[];
 }
 
+export type ContentItem = 
+  | { type: 'chapter'; data: Chapter }
+  | { type: 'paragraph'; data: Paragraph }
+  | { type: 'notion'; data: string }
+  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string } };
+
+export type SubItem = 
+  | { type: 'chapter'; data: Chapter }
+  | { type: 'paragraph'; data: Paragraph }
+  | { type: 'notion'; data: string }
+  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string } };
+
 export interface Paragraph {
+  id?: string;
   title: string;
   content: any;
   notions: string[];
@@ -23,9 +36,12 @@ export interface Paragraph {
   };
   exerciseContent?: any;
   exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
+  children?: ContentItem[];
+  subItems?: SubItem[];
 }
 
 export interface Chapter {
+  id?: string;
   title: string;
   paragraphs: Paragraph[];
   introduction?: string;
@@ -36,9 +52,12 @@ export interface Chapter {
   };
   exerciseContent?: any;
   exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
+  children?: ContentItem[];
+  subItems?: SubItem[];
 }
 
 export interface Section {
+  id?: string;
   title: string;
   chapters?: Chapter[];
   paragraphs?: Paragraph[];
@@ -50,6 +69,8 @@ export interface Section {
   };
   exerciseContent?: any;
   exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
+  children?: ContentItem[];
+  subItems?: SubItem[];
 }
 
 export interface CourseData {

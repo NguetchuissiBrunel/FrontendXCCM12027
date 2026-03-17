@@ -11,6 +11,7 @@ export const courses = [
       "name": "Jean Martin",
       "image": "/images/blog/author-03.png"
     },
+    "introduction": "Ce cours offre une introduction approfondie aux concepts fondamentaux de la théorie des langages formels et aux techniques de construction des compilateurs. Vous explorerez les liens entre les grammaires, les automates et l'analyse syntaxique.",
     "conclusion": "Félicitations pour avoir complété ce cours d'introduction à la théorie des langages et à la compilation! Vous avez acquis des connaissances fondamentales qui vous seront utiles pour comprendre les concepts avancés en informatique théorique.",
     "learningObjectives": [
       "Comprendre les concepts de base de la théorie des langages",
@@ -21,12 +22,40 @@ export const courses = [
     "sections": [
       {
         "title": "Bases de la Théorie des Langages",
+        "introduction": "Cette section pose les jalons fondamentaux pour comprendre comment les machines interprètent les langages.",
+        "exercise": {
+              "title": "Quiz de section : Fondamentaux",
+              "type": "MULTIPLE_CHOICE",
+              "questions": [
+                            {
+                                          "text": "Laquelle de ces notions est fondamentale en théorie des langages ?",
+                                          "options": [
+                                                        "Alphabet",
+                                                        "Grammaire",
+                                                        "Automate",
+                                                        "Toutes les réponses"
+                                          ]
+                            }
+              ]
+},
         "chapters": [
           {
             "title": "Introduction à la Théorie des Langages",
+        "introduction": "Nous commençons par définir ce qu'est un langage formel et son rôle dans l'informatique moderne.",
+        "exercise": {
+              "title": "Auto-évaluation du chapitre",
+              "type": "TEXT",
+              "questions": [
+                            {
+                                          "text": "Décrivez brièvement le lien entre un compilateur et la théorie des langages.",
+                                          "options": []
+                            }
+              ]
+},
             "paragraphs": [
               {
                 "title": "Qu'est-ce que la Théorie des Langages?",
+        "introduction": "Ce paragraphe explore l'origine et la définition académique de la discipline.",
                 "content": "La théorie des langages est une branche de l'informatique théorique qui étudie les langages formels et leurs propriétés. Elle est essentielle pour la conception de compilateurs, d'interpréteurs et d'autres outils de traitement de langages.",
                 "notions": [
                   "Les langages formels sont des ensembles de chaînes de symboles",
@@ -36,25 +65,13 @@ export const courses = [
                 "exercise": {
                   
 
-                    "title": "Exercice d'application",
+                    "title": "Exercice de réflexion",
 
-                    "type": "MULTIPLE_CHOICE","questions": [
+                    "type": "TEXT","questions": [
                     {
-                      "text": "La théorie des langages est principalement utilisée pour :",
-                      "options": [
-                        "Créer des interfaces utilisateur",
-                        "Définir la syntaxe des langages de programmation",
-                        "Gérer les bases de données",
-                        "Développer des applications mobiles"
-                      ],},
-                    {
-                      "text": "Les langages formels sont des ensembles de :",
-                      "options": [
-                        "Nombres",
-                        "Chaînes de symboles",
-                        "Objets",
-                        "Fonctions"
-                      ],}
+                      "text": "Selon vous, quels seraient les défis majeurs si la théorie des langages n'existait pas pour la conception de compilateurs modernes ?",
+                      "options": []
+                    }
                   ]
                 }
               },
@@ -69,25 +86,14 @@ export const courses = [
                 "exercise": {
                   
 
-                    "title": "Exercice d'application",
+                    "title": "Défi de codage : Filtrage d'alphabet",
 
-                    "type": "MULTIPLE_CHOICE","questions": [
+                    "type": "CODE",
+                    "questions": [
                     {
-                      "text": "Qu'est-ce qu'un alphabet en théorie des langages ?",
-                      "options": [
-                        "Un ensemble infini de symboles",
-                        "Un ensemble fini de symboles",
-                        "Un ensemble de nombres",
-                        "Un ensemble de fonctions"
-                      ],},
-                    {
-                      "text": "Un langage est un ensemble de :",
-                      "options": [
-                        "Nombres",
-                        "Chaînes de symboles",
-                        "Objets",
-                        "Fonctions"
-                      ],}
+                      "text": "Écrivez une fonction en JavaScript `filterAlphabet(text, alphabet)` qui prend une chaîne de caractères et un tableau de symboles (l'alphabet), et retourne uniquement les caractères de la chaîne qui appartiennent à cet alphabet.",
+                      "options": []
+                    }
                   ]
                 }
               }
@@ -223,6 +229,7 @@ export const courses = [
       "name": "Marie Lambert",
       "image": "/images/blog/author-01.png"
     },
+    "introduction": "Explorez les dernières avancées de l'intelligence artificielle cognitive. Ce cours vous plonge dans les modèles d'apprentissage qui cherchent à émuler le raisonnement et la perception humaine pour résoudre des problèmes complexes.",
     "conclusion": "Félicitations pour avoir complété ce cours sur les frontières émergentes de l'IA cognitive ! Vous avez exploré des concepts avancés qui repoussent les limites de l'intelligence artificielle et ouvrent de nouvelles perspectives pour la recherche et l'innovation.",
     "learningObjectives": [
       "Comprendre les fondements de l'IA cognitive",
@@ -233,12 +240,40 @@ export const courses = [
     "sections": [
       {
         "title": "Fondements de l'IA Cognitive",
+        "exercise": {
+              "title": "Quiz sur les fondements de l'IA",
+              "type": "MULTIPLE_CHOICE",
+              "questions": [
+                            {
+                                          "text": "L'IA cognitive se distingue de l'IA classique par :",
+                                          "options": [
+                                                        "L'imitation du raisonnement humain",
+                                                        "La vitesse de calcul",
+                                                        "L'utilisation exclusive de règles",
+                                                        "Le stockage de données"
+                                          ]
+                            }
+              ]
+},
+        "introduction": "Cette section explore les principes fondamentaux qui sous-tendent l'IA cognitive, notamment les modèles mentaux et les architectures de raisonnement.",
         "chapters": [
           {
             "title": "Introduction à l'IA Cognitive",
+        "introduction": "Comprendre les origines et les buts de l'IA cognitive est essentiel pour appréhender ses applications.",
+        "exercise": {
+              "title": "Réflexion sur l'IA Cognitive",
+              "type": "TEXT",
+              "questions": [
+                            {
+                                          "text": "Quelles sont les implications éthiques majeures d'une machine imitant le raisonnement humain ?",
+                                          "options": []
+                            }
+              ]
+},
             "paragraphs": [
               {
                 "title": "Qu'est-ce que l'IA Cognitive ?",
+        "introduction": "Définition précise du domaine de l'IA cognitive.",
                 "content": "L'IA cognitive est une branche de l'intelligence artificielle qui vise à imiter les processus de pensée humains, tels que l'apprentissage, la perception, la prise de décision et le raisonnement. Elle combine des techniques d'apprentissage automatique, de traitement du langage naturel et de neurosciences computationnelles.",
                 "notions": [
                   "L'IA cognitive s'inspire du fonctionnement du cerveau humain",
@@ -380,6 +415,7 @@ export const courses = [
       },
       {
         "title": "Défis et Applications de l'IA Cognitive",
+        "introduction": "Découvrez comment l'IA cognitive est appliquée dans le monde réel et les défis éthiques majeurs auxquels elle est confrontée.",
         "chapters": [
           {
             "title": "Défis Éthiques et Sociaux",
@@ -473,6 +509,7 @@ export const courses = [
       "name": "Dr. John Smith",
       "image": "/images/blog/author-02.png"
     },
+    "introduction": "Ce cours explore le modèle de l'économie circulaire, une alternative durable au modèle linéaire 'extraire-fabriquer-jeter'. Découvrez comment l'innovation peut transformer les déchets en ressources précieuses.",
     "conclusion": "Nous avons vu comment l'économie circulaire peut transformer les industries et réduire l'impact environnemental. En adoptant ces pratiques, les entreprises peuvent non seulement innover, mais aussi contribuer à la durabilité de notre planète.",
     "learningObjectives": [
       "Comprendre les concepts de base de l'économie circulaire",
@@ -484,12 +521,40 @@ export const courses = [
     "sections": [
       {
         "title": "Fondements de l'Économie Circulaire",
+        "exercise": {
+              "title": "Quiz : Vers une économie circulaire",
+              "type": "MULTIPLE_CHOICE",
+              "questions": [
+                            {
+                                          "text": "Le modèle 'extraire-fabriquer-jeter' est appelé :",
+                                          "options": [
+                                                        "Modèle circulaire",
+                                                        "Modèle linéaire",
+                                                        "Modèle durable",
+                                                        "Modèle efficient"
+                                          ]
+                            }
+              ]
+},
+        "introduction": "Cette section détaille les principes de base de l'économie circulaire et son opposition au modèle linéaire traditionnel.",
         "chapters": [
           {
             "title": "Principes de Base",
+        "introduction": "Découverte des piliers qui soutiennent la circularité économique.",
+        "exercise": {
+              "title": "Étude de cas rapide",
+              "type": "TEXT",
+              "questions": [
+                            {
+                                          "text": "Citez un exemple de produit conçu selon l'éco-conception.",
+                                          "options": []
+                            }
+              ]
+},
             "paragraphs": [
               {
                 "title": "Définition et enjeux",
+        "introduction": "Mise en contexte des défis environnementaux actuels.",
                 "content": "L'économie circulaire vise à minimiser les déchets et maximiser l'utilisation des ressources, s'opposant au modèle linéaire traditionnel par des pratiques de réutilisation, recyclage et valorisation.",
                 "notions": [
                   "Modèle linéaire vs circulaire",
@@ -1425,8 +1490,8 @@ export const courses = [
         ]
       }
     ]
-  }
-   {
+  },
+  {
     "id": 13,
     "title": "Marketing Digital : Stratégies pour le 21ème Siècle",
     "category": "Marketing",

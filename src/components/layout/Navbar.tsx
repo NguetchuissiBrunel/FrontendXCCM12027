@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { FaUser, FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
-import { MdHelpOutline } from 'react-icons/md';
+import { FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
+import { MdHelpOutline, MdDashboard } from 'react-icons/md';
 import { clearAuthToken } from '@/utils/authHelpers';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -251,8 +251,8 @@ const Navbar = () => {
                     }
                   `}
                 >
-                  <FaUser className="w-4 h-4" />
-                  <span>Mon Compte</span>
+                  <MdDashboard className="w-4 h-4" />
+                  <span>Mon Espace</span>
                 </button>
 
                 {/* Bouton Déconnexion */}
@@ -398,8 +398,8 @@ const Navbar = () => {
                         }
                       `}
                     >
-                      <FaUser className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                      <span>Mon Compte</span>
+                      <MdDashboard className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                      <span>Mon Espace</span>
                     </button>
 
                     {/* Bouton Déconnexion mobile */}

@@ -1,16 +1,18 @@
 'use client';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { Suspense } from 'react';
 
 interface Props {
     children: React.ReactNode;
     role: 'student' | 'professor';
 }
 
-export default function DashboardSidebarLayout({ children, role }: Props) {
+function SidebarLayoutInner({ children, role }: Props) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { user } = useAuth();
     const [userData, setUserData] = useState<any>(null);
 
@@ -33,11 +35,12 @@ export default function DashboardSidebarLayout({ children, role }: Props) {
             if (pathname.includes('/echeances')) return 'echeances';
             return 'accueil';
         } else {
+            const tab = searchParams.get('tab');
+            if (tab) return tab;
             if (pathname.includes('/inscriptions')) return 'inscriptions';
             if (pathname.includes('/exercises')) return 'exercices';
             if (pathname.includes('/classes')) return 'classes';
             if (pathname.includes('/compositions')) return 'compositions';
-            if (pathname.endsWith('/profdashboard')) return 'accueil';
             return 'accueil';
         }
     };
@@ -57,5 +60,13 @@ export default function DashboardSidebarLayout({ children, role }: Props) {
                 {children}
             </main>
         </div>
+    );
+}
+
+export default function DashboardSidebarLayout(props: Props) {
+    return (
+        <Suspense fallback={<div>Chargement...</div>}>
+            <SidebarLayoutInner {...props} />
+        </Suspense>
     );
 }

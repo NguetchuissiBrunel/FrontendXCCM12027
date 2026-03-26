@@ -37,11 +37,11 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
   ];
 
   const professorMenuItems = [
-    { id: 'accueil', label: 'Accueil', icon: Home, href: '/profdashboard' },
-    { id: 'inscriptions', label: 'Inscriptions', icon: LucideUsers, href: '/profdashboard/inscriptions' },
-    { id: 'classes', label: 'Mes Classes', icon: FolderOpen, href: '/profdashboard/classes' },
-    { id: 'exercices', label: 'Mes Exercices', icon: FileText, href: '/profdashboard/exercises' },
-    { id: 'compositions', label: 'Mes Compositions', icon: BookOpen, href: '/profdashboard/compositions' },
+    { id: 'accueil', label: 'Accueil', icon: Home, href: '/profdashboard?tab=accueil' },
+    { id: 'inscriptions', label: 'Inscriptions', icon: LucideUsers, href: '/profdashboard?tab=inscriptions' },
+    { id: 'classes', label: 'Mes Classes', icon: FolderOpen, href: '/profdashboard?tab=classes' },
+    { id: 'exercices', label: 'Mes Exercices', icon: FileText, href: '/profdashboard?tab=exercices' },
+    { id: 'compositions', label: 'Mes Compositions', icon: BookOpen, href: '/profdashboard?tab=compositions' },
   ];
 
   return (

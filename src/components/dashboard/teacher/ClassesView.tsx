@@ -72,7 +72,7 @@ function parseId(id: number | string | undefined): number {
   return 0;
 }
 
-export default function ProfessorDashboard() {
+export default function ClassesView() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -612,62 +612,60 @@ export default function ProfessorDashboard() {
         </div>
       )}
 
+      {/* En-tête de la page Mes Classes */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-        {/* En-tête de la page Mes Compositions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6 mt-4">
-            <div>
-                <button
-                    onClick={() => router.push('/profdashboard')}
-                    className="flex items-center text-purple-600 dark:text-purple-400 font-medium mb-4 hover:translate-x-[-4px] transition-transform"
-                >
-                    <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Retour au Dashboard
-                </button>
-                <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                    Mes <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">Compositions</span>
-                </h1>
-                <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
-                    Gérez vos contenus pédagogiques et suivez leurs statistiques.
-                </p>
-            </div>
+          <div>
+            <button
+              onClick={() => router.push('/profdashboard?tab=accueil')}
+              className="flex items-center text-purple-600 dark:text-purple-400 font-medium mb-4 hover:translate-x-[-4px] transition-transform"
+            >
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Retour au Dashboard
+            </button>
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Gestion de vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">Classes</span>
+            </h1>
+            <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
+              Consultez et scindez vos cours en créant différentes classes.
+            </p>
+          </div>
         </div>
 
-        {coursesStatsForProfile.length > 0 ? (
+        {compositions.length > 0 ? (
           <CompositionsCard
-            title="Mes Compositions"
-            compositions={coursesStatsForProfile.map((stat) => ({
-              id: stat.courseId.toString(),
-              title: stat.courseTitle,
-              class: stat.courseCategory,
-              participants: stat.totalEnrolled,
-              likes: 12, // Valeur par défaut
-              downloads: 5,
-              status: stat.completionRate && stat.completionRate > 0 ? 'PUBLISHED' : 'DRAFT',
-              courseStats: {
-                totalExercises: stat.totalExercises,
-                totalEnrolled: stat.totalEnrolled
-              }
-            }))}
-            onDelete={() => toast.info("La suppression s'effectue depuis la page de détails ou l'éditeur")}
-            onCreateClick={() => router.push('/courses/create')}
-            onManageExercises={(courseId) => router.push(`/profdashboard/exercises/${courseId}`)}
+            title="Mes Classes de cours"
+            compositions={compositions}
+            onDelete={handleDeleteCourse}
+            onCreateClick={() => setIsModalOpen(true)}
+            onManageExercises={(classId) => router.push(`/profdashboard/exercises/${classId}`)}
+            onManageClassCourses={handleOpenManageCoursesForClass}
+            onChangeStatus={handleChangeClassStatus}
+            getCourseStats={(id) => {
+              const classId = parseId(id);
+              const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === classId);
+              return stats ? {
+                totalExercises: stats.totalExercises || 0,
+                totalEnrolled: stats.totalEnrolled || 0
+              } : undefined;
+            }}
           />
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Mes Compositions
+              Mes Classes de Cours
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Vous n'avez pas encore créé de cours.
+              Vous n'avez pas encore de classe. Créez votre première classe.
             </p>
             <button
-              onClick={() => router.push('/courses/create')}
+              onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
             >
               <Plus size={20} />
-              Créer un cours
+              Créer une classe
             </button>
           </div>
         )}

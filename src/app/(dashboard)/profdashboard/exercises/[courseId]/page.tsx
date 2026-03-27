@@ -23,88 +23,76 @@ import {
   Copy,
   Loader2,
   BookOpen,
-  TrendingUp
+  TrendingUp,
+  Layout
 } from 'lucide-react';
 
 // Import des services
 import { ExerciseService } from '@/lib3/services/ExerciseService';
-import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { CourseClassService } from '@/lib/services/CourseClassService';
 import { Exercise as BaseExercise } from '@/types/exercise';
-
-
 import { useAuth } from '@/contexts/AuthContext';
+
 // Étendre le type Exercise pour inclure 'DRAFT'
-type Exercise = BaseExercise & { status: 'PUBLISHED' | 'DRAFT' | 'CLOSED' | 'ARCHIVED' };
-// Types pour les réponses du service de cours
-interface CourseResponse {
+type Exercise = BaseExercise & { status: 'PUBLISHED' | 'DRAFT' | 'CLOSED' | 'ARCHIVED'; courseId?: number };
+
+interface CourseClass {
   id: number;
-  title: string;
-  description: string;
-  category?: string;
-  authorId: string;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-  viewCount: number;
-  likeCount: number;
-  downloadCount: number;
-  createdAt: string;
-  updatedAt: string;
+  name: string;
+  theme?: string;
+  description?: string;
+  coverImage?: string;
+  status: 'OPEN' | 'CLOSED' | 'ARCHIVED';
+  maxStudents?: number;
+  studentCount?: number;
+  createdAt?: string;
+  courses?: any[]; // On n'a pas besoin du détail complet des cours ici pour l'instant
 }
 
-interface EnrichedCourseResponse extends CourseResponse {
-  studentCount: number;
-  exerciseCount: number;
-  averageRating?: number;
-}
-
-export default function CourseExercisesPage() {
+export default function ClassExercisesPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
 
-  const courseId = params?.courseId ? parseInt(params.courseId as string) : 0;
+  // On garde param.courseId car c'est le nom du dossier dans Next.js, mais contextuellement c'est le classId
+  const classId = params?.courseId ? parseInt(params.courseId as string) : 0;
 
-  // Vérification du courseId
-  if (!courseId) {
+  // Vérification du classId
+  if (!classId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
           <FileText className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-            Cours non trouvé
+            Classe non trouvée
           </h1>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
             L'URL de la page est incorrecte.
           </p>
           <button
-            onClick={() => router.push('/profdashboard/exercises')}
+            onClick={() => router.push('/profdashboard')}
             className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
-            Retour aux exercices
+            Retour au tableau de bord
           </button>
         </div>
       </div>
     );
   }
 
-  const [courseInfo, setCourseInfo] = useState<EnrichedCourseResponse>({
-    id: courseId,
-    title: `Cours #${courseId}`,
+  const [classInfo, setClassInfo] = useState<CourseClass>({
+    id: classId,
+    name: `Classe #${classId}`,
     description: 'Chargement...',
-    category: '',
-    authorId: '',
-    status: 'DRAFT',
-    viewCount: 0,
-    likeCount: 0,
-    downloadCount: 0,
+    theme: '',
+    status: 'OPEN',
     studentCount: 0,
-    exerciseCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    courses: []
   });
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingCourse, setLoadingCourse] = useState(true);
+  const [loadingClass, setLoadingClass] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
@@ -115,34 +103,51 @@ export default function CourseExercisesPage() {
       return;
     }
 
-    loadCourseInfo();
-    loadExercises();
-  }, [courseId, user, router]);
+    loadClassInfo();
+  }, [classId, user, router]);
 
-  const loadCourseInfo = async () => {
+  const loadClassInfo = async () => {
     try {
-      setLoadingCourse(true);
-      const response = await CourseControllerService.getEnrichedCourse(courseId);
+      setLoadingClass(true);
+      const response = await CourseClassService.getClassById(classId);
 
-      if (response.data) {
-        const courseData = response.data as EnrichedCourseResponse;
-        setCourseInfo(courseData);
+      if (response && response.data) {
+        const classData = response.data as CourseClass;
+        setClassInfo(classData);
+
+        // Charger les exercices de tous les cours de la classe
+        if (classData.courses && classData.courses.length > 0) {
+          await loadAllExercises(classData.courses);
+        } else {
+          setExercises([]);
+          setLoading(false);
+        }
       } else {
-        toast.error('Impossible de charger les informations du cours');
+        toast.error('Impossible de charger les informations de la classe');
       }
     } catch (error: any) {
-      console.error('Erreur chargement infos cours:', error);
-      toast.error(error.message || 'Impossible de charger les informations du cours');
+      console.error('Erreur chargement infos classe:', error);
+      toast.error(error.message || 'Impossible de charger les informations de la classe');
     } finally {
-      setLoadingCourse(false);
+      setLoadingClass(false);
     }
   };
 
-  const loadExercises = async () => {
+  const loadAllExercises = async (courses: any[]) => {
     try {
       setLoading(true);
-      const exercisesData = await ExerciseService.getExercisesForCourse(courseId);
-      setExercises(exercisesData || []);
+      let allExercises: Exercise[] = [];
+
+      for (const course of courses) {
+        const exercisesData = await ExerciseService.getExercisesForCourse(course.id);
+        if (exercisesData && exercisesData.length > 0) {
+          // Ajouter l'ID du cours pour pouvoir l'utiliser dans les actions futures
+          const exercisesWithCourse = exercisesData.map((e: any) => ({ ...e, courseId: course.id }));
+          allExercises = [...allExercises, ...exercisesWithCourse];
+        }
+      }
+
+      setExercises(allExercises);
     } catch (error: any) {
       console.error('Erreur chargement exercices:', error);
       toast.error(error.message || 'Impossible de charger les exercices');
@@ -161,7 +166,7 @@ export default function CourseExercisesPage() {
       const success = await ExerciseService.deleteExercise(exerciseId);
       if (success) {
         toast.success('✅ Exercice supprimé avec succès');
-        loadExercises(); // Recharger la liste
+        loadClassInfo(); // Recharger la liste
       } else {
         toast.error('❌ Erreur lors de la suppression');
       }
@@ -171,16 +176,16 @@ export default function CourseExercisesPage() {
     }
   };
 
-  const handleDuplicateExercise = async (exerciseId: number) => {
+  const handleDuplicateExercise = async (exerciseId: number, originalCourseId: number) => {
     try {
       toast.loading('Duplication en cours...');
-      const result = await ExerciseService.duplicateExercise(exerciseId, courseId);
+      const result = await ExerciseService.duplicateExercise(exerciseId, originalCourseId);
 
       toast.dismiss();
 
       if (result.success) {
         toast.success('✅ Exercice dupliqué avec succès');
-        loadExercises(); // Recharger la liste
+        loadClassInfo(); // Recharger la liste
       } else {
         toast.error(result.message || '❌ Erreur lors de la duplication');
       }
@@ -211,6 +216,7 @@ export default function CourseExercisesPage() {
 
     switch (status) {
       case 'PUBLISHED':
+      case 'OPEN':
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'DRAFT':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
@@ -226,7 +232,8 @@ export default function CourseExercisesPage() {
     if (!status) return 'Inconnu';
 
     switch (status) {
-      case 'PUBLISHED': return 'Publié';
+      case 'PUBLISHED':
+      case 'OPEN': return 'Publié';
       case 'DRAFT': return 'Brouillon';
       case 'CLOSED': return 'Fermé';
       case 'ARCHIVED': return 'Archivé';
@@ -260,12 +267,12 @@ export default function CourseExercisesPage() {
       : 0
   };
 
-  if (loadingCourse) {
+  if (loadingClass) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des informations du cours...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des informations de la classe...</p>
         </div>
       </div>
     );
@@ -284,64 +291,57 @@ export default function CourseExercisesPage() {
               Dashboard
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link
-              href="/profdashboard/exercises"
-              className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-            >
-              Exercices
-            </Link>
+            <span className="text-gray-800 dark:text-gray-200 font-medium">
+              {classInfo.name}
+            </span>
             <ChevronRight size={16} className="mx-2" />
             <span className="text-gray-800 dark:text-gray-200 font-medium">
-              {courseInfo.title}
+              Exercices
             </span>
           </div>
 
           <div className="flex items-center justify-between mb-6">
             <button
-              onClick={() => router.push('/profdashboard/exercises')}
+              onClick={() => router.push('/profdashboard')}
               className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
             >
               <ArrowLeft size={20} />
-              Retour aux cours
+              Retour au tableau de bord
             </button>
           </div>
         </div>
 
-        {/* En-tête du cours */}
+        {/* En-tête de la classe */}
         <div className="mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 rounded-xl">
-                    <BookOpen className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/20 rounded-xl">
+                    <Layout className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-                        {courseInfo.title}
+                        {classInfo.name}
                       </h1>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${courseInfo.status === 'PUBLISHED'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                        : courseInfo.status === 'DRAFT'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}>
-                        {courseInfo.status === 'PUBLISHED' ? 'Publié' :
-                          courseInfo.status === 'DRAFT' ? 'Brouillon' : 'Archivé'}
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(classInfo.status)}`}>
+                        {getStatusText(classInfo.status)}
                       </span>
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      {courseInfo.description}
+                      {classInfo.description || 'Aucune description.'}
                     </p>
-                    {courseInfo.category && (
+                    {classInfo.theme && (
                       <div className="flex items-center gap-2">
                         <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 rounded-full text-sm font-medium">
-                          {courseInfo.category}
+                          {classInfo.theme}
                         </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          Créé le {formatDate(courseInfo.createdAt)}
-                        </span>
+                        {classInfo.createdAt && (
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Créée le {formatDate(classInfo.createdAt)}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -351,13 +351,13 @@ export default function CourseExercisesPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-blue-500" />
+                      <FileText className="w-5 h-5 text-purple-500" />
                       <div>
                         <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
                           {stats.totalExercises}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Exercices
+                          Exercices Totaux
                         </div>
                       </div>
                     </div>
@@ -368,7 +368,7 @@ export default function CourseExercisesPage() {
                       <Users className="w-5 h-5 text-orange-500" />
                       <div>
                         <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                          {courseInfo.studentCount || 0}
+                          {classInfo.studentCount || 0}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
                           Étudiants
@@ -379,13 +379,13 @@ export default function CourseExercisesPage() {
 
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-center gap-3">
-                      <Award className="w-5 h-5 text-purple-500" />
+                      <BookOpen className="w-5 h-5 text-blue-500" />
                       <div>
                         <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                          {stats.averageScore || '--'}
+                          {classInfo.courses?.length || 0}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Moyenne
+                          Cours liés
                         </div>
                       </div>
                     </div>
@@ -393,13 +393,13 @@ export default function CourseExercisesPage() {
 
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-center gap-3">
-                      <TrendingUp className="w-5 h-5 text-green-500" />
+                      <Award className="w-5 h-5 text-green-500" />
                       <div>
                         <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                          {courseInfo.viewCount || 0}
+                          {stats.averageScore || '--'}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Vues
+                          Moyenne Globale
                         </div>
                       </div>
                     </div>
@@ -455,23 +455,37 @@ export default function CourseExercisesPage() {
         {/* Liste des exercices */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-8">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                  Exercices du cours
+                  Exercices de la classe
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  {filteredExercises.length} exercice{filteredExercises.length !== 1 ? 's' : ''} trouvé{filteredExercises.length !== 1 ? 's' : ''}
+                  {filteredExercises.length} exercice{filteredExercises.length !== 1 ? 's' : ''} trouvé{filteredExercises.length !== 1 ? 's' : ''} provenant de {classInfo.courses?.length || 0} cours.
                 </p>
               </div>
 
-              <Link
-                href={`/profdashboard/exercises/${courseId}/create`}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
-              >
-                <PlusCircle size={18} />
-                Créer un exercice
-              </Link>
+              <div className="flex gap-2">
+                {(!classInfo.courses || classInfo.courses.length === 0) ? (
+                  <button
+                    disabled
+                    className="px-4 py-2 bg-gray-300 text-white rounded-lg cursor-not-allowed flex items-center gap-2"
+                    title="Ajoutez d'abord un cours à cette classe"
+                  >
+                    <PlusCircle size={18} />
+                    Créer un exercice
+                  </button>
+                ) : (
+                  <Link
+                    href={`/profdashboard/exercises/${classInfo.courses[0].id}/create`}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
+                    title={`Créer un exercice dans ${classInfo.courses[0].title}`}
+                  >
+                    <PlusCircle size={18} />
+                    Nouvel exercice
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 
@@ -490,18 +504,20 @@ export default function CourseExercisesPage() {
                   Aucun exercice trouvé
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
-                  {exercises.length === 0
-                    ? 'Ce cours ne contient pas encore d\'exercices. Créez votre premier exercice !'
-                    : 'Aucun exercice ne correspond à vos critères de recherche.'
+                  {(!classInfo.courses || classInfo.courses.length === 0)
+                    ? 'Ajoutez d\'abord un cours à cette classe pour pouvoir y attacher des exercices.'
+                    : 'Aucun exercice n\'a été créé dans les cours de cette classe.'
                   }
                 </p>
-                <Link
-                  href={`/profdashboard/exercises/${courseId}/create`}
-                  className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium inline-flex items-center gap-2"
-                >
-                  <PlusCircle size={18} />
-                  Créer un exercice
-                </Link>
+                {(classInfo.courses && classInfo.courses.length > 0) && (
+                  <Link
+                    href={`/profdashboard/exercises/${classInfo.courses[0].id}/create`}
+                    className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium inline-flex items-center gap-2"
+                  >
+                    <PlusCircle size={18} />
+                    Créer un exercice
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -555,16 +571,18 @@ export default function CourseExercisesPage() {
                       </div>
 
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => handleDuplicateExercise(exercise.id)}
-                          className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title="Dupliquer"
-                        >
-                          <Copy size={18} />
-                        </button>
+                        {exercise.courseId && (
+                          <button
+                            onClick={() => handleDuplicateExercise(exercise.id, exercise.courseId as number)}
+                            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title="Dupliquer"
+                          >
+                            <Copy size={18} />
+                          </button>
+                        )}
 
                         <Link
-                          href={`/profdashboard/exercises/${courseId}/view/${exercise.id}`}
+                          href={`/profdashboard/exercises/${exercise.courseId || classId}/view/${exercise.id}`}
                           className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
                           title="Voir"
                         >
@@ -572,7 +590,7 @@ export default function CourseExercisesPage() {
                         </Link>
 
                         <Link
-                          href={`/profdashboard/exercises/${courseId}/update/${exercise.id}`}
+                          href={`/profdashboard/exercises/${exercise.courseId || classId}/update/${exercise.id}`}
                           className="p-2 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                           title="Modifier"
                         >

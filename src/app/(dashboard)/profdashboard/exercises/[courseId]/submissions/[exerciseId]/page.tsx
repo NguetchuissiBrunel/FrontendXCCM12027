@@ -6,12 +6,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  Download, 
-  Filter, 
-  Search, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Download,
+  Filter,
+  Search,
+  CheckCircle,
   XCircle,
   Clock,
   FileText,
@@ -29,10 +29,10 @@ import {
 } from 'lucide-react';
 
 // Import des hooks - corrigé avec les bons chemins
-import { 
-  useExercise, 
+import {
+  useExercise,
   useExerciseSubmissions,
-  useGradeSubmission 
+  useGradeSubmission
 } from '@/hooks/useExercise';
 import { Exercise, Submission, ApiResponse } from '@/types/exercise';
 import SubmissionsTable from '@/components/exercises/SubmissionsTable';
@@ -42,12 +42,12 @@ export default function ExerciseSubmissionsPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  
-  const courseId = params?.courseId ? parseInt(params.courseId as string) : 0;
+
+  const paramId = params?.courseId ? parseInt(params.courseId as string) : 0;
   const exerciseId = params?.exerciseId ? parseInt(params.exerciseId as string) : 0;
-  
+
   // Vérification des IDs
-  if (!courseId || !exerciseId) {
+  if (!paramId || !exerciseId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
@@ -68,27 +68,27 @@ export default function ExerciseSubmissionsPage() {
       </div>
     );
   }
-  
+
   // Récupération des données
-  const { 
-    data: exerciseApiResponse, 
+  const {
+    data: exerciseApiResponse,
     isLoading: isLoadingExercise,
-    refetch: refetchExercise 
+    refetch: refetchExercise
   } = useExercise(exerciseId, {
     enabled: !!user && !!exerciseId,
   });
-  
-  const { 
-    data: submissionsApiResponse, 
+
+  const {
+    data: submissionsApiResponse,
     isLoading: isLoadingSubmissions,
-    refetch: refetchSubmissions 
+    refetch: refetchSubmissions
   } = useExerciseSubmissions(exerciseId, {
     enabled: !!user && !!exerciseId,
   });
-  
+
   // Hook pour la notation
   const { mutate: gradeSubmissionMutation } = useGradeSubmission();
-  
+
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showGradingModal, setShowGradingModal] = useState(false);
   const [filter, setFilter] = useState({
@@ -97,10 +97,10 @@ export default function ExerciseSubmissionsPage() {
     sortBy: 'submittedAt' as 'submittedAt' | 'studentName' | 'score',
     sortOrder: 'desc' as 'asc' | 'desc',
   });
-  
-  const [courseInfo, setCourseInfo] = useState<{
-    title: string;
-    category?: string;
+
+  const [classInfo, setClassInfo] = useState<{
+    name: string;
+    theme?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -109,19 +109,22 @@ export default function ExerciseSubmissionsPage() {
       router.push('/login');
       return;
     }
-    
-    loadCourseInfo();
-  }, [user, router, courseId]);
 
-  const loadCourseInfo = async () => {
+    loadClassInfo();
+  }, [user, router, paramId]);
+
+  const loadClassInfo = async () => {
     try {
-      // TODO: Remplacer par votre service de cours
-      setCourseInfo({
-        title: `Cours #${courseId}`,
-        category: 'Informatique',
-      });
+      const { CourseClassService } = await import('@/lib/services/CourseClassService');
+      const response = await CourseClassService.getClassById(paramId);
+      if (response && response.data) {
+        setClassInfo({
+          name: response.data.name,
+          theme: response.data.theme,
+        });
+      }
     } catch (error) {
-      console.error('Erreur chargement infos cours:', error);
+      console.error('Erreur chargement infos classe:', error);
     }
   };
 
@@ -161,11 +164,11 @@ export default function ExerciseSubmissionsPage() {
     // Récupération des soumissions depuis ApiResponse
     const submissions = submissionsApiResponse?.data || []; // data est de type Submission[] | undefined
     const submissionsArray = Array.isArray(submissions) ? submissions : [];
-    
+
     const total = submissionsArray.length;
     const graded = submissionsArray.filter((s: Submission) => s.graded).length;
     const ungraded = total - graded;
-    
+
     const gradedSubmissions = submissionsArray.filter((s: Submission) => s.graded && s.score !== undefined);
     const averageScore = gradedSubmissions.length > 0
       ? gradedSubmissions.reduce((sum: number, s: Submission) => sum + (s.score || 0), 0) / gradedSubmissions.length
@@ -199,7 +202,7 @@ export default function ExerciseSubmissionsPage() {
   // Gestion des erreurs
   if (!exerciseApiResponse?.success || !exerciseApiResponse.data) {
     const errorMessage = exerciseApiResponse?.message || 'Exercice non trouvé';
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
@@ -219,10 +222,10 @@ export default function ExerciseSubmissionsPage() {
               Réessayer
             </button>
             <button
-              onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
+              onClick={() => router.push(`/profdashboard/exercises/${paramId}`)}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Retour aux exercices
+              Retour à la classe
             </button>
           </div>
         </div>
@@ -233,8 +236,8 @@ export default function ExerciseSubmissionsPage() {
   const exercise: Exercise = exerciseApiResponse.data;
 
   // Préparation des soumissions pour SubmissionsTable
-  const submissions: Submission[] = Array.isArray(submissionsApiResponse?.data) 
-    ? submissionsApiResponse.data 
+  const submissions: Submission[] = Array.isArray(submissionsApiResponse?.data)
+    ? submissionsApiResponse.data
     : [];
 
   return (
@@ -243,29 +246,29 @@ export default function ExerciseSubmissionsPage() {
         {/* Navigation */}
         <div className="mb-6">
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-            <Link 
-              href="/profdashboard" 
+            <Link
+              href="/profdashboard"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               Dashboard
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link 
-              href="/profdashboard/exercises" 
+            <Link
+              href="/profdashboard/exercises"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               Exercices
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link 
-              href={`/profdashboard/exercises/${courseId}`}
+            <Link
+              href={`/profdashboard/exercises/${paramId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
-              {courseInfo?.title || `Cours #${courseId}`}
+              {classInfo?.name || `Classe #${paramId}`}
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link 
-              href={`/profdashboard/exercises/${courseId}/view/${exerciseId}`}
+            <Link
+              href={`/profdashboard/exercises/${paramId}/view/${exerciseId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               {exercise.title}
@@ -275,16 +278,16 @@ export default function ExerciseSubmissionsPage() {
               Soumissions
             </span>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <button
-              onClick={() => router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`)}
+              onClick={() => router.push(`/profdashboard/exercises/${paramId}/view/${exerciseId}`)}
               className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
             >
               <ArrowLeft size={20} />
               Retour à l'exercice
             </button>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
@@ -294,7 +297,7 @@ export default function ExerciseSubmissionsPage() {
                 <RefreshCw size={18} className={isLoadingSubmissions ? 'animate-spin' : ''} />
                 Actualiser
               </button>
-              
+
               <button
                 onClick={() => handleExportSubmissions('csv')}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
@@ -319,15 +322,14 @@ export default function ExerciseSubmissionsPage() {
                     {exercise.title}
                   </h1>
                   <div className="flex items-center gap-3 mt-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      exercise.status === 'PUBLISHED' 
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${exercise.status === 'PUBLISHED'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                         : exercise.status === 'DRAFT'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                    }`}>
-                      {exercise.status === 'PUBLISHED' ? 'Publié' : 
-                       exercise.status === 'DRAFT' ? 'Brouillon' : 'Fermé'}
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                      {exercise.status === 'PUBLISHED' ? 'Publié' :
+                        exercise.status === 'DRAFT' ? 'Brouillon' : 'Fermé'}
                     </span>
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
                       {exercise.maxScore} points
@@ -338,13 +340,13 @@ export default function ExerciseSubmissionsPage() {
                   </div>
                 </div>
               </div>
-              
+
               {exercise.description && (
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
                   {exercise.description}
                 </p>
               )}
-              
+
               <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
@@ -352,7 +354,7 @@ export default function ExerciseSubmissionsPage() {
                     Créé le {new Date(exercise.createdAt).toLocaleDateString('fr-FR')}
                   </span>
                 </div>
-                
+
                 {exercise.dueDate && (
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
@@ -361,7 +363,7 @@ export default function ExerciseSubmissionsPage() {
                     </span>
                   </div>
                 )}
-                
+
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   <span>
@@ -370,7 +372,7 @@ export default function ExerciseSubmissionsPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Actions rapides */}
             <div className="lg:w-80">
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10 rounded-xl p-5">
@@ -386,15 +388,15 @@ export default function ExerciseSubmissionsPage() {
                     <CheckCircle size={18} />
                     Notation en masse
                   </button>
-                  
+
                   <button
-                    onClick={() => router.push(`/profdashboard/exercises/${courseId}/update/${exerciseId}`)}
+                    onClick={() => router.push(`/profdashboard/exercises/${paramId}/update/${exerciseId}`)}
                     className="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Edit size={18} />
                     Modifier l'exercice
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(window.location.href);
@@ -426,7 +428,7 @@ export default function ExerciseSubmissionsPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
@@ -440,7 +442,7 @@ export default function ExerciseSubmissionsPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
@@ -454,7 +456,7 @@ export default function ExerciseSubmissionsPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
@@ -485,7 +487,7 @@ export default function ExerciseSubmissionsPage() {
                 />
               </div>
             </div>
-            
+
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-gray-500" />
@@ -499,7 +501,7 @@ export default function ExerciseSubmissionsPage() {
                   <option value="ungraded">À noter seulement</option>
                 </select>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <select
                   value={filter.sortBy}
@@ -510,7 +512,7 @@ export default function ExerciseSubmissionsPage() {
                   <option value="studentName">Nom étudiant</option>
                   <option value="score">Score</option>
                 </select>
-                
+
                 <button
                   onClick={() => handleFilterChange('sortOrder', filter.sortOrder === 'asc' ? 'desc' : 'asc')}
                   className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -518,7 +520,7 @@ export default function ExerciseSubmissionsPage() {
                   {filter.sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
               </div>
-              
+
               <button
                 onClick={() => setFilter({
                   graded: 'all',
@@ -545,7 +547,7 @@ export default function ExerciseSubmissionsPage() {
               </span>
             </h2>
           </div>
-          
+
           <div className="p-6">
             {isLoadingSubmissions ? (
               <div className="text-center py-12">
@@ -579,7 +581,7 @@ export default function ExerciseSubmissionsPage() {
                     Actualiser
                   </button>
                   <button
-                    onClick={() => router.push(`/profdashboard/exercises/${courseId}/view/${exerciseId}`)}
+                    onClick={() => router.push(`/profdashboard/exercises/${paramId}/view/${exerciseId}`)}
                     className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     Retour à l'exercice
@@ -593,13 +595,13 @@ export default function ExerciseSubmissionsPage() {
         {/* Actions de fin de page */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           <Link
-            href={`/profdashboard/courses/${courseId}`}
+            href={`/profdashboard/classes/${paramId}`}
             className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all"
           >
-            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Retour au cours</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Revenir à la page principale du cours</p>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Retour à la classe</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Revenir à la page principale de la classe</p>
           </Link>
-          
+
           <button
             onClick={() => window.print()}
             className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all text-left"
@@ -610,38 +612,38 @@ export default function ExerciseSubmissionsPage() {
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Générer un PDF des scores</p>
           </button>
-          
+
           <Link
-            href={`/profdashboard/exercises/${courseId}/new`}
+            href={`/profdashboard/exercises/${paramId}/create`}
             className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-5 rounded-xl border border-blue-100 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all"
           >
             <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Créer un nouvel exercice</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Pour le même cours</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Pour la même classe</p>
           </Link>
         </div>
       </div>
 
       {/* Modal de notation - VERSION PLEIN ÉCRAN */}
-{showGradingModal && selectedSubmission && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-0">
-    <div className="absolute inset-0 bg-white dark:bg-gray-900 overflow-hidden">
-      <GradingInterface
-        submission={selectedSubmission}
-        exercise={exercise}
-        onClose={() => {
-          setShowGradingModal(false);
-          setSelectedSubmission(null);
-        }}
-        onGradeComplete={() => {
-          setShowGradingModal(false);
-          setSelectedSubmission(null);
-          refetchSubmissions();
-          toast.success('Soumission notée avec succès');
-        }}
-      />
-    </div>
-  </div>
-)}
+      {showGradingModal && selectedSubmission && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-0">
+          <div className="absolute inset-0 bg-white dark:bg-gray-900 overflow-hidden">
+            <GradingInterface
+              submission={selectedSubmission}
+              exercise={exercise}
+              onClose={() => {
+                setShowGradingModal(false);
+                setSelectedSubmission(null);
+              }}
+              onGradeComplete={() => {
+                setShowGradingModal(false);
+                setSelectedSubmission(null);
+                refetchSubmissions();
+                toast.success('Soumission notée avec succès');
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,11 +13,9 @@ import {
   Users,
   ArrowLeft,
   Search,
-  Filter,
   AlertCircle,
   CheckCircle,
   Clock,
-  BarChart3,
   RefreshCw,
   PlusCircle,
   Loader2
@@ -103,7 +101,7 @@ const useExerciseSync = () => {
 
 // ============ COMPOSANT PRINCIPAL ============
 
-export default function AllExercisesPage() {
+export default function ExercisesView() {
   const router = useRouter();
   const { user } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
@@ -262,83 +260,6 @@ export default function AllExercisesPage() {
   }, [user, loadCourseExercises, startLoading, stopLoading]);
 
   // Rafraîchir un exercice spécifique
-  const refreshSingleExercise = useCallback(async (exerciseId: number) => {
-    try {
-      console.log(`🔄 Rafraîchissement exercice ${exerciseId}...`);
-
-      setExercises(prev => prev.map(ex =>
-        ex.id === exerciseId
-          ? { ...ex, isUpdating: true, hasUpdates: false }
-          : ex
-      ));
-
-      const [fullExercise, submissions] = await Promise.all([
-        ExerciseService.getExerciseDetails(exerciseId),
-        ExerciseService.getExerciseSubmissions(exerciseId)
-      ]);
-
-      if (!fullExercise) return;
-
-      const gradedSubmissions = submissions.filter((s: Submission) => s.graded);
-      const pendingSubmissions = submissions.filter((s: Submission) => !s.graded);
-
-      const averageScore = gradedSubmissions.length > 0
-        ? Math.round(gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / gradedSubmissions.length * 10) / 10
-        : 0;
-
-      // Trouver le cours correspondant
-      const course = courses.find(c => c.id === fullExercise.courseId);
-
-      setExercises(prev => prev.map(ex =>
-        ex.id === exerciseId
-          ? {
-            ...ex,
-            ...fullExercise,
-            pendingSubmissions: pendingSubmissions.length,
-            totalSubmissions: submissions.length,
-            averageScore,
-            lastActivity: new Date().toISOString(),
-            isUpdating: false,
-            hasUpdates: true
-          }
-          : ex
-      ));
-
-      // Mettre à jour le cache
-      exerciseCache.current.set(exerciseId, {
-        data: {
-          ...fullExercise,
-          courseTitle: course?.title || fullExercise.courseTitle || `Cours ${fullExercise.courseId}`,
-          courseId: fullExercise.courseId,
-          courseCategory: course?.category || 'Non catégorisé',
-          pendingSubmissions: pendingSubmissions.length,
-          totalSubmissions: submissions.length,
-          averageScore,
-          lastActivity: new Date().toISOString()
-        },
-        timestamp: Date.now()
-      });
-
-      setTimeout(() => {
-        setExercises(prev => prev.map(ex =>
-          ex.id === exerciseId
-            ? { ...ex, hasUpdates: false }
-            : ex
-        ));
-      }, 2000);
-
-      console.log(`✅ Exercice ${exerciseId} rafraîchi`);
-
-    } catch (error) {
-      console.error(`❌ Erreur rafraîchissement exercice ${exerciseId}:`, error);
-
-      setExercises(prev => prev.map(ex =>
-        ex.id === exerciseId
-          ? { ...ex, isUpdating: false }
-          : ex
-      ));
-    }
-  }, [courses]);
 
   // ============ GESTION DES ÉVÉNEMENTS ============
 
@@ -491,12 +412,12 @@ export default function AllExercisesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <div className="px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push('/profdashboard')}
+            onClick={() => router.push('/profdashboard?tab=accueil')}
             className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 mb-6"
           >
             <ArrowLeft size={20} />
@@ -822,7 +743,7 @@ export default function AllExercisesPage() {
             <div>
               <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Actions</h4>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>• Cliquez sur "Actualiser" pour forcer le rafraîchissement</p>
+                <p>• Cliquez sur &quot;Actualiser&quot; pour forcer le rafraîchissement</p>
                 <p>• Les modifications se synchronisent entre onglets</p>
                 <p>• Les exercices sont mis en cache pour 30s</p>
               </div>
@@ -830,6 +751,6 @@ export default function AllExercisesPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

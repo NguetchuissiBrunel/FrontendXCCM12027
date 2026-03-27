@@ -22,12 +22,15 @@ import { TableOfContentsItem, ItemType, ITEM_COLORS } from '@/types/editor.types
  * Node type to ItemType mapping
  */
 const NODE_TYPE_MAP: Record<string, { itemType: ItemType; level: number }> = {
-  heading: { itemType: 'course', level: 0 },      // Only H1 counts
+  heading: { itemType: 'course', level: 0 },
   section: { itemType: 'section', level: 1 },
   chapitre: { itemType: 'chapter', level: 2 },
+  chapter: { itemType: 'chapter', level: 2 },
   paragraphe: { itemType: 'paragraph', level: 3 },
+  paragraph: { itemType: 'paragraph', level: 3 },
   notion: { itemType: 'notion', level: 4 },
   exercice: { itemType: 'exercise', level: 5 },
+  exercise: { itemType: 'exercise', level: 5 },
 };
 
 /**
@@ -57,13 +60,22 @@ function extractTextContent(content: any[]): string {
  * Check if node is a hierarchy node we care about
  */
 function isHierarchyNode(node: any): boolean {
+  if (!node || !node.type) return false;
+  
   // H1 heading (Cours)
   if (node.type === 'heading' && node.attrs?.level === 1) {
     return true;
   }
 
-  // Custom XCCM nodes
-  return ['section', 'chapitre', 'paragraphe', 'notion', 'exercice'].includes(node.type);
+  // Custom XCCM nodes (matching both French and English internal names)
+  const hierarchyTypes = [
+    'section', 
+    'chapitre', 'chapter', 
+    'paragraphe', 'paragraph', 
+    'notion', 
+    'exercice', 'exercise'
+  ];
+  return hierarchyTypes.includes(node.type);
 }
 
 /**
@@ -148,6 +160,7 @@ function extractTOCRecursive(
           number: numberStr,
           children: [],
           content: node.content,
+          attrs: node.attrs,
         };
 
         if (node.content && Array.isArray(node.content)) {

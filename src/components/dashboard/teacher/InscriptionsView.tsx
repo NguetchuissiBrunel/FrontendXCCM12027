@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 
 import { useLoading } from '@/contexts/LoadingContext';
 
-export default function TeacherEnrollmentsPage() {
+export default function InscriptionsView() {
     const { user, loading: authLoading } = useAuth();
     const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [isMounted, setIsMounted] = useState(false);
@@ -41,13 +41,13 @@ export default function TeacherEnrollmentsPage() {
         : user.email.split('@')[0];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 pt-28 pb-12 px-4 sm:px-6 lg:px-8">
+        <>
             <div className="max-w-5xl mx-auto">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                     <div>
                         <button
-                            onClick={() => router.push('/profdashboard')}
+                            onClick={() => router.push('/profdashboard?tab=accueil')}
                             className="flex items-center text-purple-600 dark:text-purple-400 font-medium mb-4 hover:translate-x-[-4px] transition-transform"
                         >
                             <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,6 +75,6 @@ export default function TeacherEnrollmentsPage() {
                     <p>© {new Date().getFullYear()} XCCM1 • Plateforme Pédagogique Intelligente</p>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

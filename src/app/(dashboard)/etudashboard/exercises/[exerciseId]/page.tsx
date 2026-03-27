@@ -23,7 +23,7 @@ import toast from 'react-hot-toast';
 export default function ExerciseDetailsPage() {
     const params = useParams();
     const router = useRouter();
-    const exerciseId = parseInt(params.exerciseId as string);
+    const exerciseId = parseInt((params?.exerciseId ?? '') as string);
 
     const { user, loading: authLoading } = useAuth();
     const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();

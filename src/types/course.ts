@@ -1,34 +1,76 @@
 // src/types/course.ts
 export interface Author {
+  id?: number | string;
   name: string;
   image: string;
   designation?: string; // Rendre optionnel
 }
 
-export interface ExerciseQuestion {
-  question: string;
+export interface QuestionData {
+  text: string;
   options: string[];
-  réponse: string;
 }
 
+export type ContentItem = 
+  | { type: 'chapter'; data: Chapter }
+  | { type: 'paragraph'; data: Paragraph }
+  | { type: 'notion'; data: string }
+  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string } };
+
+export type SubItem = 
+  | { type: 'chapter'; data: Chapter }
+  | { type: 'paragraph'; data: Paragraph }
+  | { type: 'notion'; data: string }
+  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string } };
+
 export interface Paragraph {
+  id?: string;
   title: string;
   content: any;
   notions: string[];
+  introduction?: string;
   exercise?: {
-    questions: ExerciseQuestion[];
+    title: string;
+    type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
+    questions: QuestionData[];
   };
+  exerciseContent?: any;
+  exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
+  children?: ContentItem[];
+  subItems?: SubItem[];
 }
 
 export interface Chapter {
+  id?: string;
   title: string;
   paragraphs: Paragraph[];
+  introduction?: string;
+  exercise?: {
+    title: string;
+    type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
+    questions: QuestionData[];
+  };
+  exerciseContent?: any;
+  exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
+  children?: ContentItem[];
+  subItems?: SubItem[];
 }
 
 export interface Section {
+  id?: string;
   title: string;
   chapters?: Chapter[];
   paragraphs?: Paragraph[];
+  introduction?: string;
+  exercise?: {
+    title: string;
+    type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
+    questions: QuestionData[];
+  };
+  exerciseContent?: any;
+  exercises?: Array<{ title: string; content?: any; questions?: QuestionData[]; id?: string }>;
+  children?: ContentItem[];
+  subItems?: SubItem[];
 }
 
 export interface CourseData {
@@ -40,11 +82,11 @@ export interface CourseData {
   likeCount: number;
   downloadCount: number;
   author: Author;
+  introduction?: string;
   conclusion: string;
   learningObjectives: string[];
   sections: Section[];
   // Ajouter d'autres propriétés optionnelles qui pourraient exister dans vos données
-  introduction?: string;
   prerequisites?: string[];
   duration?: string;
   level?: string;

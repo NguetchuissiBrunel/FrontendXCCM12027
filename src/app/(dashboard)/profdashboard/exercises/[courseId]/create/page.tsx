@@ -9,18 +9,14 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   AlertCircle,
-  FileText,
-  BookOpen,
   ChevronRight,
-  Shield,
-  Clock,
-  Users,
   Eye,
   Loader2,
   Plus
 } from 'lucide-react';
 
 import { ExerciseService } from '@/lib3/services/ExerciseService';
+import { CourseClassService } from '@/lib/services/CourseClassService';
 import ExerciseEditorV2 from '@/components/exercises/ExerciseEditorV2';
 import { Exercise, ApiResponse } from '@/types/exercise';
 
@@ -36,28 +32,19 @@ export default function CreateExercisePage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const courseId = params?.courseId ? parseInt(params.courseId as string) : 0;
-  const [courseInfo, setCourseInfo] = useState<{
-    title: string;
-    category?: string;
+  // On garde params.courseId comme constante car on lit l'URL the Next, mais c'est contextuellement le classId
+  const paramId = params?.courseId ? parseInt(params.courseId as string) : 0;
+
+  const [classInfo, setClassInfo] = useState<{
+    id: number;
+    name: string;
+    theme?: string;
+    courses?: any[];
   } | null>(null);
 
-  // Dans create/page.tsx - assurez-vous que l'exercice initial a bien id: 0
-  const initialExerciseData: Exercise = {
-    id: 0, // TRÈS IMPORTANT : doit être 0 pour indiquer une création
-    courseId: courseId,
-    title: 'Nouvel exercice',
-    description: '',
-    maxScore: 20,
-    status: 'PUBLISHED',
-    createdAt: new Date().toISOString(),
-    questions: [],
-    version: '2.0',
-    submissionCount: 0,
-    averageScore: 0,
-    completionRate: 0,
-    pendingGrading: 0
-  };
+  // Real course ID where the exercise will be created
+  const [targetCourseId, setTargetCourseId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
@@ -66,60 +53,37 @@ export default function CreateExercisePage() {
       return;
     }
 
-    if (!courseId) {
-      toast.error('ID du cours invalide');
-      router.push('/profdashboard/exercises');
+    if (!paramId) {
+      toast.error('ID de classe invalide');
+      router.push('/profdashboard');
       return;
     }
 
-    loadCourseInfo();
-  }, [user, router, courseId]);
+    loadClassInfo();
+  }, [user, router, paramId]);
 
-  const loadCourseInfo = async () => {
+  const loadClassInfo = async () => {
     try {
-      setCourseInfo({
-        title: `Cours #${courseId}`,
-        category: 'Informatique',
-      });
-    } catch (error) {
-      console.error('Erreur chargement infos cours:', error);
-    }
-  };
-
-  // CORRECTION DÉFINITIVE - Gestion type-safe
-  // Dans create/page.tsx - CORRECTION DÉFINITIVE
-  const handleSave = async (result: ApiResponse<Exercise>) => {
-    try {
-      // CORRECTION : Vérification correcte du type
-      if (result.success === true) {
-        // Maintenant nous savons que success est true
-        // Mais data peut encore être undefined selon le type
-
-        if (result.data) {
-          // data existe, nous pouvons l'utiliser
-          const exercise = result.data;
-          toast.success(result.message || '✅ Exercice créé avec succès !');
-
-          setTimeout(() => {
-            router.push(`/profdashboard/exercises/${courseId}/view/${exercise.id}`);
-          }, 1000);
+      setLoading(true);
+      const response = await CourseClassService.getClassById(paramId);
+      if (response && response.data) {
+        const data = response.data;
+        setClassInfo(data);
+        if (data.courses && data.courses.length > 0) {
+          setTargetCourseId(data.courses[0].id);
         } else {
-          // success est true mais data est undefined
-          // Cela ne devrait pas arriver, mais on gère le cas
-          toast.success(result.message || '✅ Exercice créé avec succès !');
-
-          setTimeout(() => {
-            router.push(`/profdashboard/exercises/${courseId}`);
-          }, 1000);
+          toast.error('Cette classe ne contient aucun cours.');
         }
       } else {
-        // success est false
-        const errorMessage = result.message || 'Erreur lors de la création';
-        toast.error(`❌ ${errorMessage}`);
+        toast.error('Classe introuvable.');
+        router.push('/profdashboard');
       }
-    } catch (error: any) {
-      console.error('Erreur lors de la création:', error);
-      toast.error(error.message || 'Erreur lors de la création');
+    } catch (error) {
+      console.error('Erreur chargement infos cours/classe:', error);
+      toast.error('Erreur de chargement des informations de la classe.');
+      router.push('/profdashboard');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -133,7 +97,8 @@ export default function CreateExercisePage() {
         toast.success(result.message || '✅ Exercice créé avec succès !');
 
         setTimeout(() => {
-          router.push(`/profdashboard/exercises/${courseId}/view/${exercise.id}`);
+          // Redirect to the view page of the newly created exercise, falling back to class dashboard
+          router.push(`/profdashboard/exercises/${paramId}/view/${exercise.id}`);
         }, 1000);
       } else {
         const errorMessage = result.message || 'Erreur lors de la création';
@@ -147,7 +112,7 @@ export default function CreateExercisePage() {
 
   const handleCancel = () => {
     if (confirm('Voulez-vous vraiment annuler la création ? Toutes les données seront perdues.')) {
-      router.push(`/profdashboard/exercises/${courseId}`);
+      router.push(`/profdashboard/exercises/${paramId}`);
     }
   };
 
@@ -155,7 +120,7 @@ export default function CreateExercisePage() {
     toast.success('Aperçu de l\'exercice (données locales seulement)');
   };
 
-  if (!courseId) {
+  if (!paramId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
@@ -167,26 +132,65 @@ export default function CreateExercisePage() {
             L'URL de la page est incorrecte.
           </p>
           <button
-            onClick={() => router.push('/profdashboard/exercises')}
+            onClick={() => router.push('/profdashboard')}
             className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
-            Retour aux exercices
+            Retour au tableau de bord
           </button>
         </div>
       </div>
     );
   }
 
-  if (!courseInfo) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">Chargement des informations du cours...</p>
+          <p className="text-gray-600 dark:text-gray-300">Chargement des informations...</p>
         </div>
       </div>
     );
   }
+
+  if (!targetCourseId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+            Aucun cours rattaché
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            La classe "{classInfo?.name}" ne contient aucun cours. Les exercices doivent être rattachés à un cours.
+          </p>
+          <button
+            onClick={() => router.push(`/profdashboard/exercises/${paramId}`)}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Retour à la classe
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare initial exercise data ONLY after we confirm targetCourseId exists
+  const initialExerciseData: Exercise = {
+    id: 0,
+    courseId: targetCourseId,
+    title: 'Nouvel exercice',
+    description: '',
+    maxScore: 20,
+    status: 'PUBLISHED',
+    createdAt: new Date().toISOString(),
+    questions: [],
+    version: '2.0',
+    submissionCount: 0,
+    averageScore: 0,
+    completionRate: 0,
+    pendingGrading: 0
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20">
@@ -198,12 +202,8 @@ export default function CreateExercisePage() {
               Dashboard
             </Link>
             <ChevronRight size={16} className="mx-2" />
-            <Link href="/profdashboard/exercises" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              Exercices
-            </Link>
-            <ChevronRight size={16} className="mx-2" />
-            <Link href={`/profdashboard/exercises/${courseId}`} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              {courseInfo.title}
+            <Link href={`/profdashboard/exercises/${paramId}`} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+              {classInfo?.name || '...'}
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <span className="text-gray-800 dark:text-gray-200 font-medium">
@@ -213,11 +213,11 @@ export default function CreateExercisePage() {
 
           <div className="flex items-center justify-between mb-8">
             <button
-              onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
+              onClick={() => router.push(`/profdashboard/exercises/${paramId}`)}
               className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
             >
               <ArrowLeft size={20} />
-              Retour aux exercices
+              Retour
             </button>
 
             <div className="flex items-center gap-3">
@@ -239,19 +239,18 @@ export default function CreateExercisePage() {
           </div>
         </div>
 
-        {/* Éditeur d'exercice - UTILISEZ handleSaveSimple pour éviter l'erreur */}
+        {/* Éditeur d'exercice */}
         <div className="mb-8">
           <ExerciseEditorV2
-            courseId={courseId}
-            initialData={initialExerciseData}
-            onSave={handleSaveSimple}  // Utilisez handleSaveSimple qui est type-safe
+            courseId={targetCourseId}
+            initialData={initialExerciseData!}
+            onSave={handleSaveSimple}
             onCancel={handleCancel}
           />
         </div>
 
         {/* Notes importantes */}
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/50 dark:to-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mb-12">
-          {/* ... contenu identique ... */}
         </div>
       </div>
     </div>

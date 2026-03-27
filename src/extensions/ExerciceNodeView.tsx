@@ -33,6 +33,7 @@ export default function ExerciceNodeView({ node, updateAttributes }: NodeViewPro
   return (
     <NodeViewWrapper
       className="exercice-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',
@@ -43,8 +44,18 @@ export default function ExerciceNodeView({ node, updateAttributes }: NodeViewPro
         borderRadius: '0 4px 4px 0',
       }}
     >
-      {/* Editable Label Badge */}
-      <div contentEditable={false} className="flex flex-col gap-1 mb-2">
+      {/* Editable Label Badge with prefix */}
+      <div contentEditable={false} className="flex items-start gap-2 mb-2 select-none">
+        <span style={{
+          fontSize: '20px',
+          fontWeight: 'bold',
+          lineHeight: '1.5',
+          color: '#4F46E5', // indigo-600
+          whiteSpace: 'nowrap',
+          marginTop: '0px'
+        }}>
+          Exercice :
+        </span>
         <textarea
           ref={titleRef}
           value={node.attrs.title}

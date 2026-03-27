@@ -46,11 +46,11 @@ export default function ViewExercisePage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const courseId = params?.courseId ? parseInt(params.courseId as string) : 0;
+  const paramId = params?.courseId ? parseInt(params.courseId as string) : 0; // Represents classId within this flow
   const exerciseId = params?.exerciseId ? parseInt(params.exerciseId as string) : 0;
 
   // Vérification des IDs
-  if (!courseId || !exerciseId) {
+  if (!paramId || !exerciseId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
@@ -75,21 +75,25 @@ export default function ViewExercisePage() {
   // Utilisation des nouveaux hooks
   const {
     data: exerciseApiResponse,
-    isLoading,
+    isLoading: exerciseLoading,
     error,
     refetch
   } = useExercise(exerciseId, {
     enabled: !!user && !!exerciseId,
   });
 
-  const deleteMutation = useDeleteExercise(exerciseId, courseId);
-  const publishMutation = usePublishExercise(exerciseId, courseId);
-  const closeMutation = useCloseExercise(exerciseId, courseId);
-  const duplicateMutation = useDuplicateExercise(exerciseId, courseId);
+  const exercise = exerciseApiResponse?.data;
 
-  const [courseInfo, setCourseInfo] = useState<{
-    title: string;
-    category?: string;
+  // Les hooks de mutation attendent l'ID du cours pour l'invalidation du cache (ou utilisent paramId temporairement)
+  const realCourseId = exercise?.courseId || paramId;
+  const deleteMutation = useDeleteExercise(exerciseId, realCourseId);
+  const publishMutation = usePublishExercise(exerciseId, realCourseId);
+  const closeMutation = useCloseExercise(exerciseId, realCourseId);
+  const duplicateMutation = useDuplicateExercise(exerciseId, realCourseId);
+
+  const [classInfo, setClassInfo] = useState<{
+    name: string;
+    theme?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -99,23 +103,27 @@ export default function ViewExercisePage() {
       return;
     }
 
-    // Charger les infos du cours
-    loadCourseInfo();
-  }, [user, router, courseId]);
+    // Charger les infos de la classe
+    loadClassInfo();
+  }, [user, router, paramId]);
 
-  const loadCourseInfo = async () => {
+  const loadClassInfo = async () => {
     try {
-      setCourseInfo({
-        title: `Cours #${courseId}`,
-        category: 'Informatique',
-      });
+      const { CourseClassService } = await import('@/lib/services/CourseClassService');
+      const response = await CourseClassService.getClassById(paramId);
+      if (response && response.data) {
+        setClassInfo({
+          name: response.data.name,
+          theme: response.data.theme,
+        });
+      }
     } catch (error) {
-      console.error('Erreur chargement infos cours:', error);
+      console.error('Erreur chargement infos classe:', error);
     }
   };
 
   const handleEdit = () => {
-    router.push(`/profdashboard/exercises/${courseId}/update/${exerciseId}`);
+    router.push(`/profdashboard/exercises/${paramId}/update/${exerciseId}`);
   };
 
   const handleDelete = async () => {
@@ -127,7 +135,7 @@ export default function ViewExercisePage() {
       onSuccess: (result: any) => {
         if (result.success) {
           toast.success('✅ Exercice supprimé avec succès');
-          router.push(`/profdashboard/exercises/${courseId}`);
+          router.push(`/profdashboard/exercises/${paramId}`);
         }
       },
       onError: (error: Error) => {
@@ -137,7 +145,7 @@ export default function ViewExercisePage() {
   };
 
   const handleViewSubmissions = () => {
-    router.push(`/profdashboard/exercises/${courseId}/submissions/${exerciseId}`);
+    router.push(`/profdashboard/exercises/${paramId}/submissions/${exerciseId}`);
   };
 
   const handleDuplicate = async () => {
@@ -145,7 +153,7 @@ export default function ViewExercisePage() {
       onSuccess: (result: any) => {
         if (result.success && result.data) {
           toast.success('✅ Exercice dupliqué avec succès');
-          router.push(`/profdashboard/exercises/${courseId}/view/${result.data.id}`);
+          router.push(`/profdashboard/exercises/${paramId}/view/${result.data.id}`);
         }
       },
       onError: (error: Error) => {
@@ -237,7 +245,7 @@ export default function ViewExercisePage() {
     }
   };
 
-  if (isLoading) {
+  if (exerciseLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
@@ -271,10 +279,10 @@ export default function ViewExercisePage() {
               Réessayer
             </button>
             <button
-              onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
+              onClick={() => router.push(`/profdashboard/exercises/${paramId}`)}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Retour aux exercices
+              Retour à la classe
             </button>
           </div>
         </div>
@@ -282,7 +290,8 @@ export default function ViewExercisePage() {
     );
   }
 
-  const exercise: Exercise = exerciseApiResponse.data;
+  // Use the verified extracted exercise
+  // at this point exercise is truthy because error would have caught otherwise
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20">
@@ -305,24 +314,24 @@ export default function ViewExercisePage() {
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <Link
-              href={`/profdashboard/exercises/${courseId}`}
+              href={`/profdashboard/exercises/${paramId}`}
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
-              {courseInfo?.title || `Cours #${courseId}`}
+              {classInfo?.name || `Classe #${paramId}`}
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <span className="text-gray-800 dark:text-gray-200 font-medium truncate max-w-xs">
-              {exercise.title}
+              {exercise?.title}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
             <button
-              onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
+              onClick={() => router.push(`/profdashboard/exercises/${paramId}`)}
               className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
             >
               <ArrowLeft size={20} />
-              Retour aux exercices du cours
+              Retour aux exercices de la classe
             </button>
 
             <div className="flex gap-3">
@@ -356,19 +365,19 @@ export default function ViewExercisePage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-                    {exercise.title}
+                    {exercise?.title}
                   </h1>
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(exercise.status)}`}>
-                      {getStatusDisplay(exercise.status)}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(exercise?.status)}`}>
+                      {getStatusDisplay(exercise?.status)}
                     </span>
-                    {courseInfo?.category && (
+                    {classInfo?.theme && (
                       <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                        {courseInfo.category}
+                        {classInfo.theme}
                       </span>
                     )}
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                      {exercise.questions?.length || 0} question{(exercise.questions?.length || 0) > 1 ? 's' : ''}
+                      {exercise?.questions?.length || 0} question{(exercise?.questions?.length || 0) > 1 ? 's' : ''}
                     </span>
                   </div>
                 </div>
@@ -379,7 +388,7 @@ export default function ViewExercisePage() {
                   Description
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {exercise.description || 'Aucune description fournie.'}
+                  {exercise?.description || 'Aucune description fournie.'}
                 </p>
               </div>
 
@@ -390,7 +399,7 @@ export default function ViewExercisePage() {
                     <Award className="w-5 h-5 text-blue-500" />
                     <div>
                       <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        {exercise.maxScore}
+                        {exercise?.maxScore}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Points maximum
@@ -404,7 +413,7 @@ export default function ViewExercisePage() {
                     <Calendar className="w-5 h-5 text-purple-500" />
                     <div>
                       <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                        {formatDate(exercise.dueDate)}
+                        {formatDate(exercise?.dueDate)}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Date limite
@@ -418,7 +427,7 @@ export default function ViewExercisePage() {
                     <Clock className="w-5 h-5 text-orange-500" />
                     <div>
                       <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                        {formatDate(exercise.createdAt)}
+                        {formatDate(exercise?.createdAt)}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Créé le
@@ -432,7 +441,7 @@ export default function ViewExercisePage() {
                     <BarChart3 className="w-5 h-5 text-green-500" />
                     <div>
                       <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        {exercise.submissionCount || 0}
+                        {exercise?.submissionCount || 0}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Soumissions
@@ -443,9 +452,9 @@ export default function ViewExercisePage() {
               </div>
 
               {/* Statistiques - CORRECTION ICI */}
-              {(exercise.submissionCount || 0) > 0 && (
+              {(exercise?.submissionCount || 0) > 0 && (
                 <div className="mt-8">
-                  <ExerciseStats exerciseId={exercise.id} />
+                  <ExerciseStats exerciseId={exercise?.id || 0} />
                 </div>
               )}
             </div>
@@ -456,10 +465,10 @@ export default function ViewExercisePage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              Questions ({(exercise.questions?.length || 0)})
+              Questions ({(exercise?.questions?.length || 0)})
             </h2>
 
-            {(exercise.questions?.length || 0) === 0 && (
+            {(exercise?.questions?.length || 0) === 0 && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
                 <AlertTriangle size={16} />
                 <span className="text-sm">Aucune question</span>
@@ -467,9 +476,9 @@ export default function ViewExercisePage() {
             )}
           </div>
 
-          {(exercise.questions?.length || 0) > 0 ? (
+          {(exercise?.questions?.length || 0) > 0 ? (
             <div className="space-y-4">
-              {(exercise.questions || []).map((question, index) => {
+              {(exercise?.questions || []).map((question, index) => {
                 // CORRECTION ICI : Utilisez seulement les propriétés officielles
                 const questionText = question.text; // Pas de fallback avec question.question
                 const questionType = question.type || 'TEXT'; // Pas de fallback avec question.questionType

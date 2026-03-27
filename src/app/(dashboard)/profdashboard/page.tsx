@@ -37,13 +37,13 @@ export default function ProfDashboardSPA() {
 
     switch (tab) {
         case 'classes':
-            return <ClassesView />;
+            return <ClassesView mode="classes" />;
         case 'inscriptions':
             return <InscriptionsView />;
         case 'exercices':
             return <ExercisesView />;
         case 'compositions':
-            return <ClassesView />; // Map compositions to classes view context if it was similar, or a placeholder
+            return <ClassesView mode="compositions" />; 
         case 'accueil':
         default:
             return <HomeView />;

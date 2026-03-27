@@ -294,7 +294,7 @@ export default function HomeView() {
     file?: any;
   }) => {
     if (!user) {
-      toast.error('Vous devez être connecté pour créer une classe');
+      toast.error('Vous devez être connecté pour créer un cours');
       return;
     }
 
@@ -303,23 +303,21 @@ export default function HomeView() {
     try {
       startLoading();
 
-      // On crée d'abord une classe
-      const newClassResponse = await CourseClassService.createClass({
-        name: data.title,
-        theme: data.category,
+      // Création d'un Cours via CourseControllerService
+      const { CourseControllerService } = await import('@/lib/services/CourseControllerService');
+      const newCourseResponse = await CourseControllerService.createCourse(user.id, {
+        title: data.title,
+        category: data.category,
         description: data.description,
-        maxStudents: 50 // valeur par défaut
+        status: 'DRAFT'
       });
 
-      if (newClassResponse?.data?.id) {
-        toast.success('Classe créée avec succès !');
-        // Optionnellement uploader l'image cover si dispo
-        if (data.file) {
-          await CourseClassService.uploadCoverImage(newClassResponse.data.id, data.file);
-        }
+      if (newCourseResponse?.data?.id) {
+        toast.success('Cours créé avec succès !');
+        // On pourrait aussi uploader l'image ici si le service le permet
         await loadDashboardData();
       } else {
-        throw new Error("Impossible de récupérer l'id de la classe");
+        throw new Error("Impossible de récupérer l'id du cours");
       }
     } catch (err) {
       toast.error('Erreur lors de la création de la classe');

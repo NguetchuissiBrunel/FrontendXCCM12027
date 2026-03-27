@@ -72,7 +72,11 @@ function parseId(id: number | string | undefined): number {
   return 0;
 }
 
-export default function ClassesView() {
+interface ClassesViewProps {
+  mode?: 'classes' | 'compositions';
+}
+
+export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -294,7 +298,7 @@ export default function ClassesView() {
     file?: any;
   }) => {
     if (!user) {
-      toast.error('Vous devez être connecté pour créer une classe');
+      toast.error(mode === 'classes' ? 'Vous devez être connecté pour créer une classe' : 'Vous devez être connecté pour créer un cours');
       return;
     }
 
@@ -303,23 +307,42 @@ export default function ClassesView() {
     try {
       startLoading();
 
-      // On crée d'abord une classe
-      const newClassResponse = await CourseClassService.createClass({
-        name: data.title,
-        theme: data.category,
-        description: data.description,
-        maxStudents: 50 // valeur par défaut
-      });
+      if (mode === 'classes') {
+        // On crée d'abord une classe
+        const newClassResponse = await CourseClassService.createClass({
+          name: data.title,
+          theme: data.category,
+          description: data.description,
+          maxStudents: 50 // valeur par défaut
+        });
 
-      if (newClassResponse?.data?.id) {
-        toast.success('Classe créée avec succès !');
-        // Optionnellement uploader l'image cover si dispo
-        if (data.file) {
-          await CourseClassService.uploadCoverImage(newClassResponse.data.id, data.file);
+        if (newClassResponse?.data?.id) {
+          toast.success('Classe créée avec succès !');
+          // Optionnellement uploader l'image cover si dispo
+          if (data.file) {
+            await CourseClassService.uploadCoverImage(newClassResponse.data.id, data.file);
+          }
+          await loadDashboardData();
+        } else {
+          throw new Error("Impossible de récupérer l'id de la classe");
         }
-        await loadDashboardData();
       } else {
-        throw new Error("Impossible de récupérer l'id de la classe");
+        // Création d'un Cours via CourseControllerService
+        const { CourseControllerService } = await import('@/lib/services/CourseControllerService');
+        const newCourseResponse = await CourseControllerService.createCourse(user.id, {
+          title: data.title,
+          category: data.category,
+          description: data.description,
+          status: 'DRAFT'
+        });
+
+        if (newCourseResponse?.data?.id) {
+          toast.success('Cours créé avec succès !');
+          // On pourrait aussi uploader l'image ici si le service le permet
+          await loadDashboardData();
+        } else {
+          throw new Error("Impossible de récupérer l'id du cours");
+        }
       }
     } catch (err) {
       toast.error('Erreur lors de la création de la classe');
@@ -626,17 +649,19 @@ export default function ClassesView() {
               Retour au Dashboard
             </button>
             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Gestion de vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">Classes</span>
+              Gestion de vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">{mode === 'classes' ? 'Classes' : 'Compositions'}</span>
             </h1>
             <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
-              Consultez et scindez vos cours en créant différentes classes.
+              {mode === 'classes' 
+                ? 'Consultez et scindez vos cours en créant différentes classes.'
+                : 'Gérez vos compositions et supports de cours structurés.'}
             </p>
           </div>
         </div>
 
         {compositions.length > 0 ? (
           <CompositionsCard
-            title="Mes Classes de cours"
+            title={mode === 'classes' ? "Mes Classes de cours" : "Mes Compositions"}
             compositions={compositions}
             onDelete={handleDeleteCourse}
             onCreateClick={() => setIsModalOpen(true)}
@@ -655,17 +680,19 @@ export default function ClassesView() {
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Mes Classes de Cours
+              {mode === 'classes' ? 'Mes Classes de Cours' : 'Mes Compositions'}
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Vous n'avez pas encore de classe. Créez votre première classe.
+              {mode === 'classes' 
+                ? "Vous n'avez pas encore de classe. Créez votre première classe."
+                : "Vous n'avez pas encore de composition. Créez votre premier cours."}
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
             >
               <Plus size={20} />
-              Créer une classe
+              {mode === 'classes' ? 'Créer une classe' : 'Créer un cours'}
             </button>
           </div>
         )}

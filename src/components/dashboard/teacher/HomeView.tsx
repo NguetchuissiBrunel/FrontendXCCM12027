@@ -72,7 +72,7 @@ function parseId(id: number | string | undefined): number {
   return 0;
 }
 
-export default function ProfessorDashboard() {
+export default function HomeView() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -612,63 +612,125 @@ export default function ProfessorDashboard() {
         </div>
       )}
 
-      {/* En-tête de la page Mes Classes */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6 mt-4">
-            <div>
-                <button
-                    onClick={() => router.push('/profdashboard')}
-                    className="flex items-center text-purple-600 dark:text-purple-400 font-medium mb-4 hover:translate-x-[-4px] transition-transform"
-                >
-                    <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Retour au Dashboard
-                </button>
-                <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                    Gestion de vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">Classes</span>
-                </h1>
-                <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
-                    Consultez et scindez vos cours en créant différentes classes.
-                </p>
+      {/* Section de bienvenue et statistiques */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="max-w-3xl">
+            <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+              Bienvenue {user.firstName} !
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
+              Ravi de vous revoir. Voici l'état de vos enseignements aujourd'hui.
+            </p>
+          </div>
+
+          {/* Statistiques rapides */}
+          <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  {professor.totalStudents}
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Étudiants</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  {professor.publications}
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Cours</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-orange-600">
+                  {professor.pendingSubmissions}
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">À corriger</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl md:text-2xl font-bold text-green-600">
+                  {professor.averageProgress}%
+                </div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Score</div>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        {/* Colonne gauche : Profile et Compositions */}
+        <div className="lg:col-span-2 space-y-6">
+          <ProfileCard
+            professor={professor}
+            coursesStats={coursesStatsForProfile}
+          />
         </div>
 
-        {compositions.length > 0 ? (
-          <CompositionsCard
-            title="Mes Classes de cours"
-            compositions={compositions}
-            onDelete={handleDeleteCourse}
-            onCreateClick={() => setIsModalOpen(true)}
-            onManageExercises={(classId) => router.push(`/profdashboard/exercises/${classId}`)}
-            onManageClassCourses={handleOpenManageCoursesForClass}
-            onChangeStatus={handleChangeClassStatus}
-            getCourseStats={(id) => {
-              const classId = parseId(id);
-              const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === classId);
-              return stats ? {
-                totalExercises: stats.totalExercises || 0,
-                totalEnrolled: stats.totalEnrolled || 0
-              } : undefined;
-            }}
-          />
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Mes Classes de Cours
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Vous n'avez pas encore de classe. Créez votre première classe.
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
-            >
-              <Plus size={20} />
-              Créer une classe
-            </button>
+        {/* Colonne droite : Actions et Stats secondaires */}
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
+            <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+              <Activity className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
+              Actions rapides
+            </h3>
+            <div className="space-y-3">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-700 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                    <Plus size={18} />
+                  </div>
+                  <span className="text-sm font-medium">Nouveau Cours</span>
+                </div>
+                <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.push('/profdashboard?tab=inscriptions')}
+                className="w-full flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-700 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                    <LucideUsers size={18} />
+                  </div>
+                  <span className="text-sm font-medium">Inscriptions ({pendingInscriptionsCount})</span>
+                </div>
+                <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => {
+                  if (compositions.length > 0) {
+                    openCourseSelectionModal();
+                  } else {
+                    toast.error("Créez d'abord un cours");
+                  }
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-700 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                    <Upload size={18} />
+                  </div>
+                  <span className="text-sm font-medium">Créer un exercice</span>
+                </div>
+                <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Status du système */}
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 md:p-5 border border-purple-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <h3 className="font-bold text-gray-800 dark:text-white text-sm">Status du système</h3>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              {compositions.length} cours actifs • {professor.totalExercises} exercices créés
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Section de débogage optionnelle (à cacher en production) */}

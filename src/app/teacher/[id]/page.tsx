@@ -97,64 +97,52 @@ export default function TeacherProfilePage() {
       setLoading(true);
       setError(null);
 
-      // Charger les infos de l'enseignant via GestionDesUtilisateursService
+      // 1. Charger les infos de l'enseignant
       const teacherResponse = await GestionDesUtilisateursService.getTeacherById1(teacherId);
 
       if (!teacherResponse.success || !teacherResponse.data) {
         throw new Error('Enseignant non trouvé');
       }
 
-      const teacherData = teacherResponse.data;
-      setTeacher(teacherData as Teacher);
+      const teacherData = teacherResponse.data as Teacher;
+      setTeacher(teacherData);
 
-      // Charger les classes de l'enseignant via CourseClassService
+      // 2. Charger et filtrer les classes (comparaison robuste)
       const classesResponse = await CourseClassService.getAllOpenClasses();
+      let filteredClasses: CourseClass[] = [];
+      let totalStudents = 0;
 
-      if (classesResponse.data) {
-        let allClasses = classesResponse.data as CourseClass[];
-
-        // Filtrer pour ne garder que les classes de cet enseignant
-        allClasses = allClasses.filter(c => c.teacher?.id === teacherId);
-
-        setCourseClasses(allClasses);
-
-        // Calculer les statistiques agrégées
-        const coursesInClasses = allClasses.flatMap(cls => cls.courses?.map(c => c.id) || []);
-        const totalCourses = coursesInClasses.length;
-        const totalStudents = allClasses.reduce((acc, cls) => acc + (cls.studentCount || 0), 0);
-
-        // Charger les cours standalone (en dehors de toutes les classes)
-        try {
-          const teacherCoursesRes = await CourseControllerService.getAuthorCourses(teacherId);
-          const allAuthorCourses = (teacherCoursesRes.data || []) as Course[];
-          const publishedStandalone = allAuthorCourses.filter(
-            c => c.status === 'PUBLISHED' && !coursesInClasses.includes(c.id)
-          );
-          setStandaloneCourses(publishedStandalone);
-
-          setStats({
-            totalClasses: allClasses.length,
-            totalCourses: totalCourses + publishedStandalone.length,
-            totalStudents: totalStudents
-          });
-        } catch {
-          setStats({
-            totalClasses: allClasses.length,
-            totalCourses: totalCourses,
-            totalStudents: totalStudents
-          });
-        }
-      } else {
-        setCourseClasses([]);
-        // Try standalone courses even if no classes
-        try {
-          const teacherCoursesRes = await CourseControllerService.getAuthorCourses(teacherId);
-          const allAuthorCourses = (teacherCoursesRes.data || []) as Course[];
-          const publishedStandalone = allAuthorCourses.filter(c => c.status === 'PUBLISHED');
-          setStandaloneCourses(publishedStandalone);
-          setStats(prev => ({ ...prev, totalCourses: publishedStandalone.length }));
-        } catch { /* ignore */ }
+      if (classesResponse.data && Array.isArray(classesResponse.data)) {
+        filteredClasses = (classesResponse.data as any[]).filter(c => {
+          const classTeacherId = c.teacher?.id || c.teacherId;
+          return String(classTeacherId) === String(teacherId);
+        });
+        totalStudents = filteredClasses.reduce((acc, cls) => acc + (cls.studentCount || 0), 0);
       }
+      setCourseClasses(filteredClasses);
+
+      // 3. Charger et filtrer les cours (comparaison robuste)
+      // On utilise getAllCourses pour plus de fiabilité si getAuthorCourses échoue ou est incomplet
+      const coursesResponse = await CourseControllerService.getAllCourses();
+      let authorCourses: any[] = [];
+
+      if (coursesResponse.success && Array.isArray(coursesResponse.data)) {
+        authorCourses = (coursesResponse.data as any[]).filter(c => {
+          const courseAuthorId = c.author?.id || c.authorId;
+          return String(courseAuthorId) === String(teacherId) && c.status === 'PUBLISHED';
+        });
+      }
+
+      // Identifier les cours qui ne sont pas dans une classe filtrée
+      const coursesInClassesIds = new Set(filteredClasses.flatMap(cls => cls.courses?.map(c => c.id) || []));
+      const publishedStandalone = authorCourses.filter(c => !coursesInClassesIds.has(c.id));
+
+      setStandaloneCourses(publishedStandalone);
+      setStats({
+        totalClasses: filteredClasses.length,
+        totalCourses: authorCourses.length,
+        totalStudents: totalStudents
+      });
 
     } catch (err: any) {
       console.error('❌ Erreur chargement profil enseignant:', err);

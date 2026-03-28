@@ -37,7 +37,7 @@ declare module '@tiptap/core' {
 export default Node.create<ParagrapheOptions>({
   name: 'paragraphe',
 
-  group: 'xccm-paragraph',
+  group: 'block xccm-paragraph',
 
   content: '(notion | exercice)+',
 

@@ -78,17 +78,23 @@ export default function EnrollmentButton({
     primary: !canEnroll
       ? 'bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed'
       : isEnrolled
-        ? 'bg-green-600 hover:bg-green-700 text-white'
+        ? enrollment?.status === 'PENDING'
+          ? 'bg-orange-500 hover:bg-orange-600 text-white'
+          : 'bg-red-600 hover:bg-red-700 text-white'
         : 'bg-purple-600 hover:bg-purple-700 text-white',
     secondary: !canEnroll
       ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
       : isEnrolled
-        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+        ? enrollment?.status === 'PENDING'
+          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50'
+          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
         : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50',
     outline: !canEnroll
       ? 'border border-gray-300 text-gray-500 cursor-not-allowed'
       : isEnrolled
-        ? 'border border-green-600 text-green-600 hover:bg-green-50 dark:bg-green-900/20 dark:text-green-400'
+        ? enrollment?.status === 'PENDING'
+          ? 'border border-orange-500 text-orange-500 hover:bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400'
+          : 'border border-red-600 text-red-600 hover:bg-red-50 dark:bg-red-900/20 dark:text-red-400'
         : 'border border-purple-600 text-purple-600 hover:bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400'
   };
 
@@ -131,7 +137,7 @@ export default function EnrollmentButton({
           enrollment?.status === 'PENDING' ? (
             <>
               <Loader2 className={iconSizes[size]} />
-              <span>En attente de validation</span>
+              <span>En attente...</span>
             </>
           ) : (
             <>

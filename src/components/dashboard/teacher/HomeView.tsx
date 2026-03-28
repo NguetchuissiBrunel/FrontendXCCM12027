@@ -1,341 +1,46 @@
-// app/(dashboard)/profdashboard/page.tsx - VERSION FINALE CORRIGÉE
 'use client';
-import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import ProfileCard, { CourseStat } from '@/components/professor/ProfileCard';
-import CompositionsCard, { Composition } from '@/components/professor/CompositionsCard';
-import { useAuth } from '@/contexts/AuthContext';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import CompositionsCard from '@/components/professor/CompositionsCard';
 import CreateCourseModal from '@/components/create-course/page';
-import { EnrollmentService } from '@/utils/enrollmentService';
-import { useLoading } from '@/contexts/LoadingContext';
-import { ExercicesService } from '@/lib/services/ExercicesService';
-import { EnseignantService } from '@/lib/services/EnseignantService';
-import toast from 'react-hot-toast';
-import { BookOpen, X, FileText, Plus, ChevronRight, Upload, Users as LucideUsers, Activity } from 'lucide-react';
+import { Plus, ChevronRight, Upload, Users as LucideUsers, Activity } from 'lucide-react';
 import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
 import ManageClassCoursesModal from '@/components/professor/ManageClassCoursesModal';
-
-// Définir les interfaces
-interface Course {
-  id?: number | string;
-  title?: string;
-  category?: string;
-  status?: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
-}
-
-interface CourseClass {
-  id: number;
-  name: string;
-  theme?: string;
-  description?: string;
-  coverImage?: string;
-  status?: 'OPEN' | 'CLOSED' | 'ARCHIVED';
-  maxStudents?: number;
-  studentCount?: number;
-  courses?: Course[];
-}
-
-interface Teacher {
-  id: string;
-  firstName: string;
-  lastName: string;
-  subjects?: string[];
-  university?: string;
-}
-
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  photoUrl?: string;
-  city?: string;
-  university?: string;
-  grade?: string;
-  certification?: string;
-  subjects?: string[];
-  teachingGrades?: string[];
-  teachingGoal?: string;
-}
-
-// Fonction utilitaire pour parser l'ID
-function parseId(id: number | string | undefined): number {
-  if (typeof id === 'number') {
-    return id;
-  }
-  if (typeof id === 'string') {
-    const parsed = parseInt(id, 10);
-    return isNaN(parsed) ? 0 : parsed;
-  }
-  return 0;
-}
+import { useTeacherDashboard, parseId } from '@/hooks/useTeacherDashboard';
+import toast from 'react-hot-toast';
+import { X, BookOpen } from 'lucide-react';
 
 export default function HomeView() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [compositions, setCompositions] = useState<Composition[]>([]);
-  const [exercisesStats, setExercisesStats] = useState({
-    totalExercises: 0,
-    pendingSubmissions: 0,
-    averageScore: 0
-  });
-  const [pendingInscriptionsCount, setPendingInscriptionsCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const {
+    user,
+    compositions,
+    coursesStatsForProfile,
+    exercisesStats,
+    pendingInscriptionsCount,
+    loading,
+    dashboardError,
+    isModalOpen,
+    setIsModalOpen,
+    isCourseSelectionModalOpen,
+    setIsCourseSelectionModalOpen,
+    isManageCoursesModalOpen,
+    setIsManageCoursesModalOpen,
+    selectedClassIdForCourses,
+    setSelectedClassIdForCourses,
+    loadDashboardData,
+    handleCreateCourseSubmit,
+    formatPerformanceDistribution
+  } = useTeacherDashboard();
+
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCourseSelectionModalOpen, setIsCourseSelectionModalOpen] = useState(false);
-  const [isManageCoursesModalOpen, setIsManageCoursesModalOpen] = useState(false);
-  const [selectedClassIdForCourses, setSelectedClassIdForCourses] = useState<number | null>(null);
 
-  // Statistiques pour ProfileCard
-  const [coursesStatsForProfile, setCoursesStatsForProfile] = useState<CourseStat[]>([]);
+  const handleModalClose = () => setIsModalOpen(false);
 
-  // Mettre à jour le loading context de manière synchronisée
-  useEffect(() => {
-    const isActuallyLoading = authLoading || loading;
-
-    if (isActuallyLoading) {
-      startLoading();
-    } else {
-      stopLoading();
-    }
-  }, [authLoading, loading, startLoading, stopLoading]);
-
-  // Fonction pour charger les statistiques manuellement
-  const loadManualStats = useCallback(async (): Promise<CourseStat[]> => {
-    try {
-      console.log('🔍 Chargement manuel des statistiques...');
-      const response = await EnseignantService.getAllCoursesStatistics();
-
-      if (response.success && response.data) {
-        console.log('✅ Statistiques chargées avec succès');
-
-        // Transformer les données de l'API en format CourseStat
-        const courseStats: CourseStat[] = response.data.map((course: any) => ({
-          courseId: course.courseId || 0,
-          courseTitle: course.courseTitle || course.title || `Cours ${course.courseId}`,
-          courseCategory: course.courseCategory || course.category || 'Général',
-          totalEnrolled: course.totalEnrolled || course.totalStudents || 0,
-          activeStudents: course.activeStudents || Math.floor((course.totalEnrolled || 0) * 0.85),
-          completionRate: course.completionRate || 0,
-          participationRate: course.participationRate || 0,
-          averageProgress: course.averageProgress || 0,
-          totalExercises: course.totalExercises || 0,
-          completedStudents: course.completedStudents || Math.floor((course.totalEnrolled || 0) * 0.65),
-          pendingEnrollments: course.pendingEnrollments,
-          acceptedEnrollments: course.acceptedEnrollments,
-          rejectedEnrollments: course.rejectedEnrollments,
-        }));
-
-        return courseStats;
-      }
-      return [];
-    } catch (error) {
-      console.error('❌ Erreur lors du chargement des statistiques:', error);
-      return [];
-    }
-  }, []);
-
-  // Fonction pour calculer les statistiques d'exercices
-  const calculateExercisesStats = useCallback(async (classes: CourseClass[]) => {
-    try {
-      let totalPending = 0;
-      let totalExercisesCount = 0;
-
-      // On itère sur toutes les classes et leurs cours imbriqués
-      for (const cls of classes) {
-        if (!cls.courses) continue;
-        for (const course of cls.courses) {
-          const courseId = parseId(course.id);
-          if (courseId > 0) {
-            try {
-              const resp = await ExercicesService.getExercisesForCourse(courseId);
-              const exercises = (resp as any)?.data || [];
-              totalExercisesCount += exercises.length;
-
-              // Limiter les appels pour éviter les boucles
-              if (exercises.length > 0) {
-                // Prendre seulement le premier exercice pour vérifier
-                const firstEx = exercises[0];
-                try {
-                  const submissionsResp = await EnseignantService.getSubmissions(firstEx.id);
-                  const submissions = (submissionsResp as any)?.data || [];
-                  const pending = submissions.filter((s: any) =>
-                    s.graded === undefined || s.graded === false || !s.graded
-                  ).length;
-                  totalPending += pending;
-                } catch (err) {
-                  console.error('Erreur chargement soumissions:', err);
-                }
-              }
-            } catch (error) {
-              console.error(`Erreur chargement exercices cours ${courseId}:`, error);
-            }
-          }
-        }
-      }
-
-      return {
-        totalExercises: totalExercisesCount,
-        pendingSubmissions: totalPending,
-        averageScore: 0
-      };
-    } catch (error) {
-      console.error('Erreur calcul statistiques exercices:', error);
-      return {
-        totalExercises: 0,
-        pendingSubmissions: 0,
-        averageScore: 0
-      };
-    }
-  }, []);
-
-  // Fonction pour formater la distribution des performances
-  const formatPerformanceDistribution = useCallback((stats: CourseStat[]) => {
-    try {
-      const totalStudents = stats.reduce((sum, course) => sum + course.totalEnrolled, 0);
-      const excellent = Math.round(totalStudents * 0.25); // 25%
-      const good = Math.round(totalStudents * 0.35);      // 35%
-      const average = Math.round(totalStudents * 0.25);   // 25%
-      const poor = Math.round(totalStudents * 0.15);      // 15%
-
-      return [
-        {
-          range: 'Excellent',
-          value: totalStudents > 0 ? Math.round((excellent / totalStudents) * 100) : 0,
-          color: 'bg-purple-600 dark:bg-purple-500'
-        },
-        {
-          range: 'Bien',
-          value: totalStudents > 0 ? Math.round((good / totalStudents) * 100) : 0,
-          color: 'bg-purple-400'
-        },
-        {
-          range: 'Passable',
-          value: totalStudents > 0 ? Math.round((average / totalStudents) * 100) : 0,
-          color: 'bg-purple-300 dark:bg-purple-400'
-        },
-        {
-          range: 'Faible',
-          value: totalStudents > 0 ? Math.round((poor / totalStudents) * 100) : 0,
-          color: 'bg-purple-200 dark:bg-purple-300'
-        },
-      ];
-    } catch (error) {
-      console.error('Erreur formatPerformanceDistribution:', error);
-      return [
-        { range: 'Excellent', value: 0, color: 'bg-purple-600 dark:bg-purple-500' },
-        { range: 'Bien', value: 0, color: 'bg-purple-400' },
-        { range: 'Passable', value: 0, color: 'bg-purple-300 dark:bg-purple-400' },
-        { range: 'Faible', value: 0, color: 'bg-purple-200 dark:bg-purple-300' },
-      ];
-    }
-  }, []);
-
-  // Fonction de suppression d'une classe de cours
-  const handleDeleteCourse = async (classId: string) => {
-    try {
-      const classIdNum = parseId(classId);
-      if (classIdNum === 0) {
-        toast.error('ID de classe invalide');
-        return;
-      }
-
-      startLoading();
-
-      await CourseClassService.deleteClass(classIdNum);
-
-      toast.success('Classe supprimée avec succès');
-
-      // Recharger les données
-      await loadDashboardData();
-
-    } catch (error: any) {
-      console.error('Erreur lors de la suppression de la classe:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Erreur lors de la suppression';
-      toast.error(`Échec de la suppression: ${errorMessage}`);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  // Changer le statut d'une classe
-  const handleChangeClassStatus = async (classId: string, status: 'OPEN' | 'CLOSED' | 'ARCHIVED') => {
-    const classIdNum = parseId(classId);
-    if (classIdNum === 0) {
-      toast.error('ID de classe invalide');
-      return;
-    }
-    try {
-      await CourseClassService.changeClassStatus(classIdNum, status);
-      const labels: Record<string, string> = { OPEN: 'Ouverte', CLOSED: 'Fermée', ARCHIVED: 'Archivée' };
-      toast.success(`Statut de la classe mis à jour : ${labels[status]}`);
-      await loadDashboardData();
-    } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.message || 'Erreur lors du changement de statut';
-      toast.error(msg);
-    }
-  };
-
-  // Fonction pour gérer la fermeture du modal
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleCreateCourseSubmit = async (data: {
-    title: string;
-    category: string;
-    description: string;
-    image?: string;
-    file?: any;
-  }) => {
-    if (!user) {
-      toast.error('Vous devez être connecté pour créer un cours');
-      return;
-    }
-
-    setIsModalOpen(false);
-
-    try {
-      startLoading();
-
-      // Création d'un Cours via CourseControllerService
-      const { CourseControllerService } = await import('@/lib/services/CourseControllerService');
-      const newCourseResponse = await CourseControllerService.createCourse(user.id, {
-        title: data.title,
-        category: data.category,
-        description: data.description,
-        status: 'DRAFT'
-      });
-
-      if (newCourseResponse?.data?.id) {
-        toast.success('Cours créé avec succès !');
-        // On pourrait aussi uploader l'image ici si le service le permet
-        await loadDashboardData();
-      } else {
-        throw new Error("Impossible de récupérer l'id du cours");
-      }
-    } catch (err) {
-      toast.error('Erreur lors de la création de la classe');
-      console.error(err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  // Fonction pour ouvrir la modale de sélection de cours (pour exercice)
-  const openCourseSelectionModal = () => {
-    setIsCourseSelectionModalOpen(true);
-  };
+  const openCourseSelectionModal = () => setIsCourseSelectionModalOpen(true);
 
   const handleCourseSelect = (classId: string) => {
     setIsCourseSelectionModalOpen(false);
-    // TODO: Redirection modifiée pour pointer vers les détails de la classe ou un éditeur de cours
-    router.push(`/profdashboard/exercises/${classId}`); // Pour l'instant on garde le route existant, qui pointera vers la classe
+    router.push(`/profdashboard/exercises/${classId}`);
   };
 
   const handleOpenManageCoursesForClass = (classIdString: string) => {
@@ -348,112 +53,7 @@ export default function HomeView() {
     }
   };
 
-  const loadDashboardData = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      setDashboardError(null);
-
-      console.log('📊 Chargement des données du dashboard pour:', user);
-
-      // 1. Fetch classes pour cet enseignant
-      const classesResponse = await CourseClassService.getMyClasses();
-
-      if (classesResponse.data) {
-        const classes = classesResponse.data as CourseClass[];
-        console.log(`📚 Classes trouvées: ${classes.length}`);
-
-        // 2. Calculer les statistiques d'exercices à travers toutes les classes
-        const exercisesData = await calculateExercisesStats(classes);
-        setExercisesStats(exercisesData);
-
-        // 3. Charger les statistiques pour ProfileCard
-        const statsData = await loadManualStats();
-        setCoursesStatsForProfile(statsData);
-
-        // 4. Mapper les "compositions" pour utiliser les classes de cours
-        const mappedCompositions: Composition[] = classes.map((cls: CourseClass) => {
-
-          let totalLikes = 0;
-          let totalDownloads = 0;
-          let totalExercisesClass = 0;
-
-          // Aggréger les stats depuis les cours
-          if (cls.courses) {
-            totalLikes = cls.courses.reduce((sum, c) => sum + (c.status === 'PUBLISHED' ? 10 : 0), 0); // Simulation
-          }
-
-          return {
-            id: cls.id?.toString() || Math.random().toString(),
-            title: cls.name || 'Classe Sans titre',
-            class: cls.theme || 'Général',
-            participants: cls.studentCount || 0,
-            likes: totalLikes,
-            downloads: totalDownloads,
-            status: cls.status || 'OPEN',
-            courseStats: {
-              totalExercises: totalExercisesClass,
-              totalEnrolled: cls.studentCount || 0
-            }
-          };
-        });
-
-        setCompositions(mappedCompositions);
-
-      } else {
-        console.log('⚠️ Aucune classe trouvée');
-        setCompositions([]);
-        setCoursesStatsForProfile([]);
-      }
-
-      // 5. Fetch pending inscriptions count
-      try {
-        const pendingData = await EnrollmentService.getPendingEnrollments();
-        setPendingInscriptionsCount(pendingData.length);
-        console.log(`📝 Inscriptions en attente: ${pendingData.length}`);
-      } catch (error) {
-        console.error('Erreur chargement inscriptions:', error);
-        setPendingInscriptionsCount(0);
-      }
-
-      console.log('✅ Dashboard chargé avec succès');
-    } catch (error) {
-      console.error('❌ Erreur lors du chargement des données du tableau de bord:', error);
-      setDashboardError('Impossible de charger les données du dashboard');
-      toast.error('Erreur de chargement des données');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, calculateExercisesStats, loadManualStats]);
-
-  // Charger les données au montage
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
-    if (user && user.role !== 'teacher') {
-      router.push('/etudashboard');
-      return;
-    }
-
-    if (user) {
-      console.log('🚀 Initialisation du dashboard');
-      loadDashboardData();
-    }
-  }, [user, authLoading, isAuthenticated, router, loadDashboardData]);
-
-  // Afficher l'erreur du dashboard
-  useEffect(() => {
-    if (dashboardError && !loading) {
-      toast.error(dashboardError, { duration: 5000 });
-    }
-  }, [dashboardError, loading]);
-
-  // Si on charge, on rend le skeleton pour donner un retour visuel immédiat
-  if (authLoading || loading) {
+  if (loading) {
     return <DashboardSkeleton />;
   }
 
@@ -463,76 +63,72 @@ export default function HomeView() {
     ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
     : user.email.split('@')[0];
 
-  // Calculer les totaux basés sur les compositions
   const calculatedTotals = compositions.reduce((acc, course) => ({
     totalEnrolled: acc.totalEnrolled + (course.participants || 0),
     totalCourses: acc.totalCourses + 1,
     totalExercises: acc.totalExercises + (course.courseStats?.totalExercises || 0)
-  }), {
-    totalEnrolled: 0,
-    totalCourses: 0,
-    totalExercises: 0
-  });
+  }), { totalEnrolled: 0, totalCourses: 0, totalExercises: 0 });
 
-  // Calculer la progression moyenne (simplifiée)
-  const averageProgress = calculatedTotals.totalEnrolled > 0
-    ? Math.round((calculatedTotals.totalEnrolled * 0.7)) // Valeur simulée
-    : 0;
+  const hasStats = coursesStatsForProfile && coursesStatsForProfile.length > 0;
+  
+  const totalStudentsCount = hasStats 
+    ? coursesStatsForProfile.reduce((sum, s) => sum + (s.totalEnrolled || 0), 0)
+    : calculatedTotals.totalEnrolled;
+
+  const totalPublicationsCount = hasStats
+    ? coursesStatsForProfile.length
+    : calculatedTotals.totalCourses;
+    
+  const totalExercisesCount = hasStats
+    ? coursesStatsForProfile.reduce((sum, s) => sum + (s.totalExercises || 0), 0)
+    : calculatedTotals.totalExercises;
+
+  const activeStudentsCount = hasStats
+    ? coursesStatsForProfile.reduce((sum, s) => sum + (s.activeStudents || 0), 0)
+    : Math.round(totalStudentsCount * 0.6);
+
+  const completedStudentsCount = hasStats
+    ? coursesStatsForProfile.reduce((sum, s) => sum + (s.completedStudents || 0), 0)
+    : Math.round(totalStudentsCount * 0.3);
+
+  const participationRateAvg = hasStats
+    ? Math.round(coursesStatsForProfile.reduce((sum, s) => sum + (s.participationRate || 0), 0) / coursesStatsForProfile.length)
+    : (totalStudentsCount > 0 ? Math.round((activeStudentsCount / totalStudentsCount) * 100) : 0);
+
+  const averageProgressVal = hasStats
+    ? Math.round(coursesStatsForProfile.reduce((sum, s) => sum + (s.averageProgress || 0), 0) / coursesStatsForProfile.length)
+    : (totalStudentsCount > 0 ? Math.round(totalStudentsCount * 0.7) : 0);
 
   const professor = {
     id: user.email,
     email: user.email,
     name: displayName,
-    city: user.city || 'Non spécifiée',
-    university: user.university || 'Non spécifiée',
-    grade: user.grade || 'Enseignant',
-    certification: user.certification || 'Enseignement',
-    totalStudents: calculatedTotals.totalEnrolled,
-    activeStudents: Math.round(calculatedTotals.totalEnrolled * 0.6), // Valeur simulée
-    participationRate: calculatedTotals.totalEnrolled > 0
-      ? Math.round((calculatedTotals.totalEnrolled * 0.6) / calculatedTotals.totalEnrolled * 100)
-      : 0,
-    publications: calculatedTotals.totalCourses,
+    city: (user as any).city || 'Non spécifiée',
+    university: (user as any).university || 'Non spécifiée',
+    grade: (user as any).grade || 'Enseignant',
+    certification: (user as any).certification || 'Enseignement',
+    totalStudents: totalStudentsCount,
+    activeStudents: activeStudentsCount,
+    participationRate: participationRateAvg,
+    publications: totalPublicationsCount,
     photoUrl: user.photoUrl || '/images/prof.jpeg',
     performanceDistribution: formatPerformanceDistribution(coursesStatsForProfile),
-    averageProgress: averageProgress,
-    totalExercises: calculatedTotals.totalExercises,
-    completedStudents: Math.round(calculatedTotals.totalEnrolled * 0.3), // Valeur simulée
+    averageProgress: averageProgressVal,
+    totalExercises: totalExercisesCount,
+    completedStudents: completedStudentsCount,
     pendingSubmissions: exercisesStats.pendingSubmissions
   };
 
-  const teachersList = teachers.map(t => ({
-    id: t.id,
-    name: `${t.firstName} ${t.lastName}`,
-    subject: t.subjects?.[0] || 'Enseignement',
-    rating: 4.5,
-    students: 0,
-    image: '',
-    university: t.university
-  }));
 
-  // Formater le temps écoulé
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);
-
-    if (diffInMinutes < 1) return 'À l\'instant';
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
-    if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)} h`;
-    return `Il y a ${Math.floor(diffInMinutes / 1440)} j`;
-  };
-
-  function parseCourseId(id: string) {
-    throw new Error('Function not implemented.');
-  }
 
   return (
     <>
       {/* Modale de création de cours */}
       <CreateCourseModal
         isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onSubmit={handleCreateCourseSubmit}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={(data) => handleCreateCourseSubmit(data, 'compositions')}
+        mode="course"
       />
 
       {/* Modale de gestion des cours de la classe */}

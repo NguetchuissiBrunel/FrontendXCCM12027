@@ -132,10 +132,11 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
       {/* Editable Content */}
       <NodeViewContent className="content" />
 
-      {/* Add Exercise Button */}
-      <div contentEditable={false} style={{ marginTop: '8px' }}>
-        <button
-          onMouseDown={(e) => e.stopPropagation()}
+      {/* Add Exercise Button - Only in Editor */}
+      {window.location.pathname.includes('editor') && (
+        <div contentEditable={false} style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             window.dispatchEvent(
@@ -166,6 +167,7 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
           ＋ Exercice
         </button>
       </div>
+      )}
     </NodeViewWrapper>
   );
 }

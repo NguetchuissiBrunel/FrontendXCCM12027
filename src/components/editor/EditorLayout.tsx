@@ -92,6 +92,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const [courseImage, setCourseImage] = useState<string | undefined>(undefined);
   const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
   const [isLoadingCourse, setIsLoadingCourse] = useState(false);
+  const [pendingContent, setPendingContent] = useState<any>(null);
 
   // Exercise management states
   const [exercises, setExercises] = useState<ExerciseType[]>([]);
@@ -174,6 +175,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // Handle initialization from query params
   useEffect(() => {
     const isNew = searchParams.get('new') === 'true';
+    const courseIdParam = searchParams.get('courseId');
+
     if (isNew) {
       const title = searchParams.get('title');
       const category = searchParams.get('category');
@@ -184,8 +187,74 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       if (description) setCourseDescription(description);
 
       setIsEntranceModalOpen(false);
+    } else if (courseIdParam && currentCourseId === null && !isLoadingCourse && user?.id) {
+      const id = Number(courseIdParam);
+      if (!isNaN(id)) {
+        loadSpecificCourse(id, user.id);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, currentCourseId, isLoadingCourse, user]);
+
+  // Apply pending content when editor is ready
+  useEffect(() => {
+    if (editorInstance && pendingContent) {
+      // Defer execution to avoid "flushSync was called from inside a lifecycle method"
+      const timer = setTimeout(() => {
+        try {
+          editorInstance.commands.setContent(pendingContent);
+          setPendingContent(null); // Clear after applying
+        } catch (error) {
+          console.error('Error applying content to editor:', error);
+          // Don't show toast here as it might be annoying on every attempt
+        }
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [editorInstance, pendingContent]);
+
+  const loadSpecificCourse = async (id: number, userId: string) => {
+    try {
+      setIsLoadingCourse(true);
+      
+      // Since getEnrichedCourse doesn't return content, we use getAuthorCourses
+      // which returns the full CourseResponse objects including content.
+      const response = await CourseControllerService.getAuthorCourses(userId);
+      const courses = (response as any).data || response;
+      
+      const course = Array.isArray(courses) ? courses.find((c: any) => c.id === id) : null;
+
+      if (course) {
+        let content = course.content;
+        
+        // Handle cases where content might be a string (JSON) instead of an object
+        if (typeof content === 'string' && content.trim().startsWith('{')) {
+          try {
+            content = JSON.parse(content);
+          } catch (e) {
+            console.error('Failed to parse content JSON string:', e);
+          }
+        }
+
+        setPendingContent(content || '');
+        setCurrentCourseId(course.id || id);
+        setCourseTitle(course.title || "Sans titre");
+        setCourseCategory(course.category || "Informatique");
+        setCourseDescription(course.description || "");
+        setCourseImage(course.photoUrl || course.coverImage);
+        
+        toast.success(`Cours "${course.title || 'Sans titre'}" chargé`);
+        setIsEntranceModalOpen(false);
+        setActivePanel('structure');
+      } else {
+        toast.error('Cours non trouvé dans votre bibliothèque');
+      }
+    } catch (error) {
+      console.error('Erreur chargement cours spécifique:', error);
+      toast.error('Impossible de charger le cours spécifié.');
+    } finally {
+      setIsLoadingCourse(false);
+    }
+  };
 
   // Extract TOC from editor in real-time
   const [tocItems, refreshTOC] = useTOC(editorInstance, 300);
@@ -359,7 +428,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   };
 
   // Ref for MainEditor to handle imperative updates from TOC
-  const editorRef = React.useRef<{ handleTOCAction: (action: 'rename' | 'delete' | 'move', itemId: string, newTitle?: string | any) => void }>(null);
+  const editorRef = React.useRef<{ handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'copy' | 'paste' | 'duplicate', itemId: string, payload?: any) => void }>(null);
 
   // Ref for auto-save timer
   const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -1318,7 +1387,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                       <div>
                                         <h4 className="font-medium dark:text-white">{exercise.title}</h4>
                                         <p className="text-xs text-gray-500">
-                                          Échéance: {new Date(exercise.dueDate).toLocaleDateString()}
+                                          Échéance: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
                                         </p>
                                       </div>
                                       <div className="text-right">

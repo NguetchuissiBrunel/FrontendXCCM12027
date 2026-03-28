@@ -133,40 +133,42 @@ export default function ChapitreNodeView({ node, updateAttributes }: NodeViewPro
       {/* Editable Content */}
       <NodeViewContent className="content" />
 
-      {/* Add Exercise Button */}
-      <div contentEditable={false} style={{ marginTop: '8px' }}>
-        <button
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            window.dispatchEvent(
-              new CustomEvent('xccm:open-exercise-modal', {
-                detail: { nodeId: node.attrs.id }
-              })
-            );
-          }}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 12px',
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#059669',
-            border: '1px dashed #6ee7b7',
-            borderRadius: '6px',
-            background: 'transparent',
-            cursor: 'pointer',
-            opacity: 0.7,
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
-          title="Ajouter un exercice dans ce chapitre"
-        >
-          ＋ Exercice
-        </button>
-      </div>
+      {/* Add Exercise Button - Only in Editor */}
+      {window.location.pathname.includes('editor') && (
+        <div contentEditable={false} style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              window.dispatchEvent(
+                new CustomEvent('xccm:open-exercise-modal', {
+                  detail: { nodeId: node.attrs.id }
+                })
+              );
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#059669',
+              border: '1px dashed #6ee7b7',
+              borderRadius: '6px',
+              background: 'transparent',
+              cursor: 'pointer',
+              opacity: 0.7,
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+            title="Ajouter un exercice dans ce chapitre"
+          >
+            ＋ Exercice
+          </button>
+        </div>
+      )}
     </NodeViewWrapper>
   );
 }

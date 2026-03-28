@@ -17,6 +17,7 @@
 
 import React, { useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
+import { BookOpen } from 'lucide-react';
 
 export default function NotionNodeView({ node, updateAttributes }: NodeViewProps) {
   // const [isHovered, setIsHovered] = useState(false);
@@ -27,21 +28,33 @@ export default function NotionNodeView({ node, updateAttributes }: NodeViewProps
       data-id={node.attrs.id}
       style={{
         position: 'relative',
-        border: '1px solid transparent',
-        borderLeft: '4px solid #EF4444',
-        backgroundColor: 'rgba(239, 68, 68, 0.05)',
-        padding: '16px',
-        margin: '16px 0',
-        borderRadius: '0 4px 4px 0',
+        border: '2px solid #EF4444',
+        borderLeft: '8px solid #EF4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.08)',
+        padding: '20px',
+        margin: '24px 0',
+        borderRadius: '12px',
+        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
       }}
     >
-      {/* Editable Content */}
-      <NodeViewContent className="content" />
+      {/* Label Badge */}
+      <div contentEditable={false} className="flex items-center gap-2 mb-4 select-none bg-red-600 text-white px-3 py-1.5 rounded-lg w-fit shadow-sm">
+        <BookOpen className="h-4 w-4" />
+        <span className="text-xs font-black uppercase tracking-wider">
+          Notion Clé {node.attrs.number || ""}
+        </span>
+      </div>
 
-      {/* Add Exercise Button */}
-      <div contentEditable={false} style={{ marginTop: '8px' }}>
-        <button
-          onMouseDown={(e) => e.stopPropagation()}
+      {/* Editable Content */}
+      <div className="mb-2">
+        <NodeViewContent className="content" />
+      </div>
+
+      {/* Add Exercise Button - Only in Editor */}
+      {window.location.pathname.includes('editor') && (
+        <div contentEditable={false} style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             window.dispatchEvent(
@@ -72,6 +85,7 @@ export default function NotionNodeView({ node, updateAttributes }: NodeViewProps
           ＋ Exercice
         </button>
       </div>
+      )}
     </NodeViewWrapper>
   );
 }

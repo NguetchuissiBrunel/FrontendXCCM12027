@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText, FolderOpen } from 'lucide-react';
+import { usePendingCount } from '@/hooks/usePendingCount';
 
 interface SidebarProps {
   userRole: 'student' | 'professor';
@@ -14,6 +15,7 @@ interface SidebarProps {
 
 export default function Sidebar({ userRole, userName, userLevel, activeTab }: SidebarProps) {
   const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
+  const { pendingCount } = usePendingCount();
 
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
@@ -95,7 +97,12 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
                     }`}
                 >
                   <Icon size={20} />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.id === 'inscriptions' && pendingCount > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center animate-pulse shadow-sm">
+                      {pendingCount > 9 ? '9+' : pendingCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

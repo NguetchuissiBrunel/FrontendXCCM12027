@@ -27,7 +27,6 @@ const NODE_TYPE_MAP: Record<string, { itemType: ItemType; level: number }> = {
   chapitre: { itemType: 'chapter', level: 2 },
   chapter: { itemType: 'chapter', level: 2 },
   paragraphe: { itemType: 'paragraph', level: 3 },
-  paragraph: { itemType: 'paragraph', level: 3 },
   notion: { itemType: 'notion', level: 4 },
   exercice: { itemType: 'exercise', level: 5 },
   exercise: { itemType: 'exercise', level: 5 },
@@ -71,7 +70,7 @@ function isHierarchyNode(node: any): boolean {
   const hierarchyTypes = [
     'section', 
     'chapitre', 'chapter', 
-    'paragraphe', 'paragraph', 
+    'paragraphe', 
     'notion', 
     'exercice', 'exercise'
   ];

@@ -33,6 +33,7 @@ interface CourseSidebarProps {
   setShowExercise: (show: boolean) => void;
   setCourseCompleted: (completed: boolean) => void;
   onDownloadRequest: () => void;
+  isEnrolled: boolean;
 }
 
 const CourseSidebar: React.FC<CourseSidebarProps> = ({
@@ -45,7 +46,8 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   setCurrentParagraphIndex,
   setShowExercise,
   setCourseCompleted,
-  onDownloadRequest
+  onDownloadRequest,
+  isEnrolled
 }) => {
   const [expandedParts, setExpandedParts] = useState<{ [key: number]: boolean }>({});
   const [expandedChapters, setExpandedChapters] = useState<{ [key: string]: boolean }>({});
@@ -367,11 +369,13 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
       <div className="p-2 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={handleDownloadClick}
-          className="fixed bottom-6 left-30 bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 shadow-lg transition-all hover:shadow-xl"
-          title="Télécharger le cours"
+          className={`fixed bottom-6 right-6 rounded-full p-4 shadow-2xl transition-all hover:scale-110 active:scale-95 z-50 ${
+            isEnrolled ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-gray-400 text-white cursor-not-allowed opacity-70'
+          }`}
+          title={isEnrolled ? "Télécharger le cours" : "Inscrivez-vous pour télécharger"}
           type="button"
         >
-          <Download className="h-7 w-7" />
+          <Download className="h-8 w-8" />
         </button>
       </div>
     </aside>

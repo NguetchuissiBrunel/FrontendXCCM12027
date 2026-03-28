@@ -37,7 +37,7 @@ declare module '@tiptap/core' {
 export default Node.create<ChapitreOptions>({
   name: 'chapitre',
 
-  group: 'xccm-chapter',
+  group: 'block xccm-chapter',
 
   content: '(paragraphe | exercice)+',
 

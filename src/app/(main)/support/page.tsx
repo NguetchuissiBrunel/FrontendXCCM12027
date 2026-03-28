@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLoading } from '@/contexts/LoadingContext';
+import { useTranslations } from 'next-intl';
 
 interface FAQItem {
   id: string;
@@ -25,6 +26,7 @@ interface TicketStatus {
 }
 
 export default function SupportTechniquePage() {
+  const t = useTranslations('pages.support');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
@@ -113,11 +115,11 @@ export default function SupportTechniquePage() {
   ]);
 
   const categories = [
-    { id: 'all', label: 'Toutes les questions', count: faqItems.length },
-    { id: 'general', label: 'Général', count: faqItems.filter(f => f.category === 'general').length },
-    { id: 'technique', label: 'Technique', count: faqItems.filter(f => f.category === 'technique').length },
-    { id: 'compte', label: 'Compte', count: faqItems.filter(f => f.category === 'compte').length },
-    { id: 'paiement', label: 'Paiement', count: faqItems.filter(f => f.category === 'paiement').length },
+    { id: 'all', label: t('quickLinks.allCategories', { defaultValue: 'Toutes les questions' }), count: faqItems.length },
+    { id: 'general', label: t('categoryOptions.general'), count: faqItems.filter(f => f.category === 'general').length },
+    { id: 'technique', label: t('categoryOptions.technique'), count: faqItems.filter(f => f.category === 'technique').length },
+    { id: 'compte', label: t('categoryOptions.compte'), count: faqItems.filter(f => f.category === 'compte').length },
+    { id: 'paiement', label: t('categoryOptions.paiement'), count: faqItems.filter(f => f.category === 'paiement').length },
   ];
 
   const filteredFAQs = faqItems.filter(item => {
@@ -144,7 +146,7 @@ export default function SupportTechniquePage() {
     // Simulation d'envoi
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    toast.success('Votre message a été envoyé ! Notre équipe vous répondra dans les 24 heures.');
+    toast.success(t('successToast'));
     setFormData({
       name: '',
       email: '',
@@ -190,11 +192,11 @@ export default function SupportTechniquePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
-              <span className="block">Support Technique</span>
-              <span className="block text-purple-600 dark:text-purple-400">Centre d'aide</span>
+              <span className="block">{t('title')}</span>
+              <span className="block text-purple-600 dark:text-purple-400">{t('subtitle')}</span>
             </h1>
             <p className="mt-3 max-w-2xl mx-auto text-lg text-gray-500 dark:text-gray-400 sm:text-xl">
-              Trouvez rapidement des réponses à vos questions ou contactez notre équipe d'assistance
+              {t('description')}
             </p>
           </div>
         </div>
@@ -212,8 +214,8 @@ export default function SupportTechniquePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">FAQ</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Questions fréquentes</p>
+            <h3 className="font-bold text-gray-900 dark:text-white">{t('quickLinks.faq')}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('quickLinks.faqDesc')}</p>
           </Link>
 
           <Link
@@ -225,8 +227,8 @@ export default function SupportTechniquePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">Contact</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Formulaire de contact</p>
+            <h3 className="font-bold text-gray-900 dark:text-white">{t('quickLinks.contact')}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('quickLinks.contactDesc')}</p>
           </Link>
 
           <Link
@@ -238,8 +240,8 @@ export default function SupportTechniquePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">Mes tickets</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Suivi des demandes</p>
+            <h3 className="font-bold text-gray-900 dark:text-white">{t('quickLinks.tickets')}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('quickLinks.ticketsDesc')}</p>
           </Link>
 
           <div className="bg-gradient-to-r from-purple-700 to-purple-600 dark:from-purple-800 dark:to-purple-700 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 text-center">
@@ -248,10 +250,10 @@ export default function SupportTechniquePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
-            <h3 className="font-bold text-white">Chat en direct</h3>
-            <p className="text-purple-100 text-sm">Disponible 9h-18h</p>
+            <h3 className="font-bold text-white">{t('quickLinks.livechat')}</h3>
+            <p className="text-purple-100 text-sm">{t('quickLinks.livechatDesc')}</p>
             <button className="mt-3 bg-white text-purple-600 hover:bg-purple-50 text-sm font-medium py-2 px-4 rounded-lg transition-colors w-full">
-              Démarrer le chat
+              {t('quickLinks.startChat')}
             </button>
           </div>
         </div>
@@ -266,7 +268,7 @@ export default function SupportTechniquePage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher dans l'aide..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full px-4 py-3 pl-12 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
                 />
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
@@ -280,9 +282,9 @@ export default function SupportTechniquePage() {
             {/* FAQ Section */}
             <section id="faq" className="mb-12">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Foire Aux Questions</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('faqTitle')}</h2>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {filteredFAQs.length} questions trouvées
+                  {t('faqFound', { count: filteredFAQs.length })}
                 </div>
               </div>
 
@@ -324,7 +326,7 @@ export default function SupportTechniquePage() {
                       </div>
                       <div className="flex items-center space-x-4">
                         <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">
-                          {item.popularity}% d'utilité
+                          {t('usefulness', { pop: item.popularity })}
                         </span>
                         <svg
                           className={`w-5 h-5 text-gray-400 transition-transform ${expandedFAQ === item.id ? 'transform rotate-180' : ''
@@ -344,20 +346,20 @@ export default function SupportTechniquePage() {
                           <p className="text-gray-600 dark:text-gray-400 mb-4">{item.answer}</p>
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                              Catégorie : {categories.find(c => c.id === item.category)?.label}
+                              {t('category', { cat: categories.find(c => c.id === item.category)?.label || '' })}
                             </span>
                             <div className="flex space-x-2">
                               <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                                 <svg className="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v5m7 0h-4" />
                                 </svg>
-                                Utile
+                                {t('useful')}
                               </button>
                               <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                                 <svg className="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
                                 </svg>
-                                Pas utile
+                                {t('notUseful')}
                               </button>
                             </div>
                           </div>
@@ -371,14 +373,14 @@ export default function SupportTechniquePage() {
 
             {/* Contact Form */}
             <section id="contact" className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Formulaire de Contact</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t('formTitle')}</h2>
 
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 border border-gray-100 dark:border-gray-800">
                 <form onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nom complet *
+                        {t('nameLabel')}
                       </label>
                       <input
                         type="text"
@@ -387,13 +389,13 @@ export default function SupportTechniquePage() {
                         onChange={handleInputChange}
                         required
                         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
-                        placeholder="Votre nom"
+                        placeholder={t('namePlaceholder')}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Email *
+                        {t('emailLabel')}
                       </label>
                       <input
                         type="email"
@@ -402,7 +404,7 @@ export default function SupportTechniquePage() {
                         onChange={handleInputChange}
                         required
                         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
-                        placeholder="votre@email.com"
+                        placeholder={t('emailPlaceholder')}
                       />
                     </div>
                   </div>
@@ -410,7 +412,7 @@ export default function SupportTechniquePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Sujet *
+                        {t('subjectLabel')}
                       </label>
                       <input
                         type="text"
@@ -419,13 +421,13 @@ export default function SupportTechniquePage() {
                         onChange={handleInputChange}
                         required
                         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
-                        placeholder="Sujet de votre demande"
+                        placeholder={t('subjectPlaceholder')}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Catégorie *
+                        {t('categoryLabel')}
                       </label>
                       <select
                         name="category"
@@ -433,18 +435,18 @@ export default function SupportTechniquePage() {
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 dark:text-gray-300 transition-colors"
                       >
-                        <option value="general">Général</option>
-                        <option value="technique">Problème technique</option>
-                        <option value="compte">Problème de compte</option>
-                        <option value="paiement">Facturation/Paiement</option>
-                        <option value="feature">Demande de fonctionnalité</option>
+                        <option value="general">{t('categoryOptions.general')}</option>
+                        <option value="technique">{t('categoryOptions.technique')}</option>
+                        <option value="compte">{t('categoryOptions.compte')}</option>
+                        <option value="paiement">{t('categoryOptions.paiement')}</option>
+                        <option value="feature">{t('categoryOptions.feature')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Urgence *
+                      {t('urgencyLabel')}
                     </label>
                     <div className="flex flex-wrap gap-3">
                       {[
@@ -477,7 +479,7 @@ export default function SupportTechniquePage() {
 
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Message *
+                      {t('messageLabel')}
                     </label>
                     <textarea
                       name="message"
@@ -486,13 +488,13 @@ export default function SupportTechniquePage() {
                       required
                       rows={6}
                       className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 resize-none transition-colors"
-                      placeholder="Décrivez votre problème ou votre demande en détail..."
+                      placeholder={t('messagePlaceholder')}
                     />
                   </div>
 
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      * Champs obligatoires
+                      {t('requiredFields')}
                     </div>
                     <button
                       type="submit"
@@ -500,13 +502,13 @@ export default function SupportTechniquePage() {
                       className="px-8 py-3 bg-purple-600 dark:bg-purple-700 hover:bg-purple-700 dark:hover:bg-purple-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                     >
                       {isSubmitting ? (
-                        <span>Envoi...</span>
+                        <span>{t('sending')}</span>
                       ) : (
                         <>
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
-                          <span>Envoyer le message</span>
+                          <span>{t('sendMessage')}</span>
                         </>
                       )}
                     </button>
@@ -522,9 +524,9 @@ export default function SupportTechniquePage() {
             <section id="tickets">
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 border border-gray-100 dark:border-gray-800">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Mes tickets</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('myTickets')}</h3>
                   <Link href="/tickets" className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
-                    Voir tout
+                    {t('seeAll')}
                   </Link>
                 </div>
 
@@ -552,7 +554,7 @@ export default function SupportTechniquePage() {
                               ticket.status === 'resolved' ? 'Résolu' : 'Fermé'}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Dernière mise à jour : {ticket.lastUpdate}
+                          {t('lastUpdate', { time: ticket.lastUpdate })}
                         </span>
                       </div>
                     </div>
@@ -563,7 +565,7 @@ export default function SupportTechniquePage() {
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span>Nouvelle demande</span>
+                  <span>{t('newRequest')}</span>
                 </button>
               </div>
             </section>
@@ -581,9 +583,9 @@ export default function SupportTechniquePage() {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-medium text-white">Téléphone</h4>
-                      <p className="text-purple-100 text-sm">+33 1 23 45 67 89</p>
-                      <p className="text-purple-200 text-xs">Lun-Ven 9h-18h</p>
+                      <h4 className="font-medium text-white">{t('phoneTitle')}</h4>
+                      <p className="text-purple-100 text-sm">{t('phoneVal')}</p>
+                      <p className="text-purple-200 text-xs">{t('phoneHours')}</p>
                     </div>
                   </div>
 
@@ -594,9 +596,9 @@ export default function SupportTechniquePage() {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-medium text-white">Email</h4>
-                      <p className="text-purple-100 text-sm">support@xccm-platform.com</p>
-                      <p className="text-purple-200 text-xs">Réponse sous 24h</p>
+                      <h4 className="font-medium text-white">{t('emailTitle')}</h4>
+                      <p className="text-purple-100 text-sm">{t('emailVal')}</p>
+                      <p className="text-purple-200 text-xs">{t('emailHours')}</p>
                     </div>
                   </div>
 
@@ -608,27 +610,27 @@ export default function SupportTechniquePage() {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-medium text-white">Adresse</h4>
-                      <p className="text-purple-100 text-sm">123 Rue de l'Éducation</p>
-                      <p className="text-purple-200 text-xs">75000 Paris, France</p>
+                      <h4 className="font-medium text-white">{t('addressTitle')}</h4>
+                      <p className="text-purple-100 text-sm">{t('addressVal')}</p>
+                      <p className="text-purple-200 text-xs">{t('addressCity')}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-white/20">
-                  <h4 className="font-medium text-white mb-3">Heures d'ouverture</h4>
+                  <h4 className="font-medium text-white mb-3">{t('openingHoursTitle')}</h4>
                   <div className="space-y-2 text-sm text-purple-100">
                     <div className="flex justify-between">
-                      <span>Lundi - Vendredi</span>
-                      <span>9h00 - 18h00</span>
+                      <span>{t('mondayFriday')}</span>
+                      <span>{t('monFriHours')}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Samedi</span>
-                      <span>10h00 - 14h00</span>
+                      <span>{t('saturday')}</span>
+                      <span>{t('satHours')}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Dimanche</span>
-                      <span>Fermé</span>
+                      <span>{t('sunday')}</span>
+                      <span>{t('sunHours')}</span>
                     </div>
                   </div>
                 </div>
@@ -638,7 +640,7 @@ export default function SupportTechniquePage() {
             {/* Resources */}
             <section>
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 border border-gray-100 dark:border-gray-800">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Ressources utiles</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t('usefulDocs')}</h3>
 
                 <div className="space-y-4">
                   <Link href="/documentation" className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
@@ -649,7 +651,7 @@ export default function SupportTechniquePage() {
                         </svg>
                       </div>
                       <span className="text-gray-700 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        Documentation complète
+                        {t('docFull')}
                       </span>
                     </div>
                     <svg className="w-5 h-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -666,7 +668,7 @@ export default function SupportTechniquePage() {
                         </svg>
                       </div>
                       <span className="text-gray-700 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        Tutoriels vidéo
+                        {t('videoTutorials')}
                       </span>
                     </div>
                     <svg className="w-5 h-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -682,7 +684,7 @@ export default function SupportTechniquePage() {
                         </svg>
                       </div>
                       <span className="text-gray-700 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        Blog & Actualités
+                        {t('blogNews')}
                       </span>
                     </div>
                     <svg className="w-5 h-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -698,7 +700,7 @@ export default function SupportTechniquePage() {
                         </svg>
                       </div>
                       <span className="text-gray-700 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        Communauté
+                        {t('community')}
                       </span>
                     </div>
                     <svg className="w-5 h-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -716,19 +718,19 @@ export default function SupportTechniquePage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl font-bold text-white mb-2">24/7</div>
-              <div className="text-purple-100 text-sm">Support disponible</div>
+              <div className="text-purple-100 text-sm">{t('supportAvail')}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-white mb-2">2h</div>
-              <div className="text-purple-100 text-sm">Temps de réponse moyen</div>
+              <div className="text-purple-100 text-sm">{t('respTime')}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-white mb-2">98%</div>
-              <div className="text-purple-100 text-sm">Satisfaction client</div>
+              <div className="text-purple-100 text-sm">{t('satisfaction')}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-white mb-2">1000+</div>
-              <div className="text-purple-100 text-sm">Questions résolues</div>
+              <div className="text-purple-100 text-sm">{t('resolvedQs')}</div>
             </div>
           </div>
         </div>

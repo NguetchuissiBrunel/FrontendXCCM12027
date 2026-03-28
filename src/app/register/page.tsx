@@ -1,12 +1,14 @@
 'use client';
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaCamera, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket, FaEyeSlash, FaEye } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaGraduationCap, FaChalkboardTeacher, FaUniversity, FaMapMarkerAlt, FaBook, FaRocket, FaEyeSlash, FaEye } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import ImageUploader from '@/components/upload/ImageUploader';
+import { useTranslations, useLocale } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type FormData = {
   email: string;
@@ -34,34 +36,9 @@ type FormData = {
   teachingGoal?: string;
 };
 
-const GRADES = [
-  "Professeur des écoles",
-  "Certifié (CAPES)",
-  "Agrégé",
-  "Enseignant-Chercheur",
-  "Maître de Conférences",
-  "Professeur des Universités",
-  "Doctorant"
-];
-
-const SUBJECTS = [
-  "Mathématiques",
-  "Physique-Chimie",
-  "SVT",
-  "Informatique",
-  "Français",
-  "Anglais",
-  "Histoire-Géographie",
-  "Philosophie",
-  "Économie",
-  "Gestion",
-  "Droit",
-  "Médecine",
-  "Génie Civil",
-  "Génie Électrique"
-];
-
 const SignupPage = () => {
+  const t = useTranslations('auth.register');
+  const locale = useLocale();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -81,6 +58,16 @@ const SignupPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
   const subjectDropdownRef = useRef<HTMLDivElement>(null);
+  const grades = useMemo(() => (
+    locale === 'fr'
+      ? ['Professeur des ecoles', 'Certifie (CAPES)', 'Agrege', 'Enseignant-Chercheur', 'Maitre de Conferences', 'Professeur des Universites', 'Doctorant']
+      : ['School teacher', 'Certified teacher (CAPES)', 'Associate professor', 'Teacher-researcher', 'Senior lecturer', 'University professor', 'Doctoral student']
+  ), [locale]);
+  const subjects = useMemo(() => (
+    locale === 'fr'
+      ? ['Mathematiques', 'Physique-Chimie', 'SVT', 'Informatique', 'Francais', 'Anglais', 'Histoire-Geographie', 'Philosophie', 'Economie', 'Gestion', 'Droit', 'Medecine', 'Genie Civil', 'Genie Electrique']
+      : ['Mathematics', 'Physics-Chemistry', 'Life sciences', 'Computer science', 'French', 'English', 'History-Geography', 'Philosophy', 'Economics', 'Management', 'Law', 'Medicine', 'Civil engineering', 'Electrical engineering']
+  ), [locale]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -111,7 +98,7 @@ const SignupPage = () => {
     if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
       setErrors(prev => ({
         ...prev,
-        confirmPassword: "Les mots de passe ne correspondent pas"
+        confirmPassword: t('validation.passwordMismatch')
       }));
     } else if (formData.confirmPassword && formData.password === formData.confirmPassword) {
       setErrors(prev => {
@@ -120,36 +107,36 @@ const SignupPage = () => {
         return newErrors;
       });
     }
-  }, [formData.password, formData.confirmPassword]);
+  }, [formData.password, formData.confirmPassword, t]);
 
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = "L'email est requis";
+      newErrors.email = t('validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "L'email n'est pas valide";
+      newErrors.email = t('validation.emailInvalid');
     }
 
     if (!formData.password) {
-      newErrors.password = "Le mot de passe est requis";
+      newErrors.password = t('validation.passwordRequired');
     } else if (formData.password.length < 8) {
-      newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
+      newErrors.password = t('validation.passwordTooShort');
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Veuillez confirmer votre mot de passe";
+      newErrors.confirmPassword = t('validation.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+      newErrors.confirmPassword = t('validation.passwordMismatch');
     }
 
     if (formData.role === 'teacher' && !formData.grade) {
-      newErrors.grade = "Veuillez sélectionner votre grade";
+      newErrors.grade = t('validation.gradeRequired');
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  }, [formData, t]);
 
   const handleNext = useCallback(() => {
     if (currentStep === 1 && validateStep1()) {
@@ -161,8 +148,8 @@ const SignupPage = () => {
     setPhotoPreview(url);
     setFormData({ ...formData, photoUrl: url });
     setErrors({ ...errors, photo: '' });
-    toast.success('Photo uploadée avec succès');
-  }, [formData, errors]);
+    toast.success(t('messages.photoSuccess'));
+  }, [errors, formData, t]);
 
   const handlePhotoUploadError = useCallback((error: string) => {
     setErrors({ ...errors, photo: error });
@@ -230,22 +217,27 @@ const SignupPage = () => {
         }
       }
 
-      toast.success("Inscription réussie !");
-    } catch (error: any) {
+      toast.success(t('messages.success'));
+    } catch (error: unknown) {
+      const apiError = error as {
+        body?: { message?: string };
+        message?: string;
+        status?: number;
+      };
       console.error("Erreur lors de l'enregistrement :", error);
 
-      let errorMessage = "Une erreur est survenue lors de l'inscription.";
+      let errorMessage = t('messages.unexpected');
 
-      if (error?.body?.message) {
-        errorMessage = error.body.message;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.status === 400) {
-        errorMessage = "Données invalides. Veuillez vérifier vos informations.";
-      } else if (error?.status === 409) {
-        errorMessage = "Cet email est déjà utilisé.";
-      } else if (error?.status === 500) {
-        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
+      if (apiError.body?.message) {
+        errorMessage = apiError.body.message;
+      } else if (apiError.message) {
+        errorMessage = apiError.message;
+      } else if (apiError.status === 400) {
+        errorMessage = t('messages.invalidData');
+      } else if (apiError.status === 409) {
+        errorMessage = t('messages.emailInUse');
+      } else if (apiError.status === 500) {
+        errorMessage = t('messages.serverError');
       }
 
       setErrors({ submit: errorMessage });
@@ -253,7 +245,7 @@ const SignupPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, registerStudent, registerTeacher]);
+  }, [formData, registerStudent, registerTeacher, t]);
 
   const renderStep1 = useMemo(() => (
     <motion.div
@@ -264,15 +256,18 @@ const SignupPage = () => {
       className="space-y-6 bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 transition-colors duration-300"
     >
       <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-        Créez votre compte
+        {t('step1.title')}
       </h2>
+      <div className="flex justify-end">
+        <LanguageSwitcher compact />
+      </div>
 
       <div className="space-y-4">
         <div className="relative">
           <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="email"
-            placeholder="Votre adresse email"
+            placeholder={t('placeholders.email')}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -284,7 +279,7 @@ const SignupPage = () => {
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type={showPassword ? "text" : "password"}
-            placeholder="Votre mot de passe"
+            placeholder={t('placeholders.password')}
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -293,7 +288,7 @@ const SignupPage = () => {
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
           >
             {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
           </button>
@@ -306,7 +301,7 @@ const SignupPage = () => {
           <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type={showConfirmPassword ? "text" : "password"}
-            placeholder="Confirmez votre mot de passe"
+            placeholder={t('placeholders.confirmPassword')}
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
             className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 pr-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -315,7 +310,7 @@ const SignupPage = () => {
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-            aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
           >
             {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
           </button>
@@ -333,7 +328,7 @@ const SignupPage = () => {
               : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
               }`}
           >
-            <FaGraduationCap className="mr-2" /> Étudiant
+            <FaGraduationCap className="mr-2" /> {t('roles.student')}
           </button>
           <button
             type="button"
@@ -343,7 +338,7 @@ const SignupPage = () => {
               : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
               }`}
           >
-            <FaChalkboardTeacher className="mr-2" /> Enseignant
+            <FaChalkboardTeacher className="mr-2" /> {t('roles.teacher')}
           </button>
         </div>
 
@@ -361,8 +356,8 @@ const SignupPage = () => {
                 onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all appearance-none"
               >
-                <option value="" disabled>Sélectionnez votre grade</option>
-                {GRADES.map(grade => (
+                <option value="" disabled>{t('placeholders.grade')}</option>
+                {grades.map(grade => (
                   <option key={grade} value={grade}>{grade}</option>
                 ))}
               </select>
@@ -376,16 +371,16 @@ const SignupPage = () => {
         onClick={handleNext}
         className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
       >
-        Suivant
+        {t('step1.next')}
       </button>
       <div className="text-center">
-        <span className="text-gray-600 dark:text-gray-400">Vous avez déjà un compte ? </span>
+        <span className="text-gray-600 dark:text-gray-400">{t('alreadyHaveAccount')} </span>
         <Link href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
-          Connectez-vous
+          {t('login')}
         </Link>
       </div>
     </motion.div>
-  ), [formData, errors, handleNext, showPassword, showConfirmPassword]);
+  ), [errors, formData, grades, handleNext, showConfirmPassword, showPassword, t]);
 
   const renderStep2 = useMemo(() => (
     <motion.div
@@ -396,7 +391,7 @@ const SignupPage = () => {
       className="space-y-6 bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-800 transition-colors duration-300"
     >
       <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-        Complétez votre profil
+        {t('step2.title')}
       </h2>
 
       <div className="space-y-4">
@@ -405,7 +400,7 @@ const SignupPage = () => {
             <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Prénom"
+              placeholder={t('placeholders.firstName')}
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -415,7 +410,7 @@ const SignupPage = () => {
             <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Nom"
+              placeholder={t('placeholders.lastName')}
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -428,7 +423,7 @@ const SignupPage = () => {
             currentImageUrl={photoPreview}
             onUploadComplete={handlePhotoUploadComplete}
             onUploadError={handlePhotoUploadError}
-            placeholder="Cliquez ou glissez votre photo ici"
+            placeholder={t('placeholders.photo')}
           />
         </div>
 
@@ -437,7 +432,7 @@ const SignupPage = () => {
             <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Ville"
+              placeholder={t('placeholders.city')}
               value={formData.city}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -447,7 +442,7 @@ const SignupPage = () => {
             <FaUniversity className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Université"
+              placeholder={t('placeholders.university')}
               value={formData.university}
               onChange={(e) => setFormData({ ...formData, university: e.target.value })}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -460,7 +455,7 @@ const SignupPage = () => {
             <FaBook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Spécialisation"
+              placeholder={t('placeholders.specialization')}
               value={formData.specialization || ''}
               onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
@@ -487,13 +482,13 @@ const SignupPage = () => {
                     </span>
                   ))
                 ) : (
-                  <span className="text-gray-400">Sélectionnez vos matières</span>
+                  <span className="text-gray-400">{t('placeholders.subjects')}</span>
                 )}
               </div>
 
               {showSubjectDropdown && (
                 <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                  {SUBJECTS.map(subject => (
+                  {subjects.map(subject => (
                     <div
                       key={subject}
                       onClick={() => toggleSubject(subject)}
@@ -516,27 +511,27 @@ const SignupPage = () => {
           onClick={() => setCurrentStep(1)}
           className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-300 border border-gray-300 dark:border-gray-700"
         >
-          Retour
+          {t('step2.back')}
         </button>
         <button
           onClick={handleSubmit}
           className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
+          {isSubmitting ? t('step2.submitting') : t('step2.submit')}
         </button>
       </div>
 
       <div className="text-center">
-        <span className="text-gray-600 dark:text-gray-400">Vous avez déjà un compte ? </span>
+        <span className="text-gray-600 dark:text-gray-400">{t('alreadyHaveAccount')} </span>
         <Link href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
-          Connectez-vous
+          {t('login')}
         </Link>
       </div>
 
       {/* Toaster - Supprimé car géré au niveau global RootLayout */}
     </motion.div>
-  ), [formData, isSubmitting, handleSubmit, errors, handlePhotoUploadComplete, handlePhotoUploadError, photoPreview, showSubjectDropdown]);
+  ), [formData, handlePhotoUploadComplete, handlePhotoUploadError, handleSubmit, isSubmitting, photoPreview, showSubjectDropdown, subjects, t]);
 
   return (
     <div

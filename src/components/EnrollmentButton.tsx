@@ -6,6 +6,7 @@ import { useEnrollment } from '@/hooks/useEnrollment';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLoading } from '@/contexts/LoadingContext';
 import { Play, Check, Loader2, BookOpen, Lock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface EnrollmentButtonProps {
   courseId: number;
@@ -26,6 +27,7 @@ export default function EnrollmentButton({
   onEnroll,
   onUnenroll
 }: EnrollmentButtonProps) {
+  const t = useTranslations('enrollment');
   const { user, isAuthenticated } = useAuth();
   const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
   const { isEnrolled, progress, loading, enroll, unenroll, enrollment } = useEnrollment(courseId);
@@ -99,7 +101,7 @@ export default function EnrollmentButton({
         disabled
       >
         <Loader2 className={`${iconSizes[size]} animate-spin`} />
-        <span>Chargement...</span>
+        <span>{t('loading')}</span>
       </button>
     );
   }
@@ -118,31 +120,31 @@ export default function EnrollmentButton({
           disabled:opacity-50 disabled:cursor-not-allowed
           ${canEnroll ? 'hover:scale-105 active:scale-95' : ''}
         `}
-        title={!canEnroll ? (user?.role === 'teacher' ? 'Enseignants ne peuvent pas s\'inscrire' : 'Connectez-vous en tant qu\'étudiant') : undefined}
+        title={!canEnroll ? (user?.role === 'teacher' ? t('teacherRestricted') : t('loginRequired')) : undefined}
       >
         {globalLoading ? (
           <Loader2 className={`${iconSizes[size]} animate-spin`} />
         ) : !canEnroll ? (
           <>
             <Lock className={iconSizes[size]} />
-            <span>{user?.role === 'teacher' ? 'Enseignant' : 'Se connecter'}</span>
+            <span>{user?.role === 'teacher' ? t('teacher') : t('login')}</span>
           </>
         ) : isEnrolled ? (
           enrollment?.status === 'PENDING' ? (
             <>
               <Loader2 className={iconSizes[size]} />
-              <span>En attente de validation</span>
+              <span>{t('pending')}</span>
             </>
           ) : (
             <>
               <Check className={iconSizes[size]} />
-              <span>{showProgress ? `${progress}% complété` : 'Se désinscrire'}</span>
+              <span>{showProgress ? t('completed', { progress }) : t('unenroll')}</span>
             </>
           )
         ) : (
           <>
             <BookOpen className={iconSizes[size]} />
-            <span>S'inscrire</span>
+            <span>{t('enroll')}</span>
           </>
         )}
       </button>
@@ -156,7 +158,7 @@ export default function EnrollmentButton({
             ></div>
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
-            {progress}% complété
+            {t('completed', { progress })}
           </div>
         </div>
       )}

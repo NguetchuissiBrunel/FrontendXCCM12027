@@ -3,6 +3,7 @@
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { useState } from 'react';
+import { useLocale } from 'next-intl';
 import {
   AlertCircle,
   BookOpen,
@@ -22,8 +23,148 @@ import {
 } from 'lucide-react';
 
 export default function TermsOfServicePage() {
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const contactEmail = 'xccm1-enspy@gmail.com';
+  const content = locale === 'fr'
+    ? {
+        copyFallback: 'Copiez cet e-mail :',
+        sections: [
+          { id: 'acceptation', label: '1. Acceptation' },
+          { id: 'description', label: '2. Service' },
+          { id: 'comptes', label: '3. Comptes' },
+          { id: 'contenu', label: '4. Contenu' },
+          { id: 'propriete', label: '5. Propriete' },
+          { id: 'responsabilite', label: '6. Responsabilite' },
+          { id: 'resiliation', label: '7. Resiliation' },
+          { id: 'contact', label: '8. Contact' },
+        ],
+        badge: 'Document contractuel',
+        title: "Conditions d'utilisation",
+        subtitle: 'Plateforme XCCM1 - ENSPY Yaounde',
+        effectiveDate: 'En vigueur depuis le 13 novembre 2025',
+        version: 'Version 1.0',
+        download: 'Telecharger / Imprimer',
+        copyEmail: "Copier l'e-mail",
+        keyTakeaways: 'A retenir',
+        academicUse: 'Usage academique',
+        academicUseDescription: 'XCCM1 est un prototype utilise dans un cadre pedagogique.',
+        respect: 'Respect des contenus',
+        respectDescription: "Aucune publication illegale, diffamatoire ou plagiee n'est autorisee.",
+        liability: 'Responsabilite limitee',
+        liabilityDescription: `Le service est fourni "en l'etat" sans garantie de disponibilite.`,
+        acceptTitle: 'Acceptation des conditions',
+        acceptBody: "En accedant ou en utilisant la plateforme XCCM1, vous acceptez d'etre lie par les presentes conditions d'utilisation.",
+        acceptWarning: "Si vous n'acceptez pas ces conditions, vous ne pouvez pas utiliser XCCM1.",
+        serviceTitle: 'Description du service',
+        serviceItems: [
+          'XCCM1 est une plateforme web academique de creation, structuration et partage de contenus pedagogiques sous forme de granules.',
+          "La plateforme est destinee aux enseignants et aux etudiants de l'ENSPY.",
+          'Prototype developpe dans le cadre du cours GIF4087-1 (2025-2026).'
+        ],
+        accountsTitle: 'Comptes utilisateur',
+        students: 'Etudiants',
+        studentsItems: ['Acces en lecture', 'Consultation des cours', 'Telechargement PDF/Word'],
+        teachers: 'Enseignants',
+        teachersItems: ['Creation de granules', 'Structuration hierarchique', 'Exportation multi-format'],
+        userContent: 'Contenu utilisateur',
+        userContentItems: [
+          'Les enseignants conservent la propriete intellectuelle de leurs contenus.',
+          "En publiant, vous accordez a XCCM1 une licence non-exclusive pour affichage et distribution interne.",
+          'Interdiction de publier du contenu illegal, diffamatoire ou plagie.'
+        ],
+        intellectual: 'Propriete intellectuelle',
+        intellectualLead: 'Le code source de XCCM1 est publie sous licence MIT a des fins educatives.',
+        readLicense: 'Lire la licence complete',
+        intellectualItems: [
+          "Les marques, logos et elements d'interface restent proteges.",
+          'Les contenus pedagogiques publies par les enseignants restent, sauf mention contraire, la propriete de leurs auteurs.'
+        ],
+        limitation: 'Limitation de responsabilite',
+        limitationItems: [
+          'XCCM1 est un prototype academique.',
+          'Aucune garantie de disponibilite ou de securite.',
+          "L'ENSPY n'est pas responsable des contenus publies.",
+          'Utilisation a vos risques et perils.'
+        ],
+        termination: 'Resiliation',
+        terminationBody: "L'ENSPY se reserve le droit de suspendre ou supprimer tout compte en cas de violation des presentes conditions.",
+        contact: 'Contact',
+        summary: 'Sommaire',
+        projectTitle: 'Projet academique ENSPY',
+        projectSupervisor: 'Supervise par Dr. Bernabe BATCHAKUI',
+        needHelp: "Besoin d'aide",
+        helpBody: "Contactez l'equipe XCCM1 pour toute question juridique ou technique."
+      }
+    : {
+        copyFallback: 'Copy this email:',
+        sections: [
+          { id: 'acceptation', label: '1. Acceptance' },
+          { id: 'description', label: '2. Service' },
+          { id: 'comptes', label: '3. Accounts' },
+          { id: 'contenu', label: '4. Content' },
+          { id: 'propriete', label: '5. Ownership' },
+          { id: 'responsabilite', label: '6. Liability' },
+          { id: 'resiliation', label: '7. Termination' },
+          { id: 'contact', label: '8. Contact' },
+        ],
+        badge: 'Contract document',
+        title: 'Terms of use',
+        subtitle: 'XCCM1 platform - ENSPY Yaounde',
+        effectiveDate: 'Effective since November 13, 2025',
+        version: 'Version 1.0',
+        download: 'Download / Print',
+        copyEmail: 'Copy email',
+        keyTakeaways: 'Key takeaways',
+        academicUse: 'Academic use',
+        academicUseDescription: 'XCCM1 is a prototype used in an academic context.',
+        respect: 'Content compliance',
+        respectDescription: 'No illegal, defamatory, or plagiarized publication is allowed.',
+        liability: 'Limited liability',
+        liabilityDescription: 'The service is provided "as is" with no availability guarantee.',
+        acceptTitle: 'Acceptance of terms',
+        acceptBody: 'By accessing or using the XCCM1 platform, you agree to be bound by these terms of use.',
+        acceptWarning: 'If you do not accept these terms, you may not use XCCM1.',
+        serviceTitle: 'Service description',
+        serviceItems: [
+          'XCCM1 is an academic web platform for creating, structuring, and sharing learning content as granules.',
+          'The platform is intended for ENSPY teachers and students.',
+          'Prototype developed as part of course GIF4087-1 (2025-2026).'
+        ],
+        accountsTitle: 'User accounts',
+        students: 'Students',
+        studentsItems: ['Read-only access', 'Course consultation', 'PDF/Word downloads'],
+        teachers: 'Teachers',
+        teachersItems: ['Granule creation', 'Hierarchical structuring', 'Multi-format export'],
+        userContent: 'User content',
+        userContentItems: [
+          'Teachers retain the intellectual property of their content.',
+          'By publishing, you grant XCCM1 a non-exclusive license for internal display and distribution.',
+          'Publishing illegal, defamatory, or plagiarized content is prohibited.'
+        ],
+        intellectual: 'Intellectual property',
+        intellectualLead: 'The XCCM1 source code is published under the MIT license for educational purposes.',
+        readLicense: 'Read the full license',
+        intellectualItems: [
+          'Brands, logos, and interface elements remain protected.',
+          'Learning content published by teachers remains, unless otherwise stated, the property of its authors.'
+        ],
+        limitation: 'Limitation of liability',
+        limitationItems: [
+          'XCCM1 is an academic prototype.',
+          'No guarantee of availability or security.',
+          'ENSPY is not responsible for published content.',
+          'Use at your own risk.'
+        ],
+        termination: 'Termination',
+        terminationBody: 'ENSPY reserves the right to suspend or delete any account in the event of a breach of these terms.',
+        contact: 'Contact',
+        summary: 'Summary',
+        projectTitle: 'ENSPY academic project',
+        projectSupervisor: 'Supervised by Dr. Bernabe BATCHAKUI',
+        needHelp: 'Need help',
+        helpBody: 'Contact the XCCM1 team for any legal or technical question.'
+      };
 
   const copyEmail = async (email: string) => {
     try {
@@ -31,7 +172,7 @@ export default function TermsOfServicePage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      window.prompt('Copiez cet e-mail :', email);
+      window.prompt(content.copyFallback, email);
     }
   };
 
@@ -40,17 +181,6 @@ export default function TermsOfServicePage() {
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const sections = [
-    { id: 'acceptation', label: '1. Acceptation' },
-    { id: 'description', label: '2. Service' },
-    { id: 'comptes', label: '3. Comptes' },
-    { id: 'contenu', label: '4. Contenu' },
-    { id: 'propriete', label: '5. Propriété' },
-    { id: 'responsabilite', label: '6. Responsabilité' },
-    { id: 'resiliation', label: '7. Résiliation' },
-    { id: 'contact', label: '8. Contact' },
-  ];
 
   return (
     <>
@@ -61,22 +191,22 @@ export default function TermsOfServicePage() {
           <header className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               <FileText className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              Document contractuel
+              {content.badge}
             </div>
             <h1 className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-white">
-              Conditions d&apos;utilisation
+              {content.title}
             </h1>
             <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">
-              Plateforme XCCM1 - ENSPY Yaoundé
+              {content.subtitle}
             </p>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
                 <Calendar className="h-4 w-4" />
-                En vigueur depuis le 13 novembre 2025
+                {content.effectiveDate}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
                 <Scale className="h-4 w-4" />
-                Version 1.0
+                {content.version}
               </span>
             </div>
           </header>
@@ -87,7 +217,7 @@ export default function TermsOfServicePage() {
               className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-600 hover:text-purple-700 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-purple-500"
             >
               <Download className="h-5 w-5" />
-              Télécharger / Imprimer
+              {content.download}
             </button>
             <a
               href="https://github.com/Prrojet-XCCM1/FrontendXCCM12027/blob/main/LICENCE.md"
@@ -103,31 +233,31 @@ export default function TermsOfServicePage() {
               className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-600 hover:text-purple-700 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-purple-500"
             >
               {copied ? <Check className="h-5 w-5 text-emerald-600" /> : <Copy className="h-5 w-5" />}
-              Copier l&apos;e-mail
+              {content.copyEmail}
             </button>
           </div>
 
           <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-              À retenir
+              {content.keyTakeaways}
             </h2>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Usage académique</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{content.academicUse}</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  XCCM1 est un prototype utilisé dans un cadre pédagogique.
+                  {content.academicUseDescription}
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Respect des contenus</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{content.respect}</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Aucune publication illégale, diffamatoire ou plagiée n'est autorisée.
+                  {content.respectDescription}
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Responsabilité limitée</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{content.liability}</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Le service est fourni "en l'etat" sans garantie de disponibilité.
+                  {content.liabilityDescription}
                 </p>
               </div>
             </div>
@@ -143,17 +273,14 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-sm font-semibold text-purple-700 dark:bg-purple-500/10 dark:text-purple-300">
                     1
                   </span>
-                  Acceptation des conditions
+                  {content.acceptTitle}
                 </h2>
                 <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                  <p>
-                    En accédant ou en utilisant la plateforme <strong>XCCM1</strong>, vous acceptez
-                    d&apos;être lié par les présentes conditions d&apos;utilisation.
-                  </p>
+                  <p>{content.acceptBody}</p>
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
                     <p className="flex items-start gap-2 text-amber-800 dark:text-amber-200">
                       <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-300" />
-                      Si vous n&apos;acceptez pas ces conditions, vous ne pouvez pas utiliser XCCM1.
+                      {content.acceptWarning}
                     </p>
                   </div>
                 </div>
@@ -167,30 +294,15 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
                     <Globe className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </span>
-                  Description du service
+                  {content.serviceTitle}
                 </h2>
                 <ul className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <ChevronRight className="mt-0.5 h-5 w-5 text-purple-500" />
-                    <span>
-                      <strong>XCCM1</strong> est une plateforme web académique de création,
-                      structuration et partage de contenus pédagogiques sous forme de granules.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <ChevronRight className="mt-0.5 h-5 w-5 text-purple-500" />
-                    <span>
-                      La plateforme est destinée aux <strong>enseignants</strong> et aux
-                      <strong> étudiants</strong> de l&apos;ENSPY.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <ChevronRight className="mt-0.5 h-5 w-5 text-purple-500" />
-                    <span>
-                      Prototype développé dans le cadre du cours{' '}
-                      <strong>GIF4087-1 (2025-2026)</strong>.
-                    </span>
-                  </li>
+                  {content.serviceItems.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <ChevronRight className="mt-0.5 h-5 w-5 text-purple-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
                 </ul>
               </section>
 
@@ -202,23 +314,19 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
                     <Users className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </span>
-                  Comptes utilisateur
+                  {content.accountsTitle}
                 </h2>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Étudiants</h3>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{content.students}</h3>
                     <ul className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
-                      <li>Accès en lecture</li>
-                      <li>Consultation des cours</li>
-                      <li>Téléchargement PDF/Word</li>
+                      {content.studentsItems.map((item) => <li key={item}>{item}</li>)}
                     </ul>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Enseignants</h3>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{content.teachers}</h3>
                     <ul className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
-                      <li>Création de granules</li>
-                      <li>Structuration hiérarchique</li>
-                      <li>Exportation multi-format</li>
+                      {content.teachersItems.map((item) => <li key={item}>{item}</li>)}
                     </ul>
                   </div>
                 </div>
@@ -232,30 +340,19 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
                     <BookOpen className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </span>
-                  Contenu utilisateur
+                  {content.userContent}
                 </h2>
                 <ul className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-5 w-5 text-emerald-600" />
-                    <span>
-                      Les enseignants conservent la <strong>propriété intellectuelle</strong> de
-                      leurs contenus.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-5 w-5 text-emerald-600" />
-                    <span>
-                      En publiant, vous accordez à XCCM1 une <strong>licence non-exclusive</strong>
-                      pour affichage et distribution interne.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <AlertCircle className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
-                    <span>
-                      Interdiction de publier du contenu <strong>illégal, diffamatoire ou
-                      plagié</strong>.
-                    </span>
-                  </li>
+                  {content.userContentItems.map((item, index) => (
+                    <li key={item} className="flex items-start gap-2">
+                      {index < 2 ? (
+                        <Check className="mt-0.5 h-5 w-5 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
+                      )}
+                      <span>{item}</span>
+                    </li>
+                  ))}
                 </ul>
               </section>
 
@@ -267,13 +364,12 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
                     <Shield className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </span>
-                  Propriété intellectuelle
+                  {content.intellectual}
                 </h2>
                 <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
                     <p className="font-medium text-slate-800 dark:text-white">
-                      Le code source de XCCM1 est publié sous <strong>licence MIT</strong> à des fins
-                      éducatives.
+                      {content.intellectualLead}
                     </p>
                     <a
                       href="https://github.com/enspy-xccm/xccm1/blob/main/LICENSE"
@@ -282,15 +378,11 @@ export default function TermsOfServicePage() {
                       className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-purple-700 hover:text-purple-800 dark:text-purple-300 dark:hover:text-purple-200"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Lire la licence complète
+                      {content.readLicense}
                     </a>
                   </div>
                   <ul className="space-y-2">
-                    <li>Les marques, logos et éléments d'interface restent protégés.</li>
-                    <li>
-                      Les contenus pédagogiques publiés par les enseignants restent, sauf mention
-                      contraire, la propriété de leurs auteurs.
-                    </li>
+                    {content.intellectualItems.map((item) => <li key={item}>{item}</li>)}
                   </ul>
                 </div>
               </section>
@@ -303,13 +395,10 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
                     <AlertCircle className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </span>
-                  Limitation de responsabilité
+                  {content.limitation}
                 </h2>
                 <ul className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <li>XCCM1 est un <strong>prototype académique</strong>.</li>
-                  <li>Aucune garantie de disponibilité ou de sécurité.</li>
-                  <li>L&apos;ENSPY n&apos;est pas responsable des contenus publiés.</li>
-                  <li>Utilisation à vos risques et périls.</li>
+                  {content.limitationItems.map((item) => <li key={item}>{item}</li>)}
                 </ul>
               </section>
 
@@ -321,11 +410,10 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
                     <Lock className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </span>
-                  Résiliation
+                  {content.termination}
                 </h2>
                 <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
-                  L&apos;ENSPY se réserve le droit de <strong>suspendre ou supprimer</strong> tout
-                  compte en cas de violation des présentes conditions.
+                  {content.terminationBody}
                 </p>
               </section>
 
@@ -337,7 +425,7 @@ export default function TermsOfServicePage() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
                     <Mail className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </span>
-                  Contact
+                  {content.contact}
                 </h2>
                 <button
                   onClick={() => copyEmail(contactEmail)}
@@ -356,10 +444,10 @@ export default function TermsOfServicePage() {
               <div className="sticky top-24 space-y-6">
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-                    Sommaire
+                    {content.summary}
                   </h3>
                   <nav className="mt-4 space-y-2 text-sm">
-                    {sections.map((item) => (
+                    {content.sections.map((item) => (
                       <button
                         key={item.id}
                         onClick={() => scrollTo(item.id)}
@@ -373,19 +461,19 @@ export default function TermsOfServicePage() {
                 </div>
 
                 <div className="rounded-2xl border border-purple-600 bg-slate-900 p-6 text-white shadow-md dark:border-purple-500">
-                  <h3 className="text-lg font-semibold">Projet académique ENSPY</h3>
+                  <h3 className="text-lg font-semibold">{content.projectTitle}</h3>
                   <p className="mt-2 text-sm text-slate-200">GIF4087-1 - 2025-2026</p>
                   <p className="mt-2 text-xs text-slate-300">
-                    Supervisé par Dr. Bernabe BATCHAKUI
+                    {content.projectSupervisor}
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-                    Besoin d&apos;aide
+                    {content.needHelp}
                   </h3>
                   <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                    Contactez l&apos;équipe XCCM1 pour toute question juridique ou technique.
+                    {content.helpBody}
                   </p>
                   <button
                     onClick={() => copyEmail(contactEmail)}

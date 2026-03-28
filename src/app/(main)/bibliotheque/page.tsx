@@ -7,6 +7,7 @@ import { useCourses } from '@/hooks/useCourses';
 import { useLoading } from "@/contexts/LoadingContext";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import {
   Search,
   ChevronLeft,
@@ -15,11 +16,8 @@ import {
   Download,
   Eye,
   Users,
-  Filter,
   BookUp,
   Tv,
-  Play,
-  Share2,
   Layout,
   X
 } from "lucide-react";
@@ -35,9 +33,16 @@ interface OrientationSelectorProps {
   isOpen: boolean;
   onSelect: (orientation: 'p' | 'l') => void;
   onClose: () => void;
+  content: {
+    title: string;
+    description: string;
+    portrait: string;
+    landscape: string;
+    cancel: string;
+  };
 }
 
-const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSelect, onClose }) => {
+const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSelect, onClose, content }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
@@ -45,11 +50,11 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
             <Layout className="h-6 w-6 mr-2 text-purple-600" />
-            Orientation du PDF
+            {content.title}
           </h3>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          Comment souhaitez-vous mettre en page votre document pour l'exportation ?
+          {content.description}
         </p>
         <div className="grid grid-cols-2 gap-4 mb-6">
           <button
@@ -59,7 +64,7 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
             <div className="w-12 h-16 border-2 border-purple-200 dark:border-purple-700 rounded mb-2 flex items-center justify-center group-hover:border-purple-400">
               <BookUp className="text-purple-400 group-hover:text-purple-600" />
             </div>
-            <span className="font-bold text-sm text-gray-700 dark:text-gray-300">Portrait</span>
+            <span className="font-bold text-sm text-gray-700 dark:text-gray-300">{content.portrait}</span>
           </button>
           <button
             onClick={() => onSelect('l')}
@@ -68,12 +73,12 @@ const OrientationSelector: React.FC<OrientationSelectorProps> = ({ isOpen, onSel
             <div className="w-16 h-12 border-2 border-purple-200 dark:border-purple-700 rounded mb-2 flex items-center justify-center group-hover:border-purple-400">
               <Tv className="text-purple-400 group-hover:text-purple-600" />
             </div>
-            <span className="font-bold text-sm text-gray-700 dark:text-gray-300">Paysage</span>
+            <span className="font-bold text-sm text-gray-700 dark:text-gray-300">{content.landscape}</span>
           </button>
         </div>
         <div className="flex justify-end">
           <button onClick={onClose} className="px-4 py-2 text-gray-500 hover:text-gray-800 dark:hover:text-white font-medium transition-colors">
-            Annuler
+            {content.cancel}
           </button>
         </div>
       </div>
@@ -90,22 +95,95 @@ const StarRating = ({ rating = 5 }: { rating: number }) => (
 // --- COMPOSANT PRINCIPAL ---
 
 const Bibliotheque = () => {
+  const locale = useLocale();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const { courses, loading, error, fetchCourse, incrementLike, decrementLike, incrementDownload } = useCourses();
-  const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
+  const { startLoading, stopLoading } = useLoading();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [showOrientation, setShowOrientation] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const content = useMemo(() => (
+    locale === 'fr'
+      ? {
+          authRequired: "Veuillez vous connecter pour acceder a la bibliotheque",
+          removedFromFavorites: "Cours retire de vos favoris",
+          addedToFavorites: "Cours ajoute a vos favoris !",
+          likeError: "Impossible de mettre a jour le like",
+          generating: "Generation de votre ressource...",
+          missingData: "Donnees introuvables",
+          ready: "Document pret !",
+          downloadError: "Echec du telechargement",
+          loadingTitle: "Chargement de votre contenu",
+          loadingDescription: "Veuillez patienter un instant...",
+          heroTitle: "Bibliotheque",
+          heroDescription: "Accedez a l'integralite de nos cours et supports pedagogiques",
+          searchPlaceholder: "Rechercher un cours, un auteur, une categorie...",
+          allCourses: "Tous les cours",
+          favorites: "Mes favoris",
+          showingFavorites: "Affichage de vos cours favoris",
+          clearFilter: "Effacer le filtre",
+          noFavorites: "Aucun favori",
+          emptyTitle: "Oups ! Rien n'a ete trouve",
+          noFavoritesDescription: "Vous n'avez pas encore ajoute de cours a vos favoris. Cliquez sur les coeurs pour en ajouter !",
+          emptyDescription: "Nous n'avons trouve aucun cours correspondant a vos criteres actuels. Essayez de reinitialiser les filtres ou de modifier votre recherche.",
+          resetSearch: "Reinitialiser la recherche",
+          categoryFallback: "Formation",
+          favoriteBadge: "Favori",
+          unknownAuthor: "Auteur inconnu",
+          orientation: {
+            title: "Orientation du PDF",
+            description: "Comment souhaitez-vous mettre en page votre document pour l'exportation ?",
+            portrait: "Portrait",
+            landscape: "Paysage",
+            cancel: "Annuler"
+          }
+        }
+      : {
+          authRequired: "Please sign in to access the library",
+          removedFromFavorites: "Course removed from your favorites",
+          addedToFavorites: "Course added to your favorites!",
+          likeError: "Unable to update favorite status",
+          generating: "Generating your resource...",
+          missingData: "Data not found",
+          ready: "Document is ready!",
+          downloadError: "Download failed",
+          loadingTitle: "Loading your content",
+          loadingDescription: "Please wait a moment...",
+          heroTitle: "Library",
+          heroDescription: "Access our full catalog of courses and teaching materials",
+          searchPlaceholder: "Search by course, author, or category...",
+          allCourses: "All courses",
+          favorites: "My favorites",
+          showingFavorites: "Showing your favorite courses",
+          clearFilter: "Clear filter",
+          noFavorites: "No favorites yet",
+          emptyTitle: "Oops! Nothing was found",
+          noFavoritesDescription: "You have not added any courses to your favorites yet. Click the hearts to save some.",
+          emptyDescription: "We could not find any courses matching your current filters. Try resetting the filters or changing your search.",
+          resetSearch: "Reset search",
+          categoryFallback: "Course",
+          favoriteBadge: "Favorite",
+          unknownAuthor: "Unknown author",
+          orientation: {
+            title: "PDF orientation",
+            description: "How would you like your document to be laid out for export?",
+            portrait: "Portrait",
+            landscape: "Landscape",
+            cancel: "Cancel"
+          }
+        }
+  ), [locale]);
+
   // Redirection si non authentifié
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      toast.error("Veuillez vous connecter pour accéder à la bibliothèque");
+      toast.error(content.authRequired);
       router.push('/login');
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, router, content.authRequired]);
 
   useEffect(() => {
     if (loading) {
@@ -149,7 +227,7 @@ const Bibliotheque = () => {
 
       if (isCurrentlyLiked) {
         await decrementLike(courseId);
-        toast("Cours retiré de vos favoris", {
+        toast(content.removedFromFavorites, {
           icon: '💔',
           style: {
             background: '#fef3c7',
@@ -164,10 +242,10 @@ const Bibliotheque = () => {
           origin: { y: 0.8 },
           colors: ['#8B5CF6', '#EC4899', '#3B82F6']
         });
-        toast.success("Cours ajouté à vos favoris !");
+        toast.success(content.addedToFavorites);
       }
-    } catch (err) {
-      toast.error("Impossible de mettre à jour le like");
+    } catch {
+      toast.error(content.likeError);
     }
   };
 
@@ -179,16 +257,17 @@ const Bibliotheque = () => {
   const handleSelectOrientation = async (orientation: 'p' | 'l') => {
     if (!selectedCourseId) return;
     setShowOrientation(false);
-    const downloadToast = toast.loading("Génération de votre ressource...");
+    const downloadToast = toast.loading(content.generating);
     try {
       await incrementDownload(selectedCourseId);
       const fullCourse = await fetchCourse(selectedCourseId);
-      if (!fullCourse) throw new Error("Données introuvables");
+      if (!fullCourse) throw new Error(content.missingData);
       const courseData = transformTiptapToCourseData(fullCourse);
       // await downloadCourseAsPDF(courseData, orientation); 
-      toast.success("Document prêt !", { id: downloadToast });
-    } catch (err) {
-      toast.error("Échec du téléchargement", { id: downloadToast });
+      console.log(courseData, orientation);
+      toast.success(content.ready, { id: downloadToast });
+    } catch {
+      toast.error(content.downloadError, { id: downloadToast });
     } finally {
       setSelectedCourseId(null);
     }
@@ -219,7 +298,7 @@ const Bibliotheque = () => {
         <div className="text-center space-y-6">
           <div className="space-y-2">
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
-              Chargement de votre contenu
+              {content.loadingTitle}
             </h3>
             <div className="flex justify-center space-x-1.5">
               <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -229,7 +308,7 @@ const Bibliotheque = () => {
           </div>
 
           <p className="text-sm text-gray-500 dark:text-gray-400 font-medium animate-pulse">
-            Veuillez patienter un instant...
+            {content.loadingDescription}
           </p>
         </div>
       </div>
@@ -247,9 +326,9 @@ const Bibliotheque = () => {
           <div className="absolute inset-0 bg-black/20" />
         </div>
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col items-center justify-center text-center">
-          <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-lg">Bibliothèque</h1>
+          <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-lg">{content.heroTitle}</h1>
           <p className="text-xl text-white/90 max-w-2xl drop-shadow">
-            Accédez à l'intégralité de nos cours et supports pédagogiques
+            {content.heroDescription}
           </p>
         </div>
       </div>
@@ -261,7 +340,7 @@ const Bibliotheque = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600 h-6 w-6" />
               <input
                 type="text"
-                placeholder="Rechercher un cours, un auteur, une catégorie..."
+                placeholder={content.searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-6 py-4 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-all shadow-inner"
@@ -275,7 +354,7 @@ const Bibliotheque = () => {
                 }`}
             >
               <Heart className={`w-5 h-5 mr-2 ${showFavorites ? 'fill-current' : ''}`} />
-              {showFavorites ? 'Tous les cours' : 'Mes favoris'}
+              {showFavorites ? content.allCourses : content.favorites}
             </button>
           </div>
         </div>
@@ -293,14 +372,14 @@ const Bibliotheque = () => {
             <div className="flex items-center">
               <Heart className="w-5 h-5 text-red-500 mr-3 fill-current" />
               <span className="text-red-700 dark:text-red-300 font-medium">
-                Affichage de vos cours favoris
+                {content.showingFavorites}
               </span>
             </div>
             <button
               onClick={() => setShowFavorites(false)}
               className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
             >
-              × Effacer le filtre
+              × {content.clearFilter}
             </button>
           </div>
         )}
@@ -316,11 +395,11 @@ const Bibliotheque = () => {
                 <X className="w-4 h-4 text-red-500" />
               </div>
             </div>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3">{showFavorites ? "Aucun favori" : "Oups ! Rien n'a été trouvé"}</h3>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3">{showFavorites ? content.noFavorites : content.emptyTitle}</h3>
             <p className="max-w-md text-gray-600 dark:text-gray-400 text-lg leading-relaxed mb-8">
               {showFavorites
-                ? "Vous n'avez pas encore ajouté de cours à vos favoris. Cliquez sur les cœurs pour en ajouter !"
-                : "Nous n'avons trouvé aucun cours correspondant à vos critères actuels. Essayez de réinitialiser les filtres ou de modifier votre recherche."
+                ? content.noFavoritesDescription
+                : content.emptyDescription
               }
             </p>
             <button
@@ -330,7 +409,7 @@ const Bibliotheque = () => {
               }}
               className="flex items-center gap-2 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/25 active:scale-95"
             >
-              Réinitialiser la recherche
+              {content.resetSearch}
             </button>
           </div>
         )}
@@ -347,14 +426,14 @@ const Bibliotheque = () => {
                 />
                 <div className="absolute top-3 left-3">
                   <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-purple-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase shadow-sm">
-                    {course.category || 'Formation'}
+                    {course.category || content.categoryFallback}
                   </span>
                 </div>
                 {course.isLiked && (
                   <div className="absolute top-3 right-3">
                     <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase shadow-sm flex items-center">
                       <Heart className="w-3 h-3 mr-1 fill-current" />
-                      Favori
+                      {content.favoriteBadge}
                     </span>
                   </div>
                 )}
@@ -372,7 +451,7 @@ const Bibliotheque = () => {
                 <div className="mb-4">
                   <TeacherLink
                     teacherId={course.author?.id || ''}
-                    teacherName={course.author?.name || 'Auteur inconnu'}
+                    teacherName={course.author?.name || content.unknownAuthor}
                     teacherPhoto={course.author?.image}
                     showAvatar={true}
                   />
@@ -459,6 +538,7 @@ const Bibliotheque = () => {
           isOpen={showOrientation}
           onSelect={handleSelectOrientation}
           onClose={() => setShowOrientation(false)}
+          content={content.orientation}
         />
       </div>
     </div>

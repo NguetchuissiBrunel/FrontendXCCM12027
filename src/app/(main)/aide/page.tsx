@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import {
   FaFileAlt, FaSearch, FaKey, FaUser,
   FaFileUpload, FaShare, FaCreditCard,
   FaBook, FaUserPlus, FaHeadset, FaTimes
 } from 'react-icons/fa';
-import { Heart, Star, Send, Mail, User, MessageSquare, ThumbsUp, Award, Gift, Smile } from 'lucide-react';
+import { Heart, MessageSquare, ThumbsUp, Award, Gift, Smile } from 'lucide-react';
 import ContactForm from '@/components/common/ContactForm';
 import { toast } from 'react-hot-toast';
 import { PublicServicesService } from '@/lib/services/PublicServicesService';
+import { useTranslations } from 'next-intl';
 
 interface HelpItem {
   title: string;
@@ -19,15 +20,68 @@ interface HelpItem {
 }
 
 const ContactPage = () => {
+  const t = useTranslations('pages.aide');
   const [searchQuery, setSearchQuery] = useState('');
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState({ name: '', email: '', rating: '5', comments: '' });
-  const [thankYouMessage, setThankYouMessage] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const content = useMemo(() => {
+    const helpItemKeys = ['login', 'password', 'customer', 'account', 'firstDoc', 'share', 'renew', 'tutorial'];
+    const getHelpIcon = (key: string) => {
+      switch (key) {
+        case 'login': return <FaKey className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        case 'password': return <FaUser className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        case 'customer': return <FaHeadset className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        case 'account': return <FaUserPlus className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        case 'firstDoc': return <FaFileUpload className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        case 'share': return <FaShare className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        case 'renew': return <FaCreditCard className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        case 'tutorial': return <FaBook className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+        default: return <FaFileAlt className="w-8 h-8 text-purple-500 dark:text-purple-700" />;
+      }
+    };
+
+    const faqKeys = ['pwd', 'support', 'email', 'docs', 'fees'];
+
+    return {
+      validationRequired: t('validationRequired'),
+      helpItems: helpItemKeys.map(key => ({
+        title: t(`helpItems.${key}.title`),
+        solution: t(`helpItems.${key}.solution`),
+        icon: getHelpIcon(key)
+      })),
+      faqItems: faqKeys.map(key => ({
+        question: t(`faqItems.${key}.question`),
+        answer: t(`faqItems.${key}.answer`)
+      })),
+      stats: [
+        { icon: <ThumbsUp className="text-purple-500" />, value: t('stats.satisfaction.value'), label: t('stats.satisfaction.label') },
+        { icon: <MessageSquare className="text-purple-500" />, value: t('stats.support.value'), label: t('stats.support.label') },
+        { icon: <Award className="text-purple-500" />, value: t('stats.reviews.value'), label: t('stats.reviews.label') },
+        { icon: <Gift className="text-purple-500" />, value: t('stats.features.value'), label: t('stats.features.label') }
+      ],
+      headerTitle: t('headerTitle'),
+      headerDescription: t('headerDescription'),
+      searchPlaceholder: t('searchPlaceholder'),
+      startTyping: t('startTyping'),
+      resultsFor: t('resultsFor'),
+      noResults: t('noResults'),
+      moreQuestions: t('moreQuestions'),
+      faqTitle: t('faqTitle'),
+      contactTitle: t('contactTitle'),
+      contactDescription: t('contactDescription'),
+      imageAlt: t('imageAlt'),
+      feedbackThanksTitle: t('feedbackThanksTitle'),
+      feedbackThanksDescription: t('feedbackThanksDescription'),
+      feedbackAgain: t('feedbackAgain'),
+      contactSuccess: t('contactSuccess'),
+      contactError: t('contactError'),
+      invalidFields: t('invalidFields'),
+      tooManyAttempts: t('tooManyAttempts'),
+      unavailable: t('unavailable')
+    };
+  }, [t]);
 
   const handleSuggestionClick = (item: HelpItem) => {
     setSearchQuery(item.title);
@@ -35,68 +89,11 @@ const ContactPage = () => {
     closeSearch();
   };
 
-  const handleSubmitFeedback = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!feedback.name || !feedback.email || !feedback.comments) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-
-    setSubmitted(true);
-  };
-
   const resetForm = () => {
     setSubmitted(false);
-    setFeedback({
-      name: '',
-      email: '',
-      rating: '5',
-      comments: ''
-    });
   };
 
-  const helpItems: HelpItem[] = useMemo(() => [
-    {
-      title: "Problème de connexion",
-      icon: <FaKey className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Vérifiez vos identifiants, effacez le cache du navigateur, ou utilisez la fonction 'mot de passe oublié'. Si le problème persiste, contactez le support."
-    },
-    {
-      title: "Mot de passe oublié",
-      icon: <FaUser className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Suivez les instructions envoyées à votre email pour réinitialiser votre mot de passe."
-    },
-    {
-      title: "Service client",
-      icon: <FaHeadset className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Notre équipe est disponible 24/7. Contactez-nous par chat en direct ou envoyez un email à support@xccm.com pour une assistance rapide."
-    },
-    {
-      title: "Changer de compte",
-      icon: <FaUserPlus className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Accédez aux paramètres du compte, sélectionnez 'Changer de compte' et suivez les étapes pour basculer vers un autre profil."
-    },
-    {
-      title: "Créer mon premier document",
-      icon: <FaFileUpload className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Cliquez sur le bouton '+' dans votre tableau de bord, choisissez un modèle ou commencez avec une page blanche."
-    },
-    {
-      title: "Partager ma composition",
-      icon: <FaShare className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Ouvrez votre composition, cliquez sur 'Partager' en haut à droite, et choisissez votre méthode de partage préférée."
-    },
-    {
-      title: "Renouveler mon abonnement",
-      icon: <FaCreditCard className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Allez dans 'Paramètres → Abonnement', sélectionnez votre plan et suivez les instructions de paiement."
-    },
-    {
-      title: "Tuto global",
-      icon: <FaBook className="w-8 h-8 text-purple-500 dark:text-purple-700" />,
-      solution: "Explorez notre guide complet étape par étape. Accédez à 'Aide → Tutoriels' pour des vidéos et guides détaillés."
-    }
-  ], []);
+  const helpItems: HelpItem[] = useMemo(() => content.helpItems, [content]);
 
   const openSearch = () => setIsSearchOverlayOpen(true);
   const closeSearch = () => setIsSearchOverlayOpen(false);
@@ -124,75 +121,8 @@ const ContactPage = () => {
     setFaqOpen(faqOpen === index ? null : index);
   };
 
-  const faqItems = [
-    {
-      question: "Comment réinitialiser mon mot de passe ?",
-      answer: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Vous recevrez un email avec des instructions."
-    },
-    {
-      question: "Comment contacter le support client ?",
-      answer: "Notre équipe est disponible 24/7. Vous pouvez nous contacter par chat en direct ou par email."
-    },
-    {
-      question: "Puis-je changer mon adresse email ?",
-      answer: "Oui, vous pouvez changer votre adresse email dans les paramètres de votre compte."
-    },
-    {
-      question: "Comment accéder à mes documents ?",
-      answer: "Connectez-vous à votre compte et accédez à votre tableau de bord pour voir vos documents."
-    },
-    {
-      question: "Y a-t-il des frais de retard pour les abonnements ?",
-      answer: "Oui, des frais peuvent s'appliquer si vous ne renouvelez pas votre abonnement à temps."
-    }
-  ];
-
-  const stats = [
-    { icon: <ThumbsUp className="text-purple-500" />, value: '98%', label: 'Satisfaction' },
-    { icon: <MessageSquare className="text-purple-500" />, value: '24/7', label: 'Support' },
-    { icon: <Award className="text-purple-500" />, value: '50k+', label: 'Reviews' },
-    { icon: <Gift className="text-purple-500" />, value: '200+', label: 'Features' }
-  ];
-
-  const handleFeedbackChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFeedback(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Nouvelle fonction pour gérer la soumission du formulaire de contact
-  const handleContactSubmit = async (formData: {
-    name: string;
-    email: string;
-    subject: string;
-    message: string;
-  }) => {
-    setIsSubmitting(true);
-    try {
-      await PublicServicesService.contactUs(formData);
-      toast.success('✅ Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.');
-      return { success: true };
-    } catch (error: any) {
-      console.error('Erreur envoi formulaire contact:', error);
-      
-      let errorMessage = 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.';
-      
-      if (error.status === 400) {
-        errorMessage = 'Veuillez vérifier les informations saisies. Certains champs sont invalides.';
-      } else if (error.status === 429) {
-        errorMessage = 'Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer.';
-      } else if (error.status === 500) {
-        errorMessage = 'Service temporairement indisponible. Veuillez réessayer plus tard.';
-      }
-      
-      toast.error(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const faqItems = content.faqItems;
+  const stats = content.stats;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
@@ -209,10 +139,10 @@ const ContactPage = () => {
             <div className="w-full max-w-4xl text-center px-4">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white dark:text-white flex items-center">
                 <FaFileAlt className="mr-4" />
-                Centre d&apos;aide de XCCM
+                {content.headerTitle}
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-white mb-6 dark:text-gray-100 sm:mb-8 max-w-2xl mx-auto">
-                Votre satisfaction est notre engagement : des solutions simples et rapides à portée de main... Contactez-nous !
+                {content.headerDescription}
               </p>
 
               {/* Bloc de recherche */}
@@ -226,7 +156,7 @@ const ContactPage = () => {
                     value={searchQuery}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                     onFocus={openSearch}
-                    placeholder="Rechercher une solution..."
+                    placeholder={content.searchPlaceholder}
                     className="w-full pl-12 pr-16 py-4 text-gray-900 dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base bg-white dark:bg-gray-800" />
                   <button
                     type="button"
@@ -251,14 +181,14 @@ const ContactPage = () => {
 
                     {searchQuery.trim() === '' && (
                       <div className="text-center text-gray-500 dark:text-gray-400 py-10">
-                        <p>Commencez à taper pour rechercher un sujet...</p>
+                        <p>{content.startTyping}</p>
                       </div>
                     )}
 
                     {searchQuery.trim() !== '' && (
                       filteredItems.length > 0 ? (
                         <div className="space-y-4 max-w-xl mx-auto">
-                          <h2 className="text-gray-500 dark:text-gray-400 mb-4 font-semibold">Résultats pour &quot;{searchQuery}&quot;</h2>
+                          <h2 className="text-gray-500 dark:text-gray-400 mb-4 font-semibold">{content.resultsFor} &quot;{searchQuery}&quot;</h2>
                           {filteredItems.map((item, index) => (
                             <div
                               key={index}
@@ -272,7 +202,7 @@ const ContactPage = () => {
                         </div>
                       ) : (
                         <div className="text-center text-gray-500 dark:text-gray-400 py-10">
-                          <p>Aucun résultat trouvé pour &quot;{searchQuery}&quot;.</p>
+                          <p>{content.noResults} &quot;{searchQuery}&quot;.</p>
                         </div>
                       )
                     )}
@@ -294,7 +224,7 @@ const ContactPage = () => {
                   <p className="text-gray-600 dark:text-gray-300">{item.solution}</p>
                 </div>
                 <div className="mt-auto w-full bg-gradient-to-r from-purple-400 to-purple-900 text-center p-2 rounded-b-lg">
-                  <a href="#faq" className="text-white font-semibold">Plus de questions</a>
+                  <a href="#faq" className="text-white font-semibold">{content.moreQuestions}</a>
                 </div>
               </div>
             ))}
@@ -304,7 +234,7 @@ const ContactPage = () => {
 
       {/* FAQ Section */}
       <div id="faq" className="container mx-auto px-4 py-8">
-        <h2 className="text-3xl dark:text-gray-300 font-bold mb-4">Foire Aux Questions (FAQ)</h2>
+        <h2 className="text-3xl dark:text-gray-300 font-bold mb-4">{content.faqTitle}</h2>
         <div className="space-y-4">
           {faqItems.map((item, index) => (
             <div key={index} className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4">
@@ -334,10 +264,10 @@ const ContactPage = () => {
           <div className="text-center mb-8">
             <h2 className="text-4xl text-black dark:text-gray-400 font-bold mb-4 flex items-center justify-center gap-2">
               <Heart className="text-black dark:text-gray-400 w-10 h-10" />
-              Contactez notre support
+              {content.contactTitle}
             </h2>
             <p className="text-black dark:text-gray-500 text-lg">
-              Notre équipe est là pour vous aider. Envoyez-nous votre message et nous vous répondrons rapidement.
+              {content.contactDescription}
             </p>
           </div>
 
@@ -353,9 +283,9 @@ const ContactPage = () => {
           </div>
 
           {/* ContactForm connecté à l'API */}
-          <ContactForm 
-            onSubmit={handleContactSubmit}
-            isSubmitting={isSubmitting}
+          <ContactForm
+            title=""
+            description=""
           />
         </div>
 
@@ -363,7 +293,7 @@ const ContactPage = () => {
         <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
           <Image
             src="/images/ima20.jpeg"
-            alt="Support client"
+            alt={content.imageAlt}
             fill
             className="object-cover w-full h-full"
             priority
@@ -377,16 +307,16 @@ const ContactPage = () => {
           <div className="bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 p-8 rounded-2xl text-center">
             <Smile className="w-20 h-20 text-green-600 dark:text-green-400 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">
-              Merci pour votre feedback !
+              {content.feedbackThanksTitle}
             </h3>
             <p className="text-green-700 dark:text-green-400 mb-6">
-              Votre avis nous est précieux pour améliorer nos services.
+              {content.feedbackThanksDescription}
             </p>
             <button
               onClick={resetForm}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
             >
-              Soumettre un autre feedback
+              {content.feedbackAgain}
             </button>
           </div>
         </div>

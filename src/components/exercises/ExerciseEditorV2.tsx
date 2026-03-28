@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Exercise, Question, QuestionType, ApiResponse, CreateExerciseDto, UpdateExerciseDto } from '@/types/exercise';
 import { useExercise, useCreateExercise } from '@/hooks/useExercise';
 import { toast } from 'react-hot-toast';
@@ -35,6 +36,7 @@ export default function ExerciseEditorV2({
   onSave,
   onCancel
 }: ExerciseEditorV2Props) {
+  const t = useTranslations('exercises.editor');
   const isEditing = !!initialData?.id;
 
   // Utiliser les nouveaux hooks
@@ -107,7 +109,7 @@ export default function ExerciseEditorV2({
 
   const removeQuestion = (index: number) => {
     if (questions.length <= 1) {
-      toast.error('Un exercice doit avoir au moins une question');
+      toast.error(t('minOneQuestion'));
       return;
     }
 
@@ -169,7 +171,7 @@ export default function ExerciseEditorV2({
       question.options = question.options.filter((_, i) => i !== optionIndex);
       setQuestions(newQuestions);
     } else {
-      toast.error('Une question à choix multiple doit avoir au moins 2 options');
+      toast.error(t('minTwoOptions'));
     }
   };
 
@@ -178,30 +180,30 @@ export default function ExerciseEditorV2({
 
     // Validation du titre
     if (!exercise.title.trim()) {
-      errors.push('Le titre est requis');
+      errors.push(t('titleRequired'));
     }
 
     // Validation des questions
     if (questions.length === 0) {
-      errors.push('Ajoutez au moins une question');
+      errors.push(t('addAtLeastOne'));
     } else {
       questions.forEach((q, index) => {
         if (!q.text.trim()) {
-          errors.push(`La question ${index + 1} est vide`);
+          errors.push(t('questionEmpty', { n: index + 1 }));
         }
 
         if (q.points <= 0) {
-          errors.push(`La question ${index + 1} doit avoir des points positifs`);
+          errors.push(t('questionPositivePoints', { n: index + 1 }));
         }
 
         if (q.type === 'MULTIPLE_CHOICE') {
           if (!q.options || q.options.length < 2) {
-            errors.push(`La question ${index + 1} doit avoir au moins 2 options`);
+            errors.push(t('questionMinOptions', { n: index + 1 }));
           }
 
           q.options?.forEach((opt, optIndex) => {
             if (!opt.trim()) {
-              errors.push(`L'option ${optIndex + 1} de la question ${index + 1} est vide`);
+              errors.push(t('optionEmpty', { o: optIndex + 1, n: index + 1 }));
             }
           });
         }
@@ -211,7 +213,7 @@ export default function ExerciseEditorV2({
     // Validation du score total
     const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
     if (totalPoints > exercise.maxScore) {
-      errors.push(`Total des points (${totalPoints}) dépasse le score maximum (${exercise.maxScore})`);
+      errors.push(t('totalExceedsMax', { total: totalPoints, max: exercise.maxScore }));
     }
 
     setValidationErrors(errors);
@@ -220,7 +222,7 @@ export default function ExerciseEditorV2({
 
   const handleSave = async () => {
     if (!validateExercise()) {
-      toast.error('Veuillez corriger les erreurs avant de sauvegarder');
+      toast.error(t('saveErrorToast'));
       return;
     }
 
@@ -281,7 +283,7 @@ export default function ExerciseEditorV2({
       };
 
       onSave(errorResult);
-      toast.error('Erreur lors de la sauvegarde');
+      toast.error(t('saveError'));
     }
   };
 
@@ -295,6 +297,14 @@ export default function ExerciseEditorV2({
       case 'MULTIPLE_CHOICE': return <CheckSquare className="w-4 h-4" />;
       case 'CODE': return <Code className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
+    }
+  };
+  const getQuestionTypeLabel = (type: QuestionType): string => {
+    switch (type) {
+      case 'TEXT': return t('freeText');
+      case 'MULTIPLE_CHOICE': return t('multipleChoice');
+      case 'CODE': return t('code');
+      default: return '';
     }
   };
 
@@ -311,10 +321,10 @@ export default function ExerciseEditorV2({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                {isEditing ? 'Éditeur d\'exercice' : 'Nouvel exercice'}
+                {isEditing ? t('editTitle') : t('newTitle')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {isEditing ? 'Modifiez le contenu de votre exercice' : 'Créez un nouvel exercice'}
+                {isEditing ? t('editSubtitle') : t('newSubtitle')}
               </p>
             </div>
           </div>
@@ -339,7 +349,7 @@ export default function ExerciseEditorV2({
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-medium text-red-800 dark:text-red-300 mb-2">
-                  Erreurs de validation
+                  {t('validationErrors')}
                 </h3>
                 <ul className="space-y-1">
                   {validationErrors.map((error, index) => (
@@ -356,26 +366,26 @@ export default function ExerciseEditorV2({
         {/* Informations générales */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            Informations générales
+            {t('generalInfo')}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Titre de l'exercice *
+                {t('exerciseTitle')}
               </label>
               <input
                 type="text"
                 value={exercise.title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
-                placeholder="Ex: Introduction à la programmation"
+                placeholder={t('exerciseTitlePlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Score maximum *
+                {t('maxScore')}
               </label>
               <input
                 type="number"
@@ -388,14 +398,14 @@ export default function ExerciseEditorV2({
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description
+                {t('description')}
               </label>
               <textarea
                 value={exercise.description || ''}
                 onChange={(e) => handleDescriptionChange(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                 rows={3}
-                placeholder="Décrivez l'objectif de l'exercice..."
+                placeholder={t('descPlaceholder')}
               />
             </div>
 
@@ -403,7 +413,7 @@ export default function ExerciseEditorV2({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  Date d'échéance
+                  {t('dueDate')}
                 </div>
               </label>
               <input
@@ -421,10 +431,10 @@ export default function ExerciseEditorV2({
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                Questions ({questions.length})
+                {t('questionsTitle')} ({questions.length})
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Organisez et configurez les questions de l'exercice
+                {t('questionsSubtitle')}
               </p>
             </div>
 
@@ -434,7 +444,7 @@ export default function ExerciseEditorV2({
                 className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
               >
                 <Plus size={18} />
-                Ajouter une question
+                {t('addQuestion')}
               </button>
             </div>
           </div>
@@ -450,8 +460,8 @@ export default function ExerciseEditorV2({
                   <Type className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="text-left">
-                  <div className="font-medium text-gray-800 dark:text-gray-200">Texte libre</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Réponse courte ou longue</div>
+                  <div className="font-medium text-gray-800 dark:text-gray-200">{t('freeText')}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('freeTextSub')}</div>
                 </div>
               </div>
             </button>
@@ -465,8 +475,8 @@ export default function ExerciseEditorV2({
                   <CheckSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="text-left">
-                  <div className="font-medium text-gray-800 dark:text-gray-200">Choix multiple</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">QCM avec options</div>
+                  <div className="font-medium text-gray-800 dark:text-gray-200">{t('multipleChoice')}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('multipleChoiceSub')}</div>
                 </div>
               </div>
             </button>
@@ -480,8 +490,8 @@ export default function ExerciseEditorV2({
                   <Code className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="text-left">
-                  <div className="font-medium text-gray-800 dark:text-gray-200">Code</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Exercice de programmation</div>
+                  <div className="font-medium text-gray-800 dark:text-gray-200">{t('code')}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('codeSub')}</div>
                 </div>
               </div>
             </button>
@@ -518,15 +528,15 @@ export default function ExerciseEditorV2({
                         <div className="flex items-center gap-2">
                           {getQuestionTypeIcon(question.type)}
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {question.type === 'TEXT' ? 'Texte libre' :
-                              question.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                            {question.type === 'TEXT' ? t('freeText') :
+                              question.type === 'MULTIPLE_CHOICE' ? t('multipleChoice') : t('code')}
                           </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Points:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{t('points')}</span>
                           <input
                             type="number"
                             min="1"
@@ -567,14 +577,14 @@ export default function ExerciseEditorV2({
                     {/* Énoncé */}
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Énoncé de la question *
+                        {t('questionStatement')}
                       </label>
                       <textarea
                         value={question.text}
                         onChange={(e) => updateQuestion(index, { text: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                         rows={2}
-                        placeholder="Posez votre question ici..."
+                        placeholder={t('questionPlaceholder')}
                       />
                     </div>
 
@@ -583,14 +593,14 @@ export default function ExerciseEditorV2({
                       <div className="mb-6">
                         <div className="flex items-center justify-between mb-3">
                           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Options de réponse *
+                            {t('answerOptions')}
                           </label>
                           <button
                             type="button"
                             onClick={() => addOption(index)}
                             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                           >
-                            + Ajouter une option
+                            {t('addOption')}
                           </button>
                         </div>
 
@@ -622,14 +632,14 @@ export default function ExerciseEditorV2({
                         {question.options && question.options.length > 0 && (
                           <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Réponse correcte
+                              {t('correctAnswer')}
                             </label>
                             <select
                               value={question.correctAnswer || ''}
                               onChange={(e) => updateQuestion(index, { correctAnswer: e.target.value })}
                               className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                             >
-                              <option value="">Sélectionnez la réponse correcte</option>
+                              <option value="">{t('selectCorrectAnswer')}</option>
                               {question.options.map((option, optIndex) => (
                                 <option key={optIndex} value={option}>
                                   {String.fromCharCode(65 + optIndex)}. {option}
@@ -644,14 +654,14 @@ export default function ExerciseEditorV2({
                     {/* Explication */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Explication (optionnelle)
+                        {t('explanation')}
                       </label>
                       <textarea
                         value={question.explanation || ''}
                         onChange={(e) => updateQuestion(index, { explanation: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                         rows={2}
-                        placeholder="Expliquez la réponse ou donnez des indices..."
+                        placeholder={t('explanationPlaceholder')}
                       />
                     </div>
                   </div>
@@ -664,20 +674,20 @@ export default function ExerciseEditorV2({
         {/* Résumé */}
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/50 dark:to-gray-800/50 rounded-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700">
           <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            Résumé de l'exercice
+            {t('summaryTitle')}
           </h4>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-4">
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Titre</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('summaryTitleLabel')}</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200 truncate">
-                  {exercise.title || 'Non défini'}
+                  {exercise.title || t('summaryUndefined')}
                 </div>
               </div>
 
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Questions</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('summaryQuestions')}</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
                   {questions.length} question{questions.length !== 1 ? 's' : ''}
                 </div>
@@ -686,37 +696,37 @@ export default function ExerciseEditorV2({
 
             <div className="space-y-4">
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Score total</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('summaryTotalScore')}</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
                   {calculateTotalPoints()}/{exercise.maxScore} points
                   {calculateTotalPoints() > exercise.maxScore && (
-                    <span className="ml-2 text-sm text-red-600">⚠️ Dépassement</span>
+                    <span className="ml-2 text-sm text-red-600">⚠️ {t('summaryOverflow')}</span>
                   )}
                 </div>
               </div>
 
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Date d'échéance</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('summaryDueDate')}</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
                   {exercise.dueDate
-                    ? new Date(exercise.dueDate).toLocaleDateString('fr-FR')
-                    : 'Non définie'}
+                    ? new Date(exercise.dueDate).toLocaleDateString()
+                    : t('summaryDueDateNone')}
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Types de questions</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('summaryQuestionTypes')}</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
                   {Array.from(new Set(questions.map(q => q.type))).join(', ')}
                 </div>
               </div>
 
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Statut</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('summaryStatus')}</div>
                 <div className="font-medium text-gray-800 dark:text-gray-200">
-                  {exercise.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
+                  {exercise.status === 'PUBLISHED' ? t('statusPublished') : t('statusDraft')}
                 </div>
               </div>
             </div>
@@ -730,7 +740,7 @@ export default function ExerciseEditorV2({
             className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
           >
             <X size={20} />
-            Annuler
+            {t('cancel')}
           </button>
 
           <div className="flex items-center gap-3">
@@ -742,12 +752,12 @@ export default function ExerciseEditorV2({
                   questions
                 };
                 console.log('Preview:', previewData);
-                toast.success('Aperçu généré (voir console)');
+                toast.success(t('previewGenerated'));
               }}
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2"
             >
               <Eye size={20} />
-              Aperçu
+              {t('preview')}
             </button>
 
             <button
@@ -756,7 +766,7 @@ export default function ExerciseEditorV2({
               className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Save size={20} />
-              {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              {isLoading ? t('saving') : t('save')}
             </button>
           </div>
         </div>

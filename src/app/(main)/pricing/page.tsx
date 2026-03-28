@@ -3,8 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function PricingPage() {
+  const t = useTranslations('pages.pricing');
   const [isAnnual, setIsAnnual] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currency, setCurrency] = useState<'EUR' | 'FCFA'>('FCFA'); // Nouvel état pour la devise
@@ -131,12 +133,11 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
-              <span className="block">Tarifs adaptés</span>
-              <span className="block text-purple-600 dark:text-purple-400">à vos besoins</span>
+              <span className="block">{t('title')}</span>
+              <span className="block text-purple-600 dark:text-purple-400">{t('subtitle')}</span>
             </h1>
             <p className="mt-4 text-lg text-gray-500 dark:text-gray-400 sm:mt-6 sm:text-xl">
-              Choisissez le plan qui correspond le mieux à vos besoins pédagogiques.
-              Commencez gratuitement, évoluez quand vous le souhaitez.
+              {t('description')}
             </p>
           </div>
         </div>
@@ -149,25 +150,24 @@ export default function PricingPage() {
             {/* Currency Toggle */}
             <div className="flex items-center space-x-4">
               <span className={`text-sm font-medium ${currency === 'EUR' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                EUR (€)
+                {t('currencyEUR')}
               </span>
               <button
                 onClick={() => setCurrency(currency === 'EUR' ? 'FCFA' : 'EUR')}
                 className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 dark:bg-blue-700 transition-colors"
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    currency === 'FCFA' ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currency === 'FCFA' ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
               <div className="flex items-center">
                 <span className={`text-sm font-medium ${currency === 'FCFA' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                  FCFA
+                  {t('currencyFCFA')}
                 </span>
                 {currency === 'FCFA' && (
                   <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                    Taux: 1€ = 655 FCFA
+                    {t('rateText')}
                   </span>
                 )}
               </div>
@@ -176,24 +176,23 @@ export default function PricingPage() {
             {/* Billing Toggle */}
             <div className="flex items-center space-x-4">
               <span className={`text-sm font-medium ${!isAnnual ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                Facturation mensuelle
+                {t('monthlyBilling')}
               </span>
               <button
                 onClick={() => setIsAnnual(!isAnnual)}
                 className="relative inline-flex h-6 w-11 items-center rounded-full bg-purple-600 dark:bg-purple-700 transition-colors"
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isAnnual ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
               <div className="flex items-center">
                 <span className={`text-sm font-medium ${isAnnual ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                  Facturation annuelle
+                  {t('annualBilling')}
                 </span>
                 <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                  Économisez 16%
+                  {t('saveText')}
                 </span>
               </div>
             </div>
@@ -208,28 +207,27 @@ export default function PricingPage() {
             {plans.map((plan) => {
               const monthlyPrice = currency === 'FCFA' ? convertToFCFA(plan.price.monthly) : plan.price.monthly;
               const annualPrice = currency === 'FCFA' ? convertToFCFA(plan.price.annual) : plan.price.annual;
-              
+
               return (
                 <div
                   key={plan.id}
-                  className={`relative rounded-2xl shadow-lg dark:shadow-gray-900/50 transition-all duration-300 hover:scale-[1.02] ${
-                    plan.popular
-                      ? 'ring-2 ring-purple-600 dark:ring-purple-500 border-purple-200 dark:border-purple-900'
-                      : 'border border-gray-200 dark:border-gray-800'
-                  } bg-white dark:bg-gray-900`}
+                  className={`relative rounded-2xl shadow-lg dark:shadow-gray-900/50 transition-all duration-300 hover:scale-[1.02] ${plan.popular
+                    ? 'ring-2 ring-purple-600 dark:ring-purple-500 border-purple-200 dark:border-purple-900'
+                    : 'border border-gray-200 dark:border-gray-800'
+                    } bg-white dark:bg-gray-900`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                       <div className="px-4 py-1 rounded-full bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold">
-                        Le plus populaire
+                        {t('mostPopular')}
                       </div>
                     </div>
                   )}
 
                   <div className="p-8">
                     <div className="mb-6">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h3>
-                      <p className="mt-2 text-gray-500 dark:text-gray-400">{plan.description}</p>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{t(`plans.${plan.id}.name` as any)}</h3>
+                      <p className="mt-2 text-gray-500 dark:text-gray-400">{t(`plans.${plan.id}.description` as any)}</p>
                     </div>
 
                     <div className="mb-8">
@@ -238,35 +236,34 @@ export default function PricingPage() {
                           {formatPrice(isAnnual ? annualPrice : monthlyPrice)}
                         </span>
                         <span className="ml-1 text-gray-500 dark:text-gray-400">
-                          {getCurrencySymbol()}/{isAnnual ? 'an' : 'mois'}
+                          {getCurrencySymbol()}/{isAnnual ? t('perYear') : t('perMonth')}
                         </span>
                       </div>
                       {plan.price.monthly > 0 && isAnnual && currency === 'EUR' && (
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                          Soit {(plan.price.annual / 12).toFixed(2)}€/mois
+                          {t('orMonthEur', { price: (plan.price.annual / 12).toFixed(2) })}
                         </p>
                       )}
                       {plan.price.monthly > 0 && isAnnual && currency === 'FCFA' && (
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                          Soit {formatPrice(Math.round(annualPrice / 12))} FCFA/mois
+                          {t('orMonthFcfa', { price: formatPrice(Math.round(annualPrice / 12)) })}
                         </p>
                       )}
                     </div>
 
                     <Link
                       href={plan.id === 'free' ? '/register' : plan.id === 'enterprise' ? '/contact' : '/register'}
-                      className={`w-full inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-lg transition-colors shadow-md ${
-                        plan.buttonVariant === 'primary'
-                          ? 'border-transparent text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
-                          : 'border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700'
-                      }`}
+                      className={`w-full inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-lg transition-colors shadow-md ${plan.buttonVariant === 'primary'
+                        ? 'border-transparent text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
+                        : 'border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700'
+                        }`}
                     >
-                      {plan.buttonText}
+                      {t(`plans.${plan.id}.buttonText` as any)}
                     </Link>
 
                     <div className="mt-8 space-y-4">
                       <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                        Ce qui est inclus :
+                        {t('whatsIncluded')}
                       </h4>
                       <ul className="space-y-3">
                         {plan.features.map((feature, index) => (
@@ -281,7 +278,7 @@ export default function PricingPage() {
                               </svg>
                             )}
                             <span className={`text-sm ${feature.included ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
-                              {feature.text}
+                              {t(`plans.${plan.id}.features.${index}` as any)}
                             </span>
                           </li>
                         ))}
@@ -298,24 +295,23 @@ export default function PricingPage() {
             <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8 sm:p-12">
               <div className="max-w-3xl mx-auto">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  Besoins personnalisés pour votre établissement ?
+                  {t('enterpriseContactTitle')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Nous proposons des solutions sur mesure pour les écoles, universités et organisations éducatives.
-                  Contactez-nous pour discuter de vos besoins spécifiques.
+                  {t('enterpriseContactDesc')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
                     href="/contact"
                     className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 shadow-md transition-colors"
                   >
-                    Contacter l'équipe commerciale
+                    {t('contactSales')}
                   </Link>
                   <Link
                     href="/demo"
                     className="inline-flex items-center justify-center px-6 py-3 border border-purple-600 dark:border-purple-400 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700 shadow-sm transition-colors"
                   >
-                    Voir une démo
+                    {t('seeDemo')}
                   </Link>
                 </div>
               </div>
@@ -329,10 +325,10 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-              Questions fréquentes
+              {t('faqTitle')}
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-              Tout ce que vous devez savoir sur nos tarifs et notre offre.
+              {t('faqDesc')}
             </p>
           </div>
 
@@ -346,7 +342,7 @@ export default function PricingPage() {
                   <details className="group">
                     <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white pr-4">
-                        {faq.question}
+                        {t(`faqs.${index}.question` as any)}
                       </h3>
                       <svg
                         className="w-5 h-5 text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0"
@@ -358,7 +354,7 @@ export default function PricingPage() {
                       </svg>
                     </summary>
                     <div className="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-gray-800">
-                      <p className="text-gray-600 dark:text-gray-400">{faq.answer}</p>
+                      <p className="text-gray-600 dark:text-gray-400">{t(`faqs.${index}.answer` as any)}</p>
                     </div>
                   </details>
                 </div>
@@ -367,12 +363,12 @@ export default function PricingPage() {
 
             <div className="mt-12 text-center">
               <p className="text-gray-600 dark:text-gray-400">
-                Vous avez d'autres questions ?{' '}
+                {t('moreQuestions')}{' '}
                 <Link
                   href="/contact"
                   className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
                 >
-                  Contactez notre équipe
+                  {t('contactOurTeam')}
                 </Link>
               </p>
             </div>
@@ -385,23 +381,23 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-              Prêt à révolutionner votre enseignement ?
+              {t('ctaTitle')}
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Rejoignez des milliers d'enseignants qui utilisent déjà notre plateforme pour créer des cours engageants.
+              {t('ctaDesc')}
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/register"
                 className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 shadow-md transition-colors"
               >
-                Commencer gratuitement
+                {t('startFree')}
               </Link>
               <Link
                 href="/demo"
                 className="inline-flex items-center justify-center px-8 py-3 border border-purple-600 dark:border-purple-400 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700 shadow-sm transition-colors"
               >
-                Demander une démo
+                {t('requestDemo')}
               </Link>
             </div>
           </div>

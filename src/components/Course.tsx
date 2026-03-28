@@ -18,6 +18,7 @@ import CourseContentRenderer from './CourseContentRenderer';
 import confetti from 'canvas-confetti';
 import TeacherLink from '@/components/TeacherLink';
 import { useEnrollment } from '@/hooks/useEnrollment';
+import { useTranslations } from 'next-intl';
 
 
 interface CourseProps {
@@ -27,6 +28,7 @@ interface CourseProps {
 }
 
 const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
+  const t = useTranslations('course');
   const { user } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
@@ -60,8 +62,8 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const getProgressPercentage = () => {
     if (!courseData?.sections?.length) return 0;
 
-    const steps: { s: number, c: number, p: number, ex: boolean, exL: 'section'|'chapter'|'paragraph'|null, comp: boolean }[] = [];
-    
+    const steps: { s: number, c: number, p: number, ex: boolean, exL: 'section' | 'chapter' | 'paragraph' | null, comp: boolean }[] = [];
+
     // Flatten the course structure into sequential steps
     courseData.sections.forEach((s, sIdx) => {
       // Step: Section Header
@@ -72,12 +74,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         chapters.forEach((c, cIdx) => {
           // Step: Chapter Header
           steps.push({ s: sIdx, c: cIdx, p: 0, ex: false, exL: null, comp: false });
-          
+
           const paragraphs = c.paragraphs || [];
           paragraphs.forEach((p, pIdx) => {
             // Step: Paragraph Content
             steps.push({ s: sIdx, c: cIdx, p: pIdx, ex: false, exL: null, comp: false });
-            
+
             // Step: Paragraph Exercise
             if (p.exercises?.length || p.exercise || p.exerciseContent) {
               steps.push({ s: sIdx, c: cIdx, p: pIdx, ex: true, exL: 'paragraph', comp: false });
@@ -90,12 +92,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
           }
         });
       } else if (s.paragraphs?.length) {
-          s.paragraphs.forEach((p, pIdx) => {
-              steps.push({ s: sIdx, c: 0, p: pIdx, ex: false, exL: null, comp: false });
-              if (p.exercises?.length || p.exercise || p.exerciseContent) {
-                  steps.push({ s: sIdx, c: 0, p: pIdx, ex: true, exL: 'paragraph', comp: false });
-              }
-          });
+        s.paragraphs.forEach((p, pIdx) => {
+          steps.push({ s: sIdx, c: 0, p: pIdx, ex: false, exL: null, comp: false });
+          if (p.exercises?.length || p.exercise || p.exerciseContent) {
+            steps.push({ s: sIdx, c: 0, p: pIdx, ex: true, exL: 'paragraph', comp: false });
+          }
+        });
       }
 
       // Step: Section Exercise
@@ -111,7 +113,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     if (totalSteps <= 1) return courseCompleted ? 100 : 0;
 
     // Find current step index
-    const currentStepIdx = steps.findIndex(step => 
+    const currentStepIdx = steps.findIndex(step =>
       step.comp === courseCompleted &&
       (courseCompleted || (
         step.s === currentSectionIndex &&
@@ -123,7 +125,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     );
 
     if (currentStepIdx === -1) return 0;
-    
+
     // Calculate percentage (0 to 100)
     return Math.round((currentStepIdx / (totalSteps - 1)) * 100);
   };
@@ -259,10 +261,10 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
         colors: ['#8B5CF6', '#EC4899', '#3B82F6']
       });
 
-      toast.success("Cours ajouté à vos favoris !");
+      toast.success(t('addedToFavorites'));
     } catch (error) {
       console.error("Error liking course:", error);
-      toast.error("Impossible d'aimer ce cours");
+      toast.error(t('cannotLike'));
     } finally {
       setIsLiking(false);
     }
@@ -296,14 +298,14 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
     if (showExercise) {
       if (!isCurrentExerciseCompleted()) return;
-      
+
       const activeExercises = getExercisesAtCurrentLevel();
       if (currentExerciseIndex < activeExercises.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentExerciseAnswers({}); // Reset answers for next sub-exercise
         return;
       }
-      
+
       setShowExercise(false);
       setCurrentExerciseIndex(0);
       setCurrentExerciseLevel(null);
@@ -474,28 +476,28 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     setExerciseScore((prev) => ({ ...prev, [exerciseId]: percentage }));
 
     if (percentage >= 70) {
-      toast.success("Félicitations ! Exercice réussi.");
+      toast.success(t('congratulations'));
       // setShowExercise(false); // Let user see result before clicking next
     } else {
-      toast.error("Veuisillez réessayer pour atteindre au moins 70%.");
+      toast.error(t('tryAgain'));
     }
   };
 
   const handleCertificationClick = async () => {
     if (!user) {
-      toast.error("Veuillez vous connecter pour obtenir un certificat.");
+      toast.error(t('loginForCert'));
       return;
     }
 
     setIsCertifying(true);
-    const toastId = toast.loading("Génération de votre certificat...");
-    
+    const toastId = toast.loading(t('certGeneration'));
+
     try {
-      const studentName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || "Étudiant XCCM";
+      const studentName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || t('studentStr');
       const success = await downloadCertificationPDF(courseData, studentName);
-      
+
       if (success) {
-        toast.success("Certificat généré avec succès !", { id: toastId });
+        toast.success(t('certSuccess'), { id: toastId });
         confetti({
           particleCount: 150,
           spread: 70,
@@ -503,11 +505,11 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
           colors: ['#A855F7', '#8B5CF6', '#D946EF']
         });
       } else {
-        toast.error("Échec de la génération du certificat.", { id: toastId });
+        toast.error(t('certFail'), { id: toastId });
       }
     } catch (error) {
       console.error(error);
-      toast.error("Une erreur est survenue.", { id: toastId });
+      toast.error(t('errorOccurred'), { id: toastId });
     } finally {
       setIsCertifying(false);
     }
@@ -557,12 +559,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
             {/* Titre */}
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Ce cours est en cours de préparation
+              {t('preparationTitle')}
             </h2>
 
             {/* Description */}
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-xl mx-auto">
-              Le contenu de ce cours n'est pas encore disponible. Notre équipe pédagogique travaille activement à sa création pour vous offrir la meilleure expérience d'apprentissage possible.
+              {t('preparationDesc')}
             </p>
 
             {/* Informations supplémentaires */}
@@ -570,11 +572,11 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               <div className="flex items-start justify-center text-left max-w-md mx-auto">
                 <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3 mt-1 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Que faire en attendant ?</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{t('whatToDo')}</h3>
                   <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                    <li>• Explorez d'autres cours disponibles dans la bibliothèque</li>
-                    <li>• Revenez plus tard pour découvrir le nouveau contenu</li>
-                    <li>• Inscrivez-vous pour être notifié de sa publication</li>
+                    <li>• {t('waitItem1')}</li>
+                    <li>• {t('waitItem2')}</li>
+                    <li>• {t('waitItem3')}</li>
                   </ul>
                 </div>
               </div>
@@ -585,7 +587,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               <Link href="/bibliotheque">
                 <button className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:from-purple-600 hover:to-purple-700 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
                   <ArrowLeft className="w-5 h-5" />
-                  Retour à la bibliothèque
+                  {t('backToLibrary')}
                 </button>
               </Link>
 
@@ -640,7 +642,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
       {courseData.author?.id && (
         <div className="mb-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Par</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('by')}</p>
           <TeacherLink
             teacherId={String(courseData.author.id)}
             teacherName={courseData.author.name}
@@ -657,21 +659,21 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
               <p className="text-xl text-purple-600 dark:text-purple-400 mb-4">{courseData.category}</p>
               <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400">
-                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.viewCount} vues</span>
+                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.viewCount} {t('views')}</span>
                 <button
                   onClick={handleLike}
                   disabled={isLiking}
                   className="flex items-center hover:text-red-500 transition-colors cursor-pointer group"
                 >
                   <ThumbsUp className={`h-5 w-5 mr-2 ${isLiking ? 'animate-pulse text-red-400' : 'group-hover:scale-110 transition-transform'}`} />
-                  {courseData.likeCount} likes
+                  {courseData.likeCount} {t('likes')}
                 </button>
                 <button
                   onClick={() => setShowDownloadModal(true)}
                   className="flex items-center hover:text-purple-500 transition-colors cursor-pointer group"
                 >
                   <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                  {courseData.downloadCount} téléchargements
+                  {courseData.downloadCount} {t('downloads')}
                 </button>
               </div>
             </div>
@@ -712,7 +714,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                   {/* Title Paragraph */}
                   <div className="space-y-3 ml-8 border-l-2 border-orange-100 dark:border-orange-900/30 pl-6">
                     <h4 className="text-xl font-semibold text-orange-600 dark:text-orange-400 pb-2 border-b border-orange-100 dark:border-orange-900/30">
-                      {paragraph?.title || "Titre non disponible"}
+                      {paragraph?.title || t('unavailableTitle')}
                     </h4>
                     {paragraph?.introduction && (
                       <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl border-l-4 border-amber-500">
@@ -728,7 +730,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                       <CourseContentRenderer content={paragraph.content} />
                     </div>
                   ) : (
-                    <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">Contenu non disponible</p>
+                    <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">{t('unavailableContent')}</p>
                   )}
 
                   {paragraph?.notions && paragraph.notions.length > 0 && (
@@ -737,7 +739,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                         <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg mr-3">
                           <BookOpen className="h-5 w-5 text-red-600" />
                         </div>
-                        Notions
+                        {t('notions')}
                       </h3>
                       <ul className="space-y-3">
                         {paragraph.notions.map((notion: string, index: number) => (
@@ -757,7 +759,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                   <div className="flex items-center text-indigo-900 dark:text-indigo-100">
                     <Award className="h-6 w-6 mr-3 text-indigo-600 dark:text-indigo-400" />
                     <h2 className="text-xl font-bold tracking-tight">
-                      Exercice : {currentExercise?.exercise?.title || "Application"}
+                      {t('exerciseLabel', { title: currentExercise?.exercise?.title || t('applicationTitle') })}
                     </h2>
                   </div>
                   {getExercisesAtCurrentLevel().length > 1 && (
@@ -782,13 +784,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                           <div className="space-y-3">
                             {q.options && q.options.length > 0 ? (
                               q.options.map((option: string, optIdx: number) => (
-                                <label 
-                                  key={optIdx} 
-                                  className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${
-                                    currentExerciseAnswers[idx] === option 
-                                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-sm' 
-                                      : 'border-transparent bg-white dark:bg-gray-800/60 hover:border-indigo-200 dark:hover:border-indigo-700/50 hover:bg-indigo-50/30 dark:hover:bg-gray-800 shadow-sm hover:shadow'
-                                  }`}
+                                <label
+                                  key={optIdx}
+                                  className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${currentExerciseAnswers[idx] === option
+                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-sm'
+                                    : 'border-transparent bg-white dark:bg-gray-800/60 hover:border-indigo-200 dark:hover:border-indigo-700/50 hover:bg-indigo-50/30 dark:hover:bg-gray-800 shadow-sm hover:shadow'
+                                    }`}
                                 >
                                   <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 mr-4 transition-colors ${currentExerciseAnswers[idx] === option ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-400 dark:bg-indigo-400' : 'border-gray-300 group-hover:border-indigo-400 dark:border-gray-600 dark:group-hover:border-indigo-500'}`}>
                                     {currentExerciseAnswers[idx] === option && <div className="h-2 w-2 rounded-full bg-white dark:bg-gray-900" />}
@@ -801,56 +802,55 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                                     onChange={() => handleAnswerChange(idx, option)}
                                     className="hidden"
                                   />
-                                  <span className={`transition-colors duration-200 ${
-                                    currentExerciseAnswers[idx] === option 
-                                      ? 'text-indigo-900 dark:text-indigo-100 font-semibold' 
-                                      : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
-                                  }`}>
+                                  <span className={`transition-colors duration-200 ${currentExerciseAnswers[idx] === option
+                                    ? 'text-indigo-900 dark:text-indigo-100 font-semibold'
+                                    : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
+                                    }`}>
                                     <span className="inline-block w-6 font-medium text-indigo-400/70 dark:text-indigo-500/70">{String.fromCharCode(97 + optIdx)})</span> {option}
                                   </span>
                                 </label>
-                            ))
+                              ))
+                            ) : (
+                              <textarea
+                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                                rows={3}
+                                placeholder={t('yourAnswer')}
+                                value={currentExerciseAnswers[idx] || ""}
+                                onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        onClick={submitExercise}
+                        disabled={Object.keys(currentExerciseAnswers).length < (currentExercise.exercise.questions.length || 0)}
+                        className="w-full py-4 mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 font-bold text-lg focus:ring-4 focus:ring-indigo-500/30 outline-none"
+                        type="button"
+                      >
+                        {t('validateAnswers')}
+                      </button>
+                      {currentExercise.id && exerciseScore[currentExercise.id] !== undefined && (
+                        <div className={`mt-6 p-6 rounded-xl border-2 ${exerciseScore[currentExercise.id] >= 70
+                          ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/30 text-green-700 dark:text-green-300'
+                          : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-300'
+                          }`}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <Award className={`h-6 w-6 ${exerciseScore[currentExercise.id] >= 70 ? 'text-green-600' : 'text-red-600'}`} />
+                            <h4 className="text-xl font-bold">{t('resultLabel', { score: exerciseScore[currentExercise.id] })}</h4>
+                          </div>
+                          {exerciseScore[currentExercise.id] >= 70 ? (
+                            <p className="flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5" />
+                              {t('excellent')}
+                            </p>
                           ) : (
-                            <textarea
-                              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
-                              rows={3}
-                              placeholder="Votre réponse..."
-                              value={currentExerciseAnswers[idx] || ""}
-                              onChange={(e) => handleAnswerChange(idx, e.target.value)}
-                            />
+                            <p>N'ayez crainte ! Relisez le cours et essayez à nouveau pour atteindre les 70% requis.</p>
                           )}
                         </div>
-                      </div>
-                    ))}
-                    <button
-                      onClick={submitExercise}
-                      disabled={Object.keys(currentExerciseAnswers).length < (currentExercise.exercise.questions.length || 0)}
-                      className="w-full py-4 mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 font-bold text-lg focus:ring-4 focus:ring-indigo-500/30 outline-none"
-                      type="button"
-                    >
-                      Valider mes réponses
-                    </button>
-                    {currentExercise.id && exerciseScore[currentExercise.id] !== undefined && (
-                      <div className={`mt-6 p-6 rounded-xl border-2 ${exerciseScore[currentExercise.id] >= 70
-                        ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/30 text-green-700 dark:text-green-300'
-                        : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-300'
-                        }`}>
-                        <div className="flex items-center gap-3 mb-2">
-                          <Award className={`h-6 w-6 ${exerciseScore[currentExercise.id] >= 70 ? 'text-green-600' : 'text-red-600'}`} />
-                          <h4 className="text-xl font-bold">Résultat : {exerciseScore[currentExercise.id]}%</h4>
-                        </div>
-                        {exerciseScore[currentExercise.id] >= 70 ? (
-                          <p className="flex items-center gap-2">
-                            <CheckCircle className="h-5 w-5" />
-                            Excellent ! Vous maîtrisez cette notion. Vous pouvez passer à la suite.
-                          </p>
-                        ) : (
-                          <p>N'ayez crainte ! Relisez le cours et essayez à nouveau pour atteindre les 70% requis.</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -865,7 +865,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               type="button"
             >
               <ArrowLeft className="h-5 w-5 mr-2" />
-              Précédent
+              {t('previous')}
             </button>
 
             <button
@@ -875,10 +875,10 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               type="button"
             >
               {showExercise
-                ? <>Continuer <ArrowRight className="h-5 w-5 ml-2" /></>
+                ? <>{t('continue')} <ArrowRight className="h-5 w-5 ml-2" /></>
                 : paragraph?.exercise
-                  ? <>Passer à l'exercice <Award className="h-5 w-5 ml-2" /></>
-                  : <>Suivant <ArrowRight className="h-5 w-5 ml-2" /></>
+                  ? <>{t('toExercise')} <Award className="h-5 w-5 ml-2" /></>
+                  : <>{t('next')} <ArrowRight className="h-5 w-5 ml-2" /></>
               }
             </button>
           </div>
@@ -889,10 +889,10 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center justify-center">
                   <Award className="h-8 w-8 mr-3 text-purple-600" />
-                  Conclusion du cours
+                  {t('conclusionTitle')}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400 mt-4 max-w-2xl mx-auto">
-                  {courseData.conclusion || "Merci d'avoir suivi ce cours!"}
+                  {courseData.conclusion || t('defaultConclusion')}
                 </p>
               </div>
 
@@ -900,13 +900,13 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6">
                   <h3 className="text-xl font-semibold text-purple-800 dark:text-purple-400 mb-4 flex items-center">
                     <CheckCircle className="h-6 w-6 mr-2 text-purple-600" />
-                    Aperçu du cours
+                    {t('courseOverview')}
                   </h3>
                   {(courseData.introduction || (courseData.sections && courseData.sections.length > 0)) ? (
                     <div className="space-y-4">
                       {courseData.introduction && (
                         <div>
-                          <h4 className="font-bold text-gray-800 dark:text-white mb-2">Description</h4>
+                          <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t('descriptionTitle')}</h4>
                           <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                             {courseData.introduction}
                           </p>
@@ -915,7 +915,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
                       {courseData.sections && courseData.sections.length > 0 && (
                         <div>
-                          <h4 className="font-bold text-gray-800 dark:text-white mb-2 mt-4">Plan du cours</h4>
+                          <h4 className="font-bold text-gray-800 dark:text-white mb-2 mt-4">{t('coursePlan')}</h4>
                           <ul className="space-y-2">
                             {courseData.sections.map((section: Section, index: number) => (
                               <li key={index} className="flex items-start">
@@ -928,33 +928,33 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                       )}
                     </div>
                   ) : (
-                    <p className="text-gray-500 dark:text-gray-400">Aucun objectif d'apprentissage n'a été défini pour ce cours.</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('noObjectives')}</p>
                   )}
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                   <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
                     <Award className="h-6 w-6 mr-2 text-purple-600" />
-                    Évaluez ce cours
+                    {t('rateCourse')}
                   </h3>
                   {!evaluation.submitted ? (
                     <form onSubmit={handleSubmitEvaluation} className="space-y-4">
                       <div>
                         <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                          Notez ce cours (sur 5) :
+                          {t('rateLabel')}
                         </label>
                         <StarRating rating={evaluation.rating} setRating={(rating: number) => setEvaluation((prev) => ({ ...prev, rating }))} />
                       </div>
                       <div>
                         <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                          Votre feedback :
+                          {t('feedbackLabel')}
                         </label>
                         <textarea
                           value={evaluation.feedback}
                           onChange={handleEvaluationChange}
                           className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                           rows={4}
-                          placeholder="Qu'avez-vous pensé de ce cours ?"
+                          placeholder={t('feedbackPlaceholder')}
                           required
                         />
                       </div>
@@ -962,12 +962,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                         type="submit"
                         className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                       >
-                        Soumettre l'évaluation
+                        {t('submitRating')}
                       </button>
                     </form>
                   ) : (
                     <div className="text-center text-purple-600 dark:text-purple-400 font-semibold">
-                      Merci pour votre évaluation !
+                      {t('thanksFeedback')}
                     </div>
                   )}
                 </div>
@@ -981,7 +981,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                   type="button"
                 >
                   <Award className={`h-7 w-7 mr-2 ${isCertifying ? 'animate-spin' : ''}`} />
-                  {isCertifying ? 'Génération...' : 'Obtenir votre certification'}
+                  {isCertifying ? t('generating') : t('getCert')}
                 </button>
                 <button
                   onClick={() => setShowDownloadModal(true)}
@@ -989,7 +989,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                   type="button"
                 >
                   <Download size={24} />
-                  Télécharger le cours
+                  {t('downloadCourse')}
                 </button>
               </div>
             </div>

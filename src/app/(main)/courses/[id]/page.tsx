@@ -9,6 +9,7 @@ import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useTranslations } from "next-intl";
 
 interface CoursePageProps {
   params: Promise<{ id: string }>;
@@ -22,6 +23,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const t = useTranslations('pages.coursePage');
 
   useEffect(() => {
     if (loading || authLoading) {
@@ -58,10 +60,10 @@ const CoursePage = ({ params }: CoursePageProps) => {
         isOpen={true}
         onClose={handleCancelLogin}
         onConfirm={handleConfirmLogin}
-        title="Connexion Requise"
-        message="Vous devez être connecté pour accéder au contenu des cours. Souhaitez-vous vous connecter maintenant ?"
-        confirmText="Se connecter"
-        cancelText="Retour à l'accueil"
+        title={t('loginRequiredTitle')}
+        message={t('loginRequiredMessage')}
+        confirmText={t('loginConfirm')}
+        cancelText={t('returnHome')}
         type="warning"
       />
     );
@@ -72,13 +74,13 @@ const CoursePage = ({ params }: CoursePageProps) => {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md border border-red-100 dark:border-red-900/30">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Oups !</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error || "Cours non trouvé"}</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('oops')}</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{error || t('courseNotFound')}</p>
           <button
             onClick={() => window.location.reload()}
             className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors font-semibold"
           >
-            Réessayer
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -88,7 +90,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
   const courseData = course ? transformTiptapToCourseData(course) : null;
 
   if (!courseData) {
-    return <div className="text-center py-20 text-xl text-gray-600 dark:text-gray-400">Données du cours invalides</div>;
+    return <div className="text-center py-20 text-xl text-gray-600 dark:text-gray-400">{t('invalidCourseData')}</div>;
   }
 
   return (

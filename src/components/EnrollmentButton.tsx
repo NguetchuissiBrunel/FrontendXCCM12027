@@ -27,7 +27,8 @@ export default function EnrollmentButton({
   onEnroll,
   onUnenroll
 }: EnrollmentButtonProps) {
-  const t = useTranslations('enrollment');
+  // Correction : utiliser le bon namespace 'pages.enrollment'
+  const t = useTranslations('pages.enrollment');
   const { user, isAuthenticated } = useAuth();
   const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
   const { isEnrolled, progress, loading, enroll, unenroll, enrollment } = useEnrollment(courseId);

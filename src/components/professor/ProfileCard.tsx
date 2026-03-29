@@ -224,9 +224,9 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+    <div id="profile-card" className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-8">
-        <h2 id="profile-card" className="text-2xl font-bold text-purple-700 dark:text-purple-400">Profil de l&apos;Enseignant</h2>
+        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">Profil de l&apos;Enseignant</h2>
         {!isEditing ? (
           <button
             onClick={handleEdit}

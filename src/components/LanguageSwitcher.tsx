@@ -1,7 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation';
 import Cookies from 'js-cookie';
 import { useLocale, useTranslations } from 'next-intl';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -20,6 +20,7 @@ export default function LanguageSwitcher({
   compact = false,
 }: LanguageSwitcherProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const locale = useLocale() as AppLocale;
   const t = useTranslations('languageSwitcher');
   const [isPending, startTransition] = useTransition();
@@ -35,7 +36,7 @@ export default function LanguageSwitcher({
     });
 
     startTransition(() => {
-      router.refresh();
+      router.replace(pathname, { locale: nextLocale });
     });
   };
 

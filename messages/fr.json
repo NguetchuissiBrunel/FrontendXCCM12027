@@ -969,7 +969,16 @@
       "thanksFeedback": "Merci pour votre evaluation !",
       "generating": "Generation...",
       "getCert": "Obtenir votre certification",
-      "downloadCourse": "Telecharger le cours"
+      "downloadCourse": "Telecharger le cours",
+      "progressLabel": "Progrès",
+      "finish": "Finir",
+      "reviewTitle": "Avis",
+      "courseCompletionTitle": "Félicitations !",
+      "courseCompletedMessage": "Cours terminé : {title}",
+      "enrollToCertify": "Vous devez être inscrit pour obtenir un certificat.",
+      "enrollToDownload": "Vous devez être inscrit pour télécharger ce cours.",
+      "pendingEnrollment": "Votre inscription est en attente de validation.",
+      "requiredPercent": "70% requis."
     },
     "pricing": {
       "title": "Tarifs adaptés",

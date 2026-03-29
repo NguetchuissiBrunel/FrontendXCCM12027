@@ -96,16 +96,36 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
     };
 
     /**
-     * Filtre les nœuds TipTap pour retirer les notions et exercices du flux de texte principal
-     * car ils sont affichés dans des sections dédiées.
+     * Injecte récursivement les numéros de la TOC dans les attributs des nœuds TipTap
      */
-    const filterSpecialNodes = (nodes: any[]): any[] => {
-        if (!nodes || !Array.isArray(nodes)) return nodes;
-        return nodes.filter(node => node.type !== 'notion' && node.type !== 'exercice' && node.type !== 'exercise').map(node => ({
-            ...node,
-            content: node.content ? filterSpecialNodes(node.content) : undefined
-        }));
+    const injectNumbering = (nodes: any[], numberMap: Map<string, string>) => {
+        if (!nodes || !Array.isArray(nodes)) return;
+        nodes.forEach(node => {
+            if (node.attrs?.id && numberMap.has(node.attrs.id)) {
+                node.attrs.number = numberMap.get(node.attrs.id);
+            }
+            if (node.content) {
+                injectNumbering(node.content, numberMap);
+            }
+        });
     };
+
+    // Build a map of ID -> Number from TOC
+    const numberMap = new Map<string, string>();
+    const flattenTOCItems = (items: TableOfContentsItem[]) => {
+        items.forEach(item => {
+            if (item.id) numberMap.set(item.id, item.number);
+            if (item.children) flattenTOCItems(item.children);
+        });
+    };
+    flattenTOCItems(toc);
+
+    // Inject numbering into the original content before processing
+    if (contentJSON.content) {
+        injectNumbering(contentJSON.content, numberMap);
+    }
+
+    const filterSpecialNodes = (nodes: any[]): any[] => nodes;
 
     // 2. Parcourir l'arbre TOC pour construire la structure
     const processItems = (items: TableOfContentsItem[]): Section[] => {
@@ -117,6 +137,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                     id: item.id,
                     title: item.title || "Section sans titre",
                     introduction: item.attrs?.introduction || "",
+                    number: item.number,
                     chapters: [],
                     paragraphs: [],
                     exercises: [],
@@ -130,6 +151,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                             id: child.id,
                             title: child.title || "Chapitre sans titre",
                             introduction: child.attrs?.introduction || "",
+                            number: child.number,
                             paragraphs: [],
                             exercises: [],
                             children: [],
@@ -142,6 +164,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                     id: grandChild.id,
                                     title: grandChild.title || "Paragraphe sans titre",
                                     introduction: grandChild.attrs?.introduction || "",
+                                    number: grandChild.number,
                                     content: filterSpecialNodes(grandChild.content || []),
                                     notions: [],
                                     exercises: [],
@@ -159,7 +182,8 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                             title: cc.title || "Exercice",
                                             content: cc.content,
                                             questions: cc.attrs?.questions,
-                                            id: cc.id
+                                            id: cc.id,
+                                            number: cc.number
                                         };
                                         paragraph.exercises?.push(exData);
                                         paragraph.subItems!.push({ type: 'exercise', data: exData });
@@ -173,7 +197,8 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                     title: grandChild.title || "Exercice",
                                     content: grandChild.content,
                                     questions: grandChild.attrs?.questions,
-                                    id: grandChild.id
+                                    id: grandChild.id,
+                                    number: grandChild.number
                                 };
                                 chapter.exercises?.push(exData);
                                 chapter.subItems!.push({ type: 'exercise', data: exData });
@@ -214,7 +239,8 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                     title: cc.title || "Exercice",
                                     content: cc.content,
                                     questions: cc.attrs?.questions,
-                                    id: cc.id
+                                    id: cc.id,
+                                    number: cc.number
                                 };
                                 paragraph.exercises?.push(exData);
                                 paragraph.subItems!.push({ type: 'exercise', data: exData });
@@ -228,7 +254,8 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                             title: child.title || "Exercice",
                             content: child.content,
                             questions: child.attrs?.questions,
-                            id: child.id
+                            id: child.id,
+                            number: child.number
                         };
                         section.exercises?.push(exData);
                         section.subItems!.push({ type: 'exercise', data: exData });

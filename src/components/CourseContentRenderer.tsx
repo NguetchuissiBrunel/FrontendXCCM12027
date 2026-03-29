@@ -21,9 +21,10 @@ import Math from '../extensions/Math';
 interface CourseContentRendererProps {
     content: any;
     forceLight?: boolean;
+    nodeIndex?: number | null;
 }
 
-const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, forceLight = false }) => {
+const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, forceLight = false, nodeIndex = null }) => {
     // Helper to ensure content is a valid Doc structure
     const [validContent, setValidContent] = useState<JSONContent>({ type: 'doc', content: [] });
 
@@ -38,8 +39,23 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, 
 
         // If content is an array (list of nodes)
         if (Array.isArray(processedContent)) {
+            // Filter by nodeIndex if provided
+            if (nodeIndex !== null && nodeIndex !== undefined) {
+                if (nodeIndex >= 0) {
+                    if (processedContent[nodeIndex]) {
+                        processedContent = [processedContent[nodeIndex]];
+                    }
+                } else if (nodeIndex === -1) {
+                    // Show intro text (everything before the first notion/exercise)
+                    const firstSpecialIdx = processedContent.findIndex(n => n.type === 'notion' || n.type === 'exercice' || n.type === 'exercise');
+                    processedContent = firstSpecialIdx === -1 ? processedContent : processedContent.slice(0, firstSpecialIdx);
+                }
+            } else {
+                // nodeIndex is null - show everything (legacy mode or full paragraph)
+            }
+
             // Check if it contains inline nodes (text) directly allowed only in blocks
-            const hasInlineNodes = processedContent.some(node => node.type === 'text' || !node.type);
+            const hasInlineNodes = Array.isArray(processedContent) && processedContent.some(node => node.type === 'text' || !node.type);
 
             if (hasInlineNodes) {
                 // Wrap inline content in a paragraph

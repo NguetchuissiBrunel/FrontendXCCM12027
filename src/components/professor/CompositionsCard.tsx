@@ -1,5 +1,5 @@
 'use client';
-import { Trash2, Layout, CheckCircle, Clock, BookOpen, Archive, LockKeyhole, UnlockKeyhole } from 'lucide-react';
+import { Trash2, Layout, CheckCircle, Clock, BookOpen, Archive, LockKeyhole, UnlockKeyhole, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
 
@@ -28,6 +28,7 @@ interface CompositionsCardProps {
   getCourseStats?: (id: string) => { totalExercises?: number; totalEnrolled?: number } | undefined;
   onManageClassCourses?: (classId: string) => void;
   onChangeStatus?: (classId: string, status: ClassStatus) => Promise<void>;
+  onEdit?: (id: string) => void;
   title?: string;
 }
 
@@ -68,6 +69,7 @@ export default function CompositionsCard({
   getCourseStats,
   onManageClassCourses,
   onChangeStatus,
+  onEdit,
   title,
 }: CompositionsCardProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({
@@ -191,6 +193,15 @@ export default function CompositionsCard({
                     title="Gérer les cours"
                   >
                     <BookOpen size={20} />
+                  </button>
+                )}
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(composition.id)}
+                    className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                    title={title?.toLowerCase().includes('composition') || title?.toLowerCase().includes('cours') ? "Modifier le cours" : "Modifier la classe"}
+                  >
+                    <Pencil size={20} />
                   </button>
                 )}
                 <button

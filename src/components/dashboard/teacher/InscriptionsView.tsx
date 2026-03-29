@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 
 import { useLoading } from '@/contexts/LoadingContext';
 
-export default function TeacherEnrollmentsPage() {
+export default function InscriptionsView() {
     const { user, loading: authLoading } = useAuth();
     const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [isMounted, setIsMounted] = useState(false);
@@ -47,7 +47,7 @@ export default function TeacherEnrollmentsPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                     <div>
                         <button
-                            onClick={() => router.push('/profdashboard')}
+                            onClick={() => router.push('/profdashboard?tab=accueil')}
                             className="flex items-center text-purple-600 dark:text-purple-400 font-medium mb-4 hover:translate-x-[-4px] transition-transform"
                         >
                             <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

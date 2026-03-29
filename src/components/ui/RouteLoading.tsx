@@ -30,6 +30,15 @@ export default function RouteLoading() {
         !link.classList.contains('no-loading') &&
         link.getAttribute('href')?.startsWith('/')
       ) {
+        // Optimisation : Ne pas déclencher pour les navigations sur la même page (ex: changement de tab via searchParams)
+        const href = link.getAttribute('href') || '';
+        const targetPath = href.split('?')[0].split('#')[0];
+        const currentPath = window.location.pathname;
+        
+        if (targetPath === currentPath) {
+          return;
+        }
+
         setInternalLoading(true);
       }
     };

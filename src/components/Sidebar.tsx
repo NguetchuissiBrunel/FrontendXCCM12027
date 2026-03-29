@@ -1,11 +1,12 @@
 // components/Sidebar.tsx
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText, FolderOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { usePendingCount } from '@/hooks/usePendingCount';
 
 interface SidebarProps {
   userRole: 'student' | 'professor';
@@ -14,28 +15,24 @@ interface SidebarProps {
   activeTab?: string;
 }
 
-function getStoredPhotoUrl() {
-  if (typeof window === 'undefined') {
-    return '/images/pp.jpeg';
-  }
-
-  const currentUser = localStorage.getItem('currentUser');
-  if (!currentUser) {
-    return '/images/pp.jpeg';
-  }
-
-  try {
-    const userData = JSON.parse(currentUser) as { photoUrl?: string };
-    return userData.photoUrl || '/images/pp.jpeg';
-  } catch (error) {
-    console.error('Erreur lors du chargement de la photo:', error);
-    return '/images/pp.jpeg';
-  }
-}
-
 export default function Sidebar({ userRole, userName, userLevel, activeTab }: SidebarProps) {
   const t = useTranslations('sidebar');
-  const [photoUrl] = useState<string>(getStoredPhotoUrl);
+  const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
+  const { pendingCount } = usePendingCount();
+
+  useEffect(() => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      try {
+        const userData = JSON.parse(currentUser);
+        if (userData.photoUrl) {
+          setPhotoUrl(userData.photoUrl);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de la photo:', error);
+      }
+    }
+  }, []);
 
   const studentMenuItems = [
     { id: 'accueil', label: t('student.home'), icon: Home, href: '/etudashboard' },
@@ -45,11 +42,11 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
   ];
 
   const professorMenuItems = [
-    { id: 'accueil', label: t('teacher.home'), icon: Home, href: '/profdashboard' },
-    { id: 'inscriptions', label: t('teacher.enrollments'), icon: LucideUsers, href: '/profdashboard/inscriptions' },
-    { id: 'classes', label: t('teacher.classes'), icon: FolderOpen, href: '/profdashboard/classes' },
-    { id: 'exercices', label: t('teacher.exercises'), icon: FileText, href: '/profdashboard/exercises' },
-    { id: 'compositions', label: t('teacher.compositions'), icon: BookOpen, href: '/profdashboard/compositions' },
+    { id: 'accueil', label: t('teacher.home'), icon: Home, href: '/profdashboard?tab=accueil' },
+    { id: 'inscriptions', label: t('teacher.enrollments'), icon: LucideUsers, href: '/profdashboard?tab=inscriptions' },
+    { id: 'classes', label: t('teacher.classes'), icon: FolderOpen, href: '/profdashboard?tab=classes' },
+    { id: 'exercices', label: t('teacher.exercises'), icon: FileText, href: '/profdashboard?tab=exercices' },
+    { id: 'compositions', label: t('teacher.compositions'), icon: BookOpen, href: '/profdashboard?tab=compositions' },
   ];
 
   return (
@@ -108,7 +105,12 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
                     }`}
                 >
                   <Icon size={20} />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.id === 'inscriptions' && pendingCount > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center animate-pulse shadow-sm">
+                      {pendingCount > 9 ? '9+' : pendingCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

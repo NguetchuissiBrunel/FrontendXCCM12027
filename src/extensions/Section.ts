@@ -37,7 +37,7 @@ declare module '@tiptap/core' {
 export default Node.create<SectionOptions>({
   name: 'section',
 
-  group: 'xccm-section',
+  group: 'block xccm-section',
 
   content: '(chapitre | exercice)+',
 

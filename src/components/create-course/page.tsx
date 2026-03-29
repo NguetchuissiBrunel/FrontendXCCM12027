@@ -7,9 +7,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (data: { title: string; category: string; description: string; image?: string; file?: any }) => void;
+  mode?: 'class' | 'course';
 }
 
-export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) {
+export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'class' }: Props) {
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -165,7 +166,9 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
           >
             <X size={24} />
           </button>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Création d'une Classe</h1>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            {mode === 'class' ? 'Création d\'une Classe' : 'Création d\'un Cours'}
+          </h1>
           <p className="text-purple-100 mt-2 text-sm font-medium opacity-90">Partagez votre savoir avec vos étudiants</p>
         </div>
 
@@ -176,7 +179,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                Titre de la classe
+                Titre {mode === 'class' ? 'de la classe' : 'du cours'}
               </label>
               <input
                 type="text"
@@ -296,7 +299,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit }: Props) 
             onClick={handleSubmit}
             className="order-1 sm:order-2 bg-purple-600 hover:bg-purple-700 text-white px-12 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-purple-200 dark:shadow-none transform hover:-translate-y-1 active:scale-95"
           >
-            Créer la classe
+            {mode === 'class' ? 'Créer la classe' : 'Créer le cours'}
           </button>
         </div>
       </div>

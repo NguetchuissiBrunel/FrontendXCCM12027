@@ -37,9 +37,9 @@ declare module '@tiptap/core' {
 export default Node.create<NotionOptions>({
   name: 'notion',
 
-  group: 'xccm-granule',
+  group: 'block xccm-granule',
 
-  content: 'block+',
+  content: '(paragraph | bulletList | orderedList | horizontalRule | blockquote | codeBlock | heading)+',
 
   defining: true,
 

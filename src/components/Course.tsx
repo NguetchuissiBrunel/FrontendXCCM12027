@@ -1,7 +1,7 @@
 // src/components/Course.tsx
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, BookUp, Tv, FileText } from "lucide-react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, FileText, Check } from "lucide-react";
 import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
 import { downloadCourseAsDocx } from "@/utils/DownloadDocx";
 import { downloadCertificationPDF } from "@/utils/DownloadCertification";
@@ -27,223 +27,159 @@ interface CourseProps {
   incrementDownload: (id: number) => Promise<void>;
 }
 
+// Step interface: Each step is a structural "Page"
+interface Step {
+    type: 'section_intro' | 'chapter_intro' | 'paragraph' | 'exercise_level' | 'conclusion';
+    s: number; // section index
+    c: number; // chapter index
+    p: number; // paragraph index
+    exIdx: number; // index for sets of exercises
+    exL: 'section' | 'chapter' | 'paragraph' | null;
+    comp: boolean; // boolean for course completion state
+}
+
 const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
-  const t = useTranslations('course');
   const { user } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
-  const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
-  const [currentParagraphIndex, setCurrentParagraphIndex] = useState<number>(0);
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
+  
+  // Navigation State
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+
+  // Interaction State
   const [exerciseScore, setExerciseScore] = useState<{ [key: string]: number }>({});
-  const [showExercise, setShowExercise] = useState<boolean>(false);
-  const [courseCompleted, setCourseCompleted] = useState<boolean>(false);
   const [currentExerciseAnswers, setCurrentExerciseAnswers] = useState<{ [key: number]: string }>({});
   const [pdfGenerating, setPdfGenerating] = useState<boolean>(false);
   const [docxGenerating, setDocxGenerating] = useState<boolean>(false);
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const [isLiking, setIsLiking] = useState<boolean>(false);
   const [isCertifying, setIsCertifying] = useState<boolean>(false);
-  const [currentExerciseLevel, setCurrentExerciseLevel] = useState<'section' | 'chapter' | 'paragraph' | null>(null);
-  const [evaluation, setEvaluation] = useState<{
-    rating: number;
-    feedback: string;
-    submitted: boolean;
-  }>({
-    rating: 0,
-    feedback: "",
-    submitted: false,
-  });
-  const [showOrientationSelector, setShowOrientationSelector] = useState<boolean>(false);
+  const [evaluation, setEvaluation] = useState({ rating: 0, feedback: "", submitted: false });
+
   const { startLoading, stopLoading } = useLoading();
-  const { isEnrolled, loading: enrollmentLoading, updateProgress: updateCourseProgress } = useEnrollment(courseData.id);
+  const { isEnrolled, loading: enrollmentLoading, updateProgress: updateCourseProgress, progress: savedProgress, enrollment } = useEnrollment(courseData.id);
 
-  // Calculate total steps and current progress percentage
-  const getProgressPercentage = () => {
-    if (!courseData?.sections?.length) return 0;
+  // Logic to determine if user can download
+  const isStudent = user?.role?.includes('student');
+  const canDownload = !isStudent || (isEnrolled && enrollment?.status === 'APPROVED');
 
-    const steps: { s: number, c: number, p: number, ex: boolean, exL: 'section' | 'chapter' | 'paragraph' | null, comp: boolean }[] = [];
+  // --- Step Generation ---
 
-    // Flatten the course structure into sequential steps
-    courseData.sections.forEach((s, sIdx) => {
-      // Step: Section Header
-      steps.push({ s: sIdx, c: 0, p: 0, ex: false, exL: null, comp: false });
+  const steps = useMemo(() => {
+    if (!courseData?.sections?.length) return [];
+    const s: Step[] = [];
+    
+    courseData.sections.forEach((sec, sIdx) => {
+      s.push({ type: 'section_intro', s: sIdx, c: 0, p: 0, exIdx: 0, exL: null, comp: false });
 
-      const chapters = s.chapters || [];
+      const chapters = sec.chapters || [];
       if (chapters.length > 0) {
-        chapters.forEach((c, cIdx) => {
-          // Step: Chapter Header
-          steps.push({ s: sIdx, c: cIdx, p: 0, ex: false, exL: null, comp: false });
-
-          const paragraphs = c.paragraphs || [];
-          paragraphs.forEach((p, pIdx) => {
-            // Step: Paragraph Content
-            steps.push({ s: sIdx, c: cIdx, p: pIdx, ex: false, exL: null, comp: false });
-
-            // Step: Paragraph Exercise
-            if (p.exercises?.length || p.exercise || p.exerciseContent) {
-              steps.push({ s: sIdx, c: cIdx, p: pIdx, ex: true, exL: 'paragraph', comp: false });
-            }
+        chapters.forEach((chap, cIdx) => {
+          s.push({ type: 'chapter_intro', s: sIdx, c: cIdx, p: 0, exIdx: 0, exL: null, comp: false });
+          const paragraphs = chap.paragraphs || [];
+          paragraphs.forEach((para, pIdx) => {
+            s.push({ type: 'paragraph', s: sIdx, c: cIdx, p: pIdx, exIdx: 0, exL: null, comp: false });
           });
-
-          // Step: Chapter Exercise
-          if (c.exercises?.length || c.exercise || c.exerciseContent) {
-            steps.push({ s: sIdx, c: cIdx, p: (c.paragraphs?.length || 1) - 1, ex: true, exL: 'chapter', comp: false });
+          if (chap.exercises?.length || chap.exercise || chap.exerciseContent) {
+            s.push({ type: 'exercise_level', s: sIdx, c: cIdx, p: (chap.paragraphs?.length || 1) - 1, exIdx: 0, exL: 'chapter', comp: false });
           }
         });
-      } else if (s.paragraphs?.length) {
-        s.paragraphs.forEach((p, pIdx) => {
-          steps.push({ s: sIdx, c: 0, p: pIdx, ex: false, exL: null, comp: false });
-          if (p.exercises?.length || p.exercise || p.exerciseContent) {
-            steps.push({ s: sIdx, c: 0, p: pIdx, ex: true, exL: 'paragraph', comp: false });
-          }
-        });
+      } else if (sec.paragraphs?.length) {
+          sec.paragraphs.forEach((para, pIdx) => {
+              s.push({ type: 'paragraph', s: sIdx, c: 0, p: pIdx, exIdx: 0, exL: null, comp: false });
+          });
       }
-
-      // Step: Section Exercise
-      if (s.exercises?.length || s.exercise || s.exerciseContent) {
-        steps.push({ s: sIdx, c: Math.max(0, (s.chapters?.length || 1) - 1), p: 0, ex: true, exL: 'section', comp: false });
+      if (sec.exercises?.length || sec.exercise || sec.exerciseContent) {
+        s.push({ type: 'exercise_level', s: sIdx, c: Math.max(0, (sec.chapters?.length || 1) - 1), p: 0, exIdx: 0, exL: 'section', comp: false });
       }
     });
 
-    // Step: Conclusion
-    steps.push({ s: courseData.sections.length - 1, c: 0, p: 0, ex: false, exL: null, comp: true });
+    s.push({ type: 'conclusion', s: (courseData.sections.length || 1) - 1, c: 0, p: 0, exIdx: 0, exL: null, comp: true });
+    return s;
+  }, [courseData]);
 
-    const totalSteps = steps.length;
-    if (totalSteps <= 1) return courseCompleted ? 100 : 0;
+  const currentStep = steps[currentStepIndex] || steps[0];
+  const { s: currentSectionIndex, c: currentChapterIndex, p: currentParagraphIndex, exL: currentExerciseLevel, comp: courseCompleted } = currentStep;
+  const showExercise = currentStep.type === 'exercise_level';
+  const currentExerciseIndex = currentStep.exIdx;
 
-    // Find current step index
-    const currentStepIdx = steps.findIndex(step =>
-      step.comp === courseCompleted &&
-      (courseCompleted || (
-        step.s === currentSectionIndex &&
-        step.c === currentChapterIndex &&
-        step.p === currentParagraphIndex &&
-        step.ex === showExercise &&
-        step.exL === currentExerciseLevel
-      ))
-    );
-
-    if (currentStepIdx === -1) return 0;
-
-    // Calculate percentage (0 to 100)
-    return Math.round((currentStepIdx / (totalSteps - 1)) * 100);
+  const getProgressPercentage = () => {
+    if (steps.length <= 1) return courseCompleted ? 100 : 0;
+    return Math.round((currentStepIndex / (steps.length - 1)) * 100);
   };
 
-  // Effect to update progress in backend
+  // --- Effects ---
+
+  // Initialize step from saved progress
   useEffect(() => {
-    if (isEnrolled && !enrollmentLoading) {
-      const percentage = getProgressPercentage();
-      updateCourseProgress(percentage);
+    if (isEnrolled && !enrollmentLoading && !isInitialized && steps.length > 0) {
+      if (savedProgress > 0) {
+        const restoredIndex = Math.round((savedProgress / 100) * (steps.length - 1));
+        setCurrentStepIndex(Math.min(restoredIndex, steps.length - 1));
+      }
+      setIsInitialized(true);
     }
-  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, showExercise, currentExerciseLevel, courseCompleted, isEnrolled, enrollmentLoading]);
+  }, [isEnrolled, enrollmentLoading, savedProgress, steps.length, isInitialized]);
+
+  // Periodic persistence
+  useEffect(() => {
+    if (isEnrolled && !enrollmentLoading && isInitialized) {
+      updateCourseProgress(getProgressPercentage());
+    }
+  }, [currentStepIndex, isEnrolled, enrollmentLoading, isInitialized]);
 
   useEffect(() => {
-    if (pdfGenerating || docxGenerating || isLiking || isCertifying) {
-      startLoading();
-    } else {
-      stopLoading();
-    }
+    if (pdfGenerating || docxGenerating || isLiking || isCertifying) startLoading();
+    else stopLoading();
   }, [pdfGenerating, docxGenerating, isLiking, isCertifying, startLoading, stopLoading]);
 
-  // Scroll to top when topic changes
   useEffect(() => {
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [currentSectionIndex, currentChapterIndex, currentParagraphIndex, showExercise, currentExerciseIndex]);
+  }, [currentStepIndex]);
 
-  // Helper functions to safely access data
-  const getCurrentSection = (): Section | null => {
-    if (!courseData?.sections?.length || currentSectionIndex >= courseData.sections.length) {
-      return null;
-    }
-    return courseData.sections[currentSectionIndex];
+  // --- Helpers ---
+
+  const section = courseData.sections?.[currentSectionIndex];
+  const chapter = section?.chapters?.[currentChapterIndex];
+  const paragraph = chapter ? chapter.paragraphs?.[currentParagraphIndex] : section?.paragraphs?.[currentParagraphIndex];
+
+  const getExercisesAtCurrentLevel = () => {
+    if (currentExerciseLevel === 'chapter' && chapter) return (chapter.exercises || (chapter.exercise ? [chapter.exercise] : []));
+    if (currentExerciseLevel === 'section' && section) return (section.exercises || (section.exercise ? [section.exercise] : []));
+    return [];
   };
 
-  const getCurrentChapter = (): Chapter | null => {
-    const section = getCurrentSection();
-    if (!section?.chapters?.length || currentChapterIndex >= section.chapters.length) {
-      return null;
-    }
-    return section.chapters[currentChapterIndex];
+  const isCurrentStepCompleted = (): boolean => {
+    if (!showExercise) return true;
+    const activeExercises = getExercisesAtCurrentLevel();
+    const activeExercise = activeExercises[currentExerciseIndex];
+    if (!activeExercise?.questions?.length) return true;
+    let id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
+    return (exerciseScore[id] || 0) >= 70;
   };
 
-  const getCurrentParagraph = (): Paragraph | null => {
-    const chapter = getCurrentChapter();
-    if (chapter?.paragraphs?.length && currentParagraphIndex < chapter.paragraphs.length) {
-      return chapter.paragraphs[currentParagraphIndex];
-    }
-
-    // Fallback to direct section paragraphs if chapter is missing or empty
-    const section = getCurrentSection();
-    if (section?.paragraphs?.length && currentParagraphIndex < section.paragraphs.length) {
-      return section.paragraphs[currentParagraphIndex];
-    }
-
-    return null;
-  };
-
-  const getExercisesAtCurrentLevel = (): any[] => {
-    let items: any[] = [];
-    if (currentExerciseLevel === 'paragraph' && paragraph) items = paragraph.exercises || [];
-    else if (currentExerciseLevel === 'chapter' && chapter) items = chapter.exercises || [];
-    else if (currentExerciseLevel === 'section' && section) items = section.exercises || [];
-
-    if (items.length === 0) {
-      const activeItem = currentExerciseLevel === 'paragraph' ? paragraph : (currentExerciseLevel === 'chapter' ? chapter : section);
-      if (activeItem?.exercise || activeItem?.exerciseContent) {
-        items = [{
-          title: activeItem.exercise?.title || "Exercice",
-          questions: activeItem.exercise?.questions,
-          content: activeItem.exerciseContent,
-          id: (activeItem as any).exercise?.id || "legacy-ex"
-        }];
-      }
-    }
-    return items;
-  };
-
-  const section = getCurrentSection();
-  const chapter = getCurrentChapter();
-  const paragraph = getCurrentParagraph();
-
-  const hasSections = courseData?.sections?.length > 0;
-  const hasChapters = Boolean(section?.chapters?.length);
-  const hasParagraphs = Boolean(chapter?.paragraphs?.length);
-
-  // Course completion is now handled manually by clicking "Next" on the very last thing.
-  // This prevents the conclusion from showing prematurely.
-
-  const handleDownloadPDF = () => {
-    setShowOrientationSelector(true);
-  };
-
-  const handleOrientationSelect = async (orientation: 'p' | 'l') => {
-    setPdfGenerating(true);
-
-    try {
-      await incrementDownload(courseData.id);
-      await downloadCourseAsPDF(courseData, orientation);
-      setPdfGenerating(false);
-      setShowDownloadModal(false);
-    } catch (error) {
-      console.error("Error generating PDF or incrementing count:", error);
-      setPdfGenerating(false);
+  const nextStep = () => {
+    if (!isCurrentStepCompleted()) return;
+    if (currentStepIndex < steps.length - 1) {
+      setCurrentStepIndex(currentStepIndex + 1);
+      setCurrentExerciseAnswers({});
     }
   };
 
-  const handleDownloadDocx = async () => {
-    setDocxGenerating(true);
-    try {
-      await incrementDownload(courseData.id);
-      await downloadCourseAsDocx(courseData);
-      setDocxGenerating(false);
-      setShowDownloadModal(false);
-    } catch (error) {
-      console.error("Error generating DOCX or incrementing count:", error);
-      setDocxGenerating(false);
+  const prevStep = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(currentStepIndex - 1);
+      setCurrentExerciseAnswers({});
+    }
+  };
+
+  const navigateToParagraph = (sIdx: number, cIdx: number, pIdx: number) => {
+    const idx = steps.findIndex(st => st.s === sIdx && st.c === cIdx && st.p === pIdx && st.type === 'paragraph');
+    if (idx !== -1) setCurrentStepIndex(idx);
+    else {
+        const idxAlt = steps.findIndex(st => st.s === sIdx && st.p === pIdx && st.type === 'paragraph');
+        if (idxAlt !== -1) setCurrentStepIndex(idxAlt);
     }
   };
 
@@ -252,759 +188,263 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     setIsLiking(true);
     try {
       await incrementLike(courseData.id);
-
-      // Wow factor: Confetti!
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#8B5CF6', '#EC4899', '#3B82F6']
-      });
-
-      toast.success(t('addedToFavorites'));
-    } catch (error) {
-      console.error("Error liking course:", error);
-      toast.error(t('cannotLike'));
-    } finally {
-      setIsLiking(false);
-    }
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    } catch (e) {}
+    finally { setIsLiking(false); }
   };
 
-  const isCurrentExerciseCompleted = (): boolean => {
-    // Current active exercise based on currentExerciseLevel
-    const activeExercises = getExercisesAtCurrentLevel();
-    const activeExercise = activeExercises[currentExerciseIndex];
-    let exerciseId = "";
-
-    if (currentExerciseLevel === 'paragraph' && paragraph) {
-      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
-    } else if (currentExerciseLevel === 'chapter' && chapter) {
-      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
-    } else if (currentExerciseLevel === 'section' && section) {
-      exerciseId = `s-${currentSectionIndex}-${currentExerciseIndex}`;
-    }
-
-    if (!activeExercise && !paragraph?.exercises?.length && !chapter?.exercises?.length && !section?.exercises?.length && !paragraph?.exerciseContent && !chapter?.exerciseContent && !section?.exerciseContent) return true;
-
-    // If it's a free-form exercise (exerciseContent), we consider it completed once opened then next is clicked
-    // unless there are questions.
-    if (!activeExercise?.questions?.length) return true;
-
-    return exerciseScore[exerciseId] !== undefined && exerciseScore[exerciseId] >= 70;
+  const handleOrientationSelect = async (orientation: 'p' | 'l') => {
+    setPdfGenerating(true);
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsPDF(courseData, orientation);
+      setShowDownloadModal(false);
+    } catch (e) {}
+    finally { setPdfGenerating(false); }
   };
 
-  const nextParagraph = () => {
-    if (!hasSections || !section) return;
-
-    if (showExercise) {
-      if (!isCurrentExerciseCompleted()) return;
-
-      const activeExercises = getExercisesAtCurrentLevel();
-      if (currentExerciseIndex < activeExercises.length - 1) {
-        setCurrentExerciseIndex(currentExerciseIndex + 1);
-        setCurrentExerciseAnswers({}); // Reset answers for next sub-exercise
-        return;
-      }
-
-      setShowExercise(false);
-      setCurrentExerciseIndex(0);
-      setCurrentExerciseLevel(null);
-      setCurrentExerciseAnswers({});
-
-      // Move to next item after completing an exercise
-      if (currentExerciseLevel === 'paragraph') {
-        // If we completed paragraph exercise, move to next item
-        proceedToNextAfterParagraph();
-      } else if (currentExerciseLevel === 'chapter') {
-        // If we completed chapter exercise, move to next chapter or section exercise
-        proceedToNextAfterChapter();
-      } else if (currentExerciseLevel === 'section') {
-        // If we completed section exercise, move to next section
-        proceedToNextAfterSection();
-      }
-      return;
-    }
-
-    // Check if current level has an exercise before moving on
-    if (paragraph?.exercises?.length || paragraph?.exercise || paragraph?.exerciseContent) {
-      setCurrentExerciseLevel('paragraph');
-      setCurrentExerciseIndex(0);
-      setShowExercise(true);
-      return;
-    }
-
-    proceedToNextAfterParagraph();
-  };
-
-  const proceedToNextAfterParagraph = () => {
-    if (hasChapters && chapter) {
-      if (currentParagraphIndex < chapter.paragraphs.length - 1) {
-        setCurrentParagraphIndex(currentParagraphIndex + 1);
-      } else {
-        // End of paragraphs in chapter - check chapter exercise
-        if (chapter.exercises?.length || chapter.exercise || chapter.exerciseContent) {
-          setCurrentExerciseLevel('chapter');
-          setCurrentExerciseIndex(0);
-          setShowExercise(true);
-        } else {
-          proceedToNextAfterChapter();
-        }
-      }
-    } else if (section?.paragraphs && section.paragraphs.length > 0) {
-      if (currentParagraphIndex < section.paragraphs.length - 1) {
-        setCurrentParagraphIndex(currentParagraphIndex + 1);
-      } else {
-        // End of section paragraphs - check section exercise
-        if (section.exercises?.length || section.exercise || section.exerciseContent) {
-          setCurrentExerciseLevel('section');
-          setCurrentExerciseIndex(0);
-          setShowExercise(true);
-        } else {
-          proceedToNextAfterSection();
-        }
-      }
-    }
-  };
-
-  const proceedToNextAfterChapter = () => {
-    if (section && currentChapterIndex < section.chapters!.length - 1) {
-      setCurrentChapterIndex(currentChapterIndex + 1);
-      setCurrentParagraphIndex(0);
-    } else {
-      // End of chapters in section - check section exercise
-      if (section && (section.exercises?.length || section.exercise || section.exerciseContent)) {
-        setCurrentExerciseLevel('section');
-        setCurrentExerciseIndex(0);
-        setShowExercise(true);
-      } else {
-        proceedToNextAfterSection();
-      }
-    }
-  };
-
-  const proceedToNextAfterSection = () => {
-    if (currentSectionIndex < courseData.sections.length - 1) {
-      setCurrentSectionIndex(currentSectionIndex + 1);
-      setCurrentChapterIndex(0);
-      setCurrentParagraphIndex(0);
-    } else {
-      // Very end of course
-      setCourseCompleted(true);
-      // Ensure we scroll to top to see conclusion
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
-  };
-
-  const prevParagraph = () => {
-    setCourseCompleted(false);
-    if (showExercise) {
-      if (currentExerciseIndex > 0) {
-        setCurrentExerciseIndex(currentExerciseIndex - 1);
-        return;
-      }
-      setShowExercise(false);
-      setCurrentExerciseIndex(0);
-      return;
-    }
-
-    if (!hasSections || !section) return;
-
-    // 1. Same Chapter back nav
-    if (currentParagraphIndex > 0) {
-      setCurrentParagraphIndex(currentParagraphIndex - 1);
-      return;
-    }
-
-    // 2. Cross Chapter back nav (current chapter is at index 0)
-    if (currentChapterIndex > 0) {
-      const prevChapter = section.chapters![currentChapterIndex - 1];
-      setCurrentChapterIndex(currentChapterIndex - 1);
-      setCurrentParagraphIndex((prevChapter.paragraphs?.length || 1) - 1);
-      return;
-    }
-
-    // 3. Cross Section back nav (current section start)
-    if (currentSectionIndex > 0) {
-      const prevSection = courseData.sections[currentSectionIndex - 1];
-      setCurrentSectionIndex(currentSectionIndex - 1);
-
-      if (prevSection.chapters?.length) {
-        // Go to last paragraph of last chapter
-        const lastChapterIdx = prevSection.chapters.length - 1;
-        const lastChapter = prevSection.chapters[lastChapterIdx];
-        setCurrentChapterIndex(lastChapterIdx);
-        setCurrentParagraphIndex((lastChapter.paragraphs?.length || 1) - 1);
-      } else {
-        // Go to last paragraph of section
-        setCurrentChapterIndex(0);
-        setCurrentParagraphIndex((prevSection.paragraphs?.length || 1) - 1);
-      }
-    }
-  };
-
-  const handleAnswerChange = (questionIndex: number, answer: string) => {
-    setCurrentExerciseAnswers((prev) => ({ ...prev, [questionIndex]: answer }));
-  };
-
-  const submitExercise = () => {
-    const activeExercises = getExercisesAtCurrentLevel();
-    const activeExercise = activeExercises[currentExerciseIndex];
-    let exerciseId = "";
-
-    if (currentExerciseLevel === 'paragraph' && paragraph) {
-      exerciseId = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
-    } else if (currentExerciseLevel === 'chapter' && chapter) {
-      exerciseId = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
-    } else if (currentExerciseLevel === 'section' && section) {
-      exerciseId = `s-${currentSectionIndex}-${currentExerciseIndex}`;
-    }
-
-    if (!activeExercise || !activeExercise.questions) return;
-
-    let score = 0;
-    const totalQuestions = activeExercise.questions.length;
-
-    activeExercise.questions.forEach((q: QuestionData, idx: number) => {
-      if (currentExerciseAnswers[idx] === (q as any).réponse) {
-        score++;
-      }
-    });
-
-    const percentage = (score / totalQuestions) * 100;
-    setExerciseScore((prev) => ({ ...prev, [exerciseId]: percentage }));
-
-    if (percentage >= 70) {
-      toast.success(t('congratulations'));
-      // setShowExercise(false); // Let user see result before clicking next
-    } else {
-      toast.error(t('tryAgain'));
-    }
+  const handleDownloadDocx = async () => {
+    setDocxGenerating(true);
+    try {
+      await incrementDownload(courseData.id);
+      await downloadCourseAsDocx(courseData);
+      setShowDownloadModal(false);
+    } catch (e) {}
+    finally { setDocxGenerating(false); }
   };
 
   const handleCertificationClick = async () => {
-    if (!user) {
-      toast.error(t('loginForCert'));
-      return;
+    if (!user) return toast.error("Connectez-vous.");
+
+    const isStudent = user?.role?.includes('student');
+    if (isStudent && !isEnrolled) {
+      return toast.error("Vous devez être inscrit pour obtenir un certificat.");
     }
 
     setIsCertifying(true);
-    const toastId = toast.loading(t('certGeneration'));
-
     try {
-      const studentName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || t('studentStr');
-      const success = await downloadCertificationPDF(courseData, studentName);
-
-      if (success) {
-        toast.success(t('certSuccess'), { id: toastId });
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#A855F7', '#8B5CF6', '#D946EF']
-        });
-      } else {
-        toast.error(t('certFail'), { id: toastId });
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(t('errorOccurred'), { id: toastId });
-    } finally {
-      setIsCertifying(false);
-    }
+      const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || "Étudiant";
+      await downloadCertificationPDF(courseData, name);
+      confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
+    } catch (e) {}
+    finally { setIsCertifying(false); }
   };
 
-  const handleEvaluationChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEvaluation((prev) => ({ ...prev, feedback: e.target.value }));
+  const handleAnswerChange = (idx: number, val: string) => setCurrentExerciseAnswers(p => ({ ...p, [idx]: val }));
+
+  const submitExercise = () => {
+    const active = getExercisesAtCurrentLevel()[currentExerciseIndex];
+    if (!active?.questions) return;
+    let score = 0;
+    active.questions.forEach((q: any, i: number) => { if (currentExerciseAnswers[i] === q.réponse) score++; });
+    const pct = (score / active.questions.length) * 100;
+    let id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
+    setExerciseScore(p => ({ ...p, [id]: pct }));
+    if (pct >= 70) toast.success("Réussi !");
+    else toast.error("70% requis.");
   };
 
-  const handleSubmitEvaluation = (e: React.FormEvent) => {
-    e.preventDefault();
-    setEvaluation((prev) => ({ ...prev, submitted: true }));
-  };
-
-  interface StarRatingProps {
-    rating: number;
-    setRating?: (rating: number) => void;
-  }
-
-  const StarRating: React.FC<StarRatingProps> = ({ rating, setRating }) => (
-    <div className="flex">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => setRating && setRating(star)}
-          className={`text-2xl ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
-        >
-          ★
-        </button>
+  const StarRating = ({ rating, setRating }: { rating: number, setRating: (r: number) => void }) => (
+    <div className="flex gap-1">
+      {[1,2,3,4,5].map(s => (
+        <button key={s} type="button" onClick={() => setRating(s)} className={`text-2xl ${s <= rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</button>
       ))}
     </div>
   );
 
-  if (!hasSections || !section) {
+  // --- Render ---
+
+  if (courseCompleted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-8">
-        <div className="max-w-2xl w-full">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-12 border-2 border-dashed border-purple-200 dark:border-purple-900/30 text-center">
-            {/* Icône avec animation */}
-            <div className="relative mb-8 inline-block">
-              <div className="absolute inset-0 bg-purple-200 dark:bg-purple-900/30 rounded-full blur-3xl opacity-40 animate-pulse"></div>
-              <div className="relative bg-gradient-to-br from-purple-100 to-white dark:from-gray-700 dark:to-gray-800 w-32 h-32 rounded-full flex items-center justify-center shadow-xl">
-                <BookOpen className="w-16 h-16 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-
-            {/* Titre */}
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              {t('preparationTitle')}
-            </h2>
-
-            {/* Description */}
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-xl mx-auto">
-              {t('preparationDesc')}
-            </p>
-
-            {/* Informations supplémentaires */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6 mb-8">
-              <div className="flex items-start justify-center text-left max-w-md mx-auto">
-                <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3 mt-1 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{t('whatToDo')}</h3>
-                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                    <li>• {t('waitItem1')}</li>
-                    <li>• {t('waitItem2')}</li>
-                    <li>• {t('waitItem3')}</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Boutons d'action */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/bibliotheque">
-                <button className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:from-purple-600 hover:to-purple-700 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
-                  <ArrowLeft className="w-5 h-5" />
-                  {t('backToLibrary')}
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex">
+        <CourseSidebar 
+          courseData={courseData} 
+          currentSectionIndex={currentSectionIndex} 
+          currentChapterIndex={currentChapterIndex} 
+          currentParagraphIndex={currentParagraphIndex} 
+          setCurrentSectionIndex={(idx) => navigateToParagraph(idx, 0, 0)} 
+          setCurrentChapterIndex={(idx) => navigateToParagraph(currentSectionIndex, idx, 0)} 
+          setCurrentParagraphIndex={(idx) => navigateToParagraph(currentSectionIndex, currentChapterIndex, idx)} 
+          setShowExercise={() => {}} 
+          setCourseCompleted={() => {}} 
+          onDownloadRequest={() => {
+            if (!canDownload) {
+              const msg = isStudent && enrollment?.status === 'PENDING' 
+                ? "Votre inscription est en attente de validation."
+                : "Vous devez être inscrit pour télécharger ce cours.";
+              toast.error(msg);
+              return;
+            }
+            setShowDownloadModal(true);
+          }} 
+          isEnrolled={canDownload}
+        />
+        <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center">
+            <div className="max-w-2xl w-full bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-12 text-center border-t-8 border-purple-600">
+                <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
+                <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-4">Félicitations !</h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">Cours terminé : {courseData.title}</p>
+                <button 
+                  onClick={handleCertificationClick} 
+                  disabled={isCertifying || !canDownload} 
+                  className={`w-full py-4 rounded-xl font-bold transition-all mb-8 ${
+                    !canDownload 
+                      ? 'bg-gray-400 text-white cursor-not-allowed opacity-70' 
+                      : 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
+                  }`}
+                  title={!canDownload ? "Inscrivez-vous pour obtenir ce certificat" : "Télécharger mon certificat"}
+                >
+                  {isCertifying ? "Génération..." : "Certificat"}
                 </button>
-              </Link>
-
-              <EnrollmentButton
-                courseId={courseData.id}
-                size="md"
-                variant="secondary"
-              />
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-2xl p-6 text-left">
+                    <h3 className="font-bold mb-2">Avis</h3>
+                    {!evaluation.submitted ? (
+                        <div className="space-y-4">
+                            <StarRating rating={evaluation.rating} setRating={r => setEvaluation(p => ({ ...p, rating: r }))} />
+                            <textarea value={evaluation.feedback} onChange={e => setEvaluation(p => ({ ...p, feedback: e.target.value }))} className="w-full p-3 rounded-lg border dark:bg-gray-800" rows={3} placeholder="..." />
+                            <button onClick={() => setEvaluation(p => ({ ...p, submitted: true }))} className="w-full py-2 bg-gray-800 text-white rounded-lg">Envoyer</button>
+                        </div>
+                    ) : <p className="text-green-600 font-bold">Merci !</p>}
+                </div>
             </div>
-          </div>
         </div>
+        <DownloadOptions isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} onSelectPdf={handleOrientationSelect} onSelectWord={handleDownloadDocx} isPdfLoading={pdfGenerating} isWordLoading={docxGenerating} />
       </div>
     );
   }
 
-  const getActiveExercise = () => {
-    const activeExercises = getExercisesAtCurrentLevel();
-    if (activeExercises.length > 0 && currentExerciseIndex < activeExercises.length) {
-      const ex = activeExercises[currentExerciseIndex];
-      let id = "";
-      if (currentExerciseLevel === 'paragraph') id = `p-${currentSectionIndex}-${currentChapterIndex}-${currentParagraphIndex}-${currentExerciseIndex}`;
-      else if (currentExerciseLevel === 'chapter') id = `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}`;
-      else if (currentExerciseLevel === 'section') id = `s-${currentSectionIndex}-${currentExerciseIndex}`;
+  if (!section) return null;
 
-      return {
-        id,
-        exercise: ex,
-        content: ex.content
-      };
-    }
-    return null;
-  };
-
-  const currentExercise = getActiveExercise();
-
-  const canGoNext = !showExercise || isCurrentExerciseCompleted();
+  const currentExercise = showExercise ? getExercisesAtCurrentLevel()[currentExerciseIndex] : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 flex">
-      <CourseSidebar
-        courseData={courseData}
-        currentSectionIndex={currentSectionIndex}
-        currentChapterIndex={currentChapterIndex}
-        currentParagraphIndex={currentParagraphIndex}
-        setCurrentSectionIndex={setCurrentSectionIndex}
-        setCurrentChapterIndex={setCurrentChapterIndex}
-        setCurrentParagraphIndex={setCurrentParagraphIndex}
-        setShowExercise={setShowExercise}
-        setCourseCompleted={setCourseCompleted}
-        onDownloadRequest={() => setShowDownloadModal(true)}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex transition-colors duration-300">
+      <CourseSidebar 
+        courseData={courseData} 
+        currentSectionIndex={currentSectionIndex} 
+        currentChapterIndex={currentChapterIndex} 
+        currentParagraphIndex={currentParagraphIndex} 
+        setCurrentSectionIndex={(idx) => navigateToParagraph(idx, 0, 0)} 
+        setCurrentChapterIndex={(idx) => navigateToParagraph(currentSectionIndex, idx, 0)} 
+        setCurrentParagraphIndex={(idx) => navigateToParagraph(currentSectionIndex, currentChapterIndex, idx)} 
+        setShowExercise={() => {}} 
+        setCourseCompleted={() => {}} 
+        onDownloadRequest={() => {
+          if (!canDownload) {
+            const msg = isStudent && enrollment?.status === 'PENDING' 
+              ? "Votre inscription est en attente de validation."
+              : "Vous devez être inscrit pour télécharger ce cours.";
+            toast.error(msg);
+            return;
+          }
+          setShowDownloadModal(true);
+        }} 
+        isEnrolled={canDownload}
       />
-
-      {courseData.author?.id && (
-        <div className="mb-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('by')}</p>
-          <TeacherLink
-            teacherId={String(courseData.author.id)}
-            teacherName={courseData.author.name}
-            teacherPhoto={courseData.author.image}
-          />
-        </div>
-      )}
-
-      <div ref={scrollContainerRef} className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-4xl mx-auto pt-20">
-          {/* Header */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
-              <p className="text-xl text-purple-600 dark:text-purple-400 mb-4">{courseData.category}</p>
-              <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400">
-                <span className="flex items-center"><Eye className="h-5 w-5 mr-2" /> {courseData.viewCount} {t('views')}</span>
-                <button
-                  onClick={handleLike}
-                  disabled={isLiking}
-                  className="flex items-center hover:text-red-500 transition-colors cursor-pointer group"
-                >
-                  <ThumbsUp className={`h-5 w-5 mr-2 ${isLiking ? 'animate-pulse text-red-400' : 'group-hover:scale-110 transition-transform'}`} />
-                  {courseData.likeCount} {t('likes')}
-                </button>
-                <button
-                  onClick={() => setShowDownloadModal(true)}
-                  className="flex items-center hover:text-purple-500 transition-colors cursor-pointer group"
-                >
-                  <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                  {courseData.downloadCount} {t('downloads')}
-                </button>
-              </div>
+      
+      <div ref={scrollContainerRef} className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <div className="max-w-4xl mx-auto pt-16">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 mb-8 border border-gray-100 dark:border-gray-800">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+                <span>{courseData.viewCount} vues</span>
+                <button onClick={handleLike} className="hover:text-red-500">{courseData.likeCount} likes</button>
+                <TeacherLink teacherId={String(courseData.author?.id)} teacherName={courseData.author?.name} teacherPhoto={courseData.author?.image} />
             </div>
           </div>
 
-          {/* Content */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-12">
+          <div className="sticky top-20 z-20 mb-8 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-4 rounded-2xl border border-purple-100 shadow-sm">
+            <div className="flex justify-between items-end mb-2">
+                <span className="text-xs font-black uppercase text-purple-600">Progrès</span>
+                <span className="text-lg font-black text-purple-600">{getProgressPercentage()}%</span>
+            </div>
+            <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-full bg-purple-600 transition-all duration-700" style={{ width: `${getProgressPercentage()}%` }} />
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl p-6 md:p-10 mb-10 min-h-[60vh]">
             {!showExercise ? (
-              <>
-                {/* Hierarchical Breadcrumbs / Titles */}
-                <div className="mb-1 space-y-4">
-                  {/* Title Section */}
-                  <div className="space-y-3">
-                    <h2 className="text-4xl font-extrabold text-purple-700 dark:text-purple-400 tracking-tight">
-                      {section?.title}
-                    </h2>
-                    {section?.introduction && (
-                      <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl border-l-4 border-purple-500">
-                        <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed whitespace-pre-wrap">{section.introduction}</p>
-                      </div>
+              <div className="space-y-8">
+                {/* SECTION: Clean rendering matching img 2 */}
+                <div>
+                    <h2 className="text-[40px] font-black text-[#8B5CF6] mb-4 leading-tight">{section.title}</h2>
+                    {(currentStep.type === 'section_intro' || currentStep.type === 'chapter_intro' || currentStep.type === 'paragraph') && section.introduction && (
+                        <div className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300 italic mb-8">{section.introduction}</div>
                     )}
-                  </div>
 
-                  {/* Title Chapter */}
-                  {chapter && (
-                    <div className="space-y-3 ml-4 border-l-2 border-green-100 dark:border-green-900/30 pl-6">
-                      <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {chapter.title}
-                      </h3>
-                      {chapter?.introduction && (
-                        <div className="p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border-l-4 border-green-500">
-                          <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed whitespace-pre-wrap">{chapter.introduction}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Title Paragraph */}
-                  <div className="space-y-3 ml-8 border-l-2 border-orange-100 dark:border-orange-900/30 pl-6">
-                    <h4 className="text-xl font-semibold text-orange-600 dark:text-orange-400 pb-2 border-b border-orange-100 dark:border-orange-900/30">
-                      {paragraph?.title || t('unavailableTitle')}
-                    </h4>
-                    {paragraph?.introduction && (
-                      <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl border-l-4 border-amber-500">
-                        <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed whitespace-pre-wrap">{paragraph.introduction}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="ml-8 border-l-2 border-transparent pl-6">
-                  {paragraph?.content ? (
-                    <div className="mb-8">
-                      <CourseContentRenderer content={paragraph.content} />
-                    </div>
-                  ) : (
-                    <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">{t('unavailableContent')}</p>
-                  )}
-
-                  {paragraph?.notions && paragraph.notions.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
-                      <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-6 flex items-center">
-                        <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg mr-3">
-                          <BookOpen className="h-5 w-5 text-red-600" />
-                        </div>
-                        {t('notions')}
-                      </h3>
-                      <ul className="space-y-3">
-                        {paragraph.notions.map((notion: string, index: number) => (
-                          <li key={index} className="flex items-start bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border-l-4 border-red-500">
-                            <CheckCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
-                            <span className="text-gray-700 dark:text-gray-300">{notion}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-indigo-100 dark:border-indigo-900/30 border-l-4 border-l-blue-500 overflow-hidden mb-8 transition-all duration-300 hover:shadow-md">
-                <div className="px-6 py-5 flex items-center justify-between border-b border-indigo-100 dark:border-indigo-900/50">
-                  <div className="flex items-center text-indigo-900 dark:text-indigo-100">
-                    <Award className="h-6 w-6 mr-3 text-indigo-600 dark:text-indigo-400" />
-                    <h2 className="text-xl font-bold tracking-tight">
-                      {t('exerciseLabel', { title: currentExercise?.exercise?.title || t('applicationTitle') })}
-                    </h2>
-                  </div>
-                  {getExercisesAtCurrentLevel().length > 1 && (
-                    <span className="text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-800">
-                      {currentExerciseIndex + 1} / {getExercisesAtCurrentLevel().length}
-                    </span>
-                  )}
-                </div>
-
-                <div className="p-6 md:p-8">
-                  {currentExercise?.content && (
-                    <div className="mb-8 prose dark:prose-invert max-w-none qcm-content text-gray-700 dark:text-gray-300 leading-relaxed">
-                      <CourseContentRenderer content={currentExercise.content} />
-                    </div>
-                  )}
-
-                  {currentExercise?.exercise?.questions && currentExercise.exercise.questions.length > 0 && (
-                    <div className="space-y-6">
-                      {currentExercise.exercise.questions.map((q: QuestionData, idx: number) => (
-                        <div key={idx} className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100/80 dark:border-indigo-800/30 p-6 rounded-2xl transition-all duration-300 hover:bg-indigo-50/80 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-700/50">
-                          <h4 className="text-lg font-semibold text-indigo-950 dark:text-indigo-100 mb-5 leading-snug">{q.text}</h4>
-                          <div className="space-y-3">
-                            {q.options && q.options.length > 0 ? (
-                              q.options.map((option: string, optIdx: number) => (
-                                <label
-                                  key={optIdx}
-                                  className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${currentExerciseAnswers[idx] === option
-                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-sm'
-                                    : 'border-transparent bg-white dark:bg-gray-800/60 hover:border-indigo-200 dark:hover:border-indigo-700/50 hover:bg-indigo-50/30 dark:hover:bg-gray-800 shadow-sm hover:shadow'
-                                    }`}
-                                >
-                                  <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 mr-4 transition-colors ${currentExerciseAnswers[idx] === option ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-400 dark:bg-indigo-400' : 'border-gray-300 group-hover:border-indigo-400 dark:border-gray-600 dark:group-hover:border-indigo-500'}`}>
-                                    {currentExerciseAnswers[idx] === option && <div className="h-2 w-2 rounded-full bg-white dark:bg-gray-900" />}
-                                  </div>
-                                  <input
-                                    type="radio"
-                                    name={`question-${idx}`}
-                                    value={option}
-                                    checked={currentExerciseAnswers[idx] === option}
-                                    onChange={() => handleAnswerChange(idx, option)}
-                                    className="hidden"
-                                  />
-                                  <span className={`transition-colors duration-200 ${currentExerciseAnswers[idx] === option
-                                    ? 'text-indigo-900 dark:text-indigo-100 font-semibold'
-                                    : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
-                                    }`}>
-                                    <span className="inline-block w-6 font-medium text-indigo-400/70 dark:text-indigo-500/70">{String.fromCharCode(97 + optIdx)})</span> {option}
-                                  </span>
-                                </label>
-                              ))
-                            ) : (
-                              <textarea
-                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
-                                rows={3}
-                                placeholder={t('yourAnswer')}
-                                value={currentExerciseAnswers[idx] || ""}
-                                onChange={(e) => handleAnswerChange(idx, e.target.value)}
-                              />
+                    {/* CHAPTER: Small Green Line Marker matching img 2 */}
+                    {chapter && (
+                        <div className="ml-4 pl-4 border-l-4 border-[#10B981] mb-8">
+                            <h3 className="text-[30px] font-bold text-[#10B981] mb-2 leading-tight">{chapter.title}</h3>
+                            {(currentStep.type === 'chapter_intro' || currentStep.type === 'paragraph') && chapter.introduction && (
+                                <div className="text-[17px] leading-relaxed text-gray-800 dark:text-gray-300 italic mb-4">{chapter.introduction}</div>
                             )}
-                          </div>
+
+                            {/* PARAGRAPH: Small Orange Line Marker matching img 2 */}
+                            {currentStep.type === 'paragraph' && paragraph && (
+                                <div className="ml-4 pl-4 border-l-4 border-[#F97316]">
+                                    <h4 className="text-[25px] font-bold text-[#F97316] mb-4 leading-tight">{paragraph.title}</h4>
+                                    {paragraph.introduction && <div className="text-[16px] leading-relaxed text-gray-700 dark:text-gray-400 italic mb-6">{paragraph.introduction}</div>}
+                                    <div className="mt-4"><CourseContentRenderer content={paragraph.content} /></div>
+                                </div>
+                            )}
                         </div>
-                      ))}
-                      <button
-                        onClick={submitExercise}
-                        disabled={Object.keys(currentExerciseAnswers).length < (currentExercise.exercise.questions.length || 0)}
-                        className="w-full py-4 mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 font-bold text-lg focus:ring-4 focus:ring-indigo-500/30 outline-none"
-                        type="button"
-                      >
-                        {t('validateAnswers')}
-                      </button>
-                      {currentExercise.id && exerciseScore[currentExercise.id] !== undefined && (
-                        <div className={`mt-6 p-6 rounded-xl border-2 ${exerciseScore[currentExercise.id] >= 70
-                          ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/30 text-green-700 dark:text-green-300'
-                          : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-300'
-                          }`}>
-                          <div className="flex items-center gap-3 mb-2">
-                            <Award className={`h-6 w-6 ${exerciseScore[currentExercise.id] >= 70 ? 'text-green-600' : 'text-red-600'}`} />
-                            <h4 className="text-xl font-bold">{t('resultLabel', { score: exerciseScore[currentExercise.id] })}</h4>
-                          </div>
-                          {exerciseScore[currentExercise.id] >= 70 ? (
-                            <p className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5" />
-                              {t('excellent')}
-                            </p>
-                          ) : (
-                            <p>N'ayez crainte ! Relisez le cours et essayez à nouveau pour atteindre les 70% requis.</p>
-                          )}
+                    )}
+
+                    {/* Support for Paragraphs directly under Section */}
+                    {!chapter && currentStep.type === 'paragraph' && paragraph && (
+                        <div className="ml-4 pl-4 border-l-4 border-[#F97316]">
+                            <h4 className="text-[25px] font-bold text-[#F97316] mb-4 leading-tight">{paragraph.title}</h4>
+                            {paragraph.introduction && <div className="text-[16px] leading-relaxed text-gray-700 dark:text-gray-400 italic mb-6">{paragraph.introduction}</div>}
+                            <div className="mt-4"><CourseContentRenderer content={paragraph.content} /></div>
                         </div>
-                      )}
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
+            ) : (
+                <div>
+                    <h2 className="text-2xl font-black mb-6 flex items-center gap-2"><Award /> {currentExercise?.title || "Exercice"}</h2>
+                    {currentExercise && 'content' in currentExercise && currentExercise.content && <div className="mb-6"><CourseContentRenderer content={currentExercise.content} /></div>}
+                    {currentExercise?.questions?.map((q: any, i: number) => (
+                        <div key={i} className="mb-6 p-4 border rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                            <p className="font-bold mb-3">{q.text}</p>
+                            <div className="space-y-2">
+                                {q.options?.map((opt: string, oi: number) => (
+                                    <label key={oi} className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-white dark:hover:bg-gray-700">
+                                        <input type="radio" checked={currentExerciseAnswers[i] === opt} onChange={() => handleAnswerChange(i, opt)} className="w-4 h-4 text-purple-600" />
+                                        <span>{opt}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                    <button onClick={submitExercise} className="w-full py-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all">Valider</button>
+                    {(() => {
+                        let id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
+                        if (exerciseScore[id] === undefined) return null;
+                        return (
+                            <div className={`mt-4 p-4 rounded-xl border-2 ${isCurrentStepCompleted() ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
+                                <h4 className="font-black">Score : {exerciseScore[id]}%</h4>
+                                <p>{isCurrentStepCompleted() ? "Parfait !" : "70% requis."}</p>
+                            </div>
+                        );
+                    })()}
+                </div>
             )}
           </div>
 
-          {/* Navigation */}
-          <div className="flex justify-between mb-12">
-            <button
-              onClick={prevParagraph}
-              disabled={currentSectionIndex === 0 && currentChapterIndex === 0 && currentParagraphIndex === 0 && !showExercise}
-              className="px-5 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center font-medium"
-              type="button"
-            >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              {t('previous')}
-            </button>
-
-            <button
-              onClick={nextParagraph}
-              disabled={!canGoNext || courseCompleted}
-              className="px-5 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-md hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-medium"
-              type="button"
-            >
-              {showExercise
-                ? <>{t('continue')} <ArrowRight className="h-5 w-5 ml-2" /></>
-                : paragraph?.exercise
-                  ? <>{t('toExercise')} <Award className="h-5 w-5 ml-2" /></>
-                  : <>{t('next')} <ArrowRight className="h-5 w-5 ml-2" /></>
-              }
+          <div className="flex justify-between items-center bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-lg border">
+            <button onClick={prevStep} disabled={currentStepIndex === 0} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 font-bold hover:bg-gray-200 disabled:opacity-30"><ArrowLeft /> Retour</button>
+            <button onClick={nextStep} disabled={!isCurrentStepCompleted()} className={`flex items-center gap-2 px-10 py-3 rounded-xl font-black text-white ${isCurrentStepCompleted() ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-400 opacity-50 cursor-not-allowed'}`}>
+                {getProgressPercentage() === 100 ? "Finir" : "Suivant"} <ArrowRight />
             </button>
           </div>
-
-          {/* Section de conclusion */}
-          {courseCompleted && (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mt-12">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center justify-center">
-                  <Award className="h-8 w-8 mr-3 text-purple-600" />
-                  {t('conclusionTitle')}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-4 max-w-2xl mx-auto">
-                  {courseData.conclusion || t('defaultConclusion')}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6">
-                  <h3 className="text-xl font-semibold text-purple-800 dark:text-purple-400 mb-4 flex items-center">
-                    <CheckCircle className="h-6 w-6 mr-2 text-purple-600" />
-                    {t('courseOverview')}
-                  </h3>
-                  {(courseData.introduction || (courseData.sections && courseData.sections.length > 0)) ? (
-                    <div className="space-y-4">
-                      {courseData.introduction && (
-                        <div>
-                          <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t('descriptionTitle')}</h4>
-                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {courseData.introduction}
-                          </p>
-                        </div>
-                      )}
-
-                      {courseData.sections && courseData.sections.length > 0 && (
-                        <div>
-                          <h4 className="font-bold text-gray-800 dark:text-white mb-2 mt-4">{t('coursePlan')}</h4>
-                          <ul className="space-y-2">
-                            {courseData.sections.map((section: Section, index: number) => (
-                              <li key={index} className="flex items-start">
-                                <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 mr-3 flex-shrink-0"></div>
-                                <span className="text-gray-700 dark:text-gray-300 font-medium">{section.title}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400">{t('noObjectives')}</p>
-                  )}
-                </div>
-
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                    <Award className="h-6 w-6 mr-2 text-purple-600" />
-                    {t('rateCourse')}
-                  </h3>
-                  {!evaluation.submitted ? (
-                    <form onSubmit={handleSubmitEvaluation} className="space-y-4">
-                      <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                          {t('rateLabel')}
-                        </label>
-                        <StarRating rating={evaluation.rating} setRating={(rating: number) => setEvaluation((prev) => ({ ...prev, rating }))} />
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                          {t('feedbackLabel')}
-                        </label>
-                        <textarea
-                          value={evaluation.feedback}
-                          onChange={handleEvaluationChange}
-                          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          rows={4}
-                          placeholder={t('feedbackPlaceholder')}
-                          required
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                      >
-                        {t('submitRating')}
-                      </button>
-                    </form>
-                  ) : (
-                    <div className="text-center text-purple-600 dark:text-purple-400 font-semibold">
-                      {t('thanksFeedback')}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-                <button
-                  onClick={handleCertificationClick}
-                  disabled={isCertifying}
-                  className={`bg-purple-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center ${isCertifying ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700 active:scale-95'}`}
-                  type="button"
-                >
-                  <Award className={`h-7 w-7 mr-2 ${isCertifying ? 'animate-spin' : ''}`} />
-                  {isCertifying ? t('generating') : t('getCert')}
-                </button>
-                <button
-                  onClick={() => setShowDownloadModal(true)}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-5 rounded-3xl font-black text-lg shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4"
-                  type="button"
-                >
-                  <Download size={24} />
-                  {t('downloadCourse')}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+      
       <SmartNotes courseId={courseData.id} courseTitle={courseData.title} />
-      <DownloadOptions
-        isOpen={showDownloadModal}
-        onClose={() => setShowDownloadModal(false)}
-        onSelectPdf={handleOrientationSelect}
-        onSelectWord={handleDownloadDocx}
-        isPdfLoading={pdfGenerating}
-        isWordLoading={docxGenerating}
-      />
+      <DownloadOptions isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} onSelectPdf={handleOrientationSelect} onSelectWord={handleDownloadDocx} isPdfLoading={pdfGenerating} isWordLoading={docxGenerating} />
     </div>
   );
 };

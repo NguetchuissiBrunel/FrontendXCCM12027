@@ -969,7 +969,16 @@
       "thanksFeedback": "Thank you for your feedback!",
       "generating": "Generating...",
       "getCert": "Get your certification",
-      "downloadCourse": "Download course"
+      "downloadCourse": "Download course",
+      "progressLabel": "Progress",
+      "finish": "Finish",
+      "reviewTitle": "Review",
+      "courseCompletionTitle": "Congratulations!",
+      "courseCompletedMessage": "Course completed: {title}",
+      "enrollToCertify": "You must be enrolled to obtain a certificate.",
+      "enrollToDownload": "You must be enrolled to download this course.",
+      "pendingEnrollment": "Your enrollment is pending validation.",
+      "requiredPercent": "70% required."
     },
     "pricing": {
       "title": "Adapted Pricing",

@@ -401,30 +401,44 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
                 renderIntro(paragraph.introduction, [249, 115, 22], margin + 25); 
 
-                y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
-                y += 15; // Augmenté de 10 à 15
-
-                renderNotions(paragraph.notions, margin + 25);
-
-                if (paragraph.exercises && paragraph.exercises.length > 0) {
-                  paragraph.exercises.forEach(ex => {
-                    renderExercise(ex.content, ex, colors.paragraphe, margin + 25);
+                // Render interleaved content sequentially
+                if (paragraph.content && Array.isArray(paragraph.content)) {
+                  paragraph.content.forEach(node => {
+                    if (node.type === 'notion') {
+                      const notionText = extractTextFromContent(node.content || node);
+                      renderNotions([notionText], margin + 25);
+                    } else if (node.type === 'exercice' || node.type === 'exercise') {
+                      renderExercise(node.content, node.attrs || node, colors.paragraphe, margin + 25);
+                    } else {
+                      const nodeText = extractTextFromContent([node]);
+                      if (nodeText.trim()) {
+                        y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
+                      }
+                    }
                   });
                 } else {
-                  renderExercise(paragraph.exerciseContent, (paragraph as any).exercise, colors.paragraphe, margin + 25);
+                  // Fallback for legacy data
+                  y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
+                  y += 10;
+                  renderNotions(paragraph.notions, margin + 25);
+                  if (paragraph.exercises && paragraph.exercises.length > 0) {
+                    paragraph.exercises.forEach(ex => renderExercise(ex.content, ex, colors.paragraphe, margin + 25));
+                  }
                 }
 
                 y += 20; // Augmenté de 10 à 20
               });
             }
             
-            // Chapter level exercise at the end of the chapter
-            if (chapter.exercises && chapter.exercises.length > 0) {
-              chapter.exercises.forEach(ex => {
-                renderExercise(ex.content, ex, colors.chapitre, margin + 15);
-              });
-            } else {
-              renderExercise(chapter.exerciseContent, (chapter as any).exercise, colors.chapitre, margin + 15);
+            // Chapter level exercise removed if already in content, but keeping as fallback for legacy
+            if (!chapter.paragraphs || chapter.paragraphs.length === 0) {
+              if (chapter.exercises && chapter.exercises.length > 0) {
+                chapter.exercises.forEach(ex => {
+                  renderExercise(ex.content, ex, colors.chapitre, margin + 15);
+                });
+              } else if ((chapter as any).exercise) {
+                renderExercise(chapter.exerciseContent, (chapter as any).exercise, colors.chapitre, margin + 15);
+              }
             }
             y += 25; // Espace après un chapitre
           });
@@ -446,18 +460,28 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
             renderIntro(paragraph.introduction, [249, 115, 22], margin + 25);
 
-            y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
-            y += 15; // Augmenté de 10 à 15
-
-            renderNotions(paragraph.notions, margin + 25);
-
-            // Paragraph exercise for direct section paragraphs
-            if (paragraph.exercises && paragraph.exercises.length > 0) {
-              paragraph.exercises.forEach(ex => {
-                renderExercise(ex.content, ex, colors.paragraphe, margin + 25);
+            // Interleaved content for Section-level paragraphs
+            if (paragraph.content && Array.isArray(paragraph.content)) {
+              paragraph.content.forEach(node => {
+                if (node.type === 'notion') {
+                  const notionText = extractTextFromContent(node.content || node);
+                  renderNotions([notionText], margin + 25);
+                } else if (node.type === 'exercice' || node.type === 'exercise') {
+                  renderExercise(node.content, node.attrs || node, colors.paragraphe, margin + 25);
+                } else {
+                  const nodeText = extractTextFromContent([node]);
+                  if (nodeText.trim()) {
+                    y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
+                  }
+                }
               });
             } else {
-              renderExercise(paragraph.exerciseContent, (paragraph as any).exercise, colors.paragraphe, margin + 25);
+              y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
+              y += 10;
+              renderNotions(paragraph.notions, margin + 25);
+              if (paragraph.exercises && paragraph.exercises.length > 0) {
+                paragraph.exercises.forEach(ex => renderExercise(ex.content, ex, colors.paragraphe, margin + 25));
+              }
             }
           });
         }

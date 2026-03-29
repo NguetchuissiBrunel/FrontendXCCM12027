@@ -101,7 +101,7 @@ const useExerciseSync = () => {
 
 // ============ COMPOSANT PRINCIPAL ============
 
-export default function AllExercisesPage() {
+export default function ExercisesView() {
   const router = useRouter();
   const { user } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
@@ -417,7 +417,7 @@ export default function AllExercisesPage() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push('/profdashboard')}
+            onClick={() => router.push('/profdashboard?tab=accueil')}
             className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 mb-6"
           >
             <ArrowLeft size={20} />

@@ -15,13 +15,13 @@ export type ContentItem =
   | { type: 'chapter'; data: Chapter }
   | { type: 'paragraph'; data: Paragraph }
   | { type: 'notion'; data: string }
-  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string } };
+  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string; number?: string } };
 
 export type SubItem = 
   | { type: 'chapter'; data: Chapter }
   | { type: 'paragraph'; data: Paragraph }
   | { type: 'notion'; data: string }
-  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string } };
+  | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string; number?: string } };
 
 export interface Paragraph {
   id?: string;
@@ -29,6 +29,7 @@ export interface Paragraph {
   content: any;
   notions: string[];
   introduction?: string;
+  number?: string;
   exercise?: {
     title: string;
     type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
@@ -45,6 +46,7 @@ export interface Chapter {
   title: string;
   paragraphs: Paragraph[];
   introduction?: string;
+  number?: string;
   exercise?: {
     title: string;
     type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
@@ -62,6 +64,7 @@ export interface Section {
   chapters?: Chapter[];
   paragraphs?: Paragraph[];
   introduction?: string;
+  number?: string;
   exercise?: {
     title: string;
     type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';

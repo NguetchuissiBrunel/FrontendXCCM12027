@@ -1254,5 +1254,39 @@
       "retry": "Réessayer",
       "invalidCourseData": "Données du cours invalides"
     }
+  },
+  "onboarding": {
+    "etu": {
+      "welcomeTitle": "Bienvenue sur votre espace !",
+      "welcomeDesc": "Ici vous pouvez voir un résumé de votre activité et vos statistiques.",
+      "statsTitle": "Vos Statistiques",
+      "statsDesc": "Gardez un œil sur votre moyenne et vos exercices en attente.",
+      "coursesTitle": "Mes Cours",
+      "coursesDesc": "Accédez rapidement à tous les cours auxquels vous êtes inscrit.",
+      "pendingTitle": "À Faire",
+      "pendingDesc": "Ne ratez aucun exercice ! Vos tâches en attente sont listées ici.",
+      "navTitle": "Navigation",
+      "navDesc": "Utilisez la barre latérale pour naviguer entre les différentes sections."
+    },
+    "prof": {
+      "dashboardTitle": "Centre de Contrôle",
+      "dashboardDesc": "Gérez vos cours et vos inscriptions depuis cet espace dédié.",
+      "actionsTitle": "Actions Rapides",
+      "actionsDesc": "Créez un nouveau cours ou gérez les inscriptions en un clic.",
+      "statsTitle": "Aperçu Statistique",
+      "statsDesc": "Visualisez l'engagement de vos étudiants sur vos cours.",
+      "profileTitle": "Votre Profil Expert",
+      "profileDesc": "Vos performances et informations d'enseignant sont regroupées ici.",
+      "exercisesTitle": "Gestion des Exercices",
+      "exercisesDesc": "Accédez rapidement à la création et à la correction d'exercices.",
+      "navTitle": "Menu de Navigation",
+      "navDesc": "Utilisez cette barre latérale pour naviguer facilement entre toutes les sections de votre espace enseignant."
+    },
+    "buttons": {
+      "helpText": "Besoin d'aide ?",
+      "helpTitle": "Revoir le tutoriel",
+      "finish": "Terminer",
+      "next": "Suivant"
+    }
   }
 }

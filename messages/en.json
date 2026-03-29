@@ -1254,5 +1254,39 @@
       "retry": "Retry",
       "invalidCourseData": "Invalid course data"
     }
+  },
+  "onboarding": {
+    "etu": {
+      "welcomeTitle": "Welcome to your space!",
+      "welcomeDesc": "Here you can see a summary of your activity and statistics.",
+      "statsTitle": "Your Statistics",
+      "statsDesc": "Keep an eye on your average and pending exercises.",
+      "coursesTitle": "My Courses",
+      "coursesDesc": "Quickly access all the courses you are enrolled in.",
+      "pendingTitle": "To Do",
+      "pendingDesc": "Don't miss a single task! Your pending tasks are listed here.",
+      "navTitle": "Navigation",
+      "navDesc": "Use the sidebar to navigate between sections."
+    },
+    "prof": {
+      "dashboardTitle": "Control Center",
+      "dashboardDesc": "Manage courses and enrollments from this dedicated space.",
+      "actionsTitle": "Quick Actions",
+      "actionsDesc": "Create a new course or manage enrollments in one click.",
+      "statsTitle": "Statistical Overview",
+      "statsDesc": "Visualize your students' engagement.",
+      "profileTitle": "Your Expert Profile",
+      "profileDesc": "Your performance and teacher information are gathered here.",
+      "exercisesTitle": "Exercise Management",
+      "exercisesDesc": "Quickly access the creation and grading of exercises.",
+      "navTitle": "Navigation Menu",
+      "navDesc": "Use this sidebar to easily navigate between sections."
+    },
+    "buttons": {
+      "helpText": "Need help?",
+      "helpTitle": "Replay tutorial",
+      "finish": "Finish",
+      "next": "Next"
+    }
   }
 }

@@ -1,5 +1,5 @@
 /**
- * STRUCTURE DE COURS COMPONENT - WITH SINGLE-SELECT FILTERS
+ * COURSE STRUCTURE COMPONENT - WITH SINGLE-SELECT FILTERS
  * 
  * Right sidebar panel displaying hierarchical course library.
  * Full hierarchy: Course → Section → Chapter → Paragraph → Notion → Exercise
@@ -67,12 +67,11 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
   // Filter types with exact color codes from ITEM_COLORS
   const filterTypes: { type: ItemType; label: string; color: string }[] = [
-    { type: 'course', label: 'Cours', color: ITEM_COLORS.course },
-    { type: 'section', label: 'Partie', color: ITEM_COLORS.section },
-    { type: 'chapter', label: 'Chapitre', color: ITEM_COLORS.chapter },
-    { type: 'paragraph', label: 'Paragraphe', color: ITEM_COLORS.paragraph },
+    { type: 'course', label: 'Course', color: ITEM_COLORS.course },
+    { type: 'section', label: 'Section', color: ITEM_COLORS.section },
+    { type: 'chapter', label: 'Chapter', color: ITEM_COLORS.chapter },
+    { type: 'paragraph', label: 'Paragraph', color: ITEM_COLORS.paragraph },
     { type: 'notion', label: 'Notion', color: ITEM_COLORS.notion },
-    { type: 'exercise', label: 'Exercice', color: ITEM_COLORS.exercise },
   ];
 
   const toggleFilter = (type: ItemType) => {
@@ -105,12 +104,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
     // Show the filtered type and all its children
     const hierarchy: Record<ItemType, ItemType[]> = {
-      'course': ['course', 'section', 'chapter', 'paragraph', 'notion', 'exercise'],
-      'section': ['section', 'chapter', 'paragraph', 'notion', 'exercise'],
-      'chapter': ['chapter', 'paragraph', 'notion', 'exercise'],
-      'paragraph': ['paragraph', 'notion', 'exercise'],
+      'course': ['course', 'section', 'chapter', 'paragraph', 'notion'],
+      'section': ['section', 'chapter', 'paragraph', 'notion'],
+      'chapter': ['chapter', 'paragraph', 'notion'],
+      'paragraph': ['paragraph', 'notion'],
       'notion': ['notion'],
-      'exercise': ['exercise'],
+      'exercise': [],
     };
 
     return hierarchy[activeFilter].includes(type);
@@ -151,7 +150,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     const itemId = `${parentId}-paragraph-${index}`;
     const isExpanded = expandedItems.has(itemId);
     const hasNotions = paragraph.notions && paragraph.notions.length > 0;
-    const hasExercise = !!paragraph.exercise;
 
     if (!shouldShowType('paragraph')) return null;
 
@@ -159,7 +157,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       <div key={itemId}>
         <div
           className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md ${getItemBgClass('paragraph')}`}
-          onClick={() => (hasNotions || hasExercise) ? toggleExpansion(itemId) : null}
+          onClick={() => hasNotions ? toggleExpansion(itemId) : null}
           draggable
           onDragStart={(e) => {
             const fullItem = getItemWithHierarchy(itemId);
@@ -174,35 +172,16 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
               {paragraph.title}
             </span>
           </div>
-          {(hasNotions || hasExercise) && (
+          {hasNotions && (
             <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.paragraph }}>
               {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
             </button>
           )}
         </div>
 
-        {isExpanded && (hasNotions || hasExercise) && (
+        {isExpanded && hasNotions && (
           <div className="mt-2 space-y-1.5 pl-4">
             {paragraph.notions?.map((notion, idx) => renderNotion(notion, itemId, idx))}
-            {paragraph.exercise && (
-              <div
-                className={`rounded-lg border p-3 ${getItemBgClass('exercise')}`}
-                draggable
-                onDragStart={(e) => {
-                  const exerciseId = `${itemId}-exercise`;
-                  const fullItem = getItemWithHierarchy(exerciseId) || {
-                    id: exerciseId,
-                    title: `Exercice: ${paragraph.exercise?.questions.length ?? 0} question(s)`,
-                    type: 'exercise',
-                    parentId: itemId,
-                    data: paragraph.exercise
-                  };
-                  e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-                }}
-              >
-                Exercice: {paragraph.exercise.questions.length} question(s)
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -380,38 +359,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             )
           )
         );
-      case 'exercise':
-        return mockCourseData.flatMap((course, courseIdx) =>
-          course.sections.flatMap((sec, secIdx) =>
-            sec.chapters.flatMap((chap, chapIdx) =>
-              chap.paragraphs
-                .filter(para => !!para.exercise)
-                .map((para, paraIdx) => {
-                  const paraIndex = chap.paragraphs.indexOf(para);
-                  const exerciseId = `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIndex}-exercise`;
-                  return (
-                    <div
-                      key={exerciseId}
-                      className={`rounded-lg border p-3 ${getItemBgClass('exercise')}`}
-                      draggable
-                      onDragStart={(e) => {
-                        const fullItem = getItemWithHierarchy(exerciseId) || {
-                          id: exerciseId,
-                          title: `Exercice: ${para.exercise!.questions.length} question(s)`,
-                          type: 'exercise',
-                          parentId: `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIndex}`,
-                          data: para.exercise
-                        };
-                        e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-                      }}
-                    >
-                      Exercice: {para.exercise!.questions.length} question(s)
-                    </div>
-                  );
-                })
-            )
-          )
-        );
       default:
         return mockCourseData.map((course, idx) => renderCourse(course, idx));
     }
@@ -421,7 +368,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     <div className="flex h-full flex-col bg-white dark:bg-gray-800">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Importer des connaissances</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Import Knowledge</h2>
         <button onClick={onClose} className="text-gray-400 dark:text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300">
           <FaTimes className="text-sm" />
         </button>
@@ -432,7 +379,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         <div className="relative">
           <input
             type="text"
-            placeholder="Rechercher..."
+            placeholder="Search..."
             value={searchTerm}
             suppressHydrationWarning
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -450,7 +397,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           <svg className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Filtres</span>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Filters</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {filterTypes.map(({ type, label, color }) => (
@@ -481,16 +428,16 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         </div>
       </div>
 
-      {/* Expert Corner / Personalities */}
+      {/* Expert Corner */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-purple-50/50 dark:bg-purple-900/10 p-4">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-          <span className="text-xs font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">Coin des Experts</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">Expert Corner</span>
         </div>
         <div className="space-y-3">
           {[
-            { name: "Structure Optimale", advice: "Alternez entre notions théoriques et exercices pour maximiser la rétention." },
-            { name: "Engagement", advice: "Gardez vos paragraphes courts (< 300 mots) pour une lecture fluide." }
+            { name: "Optimal Structure", advice: "Alternate between theoretical concepts and exercises to maximize retention." },
+            { name: "Engagement", advice: "Keep your paragraphs short (< 300 words) for smooth reading." }
           ].map((expert, i) => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-purple-100 dark:border-purple-800">
               <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-1">{expert.name}</p>

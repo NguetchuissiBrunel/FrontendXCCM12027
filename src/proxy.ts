@@ -1,6 +1,14 @@
 // src/proxy.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { locales, defaultLocale } from './i18n/config';
+
+// 1. Initialize the i18n logic
+const intlMiddleware = createIntlMiddleware({
+  locales,
+  defaultLocale,
+  localeDetection: true
+});
 
 /**
  * Cleanly decode JWT payload for Edge Runtime
@@ -17,39 +25,43 @@ function decodeJWT(token: string) {
 }
 
 export function proxy(request: NextRequest) {
+  // 2. Run i18n first to ensure getLocale() works in Layouts
+  const response = intlMiddleware(request);
+
   const { pathname } = request.nextUrl;
+  
+  if (pathname === '/' || locales.some(loc => pathname === `/${loc}`)) {
+    return response;
+  }
+  
   const token = request.cookies.get('authToken')?.value;
 
-  // Route categories
+  // --- Your existing Auth Logic starts here ---
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/admindashboard/login' || pathname === '/admindashboard/register';
   const isDashboardStudent = pathname.startsWith('/etudashboard');
   const isDashboardAdmin = pathname.startsWith('/admindashboard');
   const isDashboardTeacher = pathname.startsWith('/profdashboard') || pathname.startsWith('/editor');
-  // Admin dashboard is no longer protected - removed from isProtected check
   const isProtected = isDashboardStudent || isDashboardTeacher;
 
-  // 1. No token case
   if (!token) {
     if (isProtected) {
       const loginPath = isDashboardAdmin ? '/admindashboard/login' : '/login';
-      const loginUrl = new URL(loginPath, request.url);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL(loginPath, request.url));
     }
-    return NextResponse.next();
+    return response; // Return intl response instead of NextResponse.next()
   }
 
-  // 2. Token case: Validate and Route
   const payload = decodeJWT(token);
   const isExpired = payload?.exp ? Date.now() >= payload.exp * 1000 : true;
 
   if (!payload || isExpired) {
     if (isProtected) {
       const loginPath = isDashboardAdmin ? '/admindashboard/login' : '/login';
-      const response = NextResponse.redirect(new URL(loginPath, request.url));
-      response.cookies.delete('authToken');
-      return response;
+      const redirectRes = NextResponse.redirect(new URL(loginPath, request.url));
+      redirectRes.cookies.delete('authToken');
+      return redirectRes;
     }
-    return NextResponse.next();
+    return response;
   }
 
   // Role identification
@@ -81,18 +93,19 @@ export function proxy(request: NextRequest) {
   //   return NextResponse.redirect(new URL('/admindashboard/login', request.url));
   // }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
   matcher: [
+    '/', 
+    '/(fr|en)/:path*',
     '/etudashboard/:path*',
     '/admindashboard/:path*',
     '/profdashboard/:path*',
     '/editor/:path*',
     '/login',
     '/register',
-    '/admindashboard/login',
-    '/admindashboard/register'
+    '/((?!api|_next|_vercel|.*\\..*).*)'
   ],
 };

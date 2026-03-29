@@ -6,6 +6,7 @@ import { useEnrollment } from '@/hooks/useEnrollment';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLoading } from '@/contexts/LoadingContext';
 import { Play, Check, Loader2, BookOpen, Lock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface EnrollmentButtonProps {
   courseId: number;
@@ -26,6 +27,8 @@ export default function EnrollmentButton({
   onEnroll,
   onUnenroll
 }: EnrollmentButtonProps) {
+  // Correction : utiliser le bon namespace 'pages.enrollment'
+  const t = useTranslations('pages.enrollment');
   const { user, isAuthenticated } = useAuth();
   const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
   const { isEnrolled, progress, loading, enroll, unenroll, enrollment } = useEnrollment(courseId);
@@ -78,17 +81,23 @@ export default function EnrollmentButton({
     primary: !canEnroll
       ? 'bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed'
       : isEnrolled
-        ? 'bg-green-600 hover:bg-green-700 text-white'
+        ? enrollment?.status === 'PENDING'
+          ? 'bg-orange-500 hover:bg-orange-600 text-white'
+          : 'bg-red-600 hover:bg-red-700 text-white'
         : 'bg-purple-600 hover:bg-purple-700 text-white',
     secondary: !canEnroll
       ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
       : isEnrolled
-        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+        ? enrollment?.status === 'PENDING'
+          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50'
+          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
         : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50',
     outline: !canEnroll
       ? 'border border-gray-300 text-gray-500 cursor-not-allowed'
       : isEnrolled
-        ? 'border border-green-600 text-green-600 hover:bg-green-50 dark:bg-green-900/20 dark:text-green-400'
+        ? enrollment?.status === 'PENDING'
+          ? 'border border-orange-500 text-orange-500 hover:bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400'
+          : 'border border-red-600 text-red-600 hover:bg-red-50 dark:bg-red-900/20 dark:text-red-400'
         : 'border border-purple-600 text-purple-600 hover:bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400'
   };
 
@@ -99,7 +108,7 @@ export default function EnrollmentButton({
         disabled
       >
         <Loader2 className={`${iconSizes[size]} animate-spin`} />
-        <span>Chargement...</span>
+        <span>{t('loading')}</span>
       </button>
     );
   }
@@ -118,31 +127,31 @@ export default function EnrollmentButton({
           disabled:opacity-50 disabled:cursor-not-allowed
           ${canEnroll ? 'hover:scale-105 active:scale-95' : ''}
         `}
-        title={!canEnroll ? (user?.role === 'teacher' ? 'Enseignants ne peuvent pas s\'inscrire' : 'Connectez-vous en tant qu\'étudiant') : undefined}
+        title={!canEnroll ? (user?.role === 'teacher' ? t('teacherRestricted') : t('loginRequired')) : undefined}
       >
         {globalLoading ? (
           <Loader2 className={`${iconSizes[size]} animate-spin`} />
         ) : !canEnroll ? (
           <>
             <Lock className={iconSizes[size]} />
-            <span>{user?.role === 'teacher' ? 'Enseignant' : 'Se connecter'}</span>
+            <span>{user?.role === 'teacher' ? t('teacher') : t('login')}</span>
           </>
         ) : isEnrolled ? (
           enrollment?.status === 'PENDING' ? (
             <>
               <Loader2 className={iconSizes[size]} />
-              <span>En attente de validation</span>
+              <span>{t('pending')}</span>
             </>
           ) : (
             <>
               <Check className={iconSizes[size]} />
-              <span>{showProgress ? `${progress}% complété` : 'Se désinscrire'}</span>
+              <span>{showProgress ? t('completed', { progress }) : t('unenroll')}</span>
             </>
           )
         ) : (
           <>
             <BookOpen className={iconSizes[size]} />
-            <span>S'inscrire</span>
+            <span>{t('enroll')}</span>
           </>
         )}
       </button>
@@ -156,7 +165,7 @@ export default function EnrollmentButton({
             ></div>
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
-            {progress}% complété
+            {t('completed', { progress })}
           </div>
         </div>
       )}

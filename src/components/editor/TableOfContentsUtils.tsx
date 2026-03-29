@@ -54,7 +54,17 @@ export const getTypeLabel = (type: ItemType) => {
 };
 
 export const getIndentation = (level: number) => {
-    return `ml-${Math.min(level * 4, 16)}`;
+    // Tailwind needs explicit complete class names to avoid being purged.
+    // We increase the step size significantly to make the hierarchy visible.
+    const indentMap = [
+        'ml-0',    // Level 0 (Course)
+        'ml-3',    // Level 1 (Section)
+        'ml-6',    // Level 2 (Chapitre)
+        'ml-10',   // Level 3 (Paragraphe)
+        'ml-14',   // Level 4 (Notion/Exercice)
+        'ml-16'    // Level 5+ (Fallback)
+    ];
+    return indentMap[Math.min(level, indentMap.length - 1)];
 };
 
 // Fonctions pour la gestion de la hiérarchie et des numéros

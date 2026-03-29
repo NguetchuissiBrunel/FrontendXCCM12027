@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X, Info, HelpCircle, Loader2 } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
+import { useTranslations } from 'next-intl';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -23,12 +24,15 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onConfirm,
     title,
     message,
-    confirmText = 'Confirmer',
-    cancelText = 'Annuler',
+    confirmText,
+    cancelText,
     type = 'danger',
     isLoading = false
 }) => {
     const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
+    const t = useTranslations('common');
+    const finalConfirmText = confirmText || t('confirm');
+    const finalCancelText = cancelText || t('cancel');
 
     // Sync local isLoading prop with global loading context
     useEffect(() => {
@@ -126,7 +130,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                                 disabled={globalLoading}
                                 className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors disabled:opacity-50"
                             >
-                                {cancelText}
+                                {finalCancelText}
                             </button>
                             <button
                                 onClick={onConfirm}
@@ -136,7 +140,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                                 {globalLoading && (
                                     <Loader2 className="animate-spin h-4 w-4 text-white" />
                                 )}
-                                {confirmText}
+                                {finalConfirmText}
                             </button>
                         </div>
                     </motion.div>

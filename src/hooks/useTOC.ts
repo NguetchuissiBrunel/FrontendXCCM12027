@@ -1,7 +1,7 @@
 // src/hooks/useTOC.ts
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Editor } from '@tiptap/react';
 import { extractTOC, TableOfContentsItem } from '../utils/extractTOC';
 
@@ -12,43 +12,55 @@ import { extractTOC, TableOfContentsItem } from '../utils/extractTOC';
  * @param debounceMs - Debounce delay in milliseconds (default: 300ms)
  * @returns Array of TOC items
  */
-export function useTOC(editor: Editor | null, debounceMs: number = 300): TableOfContentsItem[] {
+export function useTOC(editor: Editor | null, debounceMs: number = 300): [TableOfContentsItem[], () => void] {
   const [tocItems, setTocItems] = useState<TableOfContentsItem[]>([]);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+
+  const performUpdate = useCallback(() => {
+    if (!editor || editor.isDestroyed) return;
+    const editorJSON = editor.getJSON();
+    const newTOC = extractTOC(editorJSON);
+    setTocItems(newTOC);
+  }, [editor]);
+
+  const updateTOC = useCallback(() => {
+    if (!editor || editor.isDestroyed) return;
+    if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+    timeoutIdRef.current = setTimeout(performUpdate, debounceMs);
+  }, [editor, debounceMs, performUpdate]);
 
   useEffect(() => {
-    if (!editor) {
+    if (!editor || editor.isDestroyed) {
       setTocItems([]);
       return;
     }
 
-    // Initial extraction
-    const initialJSON = editor.getJSON();
-    const initialTOC = extractTOC(initialJSON);
-    setTocItems(initialTOC);
-
-    // Debounced update function
-    let timeoutId: NodeJS.Timeout;
-
-    const updateTOC = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        const editorJSON = editor.getJSON();
-        const newTOC = extractTOC(editorJSON);
-        setTocItems(newTOC);
-      }, debounceMs);
+    // Initial extraction - immediately and then after a small delay
+    // to catch any content set right after editor initialization
+    const initialUpdate = () => {
+      if (!editor.isDestroyed) {
+        performUpdate();
+      }
     };
 
-    // Listen to editor updates
+    initialUpdate();
+    const timeoutInitial = setTimeout(initialUpdate, 100);
+
+    // Listen to editor updates and transactions
+    // Tiptap's 'update' event is the most reliable for content changes
     editor.on('update', updateTOC);
+    editor.on('transaction', updateTOC);
 
     // Cleanup
     return () => {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutInitial);
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
       editor.off('update', updateTOC);
+      editor.off('transaction', updateTOC);
     };
-  }, [editor, debounceMs]);
+  }, [editor, updateTOC, performUpdate]);
 
-  return tocItems;
+  return [tocItems, performUpdate];
 }
 
 /**

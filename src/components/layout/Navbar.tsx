@@ -1,9 +1,8 @@
 // src/components/layout/Navbar.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
+import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
 import { MdHelpOutline, MdDashboard } from 'react-icons/md';
 import { useAuth } from '@/contexts/AuthContext';

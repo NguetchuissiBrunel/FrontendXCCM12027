@@ -176,9 +176,9 @@ const ContactPage = () => {
       return { success: true };
     } catch (error: any) {
       console.error('Erreur envoi formulaire contact:', error);
-      
+
       let errorMessage = 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.';
-      
+
       if (error.status === 400) {
         errorMessage = 'Veuillez vérifier les informations saisies. Certains champs sont invalides.';
       } else if (error.status === 429) {
@@ -186,7 +186,7 @@ const ContactPage = () => {
       } else if (error.status === 500) {
         errorMessage = 'Service temporairement indisponible. Veuillez réessayer plus tard.';
       }
-      
+
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -353,7 +353,8 @@ const ContactPage = () => {
           </div>
 
           {/* ContactForm connecté à l'API */}
-          <ContactForm 
+          <ContactForm
+            // @ts-ignore
             onSubmit={handleContactSubmit}
             isSubmitting={isSubmitting}
           />

@@ -289,8 +289,8 @@ export class CourseStatisticsService {
                             submissions = submissionsResponse;
                         } else if (submissionsResponse && typeof submissionsResponse === 'object') {
                             // Cas 2: Retour d'un objet ApiResponse avec propriété data
-                            if (submissionsResponse?.data && Array.isArray(submissionsResponse.data)) {
-                                submissions = submissionsResponse.data;
+                            if ((submissionsResponse as any)?.data && Array.isArray((submissionsResponse as any).data)) {
+                                submissions = (submissionsResponse as any).data;
                             }
                         }
 

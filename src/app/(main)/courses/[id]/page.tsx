@@ -17,7 +17,7 @@ interface CoursePageProps {
 const CoursePage = ({ params }: CoursePageProps) => {
   const resolvedParams = React.use(params);
   const courseId = parseInt(resolvedParams.id, 10);
-  const { course, loading, error, incrementLike, incrementDownload } = useCourse(courseId);
+  const { course, loading, error, toggleLike, incrementDownload } = useCourse(courseId);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -94,7 +94,9 @@ const CoursePage = ({ params }: CoursePageProps) => {
   return (
     <Course
       courseData={courseData}
-      incrementLike={incrementLike}
+      isLiked={!!course.isLiked}
+      likeCount={course.likeCount ?? 0}
+      toggleLike={toggleLike}
       incrementDownload={incrementDownload}
     />
   );

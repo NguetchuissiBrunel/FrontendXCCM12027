@@ -1,5 +1,5 @@
 'use client';
-import { Trash2, Layout, CheckCircle, Clock, BookOpen, Archive, LockKeyhole, UnlockKeyhole, Pencil } from 'lucide-react';
+import { Trash2, Layout, CheckCircle, Clock, BookOpen, Archive, LockKeyhole, UnlockKeyhole, Pencil, School } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
 
@@ -27,6 +27,7 @@ interface CompositionsCardProps {
   onManageExercises?: (courseId: string) => void;
   getCourseStats?: (id: string) => { totalExercises?: number; totalEnrolled?: number } | undefined;
   onManageClassCourses?: (classId: string) => void;
+  onAssignToClass?: (courseId: string) => void;
   onChangeStatus?: (classId: string, status: ClassStatus) => Promise<void>;
   onEdit?: (id: string) => void;
   title?: string;
@@ -68,6 +69,7 @@ export default function CompositionsCard({
   onManageExercises,
   getCourseStats,
   onManageClassCourses,
+  onAssignToClass,
   onChangeStatus,
   onEdit,
   title,
@@ -133,8 +135,8 @@ export default function CompositionsCard({
           <div
             key={composition.id}
             className={`rounded-xl p-6 transition-colors border ${composition.status === 'ARCHIVED'
-                ? 'bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700 opacity-70'
-                : 'bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-900/30'
+              ? 'bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700 opacity-70'
+              : 'bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-900/30'
               }`}
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -193,6 +195,15 @@ export default function CompositionsCard({
                     title="Gérer les cours"
                   >
                     <BookOpen size={20} />
+                  </button>
+                )}
+                {onAssignToClass && (
+                  <button
+                    onClick={() => onAssignToClass(composition.id)}
+                    className="p-2 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-colors border border-transparent hover:border-indigo-200 dark:hover:border-indigo-800"
+                    title="Affecter à une classe"
+                  >
+                    <School size={20} />
                   </button>
                 )}
                 {onEdit && (

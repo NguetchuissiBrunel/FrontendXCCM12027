@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CompositionsCard from '@/components/professor/CompositionsCard';
 import CreateCourseModal from '@/components/create-course/page';
@@ -6,6 +7,7 @@ import toast from 'react-hot-toast';
 import { BookOpen, X, Plus } from 'lucide-react';
 import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
 import ManageClassCoursesModal from '@/components/professor/ManageClassCoursesModal';
+import AssignCourseToClassModal from '@/components/professor/AssignCourseToClassModal';
 import { useTeacherDashboard, parseId } from '@/hooks/useTeacherDashboard';
 import { CourseStat } from '@/types/professor';
 
@@ -37,6 +39,10 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
     handleCreateCourseSubmit
   } = useTeacherDashboard();
 
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
+  const [selectedCourseIdForAssignment, setSelectedCourseIdForAssignment] = useState<number | null>(null);
+  const [selectedCourseTitleForAssignment, setSelectedCourseTitleForAssignment] = useState<string | undefined>(undefined);
+
   const currentCompositions = mode === 'classes' ? allClasses : allCourses;
 
   const router = useRouter();
@@ -55,6 +61,18 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
       setIsManageCoursesModalOpen(true);
     } else {
       toast.error("ID de classe invalide");
+    }
+  };
+
+  const handleOpenAssignModal = (courseIdString: string) => {
+    const courseIdNum = parseId(courseIdString);
+    if (courseIdNum > 0) {
+      const course = allCourses.find(c => parseId(c.id) === courseIdNum);
+      setSelectedCourseIdForAssignment(courseIdNum);
+      setSelectedCourseTitleForAssignment(course?.title);
+      setIsAssignModalOpen(true);
+    } else {
+      toast.error("ID de cours invalide");
     }
   };
 
@@ -87,6 +105,19 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
         onCourseUpdated={() => {
           loadDashboardData();
         }}
+      />
+
+      {/* Modale d'affectation d'un cours à une classe */}
+      <AssignCourseToClassModal
+        isOpen={isAssignModalOpen}
+        onClose={() => {
+          setIsAssignModalOpen(false);
+          setSelectedCourseIdForAssignment(null);
+          setSelectedCourseTitleForAssignment(undefined);
+        }}
+        courseId={selectedCourseIdForAssignment}
+        courseTitle={selectedCourseTitleForAssignment}
+        onUpdated={() => loadDashboardData()}
       />
 
       {/* Modale de sélection de cours */}
@@ -168,7 +199,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
               Gestion de vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">{mode === 'classes' ? 'Classes' : 'Compositions'}</span>
             </h1>
             <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
-              {mode === 'classes' 
+              {mode === 'classes'
                 ? 'Consultez et scindez vos cours en créant différentes classes.'
                 : 'Gérez vos compositions et supports de cours structurés.'}
             </p>
@@ -183,7 +214,8 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
             onCreateClick={() => setIsModalOpen(true)}
             onManageExercises={(classId) => router.push(`/profdashboard/exercises/${classId}`)}
             onManageClassCourses={mode === 'classes' ? handleOpenManageCoursesForClass : undefined}
-            onChangeStatus={mode === 'classes' 
+            onAssignToClass={mode === 'compositions' ? handleOpenAssignModal : undefined}
+            onChangeStatus={mode === 'classes'
               ? (id, status) => handleChangeClassStatus(id, status as any)
               : (id, status) => handleChangeCourseStatus(id, status === 'OPEN' ? 'PUBLISHED' : status === 'CLOSED' ? 'DRAFT' : 'ARCHIVED')
             }
@@ -209,7 +241,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
               {mode === 'classes' ? 'Mes Classes de Cours' : 'Mes Compositions'}
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {mode === 'classes' 
+              {mode === 'classes'
                 ? "Vous n'avez pas encore de classe. Créez votre première classe."
                 : "Vous n'avez pas encore de composition. Créez votre premier cours."}
             </p>

@@ -31,7 +31,7 @@ export default function EnrollmentButton({
   const { isEnrolled, progress, loading, enroll, unenroll, enrollment } = useEnrollment(courseId);
 
   // Vérifier si l'utilisateur peut s'inscrire
-  const canEnroll = isAuthenticated && user?.role === 'student';
+  const canEnroll = !!(isAuthenticated && user && ['student', 'teacher'].some(role => user.role?.includes(role)));
 
   const handleClick = async () => {
     if (loading || globalLoading) return;
@@ -124,14 +124,14 @@ export default function EnrollmentButton({
           disabled:opacity-50 disabled:cursor-not-allowed
           ${canEnroll ? 'hover:scale-105 active:scale-95' : ''}
         `}
-        title={!canEnroll ? (user?.role === 'teacher' ? 'Enseignants ne peuvent pas s\'inscrire' : 'Connectez-vous en tant qu\'étudiant') : undefined}
+        title={!canEnroll ? 'Connectez-vous pour vous inscrire' : undefined}
       >
         {globalLoading ? (
           <Loader2 className={`${iconSizes[size]} animate-spin`} />
         ) : !canEnroll ? (
           <>
             <Lock className={iconSizes[size]} />
-            <span>{user?.role === 'teacher' ? 'Enseignant' : 'Se connecter'}</span>
+            <span>Se connecter</span>
           </>
         ) : isEnrolled ? (
           enrollment?.status === 'PENDING' ? (

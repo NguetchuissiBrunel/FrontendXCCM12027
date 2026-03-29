@@ -5,10 +5,10 @@ import React, { useState, useEffect } from 'react';
 import { Exercise, Question } from '@/types/exercise';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
 import { toast } from 'react-hot-toast';
-import { 
-  FaClock, 
-  FaCalendarAlt, 
-  FaHashtag, 
+import {
+  FaClock,
+  FaCalendarAlt,
+  FaHashtag,
   FaCheckCircle,
   FaCode,
   FaFileAlt
@@ -36,7 +36,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
     // L'exercice contient déjà les questions dans la propriété `questions`
     const qs = exercise.questions || [];
     setQuestions(qs);
-    
+
     // Initialiser les réponses
     const initialAnswers: Record<number, string> = {};
     qs.forEach(q => {
@@ -48,7 +48,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
       }
     });
     setAnswers(initialAnswers);
-    
+
     // Vérifier si déjà soumis
     if (exercise.alreadySubmitted) {
       setSubmitted(true);
@@ -66,28 +66,28 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
 
   const handleSubmit = async () => {
     if (!onSubmit || submitted || readOnly) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Vérifier si toutes les questions sont répondues
       const unanswered = questions.filter(q => !answers[q.id || 0]?.trim());
       if (unanswered.length > 0) {
         toast.error(`Veuillez répondre à toutes les questions (${unanswered.length} non répondues)`);
         return;
       }
-      
+
       const formattedAnswers = questions.map(q => ({
         questionId: q.id || 0,
         answer: answers[q.id || 0] || ''
       }));
-      
+
       // Appeler la fonction onSubmit passée en props
       await onSubmit(formattedAnswers);
-      
+
       setSubmitted(true);
       toast.success('✅ Exercice soumis avec succès !');
-      
+
     } catch (error: any) {
       console.error('Erreur lors de la soumission:', error);
       toast.error(error.message || 'Erreur lors de la soumission');
@@ -122,11 +122,11 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
   };
 
   const getQuestionText = (question: Question): string => {
-    return question.text || question.question || `Question`;
+    return question.text || (question as any).question || `Question`;
   };
 
   const getQuestionType = (question: Question): string => {
-    return question.type || question.questionType || 'TEXT';
+    return question.type || (question as any).questionType || 'TEXT';
   };
 
   return (
@@ -134,19 +134,19 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
       {/* En-tête de l'exercice */}
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white mb-8">
         <h1 className="text-3xl font-bold mb-4">{exercise.title}</h1>
-        
+
         {exercise.description && (
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6">
             <p className="text-white/90 whitespace-pre-line">{exercise.description}</p>
           </div>
         )}
-        
+
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
             <FaHashtag className="w-4 h-4" />
             <span className="font-semibold">{exercise.maxScore} points</span>
           </div>
-          
+
           {exercise.dueDate && (
             <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
               <FaCalendarAlt className="w-4 h-4" />
@@ -159,7 +159,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
               </span>
             </div>
           )}
-          
+
           <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
             <FaClock className="w-4 h-4" />
             <span className="font-semibold">
@@ -181,7 +181,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-green-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${calculateProgress()}%` }}
             />
@@ -203,7 +203,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
             const questionType = getQuestionType(question);
             const questionPoints = question.points || 1;
             const currentAnswer = answers[questionId] || '';
-            
+
             return (
               <div key={questionId} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-indigo-300 transition-colors">
                 {/* En-tête de la question */}
@@ -233,13 +233,12 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                 {questionType === 'MULTIPLE_CHOICE' && question.options && question.options.length > 0 ? (
                   <div className="space-y-3">
                     {question.options.map((option, optIndex) => (
-                      <label 
-                        key={optIndex} 
-                        className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${
-                          currentAnswer === option
+                      <label
+                        key={optIndex}
+                        className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${currentAnswer === option
                             ? 'border-indigo-500 bg-indigo-50'
                             : 'border-gray-200 hover:bg-gray-50'
-                        } ${(readOnly || submitted) ? 'cursor-default' : ''}`}
+                          } ${(readOnly || submitted) ? 'cursor-default' : ''}`}
                       >
                         <input
                           type="radio"
@@ -298,11 +297,10 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
 
                 {/* Feedback après soumission */}
                 {submitted && question.studentPoints !== undefined && (
-                  <div className={`mt-4 p-4 rounded-lg ${
-                    question.studentPoints === questionPoints
-                      ? 'bg-green-50 border border-green-200' 
+                  <div className={`mt-4 p-4 rounded-lg ${question.studentPoints === questionPoints
+                      ? 'bg-green-50 border border-green-200'
                       : 'bg-yellow-50 border border-yellow-200'
-                  }`}>
+                    }`}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium">
                         Votre réponse : {question.studentPoints}/{questionPoints} points
@@ -315,8 +313,8 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                     </div>
                     {question.studentPoints < questionPoints && (
                       <p className="text-sm text-gray-700 mt-1">
-                        {question.studentAnswer === question.correctAnswer 
-                          ? 'Votre réponse est correcte !' 
+                        {question.studentAnswer === question.correctAnswer
+                          ? 'Votre réponse est correcte !'
                           : 'Vérifiez votre réponse.'}
                       </p>
                     )}

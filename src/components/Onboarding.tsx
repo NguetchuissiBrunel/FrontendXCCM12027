@@ -75,6 +75,12 @@ const TOUR_STEPS: Record<string, Step[]> = {
             title: 'Gestion des Exercices',
             description: 'Accédez rapidement à la création et à la correction d\'exercices.',
             position: 'top'
+        },
+        {
+            target: '#sidebar-nav',
+            title: 'Menu de Navigation',
+            description: 'Utilisez cette barre latérale pour naviguer facilement entre toutes les sections de votre espace enseignant.',
+            position: 'right'
         }
     ]
 };
@@ -309,42 +315,18 @@ function getTooltipStyles(targetRect: DOMRect | null, position?: string): React.
         return { position: 'relative' };
     }
 
-    const gap = 24;
-    const styles: React.CSSProperties = {
-        position: 'absolute',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+    // Vérifie si l'élément se trouve dans la moitié inférieure de l'écran
+    // Si oui, on affiche le tooltip en haut pour ne pas le cacher, et vice versa.
+    const isTargetInBottomHalf = targetRect.top > window.innerHeight / 2;
+
+    return {
+        position: 'fixed', // Utilisé fixed par rapport à l'écran pour garantir un positionnement stable
+        ...(isTargetInBottomHalf ? { top: '2rem' } : { bottom: '2rem' }),
+        left: '50%',
+        transform: 'translateX(-50%)',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        zIndex: 10000,
     };
-
-    switch (position) {
-        case 'bottom':
-            styles.top = targetRect.bottom + gap;
-            styles.left = targetRect.left + (targetRect.width / 2);
-            styles.transform = 'translateX(-50%)';
-            break;
-        case 'top':
-            styles.bottom = window.innerHeight - targetRect.top + gap;
-            styles.left = targetRect.left + (targetRect.width / 2);
-            styles.transform = 'translateX(-50%)';
-            break;
-        case 'left':
-            styles.right = window.innerWidth - targetRect.left + gap;
-            styles.top = targetRect.top + (targetRect.height / 2);
-            styles.transform = 'translateY(-50%)';
-            break;
-        case 'right':
-            styles.left = targetRect.right + gap;
-            styles.top = targetRect.top + (targetRect.height / 2);
-            styles.transform = 'translateY(-50%)';
-            break;
-        case 'center':
-        default:
-            styles.top = '50%';
-            styles.left = '50%';
-            styles.transform = 'translate(-50%, -50%)';
-            break;
-    }
-
-    return styles;
 }
 
 export default Onboarding;

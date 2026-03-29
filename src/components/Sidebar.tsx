@@ -81,7 +81,7 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
       </div>
 
       {/* Menu Principal */}
-      <nav>
+      <nav id="sidebar-nav">
         <p className="text-xs uppercase text-gray-500 dark:text-gray-400 mb-4 font-semibold">Menu Principal</p>
         <ul className="space-y-2">
           {(userRole === 'student' ? studentMenuItems : professorMenuItems).map((item) => {

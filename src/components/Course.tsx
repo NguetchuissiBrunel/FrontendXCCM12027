@@ -18,6 +18,8 @@ import CourseContentRenderer from './CourseContentRenderer';
 import confetti from 'canvas-confetti';
 import TeacherLink from '@/components/TeacherLink';
 import { useEnrollment } from '@/hooks/useEnrollment';
+import { useTranslations } from 'next-intl';
+
 
 interface CourseProps {
   courseData: CourseData;
@@ -142,9 +144,9 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const chapter = section?.chapters?.[currentChapterIndex];
   const paragraph = chapter ? chapter.paragraphs?.[currentParagraphIndex] : section?.paragraphs?.[currentParagraphIndex];
 
-  const getExercisesAtCurrentLevel = (): QuestionData[] => {
-    if (currentExerciseLevel === 'chapter' && chapter) return (chapter.exercises || (chapter.exercise ? [chapter.exercise] : [])) as QuestionData[];
-    if (currentExerciseLevel === 'section' && section) return (section.exercises || (section.exercise ? [section.exercise] : [])) as QuestionData[];
+  const getExercisesAtCurrentLevel = () => {
+    if (currentExerciseLevel === 'chapter' && chapter) return (chapter.exercises || (chapter.exercise ? [chapter.exercise] : []));
+    if (currentExerciseLevel === 'section' && section) return (section.exercises || (section.exercise ? [section.exercise] : []));
     return [];
   };
 
@@ -403,7 +405,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
             ) : (
                 <div>
                     <h2 className="text-2xl font-black mb-6 flex items-center gap-2"><Award /> {currentExercise?.title || "Exercice"}</h2>
-                    {currentExercise?.content && <div className="mb-6"><CourseContentRenderer content={currentExercise.content} /></div>}
+                    {currentExercise && 'content' in currentExercise && currentExercise.content && <div className="mb-6"><CourseContentRenderer content={currentExercise.content} /></div>}
                     {currentExercise?.questions?.map((q: any, i: number) => (
                         <div key={i} className="mb-6 p-4 border rounded-xl bg-gray-50 dark:bg-gray-800/50">
                             <p className="font-bold mb-3">{q.text}</p>

@@ -8,6 +8,7 @@ import { transformTiptapToCourseData } from '@/utils/courseTransformer';
 import { downloadCourseAsPDF } from '@/utils/DownloadPdf';
 import { downloadCourseAsDocx } from '@/utils/DownloadDocx';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 interface PdfPreviewProps {
     content: any; // TipTap JSON
@@ -16,6 +17,7 @@ interface PdfPreviewProps {
 }
 
 const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick }) => {
+    const t = useTranslations('pdfPreview');
     const [scale, setScale] = useState(0.8);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -35,7 +37,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                 // We do this by looking at paper-content height
                 const contentEl = paperRef.current.querySelector('.pdf-page-content');
                 if (!contentEl) return;
-                
+
                 const height = contentEl.getBoundingClientRect().height / scale;
                 // Use a reliable conversion for 297mm to pixels
                 const pageHeightPx = (297 * 96) / 25.4; // 96 DPI, 25.4 mm per inch
@@ -45,7 +47,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                     // and avoid edge cases where content is exactly pageHeight and goes to next page
                     const count = Math.ceil(height / (pageHeightPx * 0.999));
                     const finalCount = Math.min(Math.max(1, count), 100);
-                    
+
                     setPageCount(prev => prev !== finalCount ? finalCount : prev);
                 }
             }
@@ -85,11 +87,11 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
         try {
             if (courseData) {
                 await downloadCourseAsPDF(courseData, orientation);
-                toast.success("PDF généré avec succès");
+                toast.success(t('pdfSuccess'));
             }
         } catch (error) {
             console.error("Error generating PDF:", error);
-            toast.error("Erreur lors de la génération du PDF");
+            toast.error(t('pdfError'));
         } finally {
             setPdfGenerating(false);
             setShowDownloadModal(false);
@@ -101,11 +103,11 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
         try {
             if (courseData) {
                 await downloadCourseAsDocx(courseData);
-                toast.success("Document Word généré avec succès");
+                toast.success(t('docxSuccess'));
             }
         } catch (error) {
             console.error("Error generating Word document:", error);
-            toast.error("Erreur lors de la génération du document Word");
+            toast.error(t('docxError'));
         } finally {
             setDocxGenerating(false);
             setShowDownloadModal(false);
@@ -124,7 +126,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
             <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-bold truncate max-w-[150px] dark:text-white">{title || "Aperçu PDF"}</span>
+                    <span className="text-sm font-bold truncate max-w-[150px] dark:text-white">{title || t('title')}</span>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
@@ -139,14 +141,14 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                     <button
                         onClick={() => setShowDownloadModal(true)}
                         className="p-2 text-gray-500 hover:text-purple-600 transition-colors"
-                        title="Télécharger"
+                        title={t('download')}
                     >
                         <Download size={18} />
                     </button>
                     <div className="flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-md border border-purple-100 dark:border-purple-800">
                         <Layers size={12} className="text-purple-600 dark:text-purple-400" />
                         <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">
-                            {pageCount} {pageCount > 1 ? 'pages' : 'page'}
+                            {pageCount} {pageCount > 1 ? t('pages') : t('page')}
                         </span>
                     </div>
                 </div>
@@ -291,8 +293,8 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                 </style>
                 <div className="pdf-preview-container">
                     <div
-                        style={{ 
-                            transform: `scale(${scale})`, 
+                        style={{
+                            transform: `scale(${scale})`,
                             transformOrigin: 'top center',
                             width: '210mm',
                             height: `${pageCount * 297 * scale}mm`, // Exact page height
@@ -309,15 +311,15 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                             {/* Render Headers and Footers for each page */}
                             {Array.from({ length: pageCount }).map((_, i) => (
                                 <React.Fragment key={i}>
-                                    <div 
-                                        className="page-header" 
+                                    <div
+                                        className="page-header"
                                         style={{ top: `calc(${i * 297}mm + 5mm)` }}
                                     >
                                         <span>XCCM1 • Plateforme Pédagogique</span>
                                         <span>{title || "Sans Titre"}</span>
                                     </div>
-                                    <div 
-                                        className="page-footer" 
+                                    <div
+                                        className="page-footer"
                                         style={{ top: `calc(${(i + 1) * 297}mm - 12mm)` }}
                                     >
                                         <span>© {new Date().getFullYear()} XCCM1</span>
@@ -332,7 +334,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                                     {courseData && courseData.sections && courseData.sections.length > 0 ? (
                                         courseData.sections.map((section: any, sIdx: number) => (
                                             <div key={sIdx} className="mb-10">
-                                                <h2 
+                                                <h2
                                                     className={`text-2xl font-bold mb-6 break-words ${onElementClick && section.id ? 'interactive-heading' : ''}`}
                                                     style={{ color: '#6432C8' }}
                                                     onClick={() => onElementClick && section.id && onElementClick(section.id)}
@@ -349,7 +351,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
 
                                                 {section.chapters && section.chapters.map((chapter: any, cIdx: number) => (
                                                     <div key={cIdx} className="mb-8">
-                                                        <h3 
+                                                        <h3
                                                             className={`text-xl font-bold mb-4 break-words ${onElementClick && chapter.id ? 'interactive-heading' : ''}`}
                                                             style={{ color: '#008250' }}
                                                             onClick={() => onElementClick && chapter.id && onElementClick(chapter.id)}
@@ -368,7 +370,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                                                                 const paragraph = subItem.data;
                                                                 return (
                                                                     <div key={idx} className="mb-6">
-                                                                        <h4 
+                                                                        <h4
                                                                             className={`text-lg font-bold mb-3 break-words ${onElementClick && paragraph.id ? 'interactive-heading' : ''}`}
                                                                             style={{ color: '#E6B400' }}
                                                                             onClick={() => onElementClick && paragraph.id && onElementClick(paragraph.id)}

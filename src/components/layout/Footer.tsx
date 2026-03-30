@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import NewsletterForm from '@/components/common/NewsletterForm';
+import { useTranslations } from 'next-intl';
 
 // Icônes (garder les mêmes)
 const PhoneIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -16,6 +17,8 @@ const MapPinIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const Footer = () => {
+  const t = useTranslations('footer');
+
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-white transition-colors duration-300">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
@@ -38,12 +41,11 @@ const Footer = () => {
                 <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
                   XCCM1
                 </span>
-                <p className="text-xs text-gray-400 mt-1">Plateforme pédagogique</p>
+                <p className="text-xs text-gray-400 mt-1">{t('platform')}</p>
               </div>
             </div>
             <p className="text-gray-400 text-sm max-w-md leading-relaxed">
-              Plateforme de création et de partage de contenu pédagogique.
-              Innovez dans l'éducation avec nos outils modernes.
+              {t('description')}
             </p>
 
             <div className="space-y-3 pt-4">
@@ -69,7 +71,7 @@ const Footer = () => {
 
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase mb-4">
-                Services
+                {t('services')}
               </h3>
               <ul className="space-y-3">
                 <li>
@@ -77,7 +79,7 @@ const Footer = () => {
                     href="/editor"
                     className="text-sm text-gray-400 hover:text-white transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    Création de Cours
+                    {t('courseCreation')}
                   </Link>
                 </li>
                 <li>
@@ -85,7 +87,7 @@ const Footer = () => {
                     href="/space_coll"
                     className="text-sm text-gray-400 hover:text-white transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    Espaces Collaboratifs
+                    {t('collaborativeSpaces')}
                   </Link>
                 </li>
                 <li>
@@ -93,7 +95,7 @@ const Footer = () => {
                     href="#"
                     className="text-sm text-gray-400 hover:text-white transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    Bibliothèque de Contenu
+                    {t('contentLibrary')}
                   </Link>
                 </li>
                 <li>
@@ -101,7 +103,7 @@ const Footer = () => {
                     href="/pricing"
                     className="text-sm text-gray-400 hover:text-purple-300 transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    Tarification
+                    {t('pricing')}
                   </Link>
                 </li>
               </ul>
@@ -109,7 +111,7 @@ const Footer = () => {
 
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase mb-4">
-                Entreprise
+                {t('company')}
               </h3>
               <ul className="space-y-3">
                 <li>
@@ -117,7 +119,7 @@ const Footer = () => {
                     href="/about"
                     className="text-sm text-gray-400 hover:text-white transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    À Propos
+                    {t('about')}
                   </Link>
                 </li>
               </ul>
@@ -125,7 +127,7 @@ const Footer = () => {
 
             <div>
               <h3 className="text-sm font-semibold text-purple-400 tracking-wider uppercase mb-4">
-                Ressources
+                {t('resources')}
               </h3>
               <ul className="space-y-3">
                 <li>
@@ -133,7 +135,7 @@ const Footer = () => {
                     href="/aide"
                     className="text-sm text-gray-400 hover:text-white transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    Centre d'Aide
+                    {t('helpCenter')}
                   </Link>
                 </li>
                 <li>
@@ -149,7 +151,7 @@ const Footer = () => {
                     href="/blog"
                     className="text-sm text-gray-400 hover:text-white transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    Blog & Guides
+                    {t('blogAndGuides')}
                   </Link>
                 </li>
                 <li>
@@ -157,7 +159,7 @@ const Footer = () => {
                     href="/support"
                     className="text-sm text-gray-400 hover:text-white transition-colors hover:translate-x-1 inline-block transform duration-200"
                   >
-                    Support Technique
+                    {t('technicalSupport')}
                   </Link>
                 </li>
               </ul>
@@ -167,8 +169,8 @@ const Footer = () => {
           {/* Section 4: Newsletter - CONNECTÉE À L'API */}
           <div className="md:col-span-2 lg:col-span-1 lg:border-l lg:border-gray-700 lg:pl-6 xl:pl-8">
             <NewsletterForm
-              title="Restez informé 📬"
-              description="Inscrivez-vous pour recevoir nos dernières actualités, conseils pédagogiques et ressources exclusives."
+              title={t('newsletterTitle')}
+              description={t('newsletterDescription')}
               showPrivacyNote={false}
               className="h-full"
             />
@@ -181,7 +183,7 @@ const Footer = () => {
 
             {/* Copyright */}
             <p className="text-sm text-gray-400 order-1 md:order-1 text-center md:text-left">
-              &copy; {new Date().getFullYear()} <span className="text-purple-400 font-medium">XCCM1</span>. Tous droits réservés.
+              &copy; {new Date().getFullYear()} <span className="text-purple-400 font-medium">XCCM1</span>. {t('allRightsReserved')}
             </p>
 
             {/* Social Icons */}
@@ -230,25 +232,25 @@ const Footer = () => {
                 href="/legal"
                 className="text-gray-400 hover:text-purple-400 transition-colors hover:underline"
               >
-                Mentions légales
+                {t('legalNotices')}
               </Link>
               <Link
                 href="/privacy"
                 className="text-gray-400 hover:text-purple-400 transition-colors hover:underline"
               >
-                Politique de confidentialité
+                {t('privacyPolicy')}
               </Link>
               <Link
                 href="/terms"
                 className="text-gray-400 hover:text-purple-400 transition-colors hover:underline"
               >
-                Conditions d'utilisation
+                {t('termsOfUse')}
               </Link>
               <Link
                 href="/cookies"
                 className="text-gray-400 hover:text-purple-400 transition-colors hover:underline"
               >
-                Cookies
+                {t('cookies')}
               </Link>
             </div>
           </div>

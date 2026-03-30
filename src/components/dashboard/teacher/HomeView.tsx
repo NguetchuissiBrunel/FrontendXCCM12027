@@ -207,7 +207,7 @@ export default function HomeView() {
       )}
 
       {/* Section de bienvenue et statistiques */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+      <div id="dashboard-header" className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 mb-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="max-w-3xl">
             <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
@@ -219,7 +219,7 @@ export default function HomeView() {
           </div>
 
           {/* Statistiques rapides */}
-          <div className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
+          <div id="teacher-stats" className="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 w-full md:w-auto">
             <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
               <div className="text-center">
                 <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
@@ -261,7 +261,7 @@ export default function HomeView() {
 
         {/* Colonne droite : Actions et Stats secondaires */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
+          <div id="quick-actions" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
             <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
               <Activity className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
               Actions rapides
@@ -294,6 +294,7 @@ export default function HomeView() {
               </button>
 
               <button
+                id="exercise-actions"
                 onClick={() => {
                   if (compositions.length > 0) {
                     openCourseSelectionModal();

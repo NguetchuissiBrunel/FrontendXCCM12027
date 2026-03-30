@@ -1,21 +1,81 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { FaTimes, FaTrash, FaSpinner, FaPaperPlane, FaBook } from 'react-icons/fa';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+import { FaTimes, FaTrash, FaPaperPlane, FaBook } from 'react-icons/fa';
 import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
 import { toast } from 'react-hot-toast';
+import { useLocale } from 'next-intl';
 
 interface MyCoursesPanelProps {
   onClose: () => void;
-  onLoadCourse: (content: any, courseId: string, title: string, category: string, description: string, photoUrl?: string) => void;
+  onLoadCourse: (content: CourseResponse['content'], courseId: string, title: string, category: string, description: string, photoUrl?: string) => void;
 }
 
 const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }) => {
+  const locale = useLocale();
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const content = React.useMemo(() => (
+    locale === 'fr'
+      ? {
+          fetchError: "Erreur lors de la recuperation des cours:",
+          deleteSuccess: 'Cours supprime avec succes.',
+          deleteError: 'Impossible de supprimer le cours.',
+          statusError: 'Impossible de modifier le statut.',
+          published: 'Cours publie !',
+          draft: 'Cours repasse en brouillon.',
+          untitled: 'Sans titre',
+          defaultCategory: 'Informatique',
+          unknownDate: 'Date inconnue',
+          deleteTitle: 'Supprimer le cours',
+          deleteMessage: 'Voulez-vous vraiment supprimer ce cours ? Cette action est irreversible.',
+          deleteConfirm: 'Supprimer',
+          unpublishTitle: 'Depublier le cours',
+          publishTitle: 'Publier le cours',
+          unpublishMessage: 'Voulez-vous repasser ce cours en brouillon ? Il ne sera plus visible par les etudiants.',
+          publishMessage: 'Voulez-vous publier ce cours ? Il deviendra visible par tous les etudiants.',
+          unpublishConfirm: 'Depublier',
+          publishConfirm: 'Publier',
+          header: 'Mes cours',
+          empty: 'Aucun cours sauvegarde pour le moment.',
+          createdOn: 'Cree le',
+          publishedBadge: 'Publie',
+          draftBadge: 'Brouillon',
+          loadInEditor: "Charger dans l'editeur",
+          deleteAction: 'Supprimer'
+        }
+      : {
+          fetchError: 'Error while fetching courses:',
+          deleteSuccess: 'Course deleted successfully.',
+          deleteError: 'Unable to delete the course.',
+          statusError: 'Unable to change the status.',
+          published: 'Course published!',
+          draft: 'Course moved back to draft.',
+          untitled: 'Untitled',
+          defaultCategory: 'Computer science',
+          unknownDate: 'Unknown date',
+          deleteTitle: 'Delete course',
+          deleteMessage: 'Do you really want to delete this course? This action cannot be undone.',
+          deleteConfirm: 'Delete',
+          unpublishTitle: 'Unpublish course',
+          publishTitle: 'Publish course',
+          unpublishMessage: 'Do you want to move this course back to draft? It will no longer be visible to students.',
+          publishMessage: 'Do you want to publish this course? It will become visible to all students.',
+          unpublishConfirm: 'Unpublish',
+          publishConfirm: 'Publish',
+          header: 'My courses',
+          empty: 'No saved courses yet.',
+          createdOn: 'Created on',
+          publishedBadge: 'Published',
+          draftBadge: 'Draft',
+          loadInEditor: 'Load into editor',
+          deleteAction: 'Delete'
+        }
+  ), [locale]);
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: number | null }>({
     isOpen: false,
@@ -27,34 +87,37 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
     status: undefined
   });
 
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
       const response = await CourseControllerService.getAuthorCourses(user.id);
-      // Backend Standardized Response Handling
-      const responseData = (response as any).data || response;
+      const responseData = Array.isArray(response)
+        ? response
+        : typeof response === 'object' && response !== null && 'data' in response
+          ? (response as { data?: CourseResponse[] }).data
+          : [];
       setCourses(responseData || []);
     } catch (error) {
-      console.error("Erreur lors de la récupération des cours:", error);
+      console.error(content.fetchError, error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [content.fetchError, user]);
 
   // Fetch courses from backend on mount or when user changes
   useEffect(() => {
     fetchCourses();
-  }, [user]);
+  }, [fetchCourses]);
 
   const handleDelete = async (id: number) => {
     try {
       await CourseControllerService.deleteCourse(id);
       setCourses(prev => prev.filter(c => c.id !== id));
-      toast.success("Cours supprimé avec succès.");
+      toast.success(content.deleteSuccess);
     } catch (error) {
       console.error("Erreur lors de la suppression du cours:", error);
-      toast.error("Impossible de supprimer le cours.");
+      toast.error(content.deleteError);
     }
   };
 
@@ -63,12 +126,12 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
     try {
       await CourseControllerService.updateCourseStatus(id, newStatus);
       setCourses(prev => prev.map(c =>
-        c.id === id ? { ...c, status: newStatus as any } : c
+        c.id === id ? { ...c, status: newStatus as CourseResponse.status } : c
       ));
-      toast.success(newStatus === 'PUBLISHED' ? "Cours publié !" : "Cours repassé en brouillon.");
+      toast.success(newStatus === 'PUBLISHED' ? content.published : content.draft);
     } catch (error) {
       console.error("Erreur lors du changement de statut:", error);
-      toast.error("Impossible de modifier le statut.");
+      toast.error(content.statusError);
     }
   };
 
@@ -76,8 +139,8 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
     onLoadCourse(
       course.content,
       String(course.id),
-      course.title || "Sans titre",
-      course.category || "Informatique",
+      course.title || content.untitled,
+      course.category || content.defaultCategory,
       course.description || "",
       course.photoUrl
     );
@@ -85,16 +148,16 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'Date inconnue';
+    if (!dateStr) return content.unknownDate;
     try {
-      return new Date(dateStr).toLocaleString('fr-FR', {
+      return new Date(dateStr).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
       });
-    } catch (e) {
+    } catch {
       return dateStr;
     }
   };
@@ -108,9 +171,9 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
           if (deleteConfirm.id !== null) handleDelete(deleteConfirm.id);
           setDeleteConfirm({ isOpen: false, id: null });
         }}
-        title="Supprimer le cours"
-        message="Voulez-vous vraiment supprimer ce cours ? Cette action est irréversible."
-        confirmText="Supprimer"
+        title={content.deleteTitle}
+        message={content.deleteMessage}
+        confirmText={content.deleteConfirm}
         type="danger"
       />
       <ConfirmModal
@@ -120,17 +183,17 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
           if (statusConfirm.id !== null) handleTogglePublish(statusConfirm.id, statusConfirm.status);
           setStatusConfirm({ isOpen: false, id: null, status: undefined });
         }}
-        title={statusConfirm.status === 'PUBLISHED' ? 'Dépublier le cours' : 'Publier le cours'}
+        title={statusConfirm.status === 'PUBLISHED' ? content.unpublishTitle : content.publishTitle}
         message={statusConfirm.status === 'PUBLISHED'
-          ? 'Voulez-vous repasser ce cours en brouillon ? Il ne sera plus visible par les étudiants.'
-          : 'Voulez-vous publier ce cours ? Il deviendra visible par tous les étudiants.'
+          ? content.unpublishMessage
+          : content.publishMessage
         }
-        confirmText={statusConfirm.status === 'PUBLISHED' ? 'Dépublier' : 'Publier'}
+        confirmText={statusConfirm.status === 'PUBLISHED' ? content.unpublishConfirm : content.publishConfirm}
         type={statusConfirm.status === 'PUBLISHED' ? 'warning' : 'info'}
       />
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Mes Cours</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{content.header}</h2>
         <button
           onClick={onClose}
           className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -158,7 +221,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
           </div>
         ) : courses.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-8">
-            Aucun cours sauvegardé pour le moment.
+            {content.empty}
           </p>
         ) : (
           <div className="space-y-3">
@@ -174,21 +237,23 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                   className="group rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow bg-gray-50 dark:bg-gray-700"
                 >
                   <div className="flex items-start gap-3 justify-between">
-                    {(course.photoUrl || (course as any).coverImage) && (
+                    {(course.photoUrl || course.coverImage) && (
                       <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-600">
-                        <img
-                          src={course.photoUrl || (course as any).coverImage}
-                          alt={course.title}
+                        <Image
+                          src={course.photoUrl || course.coverImage || '/images/Capture2.png'}
+                          alt={course.title || content.untitled}
+                          width={64}
+                          height={64}
                           className="w-full h-full object-cover"
                         />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 dark:text-white truncate pr-2" title={course.title}>
-                        {course.title || "Sans titre"}
+                        {course.title || content.untitled}
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Créé le {formatDate(course.createdAt)}
+                        {content.createdOn} {formatDate(course.createdAt)}
                       </p>
                       <span
                         className={`inline-block mt-2 px-2 py-1 text-xs font-medium rounded-full ${course.status === 'PUBLISHED'
@@ -196,7 +261,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                           : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
                           }`}
                       >
-                        {course.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
+                        {course.status === 'PUBLISHED' ? content.publishedBadge : content.draftBadge}
                       </span>
                     </div>
 
@@ -204,14 +269,14 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                       <button
                         onClick={() => handleLoad(course)}
                         className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
-                        title="Charger dans l'éditeur"
+                        title={content.loadInEditor}
                       >
                         <FaBook className="text-sm text-blue-600 dark:text-blue-400" />
                       </button>
                       <button
                         onClick={() => course.id && setStatusConfirm({ isOpen: true, id: course.id, status: course.status })}
                         className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
-                        title={course.status === 'PUBLISHED' ? 'Dépublier' : 'Publier'}
+                        title={course.status === 'PUBLISHED' ? content.unpublishConfirm : content.publishConfirm}
                       >
                         {course.status === 'PUBLISHED' ? (
                           <FaPaperPlane className="text-sm text-gray-600 dark:text-gray-400" />
@@ -222,7 +287,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                       <button
                         onClick={() => course.id && setDeleteConfirm({ isOpen: true, id: course.id })}
                         className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                        title="Supprimer"
+                        title={content.deleteAction}
                       >
                         <FaTrash className="text-sm text-red-600 dark:text-red-400" />
                       </button>

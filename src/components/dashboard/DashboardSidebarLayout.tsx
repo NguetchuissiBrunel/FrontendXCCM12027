@@ -1,8 +1,9 @@
 'use client';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
 interface Props {
@@ -14,17 +15,30 @@ function SidebarLayoutInner({ children, role }: Props) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const { user } = useAuth();
-    const [userData, setUserData] = useState<any>(null);
-
-    useEffect(() => {
+    const t = useTranslations('sidebar');
+    const userData = useMemo(() => {
         if (user) {
-            setUserData(user);
-        } else {
-            const stored = localStorage.getItem('currentUser');
-            if (stored) {
-                setUserData(JSON.parse(stored));
-            }
+            return user as {
+                firstName?: string;
+                lastName?: string;
+                specialization?: string;
+                level?: string;
+                grade?: string;
+            };
         }
+
+        if (typeof window === 'undefined') {
+            return null;
+        }
+
+        const stored = localStorage.getItem('currentUser');
+        return stored ? JSON.parse(stored) as {
+            firstName?: string;
+            lastName?: string;
+            specialization?: string;
+            level?: string;
+            grade?: string;
+        } : null;
     }, [user]);
 
     const getActiveTab = () => {
@@ -35,7 +49,7 @@ function SidebarLayoutInner({ children, role }: Props) {
             if (pathname.includes('/echeances')) return 'echeances';
             return 'accueil';
         } else {
-            const tab = searchParams.get('tab');
+            const tab = searchParams?.get('tab');
             if (tab) return tab;
             if (pathname.includes('/inscriptions')) return 'inscriptions';
             if (pathname.includes('/exercises')) return 'exercices';
@@ -45,8 +59,10 @@ function SidebarLayoutInner({ children, role }: Props) {
         }
     };
 
-    const displayName = userData ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() : 'Chargement...';
-    const userLevel = userData ? (userData.specialization || userData.level || userData.grade || (role === 'student' ? 'Étudiant' : 'Enseignant')) : '...';
+    const displayName = userData ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() : t('loading');
+    const userLevel = userData
+        ? (userData.specialization || userData.level || userData.grade || (role === 'student' ? t('roles.student') : t('roles.teacher')))
+        : '...';
 
     return (
         <div className="flex min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">

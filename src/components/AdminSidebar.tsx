@@ -5,24 +5,27 @@ import Image from 'next/image';
 import { FaUsers, FaChalkboardTeacher, FaBook, FaThLarge, FaSignOutAlt, FaUserGraduate, FaUser } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const AdminSidebar = () => {
     const pathname = usePathname();
     const { logout, user } = useAuth();
+    const t = useTranslations('adminSidebar');
 
     const menuItems = [
-        { name: 'Vue d\'ensemble', icon: <FaThLarge />, path: '/admindashboard' },
-        { name: 'Étudiants', icon: <FaUsers />, path: '/admindashboard/students' },
-        { name: 'Enseignants', icon: <FaChalkboardTeacher />, path: '/admindashboard/teachers' },
-        { name: 'Cours', icon: <FaBook />, path: '/admindashboard/courses' },
-        { name: 'Enrollements', icon: <FaUserGraduate />, path: '/admindashboard/enrollments' },
-        { name: 'Administrateurs', icon: <FaUser />, path: '/admindashboard/admins' },
+        { name: t('overview'), icon: <FaThLarge />, path: '/admindashboard' },
+        { name: t('students'), icon: <FaUsers />, path: '/admindashboard/students' },
+        { name: t('teachers'), icon: <FaChalkboardTeacher />, path: '/admindashboard/teachers' },
+        { name: t('courses'), icon: <FaBook />, path: '/admindashboard/courses' },
+        { name: t('enrollments'), icon: <FaUserGraduate />, path: '/admindashboard/enrollments' },
+        { name: t('administrators'), icon: <FaUser />, path: '/admindashboard/admins' },
     ];
 
     return (
         <div className="w-64 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed left-0 top-0 z-50 shadow-xl transition-all duration-300">
             {/* Logo/Branding Section */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 space-y-4">
                 <Link href="/admindashboard" className="flex items-center gap-3 px-2 py-1 group">
                     <div className="relative w-10 h-10 flex-shrink-0">
                         <Image
@@ -36,9 +39,10 @@ const AdminSidebar = () => {
                         <h1 className="font-black text-xl bg-gradient-to-br from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">
                             XCCM1
                         </h1>
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest -mt-1">Administrateur</span>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest -mt-1">{t('administrator')}</span>
                     </div>
                 </Link>
+                <LanguageSwitcher compact className="px-2" />
             </div>
 
             <nav className="flex-1 p-4 space-y-2 mt-4">
@@ -69,7 +73,7 @@ const AdminSidebar = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold truncate text-slate-900 dark:text-white">
-                                {user?.firstName || user?.lastName ? `${user?.firstName || ''} ${user?.lastName || ''}` : 'Administrateur'}
+                                {user?.firstName || user?.lastName ? `${user?.firstName || ''} ${user?.lastName || ''}` : t('administrator')}
                             </p>
                             <p className="text-[10px] text-slate-500 truncate uppercase tracking-tight">{user?.email || 'admin@gmail.com'}</p>
                         </div>
@@ -80,7 +84,7 @@ const AdminSidebar = () => {
                     className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-all font-semibold"
                 >
                     <FaSignOutAlt />
-                    <span>Déconnexion</span>
+                    <span>{t('logout')}</span>
                 </button>
             </div>
         </div>

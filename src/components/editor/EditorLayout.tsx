@@ -425,7 +425,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     const element = editorDom.querySelector(`[data-id="${itemId}"]`);
 
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus the editor to ensure proper interaction
+      editorInstance.view.focus();
+      
+      // Scroll element to the beginning of viewport (top alignment)
+      // Using 'start' instead of 'center' for accurate positioning at content start
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 

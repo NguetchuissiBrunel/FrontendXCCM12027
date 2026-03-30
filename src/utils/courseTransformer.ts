@@ -96,48 +96,42 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
     };
 
     /**
-     * Injecte récursivement les numéros de la TOC dans les attributs des nœuds TipTap
+     * Filtre les nœuds TipTap pour retirer les notions et exercices du flux de texte principal
+     * car ils sont affichés dans des sections dédiées.
      */
-    const injectNumbering = (nodes: any[], numberMap: Map<string, string>) => {
-        if (!nodes || !Array.isArray(nodes)) return;
-        nodes.forEach(node => {
-            if (node.attrs?.id && numberMap.has(node.attrs.id)) {
-                node.attrs.number = numberMap.get(node.attrs.id);
-            }
-            if (node.content) {
-                injectNumbering(node.content, numberMap);
-            }
-        });
+    const filterSpecialNodes = (nodes: any[]): any[] => {
+        if (!nodes || !Array.isArray(nodes)) return nodes;
+        return nodes.filter(node => node.type !== 'notion' && node.type !== 'exercice' && node.type !== 'exercise').map(node => ({
+            ...node,
+            content: node.content ? filterSpecialNodes(node.content) : undefined
+        }));
     };
-
-    // Build a map of ID -> Number from TOC
-    const numberMap = new Map<string, string>();
-    const flattenTOCItems = (items: TableOfContentsItem[]) => {
-        items.forEach(item => {
-            if (item.id) numberMap.set(item.id, item.number);
-            if (item.children) flattenTOCItems(item.children);
-        });
-    };
-    flattenTOCItems(toc);
-
-    // Inject numbering into the original content before processing
-    if (contentJSON.content) {
-        injectNumbering(contentJSON.content, numberMap);
-    }
-
-    const filterSpecialNodes = (nodes: any[]): any[] => nodes;
 
     // 2. Parcourir l'arbre TOC pour construire la structure
+    let extractedCourseTitle: string | undefined = undefined;
+    let extractedCourseIntroduction: string | undefined = undefined;
+
     const processItems = (items: TableOfContentsItem[]): Section[] => {
         const sections: Section[] = [];
 
         items.forEach(item => {
+            if (item.type === 'course') {
+                extractedCourseTitle = extractedCourseTitle || item.title;
+                extractedCourseIntroduction = extractedCourseIntroduction || item.attrs?.introduction || '';
+
+                // Convert course children to sections (useful when no explicit section nodes exist)
+                if (item.children && item.children.length > 0) {
+                    sections.push(...processItems(item.children));
+                }
+
+                return;
+            }
+
             if (item.type === 'section') {
                 const section: Section = {
                     id: item.id,
                     title: item.title || "Section sans titre",
                     introduction: item.attrs?.introduction || "",
-                    number: item.number,
                     chapters: [],
                     paragraphs: [],
                     exercises: [],
@@ -151,7 +145,6 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                             id: child.id,
                             title: child.title || "Chapitre sans titre",
                             introduction: child.attrs?.introduction || "",
-                            number: child.number,
                             paragraphs: [],
                             exercises: [],
                             children: [],
@@ -164,7 +157,6 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                     id: grandChild.id,
                                     title: grandChild.title || "Paragraphe sans titre",
                                     introduction: grandChild.attrs?.introduction || "",
-                                    number: grandChild.number,
                                     content: filterSpecialNodes(grandChild.content || []),
                                     notions: [],
                                     exercises: [],
@@ -182,8 +174,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                             title: cc.title || "Exercice",
                                             content: cc.content,
                                             questions: cc.attrs?.questions,
-                                            id: cc.id,
-                                            number: cc.number
+                                            id: cc.id
                                         };
                                         paragraph.exercises?.push(exData);
                                         paragraph.subItems!.push({ type: 'exercise', data: exData });
@@ -197,8 +188,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                     title: grandChild.title || "Exercice",
                                     content: grandChild.content,
                                     questions: grandChild.attrs?.questions,
-                                    id: grandChild.id,
-                                    number: grandChild.number
+                                    id: grandChild.id
                                 };
                                 chapter.exercises?.push(exData);
                                 chapter.subItems!.push({ type: 'exercise', data: exData });
@@ -239,8 +229,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                     title: cc.title || "Exercice",
                                     content: cc.content,
                                     questions: cc.attrs?.questions,
-                                    id: cc.id,
-                                    number: cc.number
+                                    id: cc.id
                                 };
                                 paragraph.exercises?.push(exData);
                                 paragraph.subItems!.push({ type: 'exercise', data: exData });
@@ -254,8 +243,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                             title: child.title || "Exercice",
                             content: child.content,
                             questions: child.attrs?.questions,
-                            id: child.id,
-                            number: child.number
+                            id: child.id
                         };
                         section.exercises?.push(exData);
                         section.subItems!.push({ type: 'exercise', data: exData });
@@ -287,9 +275,17 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
     const sections = processItems(toc);
 
     // 3. Retourner l'objet final formaté
+    const computedTitle = (apiCourse.title && apiCourse.title.toString().trim() && apiCourse.title.toString().trim() !== 'Nouveau cours')
+        ? apiCourse.title
+        : (extractedCourseTitle || "Titre non disponible");
+
+    const computedIntroduction = (apiCourse.description && apiCourse.description.toString().trim())
+        ? apiCourse.description
+        : (extractedCourseIntroduction || "");
+
     return {
         id: apiCourse.id || 0,
-        title: apiCourse.title || "Titre non disponible",
+        title: computedTitle,
         category: apiCourse.category || "Formation",
         image: apiCourse.coverImage || apiCourse.image || "/images/Capture2.png",
         viewCount: apiCourse.viewCount || 0,
@@ -303,7 +299,7 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
             image: apiCourse.author?.image || apiCourse.author?.photoUrl || "",
             designation: apiCourse.author?.designation
         },
-        introduction: apiCourse.description || "",
+        introduction: computedIntroduction,
         conclusion: "",
         learningObjectives: [],
         sections: sections

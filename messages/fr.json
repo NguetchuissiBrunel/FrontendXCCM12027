@@ -6,6 +6,17 @@
       "en": "English"
     }
   },
+  
+  "course": {
+    "sidebar": {
+      "summary": "Sommaire",
+      "search": "Rechercher dans le contenu...",
+      "download": "Télécharger le cours",
+      "title": "Contenu du cours",
+      "enrolled": "Inscrit",
+      "notEnrolled": "S'inscrire au cours"
+    }
+  },
   "sidebar": {
     "online": "En ligne",
     "mainMenu": "Menu principal",

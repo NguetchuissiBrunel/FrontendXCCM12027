@@ -1282,6 +1282,34 @@
       "navTitle": "Menu de Navigation",
       "navDesc": "Utilisez cette barre latérale pour naviguer facilement entre toutes les sections de votre espace enseignant."
     },
+    "profInscriptions": {
+      "headerTitle": "Gestion des Inscriptions",
+      "headerDesc": "Consultez et gérez les demandes d'accès des étudiants à vos contenus.",
+      "listTitle": "Liste d'attente",
+      "listDesc": "Acceptez ou refusez les demandes d'inscription reçues pour vos cours."
+    },
+    "profClasses": {
+      "headerTitle": "Gestion de vos Classes",
+      "headerDesc": "C'est ici que vous structurez vos classes et cours.",
+      "listTitle": "Vos Classes",
+      "listDesc": "Retrouvez vos classes existantes ou créez-en de nouvelles."
+    },
+    "profCompositions": {
+      "headerTitle": "Gestion de vos Compositions",
+      "headerDesc": "Naviguez et organisez vos compositions.",
+      "listTitle": "Vos Compositions",
+      "listDesc": "Accédez à vos différents cours structurés ou créez-en de nouveaux."
+    },
+    "profExercises": {
+      "headerTitle": "Tous mes exercices",
+      "headerDesc": "Retrouvez tous les exercices liés à vos cours.",
+      "statsTitle": "Statistiques Globales",
+      "statsDesc": "Gérez vos exercices corrigés ou en attente d'une correction.",
+      "filtersTitle": "Rechercher et Filtrer",
+      "filtersDesc": "Trouvez un exercice spécifique ou filtrez par statut.",
+      "listTitle": "Liste des Exercices",
+      "listDesc": "Cliquez sur 'Gérer' pour consulter et traiter les soumissions."
+    },
     "buttons": {
       "helpText": "Besoin d'aide ?",
       "helpTitle": "Revoir le tutoriel",

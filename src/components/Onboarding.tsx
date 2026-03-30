@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, Sparkles, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 interface Step {
@@ -15,27 +15,66 @@ interface Step {
 
 const Onboarding = () => {
     const rawPathname = usePathname() || '';
+    const searchParams = useSearchParams();
+    const currentTab = searchParams?.get('tab') || 'accueil';
     const t = useTranslations('onboarding');
 
-    const TOUR_STEPS: Record<string, Step[]> = {
-        '/etudashboard': [
-            { target: '#welcome-section', title: t('etu.welcomeTitle'), description: t('etu.welcomeDesc'), position: 'bottom' },
-            { target: '#stats-overview', title: t('etu.statsTitle'), description: t('etu.statsDesc'), position: 'left' },
-            { target: '#my-courses', title: t('etu.coursesTitle'), description: t('etu.coursesDesc'), position: 'top' },
-            { target: '#pending-exercises', title: t('etu.pendingTitle'), description: t('etu.pendingDesc'), position: 'left' },
-            { target: '#sidebar-nav', title: t('etu.navTitle'), description: t('etu.navDesc'), position: 'right' }
-        ],
-        '/profdashboard': [
+    // Mémoriser profSteps et TOUR_STEPS pour éviter des recréations inutiles
+    const profSteps: Record<string, Step[]> = useMemo(() => ({
+        'accueil': [
             { target: '#dashboard-header', title: t('prof.dashboardTitle'), description: t('prof.dashboardDesc'), position: 'bottom' },
             { target: '#quick-actions', title: t('prof.actionsTitle'), description: t('prof.actionsDesc'), position: 'bottom' },
             { target: '#teacher-stats', title: t('prof.statsTitle'), description: t('prof.statsDesc'), position: 'bottom' },
             { target: '#profile-card', title: t('prof.profileTitle'), description: t('prof.profileDesc'), position: 'top' },
             { target: '#exercise-actions', title: t('prof.exercisesTitle'), description: t('prof.exercisesDesc'), position: 'top' },
             { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
+        ],
+        'inscriptions': [
+            { target: '#inscriptions-header', title: t('profInscriptions.headerTitle'), description: t('profInscriptions.headerDesc'), position: 'bottom' },
+            { target: '#inscriptions-list', title: t('profInscriptions.listTitle'), description: t('profInscriptions.listDesc'), position: 'top' },
+            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
+        ],
+        'classes': [
+            { target: '#classes-header', title: t('profClasses.headerTitle'), description: t('profClasses.headerDesc'), position: 'bottom' },
+            { target: '#classes-list', title: t('profClasses.listTitle'), description: t('profClasses.listDesc'), position: 'top' },
+            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
+        ],
+        'compositions': [
+            { target: '#compositions-header', title: t('profCompositions.headerTitle'), description: t('profCompositions.headerDesc'), position: 'bottom' },
+            { target: '#compositions-list', title: t('profCompositions.listTitle'), description: t('profCompositions.listDesc'), position: 'top' },
+            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
+        ],
+        'exercices': [
+            { target: '#exercises-header', title: t('profExercises.headerTitle'), description: t('profExercises.headerDesc'), position: 'bottom' },
+            { target: '#exercises-stats', title: t('profExercises.statsTitle'), description: t('profExercises.statsDesc'), position: 'bottom' },
+            { target: '#exercises-filters', title: t('profExercises.filtersTitle'), description: t('profExercises.filtersDesc'), position: 'bottom' },
+            { target: '#exercises-list', title: t('profExercises.listTitle'), description: t('profExercises.listDesc'), position: 'top' },
+            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
         ]
-    };
+    }), [t]);
 
-    const pathname = Object.keys(TOUR_STEPS).find(key => rawPathname.endsWith(key)) || rawPathname;
+    const TOUR_STEPS: Record<string, Step[]> = useMemo(() => ({
+        '/etudashboard': [
+            { target: '#welcome-section', title: t('etu.welcomeTitle'), description: t('etu.welcomeDesc'), position: 'bottom' },
+            { target: '#stats-overview', title: t('etu.statsTitle'), description: t('etu.statsDesc'), position: 'left' },
+            { target: '#my-courses', title: t('etu.coursesTitle'), description: t('etu.coursesDesc'), position: 'top' },
+            { target: '#pending-exercises', title: t('etu.pendingTitle'), description: t('etu.pendingDesc'), position: 'left' },
+            { target: '#sidebar-nav', title: t('etu.navTitle'), description: t('etu.navDesc'), position: 'right' }
+        ]
+    }), [t]);
+
+    let matchedKey = Object.keys(TOUR_STEPS).find(key => rawPathname.endsWith(key)) || rawPathname;
+    let localSteps: Step[] = [];
+    let localStorageKey = '';
+
+    if (rawPathname.includes('/profdashboard')) {
+        localSteps = profSteps[currentTab] || profSteps['accueil'];
+        localStorageKey = `hasSeenTour_/profdashboard_${currentTab}`;
+    } else if (TOUR_STEPS[matchedKey]) {
+        localSteps = TOUR_STEPS[matchedKey];
+        localStorageKey = `hasSeenTour_${matchedKey}`;
+    }
+
     const [isActive, setIsActive] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -64,9 +103,9 @@ const Onboarding = () => {
     }, [isActive, currentStep, steps]);
 
     useEffect(() => {
-        if (TOUR_STEPS[pathname]) {
-            setSteps(TOUR_STEPS[pathname]);
-            const hasSeen = localStorage.getItem(`hasSeenTour_${pathname}`);
+        if (localSteps.length > 0) {
+            setSteps(localSteps);
+            const hasSeen = localStorage.getItem(localStorageKey);
             if (!hasSeen) {
                 // Wait a bit for the page to render
                 const timer = setTimeout(() => {
@@ -78,7 +117,7 @@ const Onboarding = () => {
             setIsActive(false);
             setSteps([]);
         }
-    }, [pathname]);
+    }, [rawPathname, currentTab, localStorageKey, localSteps]);
 
     useEffect(() => {
         updateTargetRect();
@@ -107,7 +146,7 @@ const Onboarding = () => {
     const handleEnd = () => {
         setIsActive(false);
         setCurrentStep(0);
-        localStorage.setItem(`hasSeenTour_${pathname}`, 'true');
+        localStorage.setItem(localStorageKey, 'true');
     };
 
     const handleRestart = () => {

@@ -153,7 +153,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
 
       {/* En-tête de la page Mes Classes */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6 mt-4">
+        <div id={mode === 'classes' ? 'classes-header' : 'compositions-header'} className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6 mt-4">
           <div>
             <button
               onClick={() => router.push('/profdashboard?tab=accueil')}
@@ -175,9 +175,10 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
           </div>
         </div>
 
-        {currentCompositions.length > 0 ? (
-          <CompositionsCard
-            title={mode === 'classes' ? "Mes Classes de cours" : "Mes Compositions"}
+        <div id={mode === 'classes' ? 'classes-list' : 'compositions-list'}>
+          {currentCompositions.length > 0 ? (
+            <CompositionsCard
+              title={mode === 'classes' ? "Mes Classes de cours" : "Mes Compositions"}
             compositions={currentCompositions}
             onDelete={mode === 'classes' ? handleDeleteClass : handleDeleteCourse}
             onCreateClick={() => setIsModalOpen(true)}
@@ -222,6 +223,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Section de débogage optionnelle (à cacher en production) */}

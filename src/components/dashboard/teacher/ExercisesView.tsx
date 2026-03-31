@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslations } from 'next-intl';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
@@ -102,6 +103,7 @@ const useExerciseSync = () => {
 // ============ COMPOSANT PRINCIPAL ============
 
 export default function ExercisesView() {
+  const t = useTranslations('teacherDashboard');
   const router = useRouter();
   const { user } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
@@ -245,12 +247,12 @@ export default function ExercisesView() {
       console.log(`🎯 ${allExercises.length} exercices chargés avec succès`);
 
       if (forceRefresh) {
-        toast.success(`${allExercises.length} exercices actualisés`);
+        toast.success(t('exercises.syncSuccess', { count: allExercises.length }));
       }
 
     } catch (error) {
       console.error('❌ Erreur chargement exercices:', error);
-      toast.error('Erreur de chargement des exercices');
+      toast.error(t('exercises.loadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -318,7 +320,7 @@ export default function ExercisesView() {
 
   const handleManageExercise = (exercise: ExerciseWithStats) => {
     if (!exercise.id || !exercise.courseId) {
-      toast.error('Exercice invalide');
+      toast.error(t('exercises.invalidExercise'));
       return;
     }
 

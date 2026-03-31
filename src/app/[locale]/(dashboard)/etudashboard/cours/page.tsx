@@ -9,10 +9,11 @@ import { EnrollmentService } from '@/utils/enrollmentService';
 import { useCourses } from '@/hooks/useCourses';
 import { EnrichedCourse } from '@/types/enrollment';
 import toast from 'react-hot-toast';
-
+import { useTranslations } from 'next-intl';
 import { useLoading } from '@/contexts/LoadingContext';
 
 export default function StudentCourses() {
+  const t = useTranslations('studentCourses');
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [loading, setLoading] = useState(true);
@@ -45,37 +46,32 @@ export default function StudentCourses() {
     const fetchMyEnrollments = async () => {
       try {
         setLoading(true);
-        // Utiliser le service centralisé qui gère correctement la structure de réponse API
         const enrollments = await EnrollmentService.getMyEnrollments();
 
-        // Joindre les informations des cours
         const enriched = (enrollments || []).map((enrollment) => {
           const courseDetail = allCourses.find(c => c.id === enrollment.courseId);
 
-          // Si on trouve les détails du cours, on les utilise
           if (courseDetail) {
             return {
               id: courseDetail.id,
               title: courseDetail.title,
-              category: courseDetail.category || 'Formation',
+              category: courseDetail.category || t('categoryDefault'),
               image: courseDetail.image,
               author: courseDetail.author,
               enrollment: {
                 ...enrollment,
-                status: enrollment.status // Ensure status is passed
+                status: enrollment.status
               }
             } as unknown as EnrichedCourse;
           }
 
-          // Sinon (si useCourses n'a pas encore chargé ou cours non trouvé dans la liste globale), 
-          // on retourne un objet partiel pour afficher au moins l'inscription
           return {
             id: enrollment.courseId,
-            title: `Cours #${enrollment.courseId}`,
-            category: 'Cours',
-            image: '', // Placeholder handled in UI
+            title: `${t('coursePrefix')}${enrollment.courseId}`,
+            category: t('categoryDefault'),
+            image: '',
             author: {
-              name: 'Inconnu',
+              name: t('unknownAuthor'),
               image: ''
             },
             enrollment: {
@@ -88,17 +84,15 @@ export default function StudentCourses() {
         setEnrolledCourses(enriched);
       } catch (err: any) {
         console.error('Erreur lors du chargement des inscriptions:', err);
-        setError("Impossible de charger vos cours. Veuillez réessayer plus tard.");
+        setError(t('error.loadFailed'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchMyEnrollments();
-  }, [isAuthenticated, user, authLoading, coursesLoading, allCourses, router]);
+  }, [isAuthenticated, user, authLoading, coursesLoading, allCourses, router, t]);
 
-
-  // Fonction pour formater la date
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
@@ -108,24 +102,23 @@ export default function StudentCourses() {
         year: 'numeric'
       });
     } catch {
-      return 'Date inconnue';
+      return t('unknownDate');
     }
   };
 
   const handleUnenroll = async (enrollmentId: number) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir vous désinscrire de ce cours ?")) {
+    if (!window.confirm(t('unenrollConfirm'))) {
       return;
     }
 
     try {
       await EnrollmentService.unenroll(enrollmentId);
-      toast.success("Désinscription réussie");
+      toast.success(t('unenrollSuccess'));
 
-      // Recharger les données
-      window.location.reload(); // Simple reload for this page
+      window.location.reload();
     } catch (error: any) {
       console.error("Erreur lors de la désinscription:", error);
-      toast.error(error.message || "Erreur lors de la désinscription");
+      toast.error(error.message || t('unenrollError'));
     }
   };
 
@@ -138,13 +131,13 @@ export default function StudentCourses() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md border border-red-100 dark:border-red-900/30">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Oups !</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('error.title')}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors font-semibold"
           >
-            Réessayer
+            {t('common.retry')}
           </button>
         </div>
       </div>
@@ -154,12 +147,12 @@ export default function StudentCourses() {
   if (!user) return null;
 
   const displayName = `${user.firstName || ''} ${user.lastName || ''}`;
-  const userLevel = user.specialization || (user as any).level || 'Étudiant';
+  const userLevel = user.specialization || (user as any).level || t('studentDefault');
 
   return (
     <>
       <div className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-8">Mes Cours</h1>
+        <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-8">{t('title')}</h1>
 
         {enrolledCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -168,12 +161,10 @@ export default function StudentCourses() {
                 key={course.id}
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 border border-purple-200 dark:border-purple-900/30 hover:shadow-xl transition-all duration-300"
               >
-                {/* Catégorie */}
                 <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide mb-4 block">
                   {course.category}
                 </span>
 
-                {/* Titre et Statut */}
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2">
                     {course.title}
@@ -182,12 +173,11 @@ export default function StudentCourses() {
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${course.enrollment.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
                       course.enrollment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
                       }`}>
-                      {course.enrollment.status === 'APPROVED' ? 'Actif' : course.enrollment.status === 'PENDING' ? 'Attente' : course.enrollment.status}
+                      {course.enrollment.status === 'APPROVED' ? t('active') : course.enrollment.status === 'PENDING' ? t('pending') : course.enrollment.status}
                     </span>
                   )}
                 </div>
 
-                {/* Auteur */}
                 <div className="flex items-center mb-4">
                   <div className="relative w-8 h-8 mr-3">
                     <img
@@ -208,11 +198,10 @@ export default function StudentCourses() {
                   </div>
                 </div>
 
-                {/* Progression */}
                 {course.enrollment && (
                   <div className="mb-4">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 dark:text-gray-400">Progression</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('progress')}</span>
                       <span className="font-semibold text-purple-600 dark:text-purple-400">
                         {course.enrollment.progress}%
                       </span>
@@ -226,15 +215,13 @@ export default function StudentCourses() {
                   </div>
                 )}
 
-                {/* Date d'enrôlement */}
                 {course.enrollment && (
                   <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <Clock className="h-4 w-4 mr-1" />
-                    <span>Inscrit le {formatDate(course.enrollment.enrolledAt)}</span>
+                    <span>{t('enrolledOn')} {formatDate(course.enrollment.enrolledAt)}</span>
                   </div>
                 )}
 
-                {/* Boutons d'action */}
                 <div className="flex gap-2">
                   <Link href={`/courses/${course.id}`} className="flex-1">
                     <button
@@ -244,7 +231,7 @@ export default function StudentCourses() {
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         }`}
                     >
-                      {course.enrollment?.status === 'APPROVED' ? 'Voir le cours' : 'En attente'}
+                      {course.enrollment?.status === 'APPROVED' ? t('viewCourse') : t('pending')}
                     </button>
                   </Link>
 
@@ -252,7 +239,7 @@ export default function StudentCourses() {
                     <button
                       onClick={() => handleUnenroll(course.enrollment!.id)}
                       className="px-3 py-2 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center justify-center"
-                      title="Se désinscrire"
+                      title={t('unenrollTooltip')}
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -264,20 +251,19 @@ export default function StudentCourses() {
             ))}
           </div>
         ) : (
-          // Message quand aucun cours enrôlé
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
             <div className="flex flex-col items-center justify-center text-center">
               <BookOpen className="h-20 w-20 text-gray-400 dark:text-gray-500 mb-6" />
               <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-4">
-                Vous n'avez pas encore de cours
+                {t('noCourses.title')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 max-w-2xl text-lg mb-8">
-                Explorez la bibliothèque pour trouver des cours intéressants et commencez votre apprentissage !
+                {t('noCourses.description')}
               </p>
               <Link href="/bibliotheque">
                 <button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-3">
                   <BookOpen className="h-6 w-6" />
-                  Explorer la bibliothèque
+                  {t('exploreLibrary')}
                 </button>
               </Link>
             </div>

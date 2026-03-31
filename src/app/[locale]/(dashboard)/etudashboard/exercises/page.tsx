@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { EnrichedCourse } from '@/types/enrollment';
+import { useTranslations } from 'next-intl';
 
 // Données combinées exercice + statut étudiant
 interface StudentExerciseData {
@@ -65,6 +66,9 @@ interface StatusBadge {
 }
 
 export default function StudentExercisesPage() {
+  const t = useTranslations('studentExercises');
+  const a = useTranslations('submissionDetails.actions');
+  const c = useTranslations('CourseExercises');
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
@@ -616,7 +620,7 @@ export default function StudentExercisesPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  Mes exercices
+                  t('title')
                 </h1>
                 {refreshing && (
                   <Loader2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-spin" />
@@ -633,7 +637,7 @@ export default function StudentExercisesPage() {
                 <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full text-white">
                   <Target className="w-4 h-4" />
                   <span className="text-sm font-medium">
-                    {stats.graded}/{stats.total} notés
+                    {stats.graded}/{stats.total} {t('stats.graded')}
                   </span>
                 </div>
               )}
@@ -644,7 +648,7 @@ export default function StudentExercisesPage() {
                 className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualiser
+                {a('refresh')}
               </button>
             </div>
           </div>
@@ -660,7 +664,7 @@ export default function StudentExercisesPage() {
                   <div className="text-xl font-bold text-gray-900 dark:text-white">
                     {stats.total}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('stats.total')}</div>
                 </div>
               </div>
             </div>
@@ -674,7 +678,7 @@ export default function StudentExercisesPage() {
                   <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
                     {stats.notStarted}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">À commencer</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('stats.notStarted')}</div>
                 </div>
               </div>
             </div>
@@ -688,7 +692,7 @@ export default function StudentExercisesPage() {
                   <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
                     {stats.inProgress}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">En cours</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('stats.inProgress')}</div>
                 </div>
               </div>
             </div>
@@ -702,7 +706,7 @@ export default function StudentExercisesPage() {
                   <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
                     {stats.submitted}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Soumis</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('stats.submitted')}</div>
                 </div>
               </div>
             </div>
@@ -716,7 +720,7 @@ export default function StudentExercisesPage() {
                   <div className="text-xl font-bold text-green-600 dark:text-green-400">
                     {stats.graded}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Notés</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('stats.graded')}</div>
                 </div>
               </div>
             </div>
@@ -799,14 +803,14 @@ export default function StudentExercisesPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center border border-red-200 dark:border-red-800">
             <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-2">
-              Erreur de chargement
+              {t('error.loadError')}
             </h3>
             <p className="text-red-700 dark:text-red-400 mb-6">{error}</p>
             <button
               onClick={handleRefresh}
               className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
             >
-              Réessayer
+              {a('retry')}
             </button>
           </div>
         ) : filteredExercises.length === 0 ? (
@@ -816,14 +820,14 @@ export default function StudentExercisesPage() {
             </div>
             <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
               {searchTerm || selectedStatus !== 'all' || selectedCourse !== 'all'
-                ? 'Aucun exercice trouvé'
+                ? t('noExercises.title')
                 : 'Aucun exercice disponible'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
               {searchTerm || selectedStatus !== 'all' || selectedCourse !== 'all'
-                ? 'Aucun exercice ne correspond à vos critères de recherche.'
+                ? t('noExercises.filtered')
                 : enrolledCourses.length === 0
-                  ? 'Vous n\'êtes inscrit à aucun cours approuvé.'
+                  ? t('noExercises.noCourses')
                   : 'Aucun exercice n\'est disponible dans vos cours approuvés.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -835,14 +839,14 @@ export default function StudentExercisesPage() {
                 }}
                 className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                Réinitialiser les filtres
+                {t('resetFilters')}
               </button>
               {enrolledCourses.length === 0 && (
                 <button
                   onClick={() => router.push('/bibliotheque')}
                   className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
                 >
-                  Explorer les cours
+                  {t('exploreCourses')}
                 </button>
               )}
             </div>
@@ -918,7 +922,7 @@ export default function StudentExercisesPage() {
                                 <div className="flex items-center gap-1.5">
                                   <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                   <span>
-                                    Échéance: {formatDate(data.exercise.dueDate)}
+                                    {c('dueDate.label')}: {formatDate(data.exercise.dueDate)}
                                   </span>
                                 </div>
                               </>
@@ -933,7 +937,7 @@ export default function StudentExercisesPage() {
                             <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium text-green-800 dark:text-green-300">
-                                  Votre score
+                                  {c('yourScore')}
                                 </span>
                                 <span className={`text-lg font-bold ${data.submission.score! >= data.exercise.maxScore * 0.8 ? 'text-green-600 dark:text-green-400' :
                                   data.submission.score! >= data.exercise.maxScore * 0.6 ? 'text-yellow-600 dark:text-yellow-400' :
@@ -974,7 +978,7 @@ export default function StudentExercisesPage() {
                                   }`}
                               >
                                 <PlayCircle className="w-5 h-5" />
-                                Commencer
+                                {c('start')}
                               </button>
                             ) : data.studentStatus === 'graded' ? (
                               <button

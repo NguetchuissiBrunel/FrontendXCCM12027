@@ -246,7 +246,7 @@ export default function GradingInterface({
           </div>
 
           <div className="text-right">
-            <div className="text-xs text-gray-500 dark:text-gray-400">Score global</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t('globalScore')}</div>
             <div className={`text-lg font-bold ${getScoreColor(currentTotalScore, exercise.maxScore)}`}>
               {currentTotalScore.toFixed(1)}/{exercise.maxScore}
             </div>
@@ -315,7 +315,7 @@ export default function GradingInterface({
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Réponse de l'étudiant
+                      {t('studentAnswer')}
                     </span>
                   </div>
 
@@ -332,7 +332,7 @@ export default function GradingInterface({
                       )
                     ) : (
                       <p className="text-gray-500 dark:text-gray-400 italic">
-                        Aucune réponse
+                        {t('noAnswer')}
                       </p>
                     )}
                   </div>
@@ -457,7 +457,7 @@ export default function GradingInterface({
                 onClick={onClose}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-sm"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button
                 onClick={handleGrade}
@@ -465,7 +465,7 @@ export default function GradingInterface({
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm"
               >
                 <Save className="w-4 h-4" />
-                {isPending ? '...' : 'Enregistrer'}
+                {isPending ? t('saving') : t('save')}
               </button>
             </div>
           </div>

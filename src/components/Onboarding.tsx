@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, Sparkles, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface Step {
     target: string; // CSS Selector or "body" for general
@@ -12,86 +13,91 @@ interface Step {
     position: 'top' | 'bottom' | 'left' | 'right' | 'center';
 }
 
-const TOUR_STEPS: Record<string, Step[]> = {
-    '/etudashboard': [
-        {
-            target: '#welcome-section',
-            title: 'Bienvenue sur votre espace !',
-            description: 'Ici vous pouvez voir un résumé de votre activité et vos statistiques.',
-            position: 'bottom'
-        },
-        {
-            target: '#stats-overview',
-            title: 'Vos Statistiques',
-            description: 'Gardez un œil sur votre moyenne et vos exercices en attente.',
-            position: 'left'
-        },
-        {
-            target: '#my-courses',
-            title: 'Mes Cours',
-            description: 'Accédez rapidement à tous les cours auxquels vous êtes inscrit.',
-            position: 'top'
-        },
-        {
-            target: '#pending-exercises',
-            title: 'À Faire',
-            description: 'Ne ratez aucun exercice ! Vos tâches en attente sont listées ici.',
-            position: 'left'
-        },
-        {
-            target: '#sidebar-nav',
-            title: 'Navigation',
-            description: 'Utilisez la barre latérale pour naviguer entre les différentes sections.',
-            position: 'right'
-        }
-    ],
-    '/profdashboard': [
-        {
-            target: '#dashboard-header',
-            title: 'Centre de Contrôle',
-            description: 'Gérez vos cours et vos inscriptions depuis cet espace dédié.',
-            position: 'bottom'
-        },
-        {
-            target: '#quick-actions',
-            title: 'Actions Rapides',
-            description: 'Créez un nouveau cours ou gérez les inscriptions en un clic.',
-            position: 'bottom'
-        },
-        {
-            target: '#teacher-stats',
-            title: 'Aperçu Statistique',
-            description: 'Visualisez l\'engagement de vos étudiants sur vos cours.',
-            position: 'bottom'
-        },
-        {
-            target: '#profile-card',
-            title: 'Votre Profil Expert',
-            description: 'Vos performances et informations d\'enseignant sont regroupées ici.',
-            position: 'top'
-        },
-        {
-            target: '#exercise-actions',
-            title: 'Gestion des Exercices',
-            description: 'Accédez rapidement à la création et à la correction d\'exercices.',
-            position: 'top'
-        },
-        {
-            target: '#sidebar-nav',
-            title: 'Menu de Navigation',
-            description: 'Utilisez cette barre latérale pour naviguer facilement entre toutes les sections de votre espace enseignant.',
-            position: 'right'
-        }
-    ]
-};
-
 const Onboarding = () => {
+    const t = useTranslations('onboarding');
     const pathname = usePathname();
     const [isActive, setIsActive] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-    const [steps, setSteps] = useState<Step[]>([]);
-    const tourRef = useRef<HTMLDivElement>(null);
+
+    const getTourSteps = useCallback((): Record<string, Step[]> => ({
+        '/etudashboard': [
+            {
+                target: '#welcome-section',
+                title: t('student.steps.welcome.title'),
+                description: t('student.steps.welcome.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#stats-overview',
+                title: t('student.steps.stats.title'),
+                description: t('student.steps.stats.description'),
+                position: 'left'
+            },
+            {
+                target: '#my-courses',
+                title: t('student.steps.courses.title'),
+                description: t('student.steps.courses.description'),
+                position: 'top'
+            },
+            {
+                target: '#pending-exercises',
+                title: t('student.steps.todo.title'),
+                description: t('student.steps.todo.description'),
+                position: 'left'
+            },
+            {
+                target: '#sidebar-nav',
+                title: t('student.steps.navigation.title'),
+                description: t('student.steps.navigation.description'),
+                position: 'right'
+            }
+        ],
+        '/profdashboard': [
+            {
+                target: '#dashboard-header',
+                title: t('teacher.steps.control.title'),
+                description: t('teacher.steps.control.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#quick-actions',
+                title: t('teacher.steps.quickActions.title'),
+                description: t('teacher.steps.quickActions.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#teacher-stats',
+                title: t('teacher.steps.stats.title'),
+                description: t('teacher.steps.stats.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#profile-card',
+                title: t('teacher.steps.profile.title'),
+                description: t('teacher.steps.profile.description'),
+                position: 'top'
+            },
+            {
+                target: '#exercise-actions',
+                title: t('teacher.steps.exercises.title'),
+                description: t('teacher.steps.exercises.description'),
+                position: 'top'
+            },
+            {
+                target: '#sidebar-nav',
+                title: t('teacher.steps.navigation.title'),
+                description: t('teacher.steps.navigation.description'),
+                position: 'right'
+            }
+        ]
+    }), [t]);
+    const normalizedPath = useMemo(
+        () => pathname?.replace(/^\/(fr|en)(?=\/|$)/, '') || '/',
+        [pathname]
+    );
+    const tours = useMemo(() => getTourSteps(), [getTourSteps]);
+    const steps = useMemo(() => tours[normalizedPath] || [], [tours, normalizedPath]);
 
     const updateTargetRect = useCallback(() => {
         if (!isActive || !steps[currentStep]) return;
@@ -115,9 +121,8 @@ const Onboarding = () => {
     }, [isActive, currentStep, steps]);
 
     useEffect(() => {
-        if (TOUR_STEPS[pathname]) {
-            setSteps(TOUR_STEPS[pathname]);
-            const hasSeen = localStorage.getItem(`hasSeenTour_${pathname}`);
+        if (steps.length > 0) {
+            const hasSeen = localStorage.getItem(`hasSeenTour_${normalizedPath}`);
             if (!hasSeen) {
                 // Wait a bit for the page to render
                 const timer = setTimeout(() => {
@@ -126,16 +131,21 @@ const Onboarding = () => {
                 return () => clearTimeout(timer);
             }
         } else {
-            setIsActive(false);
-            setSteps([]);
+            const timer = window.setTimeout(() => {
+                setIsActive(false);
+            }, 0);
+            return () => window.clearTimeout(timer);
         }
-    }, [pathname]);
+    }, [steps.length, normalizedPath]);
 
     useEffect(() => {
-        updateTargetRect();
+        const timer = window.setTimeout(() => {
+            updateTargetRect();
+        }, 0);
         window.addEventListener('resize', updateTargetRect);
         window.addEventListener('scroll', updateTargetRect);
         return () => {
+            window.clearTimeout(timer);
             window.removeEventListener('resize', updateTargetRect);
             window.removeEventListener('scroll', updateTargetRect);
         };
@@ -158,7 +168,7 @@ const Onboarding = () => {
     const handleEnd = () => {
         setIsActive(false);
         setCurrentStep(0);
-        localStorage.setItem(`hasSeenTour_${pathname}`, 'true');
+        localStorage.setItem(`hasSeenTour_${normalizedPath}`, 'true');
     };
 
     const handleRestart = () => {
@@ -174,11 +184,11 @@ const Onboarding = () => {
             <button
                 onClick={handleRestart}
                 className="fixed bottom-6 right-6 p-4 bg-purple-600 text-white rounded-full shadow-2xl hover:scale-110 transition-all z-50 group"
-                title="Revoir le tutoriel"
+                title={t('actions.reviewTutorial')}
             >
                 <HelpCircle className="w-6 h-6" />
                 <span className="absolute right-full mr-4 bg-gray-800 text-white text-xs py-1 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Besoin d'aide ?
+                    {t('actions.needHelp')}
                 </span>
             </button>
         );
@@ -290,9 +300,9 @@ const Onboarding = () => {
                                     className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-all shadow-md group"
                                 >
                                     {currentStep === steps.length - 1 ? (
-                                        <>Terminer <Check size={18} /></>
+                                        <>{t('actions.finish')} <Check size={18} /></>
                                     ) : (
-                                        <>Suivant <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" /></>
+                                        <>{t('actions.next')} <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" /></>
                                     )}
                                 </button>
                             </div>
@@ -310,7 +320,8 @@ const Onboarding = () => {
 };
 
 // Helper to position tooltip based on target rect and preferred position
-function getTooltipStyles(targetRect: DOMRect | null, position?: string): React.CSSProperties {
+function getTooltipStyles(targetRect: DOMRect | null, _position?: string): React.CSSProperties {
+    void _position;
     if (!targetRect) {
         return { position: 'relative' };
     }

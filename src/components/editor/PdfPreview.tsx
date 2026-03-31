@@ -72,8 +72,8 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                 const data = transformTiptapToCourseData({
                     title,
                     content: content,
-                    category: "Formation",
-                    author: { name: "Auteur" }
+                    category: t('defaultCategory'),
+                    author: { name: t('defaultAuthor') }
                 });
                 setCourseData(data);
             } catch (err) {

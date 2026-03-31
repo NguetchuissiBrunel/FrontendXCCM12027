@@ -6,6 +6,66 @@
       "en": "English"
     }
   },
+  "onboarding": {
+    "actions": {
+      "reviewTutorial": "Revoir le tutoriel",
+      "needHelp": "Besoin d'aide ?",
+      "finish": "Terminer",
+      "next": "Suivant"
+    },
+    "student": {
+      "steps": {
+        "welcome": {
+          "title": "Bienvenue sur votre espace !",
+          "description": "Ici vous pouvez voir un résumé de votre activité et vos statistiques."
+        },
+        "stats": {
+          "title": "Vos Statistiques",
+          "description": "Gardez un œil sur votre moyenne et vos exercices en attente."
+        },
+        "courses": {
+          "title": "Mes Cours",
+          "description": "Accédez rapidement à tous les cours auxquels vous êtes inscrit."
+        },
+        "todo": {
+          "title": "À Faire",
+          "description": "Ne ratez aucun exercice ! Vos tâches en attente sont listées ici."
+        },
+        "navigation": {
+          "title": "Navigation",
+          "description": "Utilisez la barre latérale pour naviguer entre les différentes sections."
+        }
+      }
+    },
+    "teacher": {
+      "steps": {
+        "control": {
+          "title": "Centre de Contrôle",
+          "description": "Gérez vos cours et vos inscriptions depuis cet espace dédié."
+        },
+        "quickActions": {
+          "title": "Actions Rapides",
+          "description": "Créez un nouveau cours ou gérez les inscriptions en un clic."
+        },
+        "stats": {
+          "title": "Aperçu Statistique",
+          "description": "Visualisez l'engagement de vos étudiants sur vos cours."
+        },
+        "profile": {
+          "title": "Votre Profil Expert",
+          "description": "Vos performances et informations d'enseignant sont regroupées ici."
+        },
+        "exercises": {
+          "title": "Gestion des Exercices",
+          "description": "Accédez rapidement à la création et à la correction d'exercices."
+        },
+        "navigation": {
+          "title": "Menu de Navigation",
+          "description": "Utilisez cette barre latérale pour naviguer facilement entre toutes les sections de votre espace enseignant."
+        }
+      }
+    }
+  },
   "sidebar": {
     "online": "En ligne",
     "mainMenu": "Menu principal",
@@ -49,7 +109,7 @@
     "darkMode": "Mode sombre",
     "student": "Etudiant",
     "teacher": "Enseignant",
-    "myAccount": "Mon compte",
+    "myAccount": "Mon Espace",
     "logout": "Deconnexion",
     "login": "Connexion",
     "register": "Inscription"
@@ -110,8 +170,7 @@
     }
   },
   "common": {
-    "confirm": "Confirmer",
-    "cancel": "Annuler"
+    "retry": "Réessayer"
   },
   "contact": {
     "validation": {
@@ -339,6 +398,75 @@
       "description": "Paramètres avancés",
       "hint": "Configuration du cours"
     },
+    "actionMenu": {
+      "types": {
+        "course": "Cours",
+        "section": "Section",
+        "chapter": "Chapitre",
+        "paragraph": "Paragraphe",
+        "notion": "Notion",
+        "exercise": "Exercice"
+      },
+      "add": "Ajouter",
+      "addSection": "Ajouter une section",
+      "addChapter": "Ajouter un chapitre",
+      "addParagraph": "Ajouter un paragraphe",
+      "addNotion": "Ajouter une notion",
+      "addExercise": "Ajouter un exercice",
+      "open": "Ouvrir",
+      "rename": "Renommer",
+      "copy": "Copier",
+      "paste": "Coller",
+      "duplicate": "Dupliquer",
+      "move": "Déplacer",
+      "delete": "Supprimer"
+    },
+    "myCoursesPanel": {
+      "fetchErrorLog": "Erreur lors de la récupération des cours:",
+      "deleteSuccess": "Cours supprimé avec succès.",
+      "deleteError": "Impossible de supprimer le cours.",
+      "statusError": "Impossible de modifier le statut.",
+      "published": "Cours publié !",
+      "draft": "Cours repassé en brouillon.",
+      "untitled": "Sans titre",
+      "defaultCategory": "Informatique",
+      "unknownDate": "Date inconnue",
+      "deleteTitle": "Supprimer le cours",
+      "deleteMessage": "Voulez-vous vraiment supprimer ce cours ? Cette action est irréversible.",
+      "deleteConfirm": "Supprimer",
+      "unpublishTitle": "Dépublier le cours",
+      "publishTitle": "Publier le cours",
+      "unpublishMessage": "Voulez-vous repasser ce cours en brouillon ? Il ne sera plus visible par les étudiants.",
+      "publishMessage": "Voulez-vous publier ce cours ? Il deviendra visible par tous les étudiants.",
+      "unpublishConfirm": "Dépublier",
+      "publishConfirm": "Publier",
+      "header": "Mes cours",
+      "empty": "Aucun cours sauvegardé pour le moment.",
+      "createdOn": "Créé le",
+      "publishedBadge": "Publié",
+      "draftBadge": "Brouillon",
+      "loadInEditor": "Charger dans l'éditeur",
+      "deleteAction": "Supprimer"
+    },
+    "structureDeCours": {
+      "title": "Importer des connaissances",
+      "searchPlaceholder": "Rechercher...",
+      "filters": "Filtres",
+      "types": {
+        "course": "Cours",
+        "section": "Section",
+        "chapter": "Chapitre",
+        "paragraph": "Paragraphe",
+        "notion": "Notion"
+      },
+      "expertCornerTitle": "Coin Expert",
+      "expertTips": {
+        "optimalStructureName": "Structure optimale",
+        "optimalStructureAdvice": "Alternez concepts théoriques et exercices pour maximiser la rétention.",
+        "engagementName": "Engagement",
+        "engagementAdvice": "Gardez vos paragraphes courts (< 300 mots) pour une lecture fluide."
+      }
+    },
     "exercises": {
       "panelTitle": "Gestion des exercices",
       "noCourse": "Chargez ou créez un cours pour gérer les exercices",
@@ -410,6 +538,8 @@
     "pdfError": "Erreur lors de la génération du PDF",
     "docxSuccess": "Document Word généré avec succès",
     "docxError": "Erreur lors de la génération du document Word",
+    "defaultCategory": "Formation",
+    "defaultAuthor": "Auteur",
     "structureCourse": "Structurez votre cours pour voir l'aperçu...",
     "platform": "Plateforme Pédagogique",
     "exercice": "Exercice",
@@ -507,9 +637,15 @@
       "commonDifficulties": "Difficultés courantes:"
     },
     "viewer": {
+      "submitErrorLog": "Erreur lors de la soumission:",
       "unansweredError": "Veuillez répondre à toutes les questions ({count} non répondues)",
       "submitSuccess": "Exercice soumis avec succès !",
       "submitError": "Erreur lors de la soumission",
+      "questionFallback": "Question",
+      "question": "question",
+      "questions": "questions",
+      "point": "point",
+      "points": "points",
       "progress": "Progression",
       "answered": "répondues",
       "noQuestions": "Cet exercice ne contient aucune question.",
@@ -1253,6 +1389,826 @@
       "courseNotFound": "Cours non trouvé",
       "retry": "Réessayer",
       "invalidCourseData": "Données du cours invalides"
+    }
+  },
+  "studentCourses": {
+    "title": "Mes cours",
+    "categoryDefault": "Formation",
+    "coursePrefix": "Cours #",
+    "unknownAuthor": "Inconnu",
+    "error": {
+      "loadFailed": "Impossible de charger vos cours. Veuillez réessayer plus tard.",
+      "title": "Oups !"
+    },
+    "unknownDate": "Date inconnue",
+    "unenrollConfirm": "Êtes-vous sûr de vouloir vous désinscrire de ce cours ?",
+    "unenrollSuccess": "Désinscription réussie",
+    "unenrollError": "Erreur lors de la désinscription",
+    "studentDefault": "Étudiant",
+    "active": "Actif",
+    "pending": "En attente",
+    "progress": "Progression",
+    "enrolledOn": "Inscrit le",
+    "viewCourse": "Voir le cours",
+    "unenrollTooltip": "Se désinscrire",
+    "noCourses": {
+      "title": "Vous n'avez pas encore de cours",
+      "description": "Explorez la bibliothèque pour trouver des cours intéressants et commencez votre apprentissage !"
+    },
+    "exploreLibrary": "Explorer la bibliothèque"
+  },
+  "courseExercises": {
+    "coursePrefix": "Cours #",
+    "defaultDescription": "Description du cours...",
+    "defaultInstructor": "Professeur Exemple",
+    "error": {
+      "loadData": "Erreur lors du chargement des données",
+      "title": "Erreur de chargement",
+      "generic": "Impossible de charger les exercices"
+    },
+    "loading": "Chargement...",
+    "studentDefault": "Étudiant",
+    "status": {
+      "graded": "Noté",
+      "submitted": "Soumis",
+      "pending": "En attente"
+    },
+    "instructor": "Enseignant",
+    "stats": {
+      "total": "Exercices",
+      "submitted": "Soumis"
+    },
+    "searchPlaceholder": "Rechercher un exercice...",
+    "filter": {
+      "all": "Tous les exercices",
+      "pending": "En attente",
+      "submitted": "Soumis",
+      "graded": "Notés"
+    },
+    "sort": {
+      "dueDate": "Trier par date",
+      "title": "Trier par titre",
+      "points": "Trier par points"
+    },
+    "refresh": "Actualiser",
+    "noExercises": {
+      "title": "Aucun exercice trouvé",
+      "filtered": "Aucun exercice ne correspond à vos critères de recherche.",
+      "empty": "Aucun exercice n'est disponible pour ce cours pour le moment."
+    },
+    "resetFilters": "Réinitialiser les filtres",
+    "points": "points",
+    "questions": "questions",
+    "dueDate": {
+      "passed": "Échéance dépassée",
+      "label": "Échéance"
+    },
+    "yourScore": "Votre score",
+    "view": "Voir",
+    "viewSubmission": "Voir soumission",
+    "start": "Commencer",
+    "showing": "Affichage de {count} exercice(s) sur {total}",
+    "backToDashboard": "Retour au dashboard",
+    "viewFullCourse": "Voir le cours complet"
+  },
+  "deadlines": {
+    "title": "Échéances",
+    "description": "Gérez votre emploi du temps et vos deadlines personnelles",
+    "studentDefault": "Étudiant"
+  },
+  "exerciseSubmit": {
+    "unansweredError": "Veuillez répondre aux questions : {numbers}",
+    "submitSuccess": "Exercice soumis avec succès !",
+    "submitError": "Erreur lors de la soumission",
+    "notFound": {
+      "title": "Exercice non trouvé",
+      "message": "L'exercice demandé n'existe pas ou vous n'y avez pas accès."
+    },
+    "backToDashboard": "Retour au dashboard",
+    "alreadySubmitted": {
+      "title": "Exercice déjà soumis",
+      "message": "Vous avez déjà soumis cet exercice le {date}."
+    },
+    "viewSubmission": "Voir ma soumission",
+    "viewOtherExercises": "Voir d'autres exercices",
+    "backToExercises": "Retour aux exercices",
+    "dueDate": "Échéance",
+    "maxScore": "Score max",
+    "points": "points",
+    "questions": "questions",
+    "progress": "Progression",
+    "answered": "répondues",
+    "questionType": {
+      "text": "Réponse libre",
+      "multipleChoice": "Choix multiple",
+      "code": "Code"
+    },
+    "pointsSingular": "point",
+    "pointsPlural": "points",
+    "textPlaceholder": "Tapez votre réponse ici...",
+    "codeHint": "Écrivez votre code dans le langage de votre choix :",
+    "codePlaceholder": "// Votre code ici...",
+    "readyToSubmit": "Prêt à soumettre",
+    "submitting": "Soumission en cours...",
+    "submit": "Soumettre l'exercice"
+  },
+  "exerciseDetails": {
+    "notFound": {
+      "title": "Exercice introuvable",
+      "message": "L'exercice demandé n'existe pas ou n'est plus accessible."
+    },
+    "backToList": "Retour à la liste",
+    "exerciseLabel": "Exercice",
+    "noDescription": "Aucune description disponible pour cet exercice.",
+    "maxPoints": "Points Max",
+    "dueDate": "Échéance",
+    "noDueDate": "Sans limite",
+    "questions": "Questions",
+    "items": "items",
+    "attempts": "Tentatives",
+    "singleAttempt": "1 seule",
+    "startExercise": "Commencer l'exercice",
+    "cannotSubmit": "Vous ne pouvez pas participer à cet exercice.",
+    "viewResult": "Voir mon résultat",
+    "instructions": {
+      "title": "Consignes importantes",
+      "item1": "Une fois l'exercice commencé, vous devrez aller jusqu'au bout pour que vos réponses soient enregistrées.",
+      "item2": "Assurez-vous d'avoir une connexion stable avant de lancer le chronomètre.",
+      "item3": "Toute tentative de sortie de la page pourrait invalider votre session."
+    }
+  },
+  "studentExercises": {
+    "title": "Mes exercices",
+    "subtitle": "Suivez votre progression sur {total} exercice(s) dans {courseCount} cours approuvés",
+    "stats": {
+      "total": "Total",
+      "notStarted": "À commencer",
+      "inProgress": "En cours",
+      "submitted": "Soumis",
+      "graded": "Notés"
+    },
+    "searchPlaceholder": "Rechercher un exercice...",
+    "filter": {
+      "all": "Tous",
+      "notStarted": "À commencer",
+      "inProgress": "En cours",
+      "submitted": "Soumis",
+      "graded": "Notés"
+    },
+    "allCourses": "Tous les cours",
+    "status": {
+      "not_started": "À commencer",
+      "in_progress": "En cours",
+      "submitted": "Soumis",
+      "graded": "Noté"
+    },
+    "dueDate": {
+      "passed": "Échéance dépassée",
+      "today": "Aujourd'hui",
+      "days": "{count} jour(s)"
+    },
+    "points": "points",
+    "questions": "question(s)",
+    "actions": {
+      "start": "Commencer",
+      "viewResults": "Voir les résultats",
+      "viewStats": "Stats",
+      "details": "Détails"
+    },
+    "noExercises": {
+      "title": "Aucun exercice trouvé",
+      "filtered": "Aucun exercice ne correspond à vos critères de recherche.",
+      "noCourses": "Vous n'êtes inscrit à aucun cours approuvé."
+    },
+    "resetFilters": "Réinitialiser les filtres",
+    "exploreCourses": "Explorer les cours",
+    "showing": "Affichage de {count} exercice(s) sur {total}",
+    "averageScore": "Score moyen",
+    "openDeadlines": "échéances ouvertes",
+    "closedDeadlines": "échéances fermées"
+  },
+  "studentProfile": {
+    "title": "Mon Profil Étudiant",
+    "edit": "Modifier",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "saveSuccess": "Profil mis à jour avec succès !",
+    "saveError": "Erreur lors de la sauvegarde du profil",
+    "photoInvalidType": "Veuillez sélectionner une image valide",
+    "photoTooLarge": "L'image ne doit pas dépasser 5Mo",
+    "studentDefault": "Étudiant",
+    "grades": {
+      "excellent": "Excellent",
+      "good": "Bien",
+      "passable": "Passable",
+      "poor": "Faible"
+    },
+    "studentId": "No. Étudiant",
+    "firstNamePlaceholder": "Prénom",
+    "lastNamePlaceholder": "Nom",
+    "specialization": "Spécialisation",
+    "specializationPlaceholder": "Ex: Informatique",
+    "notSpecified": "Non spécifié",
+    "level": "Niveau",
+    "levelPlaceholder": "Ex: Master 2",
+    "university": "Université",
+    "universityPlaceholder": "Ex: ENSPY",
+    "city": "Ville",
+    "cityPlaceholder": "Ex: Yaoundé",
+    "major": "Majeure",
+    "majorPlaceholder": "Ex: Intelligence Artificielle",
+    "minor": "Mineure",
+    "minorPlaceholder": "Ex: Data Science",
+    "stats": {
+      "coursesParticipated": "Nombre de cours participé",
+      "certifications": "Certifications obtenues",
+      "attendance": "Assiduité"
+    },
+    "gradeDistribution": {
+      "title": "Répartition des Notes"
+    },
+    "interests": "Centres d'intérêt"
+  },
+  "submissionDetails": {
+    "backToSubmissions": "Retour à mes soumissions",
+    "title": "Détails de la soumission",
+    "download": "Télécharger",
+    "viewExercise": "Voir l'exercice",
+    "generalInfo": {
+      "statusTitle": "Statut de la soumission",
+      "graded": "Noté",
+      "pending": "En attente de correction",
+      "gradedAt": "Corrigé le {date}",
+      "gradedBy": " par {name}",
+      "scoreLabel": "Score",
+      "submittedOn": "Soumis le",
+      "timeSpent": "Temps passé",
+      "timeSpentValue": "{minutes} min {seconds} sec",
+      "notRecorded": "Non enregistré"
+    },
+    "feedbackTitle": "Feedback du correcteur",
+    "answersTitle": "Réponses soumises",
+    "points": "{value} point{plural}",
+    "yourAnswer": "Votre réponse :",
+    "noAnswer": "Aucune réponse",
+    "feedbackLabel": "Feedback :",
+    "noAnswersAvailable": "Aucune réponse disponible",
+    "studentInfo": {
+      "title": "Informations étudiant",
+      "name": "Nom",
+      "email": "Email",
+      "studentId": "ID étudiant"
+    },
+    "techMeta": {
+      "title": "Métadonnées techniques",
+      "ipAddress": "Adresse IP",
+      "browser": "Navigateur",
+      "lastModified": "Dernière modification"
+    },
+    "actions": {
+      "title": "Actions",
+      "reviewExercise": "Revoir l'exercice",
+      "downloadJson": "Télécharger JSON",
+      "refresh": "Actualiser"
+    },
+    "loading": "Chargement de la soumission...",
+    "notFoundTitle": "Soumission non trouvée",
+    "notFoundDesc": "Cette soumission n'existe pas ou vous n'y avez pas accès.",
+    "retry": "Réessayer"
+  },
+  "studentDashboard": {
+    "welcome": "Bienvenue {name} !",
+    "quote": "'Le succès n'est pas final, l'échec n'est pas fatal : c'est le courage de continuer qui compte.'",
+    "stats": {
+      "average": "Moyenne",
+      "submissions": "Soumissions",
+      "pending": "En attente",
+      "completed": "Terminés"
+    },
+    "courses": {
+      "title": "Mes Cours",
+      "explore": "Explorer la bibliothèque →",
+      "active": "Actif",
+      "progress": "Progression",
+      "viewExercises": "Voir les exercices",
+      "continue": "Continuer",
+      "noCoursesTitle": "Aucun cours pour le moment",
+      "noCoursesDesc": "Vous n'êtes inscrit à aucun cours.",
+      "discover": "Découvrir les cours"
+    },
+    "exercises": {
+      "pendingTitle": "Exercices en attente",
+      "dueDate": "Échéance:",
+      "view": "Voir",
+      "start": "Commencer",
+      "viewAll": "Voir tous ({count})",
+      "noPending": "Aucun exercice en attente",
+      "noPendingAction": "Aucun exercice en attente"
+    },
+    "submissions": {
+      "title": "Mes soumissions",
+      "submittedOn": "Soumis le",
+      "pending": "En attente",
+      "viewDetails": "Voir détails",
+      "noSubmissions": "Aucune soumission",
+      "viewAvailable": "Voir les exercices disponibles"
+    },
+    "actions": {
+      "title": "Actions rapides",
+      "viewAll": "Voir tous les exercices",
+      "startExercise": "Commencer un exercice"
+    }
+  },
+  "adminDashboard": {
+    "profile": {
+      "title": "Mon Profil Administrateur",
+      "edit": "Modifier",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "notSpecified": "Non spécifié",
+      "fields": {
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "role": "Administrateur",
+        "email": "Email:",
+        "city": "Ville:",
+        "phone": "Téléphone:"
+      },
+      "placeholders": {
+        "email": "admin@xccm.tn",
+        "city": "Tunis",
+        "phone": "+216 XX XXX XXX"
+      },
+      "stats": {
+        "totalUsers": "Total Utilisateurs",
+        "adminAccess": "Accès Admin"
+      },
+      "privileges": {
+        "title": "Privilèges Administrateur",
+        "usersTitle": "Gestion des utilisateurs",
+        "usersDesc": "Créer, modifier et supprimer des comptes",
+        "coursesTitle": "Gestion des cours",
+        "coursesDesc": "Superviser et modérer le contenu",
+        "analyticsTitle": "Statistiques complètes",
+        "analyticsDesc": "Accès à toutes les données analytiques",
+        "systemTitle": "Configuration système",
+        "systemDesc": "Paramètres avancés de la plateforme"
+      },
+      "unavailable": {
+        "title": "Profil non disponible",
+        "description": "Vous devez être connecté en tant qu'administrateur pour accéder à cette page.",
+        "login": "Se connecter"
+      },
+      "toast": {
+        "profileUpdated": "Profil mis à jour avec succès !",
+        "profileUpdatedLocal": "Profil mis à jour localement",
+        "saveError": "Erreur lors de la sauvegarde du profil",
+        "invalidImage": "Veuillez sélectionner une image valide",
+        "imageTooLarge": "L'image ne doit pas dépasser 5MB"
+      },
+      "errors": {
+        "loadUserData": "Erreur lors du chargement des données utilisateur:",
+        "saveProfile": "Erreur lors de la sauvegarde:"
+      }
+    },
+    "students": {
+      "title": "Étudiants",
+      "registered": "{count} inscrits",
+      "searchPlaceholder": "Rechercher un étudiant...",
+      "notAvailable": "N/A",
+      "notSpecifiedF": "Non spécifiée",
+      "table": {
+        "name": "Nom",
+        "email": "Email",
+        "university": "Université",
+        "actions": "Actions",
+        "empty": "Aucun étudiant trouvé"
+      },
+      "fields": {
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "email": "Email",
+        "password": "Mot de passe",
+        "confirmPassword": "Confirmer mot de passe",
+        "university": "Université",
+        "specialization": "Spécialisation",
+        "city": "Ville"
+      },
+      "placeholders": {
+        "firstName": "Jean",
+        "lastName": "Dupont",
+        "email": "jean.dupont@etu.tn",
+        "university": "Faculté des Sciences",
+        "specialization": "Informatique"
+      },
+      "actions": {
+        "add": "Ajouter",
+        "delete": "Supprimer",
+        "cancel": "Annuler",
+        "creating": "Création...",
+        "addStudent": "Ajouter l'étudiant"
+      },
+      "modal": {
+        "title": "Nouvel Étudiant"
+      },
+      "details": {
+        "role": "Étudiant"
+      },
+      "delete": {
+        "confirm": "Êtes-vous sûr de vouloir supprimer cet étudiant ?"
+      },
+      "toast": {
+        "loadError": "Impossible de charger la liste des étudiants",
+        "deleteSuccess": "Étudiant supprimé avec succès",
+        "deleteError": "Erreur lors de la suppression",
+        "passwordMismatch": "Les mots de passe ne correspondent pas",
+        "createSuccess": "Étudiant ajouté avec succès",
+        "createError": "Erreur lors de la création"
+      }
+    },
+    "teachers": {
+      "title": "Gestion des Enseignants",
+      "registered": "{count} enseignants inscrits",
+      "searchPlaceholder": "Rechercher un enseignant...",
+      "notAvailable": "N/A",
+      "notSpecified": "Non spécifié",
+      "notSpecifiedF": "Non spécifiée",
+      "notSpecifiedP": "Non spécifiées",
+      "table": {
+        "name": "Nom",
+        "email": "Email",
+        "subjects": "Matières",
+        "actions": "Actions",
+        "empty": "Aucun enseignant trouvé"
+      },
+      "fields": {
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "email": "Email",
+        "password": "Mot de passe",
+        "confirmPassword": "Confirmer mot de passe",
+        "subjects": "Matières / Spécialisation",
+        "city": "Ville",
+        "university": "Université",
+        "grade": "Grade"
+      },
+      "placeholders": {
+        "firstName": "Albert",
+        "lastName": "Einstein",
+        "email": "albert.einstein@univ.tn",
+        "subjects": "Physique, Mathématiques"
+      },
+      "actions": {
+        "add": "Ajouter",
+        "delete": "Supprimer",
+        "cancel": "Annuler",
+        "creating": "Création...",
+        "addTeacher": "Ajouter l'enseignant"
+      },
+      "modal": {
+        "title": "Ajouter un Enseignant"
+      },
+      "details": {
+        "role": "Enseignant"
+      },
+      "delete": {
+        "confirm": "Êtes-vous sûr de vouloir supprimer cet enseignant ?"
+      },
+      "toast": {
+        "loadError": "Erreur lors du chargement des enseignants",
+        "deleteSuccess": "Enseignant supprimé avec succès",
+        "deleteError": "Erreur lors de la suppression",
+        "passwordMismatch": "Les mots de passe ne correspondent pas",
+        "createSuccess": "Enseignant ajouté avec succès",
+        "createError": "Erreur lors de la création"
+      }
+    },
+    "courses": {
+      "title": "Gestion des Cours",
+      "subtitle": "Liste de tous les cours créés par les enseignants.",
+      "searchPlaceholder": "Rechercher un cours...",
+      "empty": "Aucun cours trouvé",
+      "untitled": "Sans titre",
+      "unknownTeacher": "Enseignant inconnu",
+      "uncategorized": "Non catégorisé",
+      "stats": {
+        "totalCourses": "Total Cours",
+        "activeCourses": "Cours Actifs"
+      },
+      "table": {
+        "title": "Titre",
+        "author": "Auteur",
+        "category": "Catégorie",
+        "status": "Statut",
+        "enrolled": "Inscrits",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Actif",
+        "draft": "Brouillon",
+        "archived": "Archivé"
+      },
+      "actions": {
+        "delete": "Supprimer",
+        "cancel": "Annuler"
+      },
+      "delete": {
+        "confirm": "Êtes-vous sûr de vouloir supprimer ce cours ?"
+      },
+      "toast": {
+        "loadError": "Erreur lors de la récupération des cours",
+        "deleteSuccess": "Cours supprimé avec succès",
+        "deleteError": "Erreur lors de la suppression sur le serveur"
+      }
+    }
+  },
+  "teacherDashboard": {
+    "home": {
+      "welcome": "Bienvenue {name} !",
+      "subtitle": "Ravi de vous revoir. Voici l'état de vos enseignements aujourd'hui.",
+      "stats": {
+        "students": "Étudiants",
+        "courses": "Cours",
+        "toGrade": "À corriger",
+        "score": "Score"
+      },
+      "quickActions": {
+        "title": "Actions rapides",
+        "newCourse": "Nouveau Cours",
+        "enrollments": "Inscriptions ({count})",
+        "createExercise": "Créer un exercice",
+        "createCourseFirst": "Créez d'abord un cours"
+      },
+      "systemStatus": {
+        "title": "Status du système",
+        "coursesActive": "{count} cours actifs",
+        "exercisesCreated": "{count} exercices créés"
+      },
+      "courseSelection": {
+        "title": "Sélectionnez une Classe",
+        "description": "Choisissez la classe pour laquelle vous souhaitez gérer les exercices :",
+        "participants": "{count} participants",
+        "exercises": "{count} exercice(s)"
+      },
+      "cancel": "Annuler",
+      "retryLoad": "Réessayer le chargement",
+      "errorLabel": "Erreur :",
+      "invalidClassId": "ID de classe invalide"
+    },
+    "classes": {
+      "selectClassTitle": "Sélectionnez une Classe",
+      "selectClassDescription": "Choisissez la classe pour laquelle vous souhaitez gérer les exercices :",
+      "cancel": "Annuler",
+      "backToDashboard": "Retour au Dashboard",
+      "manageTitle": "Gestion de vos {type}",
+      "classes": "Classes",
+      "compositions": "Compositions",
+      "classesDescription": "Consultez et scindez vos cours en créant différentes classes.",
+      "compositionsDescription": "Gérez vos compositions et supports de cours structurés.",
+      "myClassesTitle": "Mes Classes de Cours",
+      "myCompositionsTitle": "Mes Compositions",
+      "noClasses": "Vous n'avez pas encore de classe. Créez votre première classe.",
+      "noCompositions": "Vous n'avez pas encore de composition. Créez votre premier cours.",
+      "createClass": "Créer une classe",
+      "createCourse": "Créer un cours",
+      "editNotAvailable": "L'édition des classes n'est pas encore disponible",
+      "invalidClassId": "ID de classe invalide",
+      "deleteClassTitle": "Supprimer la classe",
+      "deleteClassMessage": "Voulez-vous vraiment supprimer cette classe de cours ? Cette action est irréversible.",
+      "deleteButton": "Supprimer",
+      "manageCourses": "Gérer les cours",
+      "published": "Publié",
+      "draft": "Brouillon"
+    },
+    "inscriptions": {
+      "backToDashboard": "Retour au Dashboard",
+      "title": "Gestion des Inscriptions",
+      "subtitle": "Consultez et validez les demandes d'accès des étudiants à vos contenus pédagogiques.",
+      "footer": "© {year} XCCM1 • Plateforme Pédagogique Intelligente"
+    },
+    "pendingEnrollments": {
+      "loading": "Chargement des demandes...",
+      "emptyTitle": "Tout est à jour !",
+      "emptyDescription": "Il n'y a aucune demande d'inscription en attente pour le moment.",
+      "requestsTitle": "Demandes ({count})",
+      "actionRequired": "Action requise",
+      "requestedOn": "Demandé le {date}",
+      "accept": "Accepter",
+      "reject": "Rejeter",
+      "acceptedSuccess": "Enrôlement accepté avec succès",
+      "rejectedSuccess": "Enrôlement rejeté avec succès",
+      "operationError": "Erreur lors de l'opération. Veuillez réessayer.",
+      "student": "Étudiant"
+    },
+    "manageClassCoursesModal": {
+      "title": "Gestion des Cours dans la Classe",
+      "classLabel": "Classe : {name}",
+      "assignedCoursesTitle": "Cours dans cette classe ({count})",
+      "noAssignedCourses": "Aucun cours n'a été ajouté à cette classe pour le moment.",
+      "availableCoursesTitle": "Cours disponibles ({count})",
+      "noCoursesYet": "Vous n'avez créé aucun cours. Veuillez en créer un d'abord.",
+      "allCoursesAdded": "Tous vos cours sont déjà dans cette classe.",
+      "add": "Ajouter",
+      "remove": "Retirer",
+      "published": "Publié",
+      "draft": "Brouillon",
+      "close": "Fermer",
+      "errorLoading": "Erreur lors du chargement des cours",
+      "addSuccess": "Cours ajouté à la classe",
+      "removeSuccess": "Cours retiré de la classe",
+      "addError": "Impossible d'ajouter le cours à la classe",
+      "removeError": "Impossible de retirer ce cours"
+    },
+    "createCourseModal": {
+      "move": "Déplacer",
+      "createClassTitle": "Création d'une classe",
+      "createCourseTitle": "Création d'un cours",
+      "description": "Partagez votre savoir avec vos étudiants",
+      "titleLabel": "Titre {type}",
+      "classType": "de la classe",
+      "courseType": "du cours",
+      "titlePlaceholder": "Ex : Architecture des Systèmes",
+      "mainThemeLabel": "Thème principal",
+      "selectPlaceholder": "Sélectionner...",
+      "customCategoryPlaceholder": "Saisissez votre thème personnalisé",
+      "coverImageLabel": "Image de couverture",
+      "resourcesLabel": "Ressources (PDF, DOC)",
+      "jpgPngHint": "JPG, PNG (Max 2Mo)",
+      "removeResource": "Supprimer",
+      "addResource": "Ajouter un support",
+      "programDescriptionLabel": "Description du programme",
+      "programDescriptionPlaceholder": "Qu'est-ce que les étudiants vont apprendre ?",
+      "cancel": "Annuler",
+      "createClassAction": "Créer la classe",
+      "createCourseAction": "Créer le cours",
+      "uploadErrorInvalidFile": "Fichier invalide",
+      "uploadErrorFailed": "Erreur lors de l'upload de l'image",
+      "drag": "Déplacer",
+      "category": {
+        "computerScience": "Informatique",
+        "mathematics": "Mathématiques",
+        "physics": "Physique",
+        "languages": "Langues",
+        "other": "+ Autre catégorie"
+      }
+    },
+    "profExercisesCreate": {
+      "loginRequired": "Veuillez vous connecter",
+      "invalidClassId": "ID de classe invalide",
+      "classWithoutCourse": "Cette classe ne contient aucun cours.",
+      "classNotFound": "Classe introuvable.",
+      "classLoadError": "Erreur de chargement des informations de la classe.",
+      "createSuccess": "Exercice créé avec succès !",
+      "createError": "Erreur lors de la création de l'exercice",
+      "createUnexpectedError": "Erreur inattendue lors de la création de l'exercice",
+      "cancelConfirm": "Voulez-vous vraiment annuler la création ? Toutes les données seront perdues.",
+      "previewInfo": "Aperçu de l'exercice (données locales seulement)",
+      "invalidParamsTitle": "Paramètres invalides",
+      "invalidParamsDescription": "L'URL de la page est incorrecte.",
+      "backToDashboard": "Retour au tableau de bord",
+      "loadingInfo": "Chargement des informations...",
+      "noCourseTitle": "Aucun cours rattaché",
+      "noCourseDescription": "La classe \"{className}\" ne contient aucun cours. Les exercices doivent être rattachés à un cours.",
+      "backToClass": "Retour à la classe",
+      "newExercise": "Nouvel exercice",
+      "dashboard": "Dashboard",
+      "createTitle": "Création d'exercice",
+      "back": "Retour",
+      "preview": "Aperçu"
+    },
+    "compositionsCard": {
+      "deleteClassTitle": "Supprimer la classe",
+      "deleteClassMessage": "Voulez-vous vraiment supprimer cette classe de cours ? Cette action est irréversible.",
+      "delete": "Supprimer",
+      "createCourse": "Créer un cours",
+      "createClass": "Créer une classe",
+      "manageCourses": "Gérer les cours",
+      "editCourse": "Modifier le cours",
+      "editClass": "Modifier la classe",
+      "removeCourse": "Retirer",
+      "category": "Catégorie :",
+      "theme": "Thème :",
+      "participants": "{count} participants",
+      "courses": "{count} cours",
+      "classes": "{count} classes",
+      "exercises": "{count} exercices",
+      "students": "{count} étudiants",
+      "open": "Ouverte",
+      "closed": "Fermée",
+      "archived": "Archivée",
+      "draft": "Brouillon",
+      "totalSummary": "Total : {count} {type} • {exercises} exercices • {students} étudiants"
+    },
+    "profileCard": {
+      "title": "Profil de l'enseignant",
+      "edit": "Modifier",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "overview": "Aperçu",
+      "coursesStatsTab": "Statistiques par cours",
+      "photoUploadSuccess": "Photo téléchargée avec succès !",
+      "photoUploadError": "Erreur lors de l'upload de la photo",
+      "invalidFile": "Fichier invalide",
+      "profileUpdateSuccess": "Profil mis à jour avec succès !",
+      "profileUpdateError": "Erreur lors de la sauvegarde du profil",
+      "userIdNotFound": "ID utilisateur non trouvé",
+      "nameLabel": "Nom complet",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "city": "Ville",
+      "university": "Université",
+      "grade": "Grade",
+      "certification": "Certification",
+      "current": "Actuel : {value}",
+      "notSpecified": "Non spécifié",
+      "students": "{count} étudiants",
+      "publishedCourses": "{count} cours publiés",
+      "activeStudents": "{count} étudiants actifs",
+      "participationRate": "Taux de participation",
+      "averageProgress": "Progression moyenne",
+      "exercises": "{count} exercices",
+      "completed": "{count} complétés",
+      "emailLabel": "Adresse e-mail",
+      "studentsLabel": "Total Étudiants",
+      "none": "Aucun",
+      "nonePublishedCourse": "aucun cours publié",
+      "noneActiveStudent": "aucun étudiant actif",
+      "publishedCoursesLabel": "sur {count} cours publiés",
+      "publishedCoursesTitle": "Cours Publiés",
+      "coursesCreated": "cours créés",
+      "allCoursesAverage": "moyenne de tous les cours",
+      "exercisesLabel": "Exercices Totaux",
+      "noneExerciseCreated": "aucun exercice créé",
+      "inCourses": "dans {count} cours",
+      "completedStudents": "Étudiants Terminés",
+      "completedCoursesHint": "ont complété leurs cours",
+      "completionRateLabel": "Taux de Complétion",
+      "completionRateHint": "des étudiants ont terminé",
+      "performanceDistribution": "Distribution des performances des étudiants",
+      "startTeachingTitle": "Commencez votre parcours d'enseignement",
+      "startTeachingDesc": "Vous n'avez pas encore publié de cours. Créez votre premier cours pour :",
+      "startTeachingItem1": "Suivre les statistiques de vos étudiants",
+      "startTeachingItem2": "Analyser les performances d'apprentissage",
+      "startTeachingItem3": "Recevoir des feedbacks sur vos contenus",
+      "startTeachingItem4": "Gérer les inscriptions et participations",
+      "coursesStatsTitle": "Détails des statistiques par cours",
+      "coursesCount": "{count} cours",
+      "enrolled": "Inscrits",
+      "active": "Actifs",
+      "participation": "Participation",
+      "progression": "Progression",
+      "rate": "Taux",
+      "completedTitle": "Terminés",
+      "exercisesTitle": "Exercices",
+      "enrollments": "Inscriptions",
+      "pending": "En attente",
+      "accepted": "Acceptés",
+      "rejected": "Rejetés",
+      "viewFullDetails": "Voir les détails complets",
+      "noCourseStats": "Aucune statistique de cours disponible",
+      "noCourseStatsHint": "Les statistiques apparaîtront une fois que vos cours auront des étudiants inscrits.",
+      "createCourse": "Créer un cours"
+    },
+    "exercises": {
+      "title": "Mes exercices",
+      "description": "Gérez vos exercices et suivez le statut des corrections.",
+      "refresh": "Actualiser",
+      "refreshing": "Actualisation...",
+      "statsExercises": "Exercices",
+      "statsToGrade": "À corriger",
+      "statsGraded": "Corrigés",
+      "searchPlaceholder": "Rechercher un exercice, un cours...",
+      "filters": {
+        "all": "Tous",
+        "pending": "En attente",
+        "graded": "Corrigés"
+      },
+      "noResults": "Aucun exercice correspondant à votre recherche",
+      "noExercises": "Aucun exercice créé pour le moment",
+      "createCourseAction": "Créer un exercice",
+      "courseUncategorized": "Non catégorisé",
+      "noDescription": "Pas de description",
+      "dueDate": "Échéance : {date}",
+      "submitted": "Soumis",
+      "pendingSubmissions": "{count} en attente",
+      "totalSubmissions": "{count} soumissions",
+      "averageScore": "Moyenne",
+      "viewExercises": "Gérer",
+      "reviewSubmissions": "Soumissions",
+      "editExercise": "Modifier",
+      "actionsTitle": "Actions",
+      "submissionsStatus": "Statut des soumissions",
+      "updates": "Mises à jour",
+      "statusPending": "En attente",
+      "statusGraded": "Corrigé",
+      "statusOpen": "Ouvert",
+      "statusClosed": "Fermé",
+      "statusArchived": "Archivé",
+      "loadFailed": "Erreur de chargement des exercices",
+      "invalidExercise": "Exercice invalide",
+      "syncSuccess": "{count} exercices actualisés"
     }
   }
 }

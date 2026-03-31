@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Calendar from '@/components/Calendar';
-
+import { useTranslations } from 'next-intl';
 import { useLoading } from '@/contexts/LoadingContext';
 
 interface User {
@@ -17,6 +17,7 @@ interface User {
 }
 
 export default function StudentDeadlines() {
+  const t = useTranslations('deadlines');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
@@ -62,14 +63,14 @@ export default function StudentDeadlines() {
   if (!user) return null;
 
   const displayName = `${user.firstName} ${user.lastName}`;
-  const userLevel = user.specialization || user.level || 'Étudiant';
+  const userLevel = user.specialization || user.level || t('studentDefault');
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-2">Échéances</h1>
-          <p className="text-gray-500 dark:text-gray-400">Gérez votre emploi du temps et vos deadlines personnelles</p>
+          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-2">{t('title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t('description')}</p>
         </div>
       </div>
 

@@ -46,7 +46,7 @@ export default function InscriptionsView() {
         <>
             <div className="max-w-5xl mx-auto">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+                <div id="inscriptions-header" className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                     <div>
                         <button
                             onClick={() => router.push('/profdashboard?tab=accueil')}
@@ -68,7 +68,7 @@ export default function InscriptionsView() {
                 </div>
 
                 {/* List Container */}
-                <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl p-2 sm:p-6 shadow-xl shadow-purple-500/5 border border-white dark:border-gray-700">
+                <div id="inscriptions-list" className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl p-2 sm:p-6 shadow-xl shadow-purple-500/5 border border-white dark:border-gray-700">
                     <PendingEnrollmentsList />
                 </div>
 

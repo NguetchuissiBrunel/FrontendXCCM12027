@@ -13,6 +13,7 @@ import { EnrichedCourse } from '@/types/enrollment';
 import { toast } from 'react-hot-toast';
 import StudentDashboardSkeleton from '@/components/student/StudentDashboardSkeleton';
 import Sidebar from '@/components/Sidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface User {
   id: string;
@@ -45,8 +46,8 @@ interface DashboardStats {
 
 export default function StudentHome() {
   const t = useTranslations('studentDashboard');
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrichedCourse[]>([]);
   const [pendingExercises, setPendingExercises] = useState<any[]>([]);
@@ -88,7 +89,7 @@ export default function StudentHome() {
       console.error('Erreur lors du chargement des données étudiant:', error);
       toast.error('Erreur lors du chargement des données');
     } finally {
-      setLoading(false);
+      setDataLoading(false);
       stopLoading();
     }
   };
@@ -234,34 +235,20 @@ export default function StudentHome() {
 
   // Chargement initial
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const currentUser = localStorage.getItem('currentUser');
+    if (authLoading) return;
 
-        if (!currentUser) {
-          router.push('/login');
-          return;
-        }
+    if (!user || !isAuthenticated) {
+      router.push('/login');
+      return;
+    }
 
-        const userData = JSON.parse(currentUser) as User;
+    if (user.role !== 'student') {
+      router.push('/profdashboard');
+      return;
+    }
 
-        // Vérifier le rôle
-        if (userData.role !== 'student') {
-          router.push('/profdashboard');
-          return;
-        }
-
-        setUser(userData);
-        await loadStudentData(userData);
-
-      } catch (error) {
-        console.error('Erreur lors du chargement des données utilisateur:', error);
-        router.push('/login');
-      }
-    };
-
-    loadData();
-  }, [router]);
+    loadStudentData(user as any);
+  }, [authLoading, isAuthenticated, user, router]);
 
   // Recalculer les stats quand les soumissions changent
   useEffect(() => {
@@ -304,7 +291,7 @@ export default function StudentHome() {
   };
 
   // Composant de chargement - Retourne le skeleton pour un meilleur UX
-  if (loading || globalLoading || coursesLoading) {
+  if (dataLoading || authLoading || globalLoading || coursesLoading) {
     return <StudentDashboardSkeleton />;
   }
 

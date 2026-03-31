@@ -1,6 +1,6 @@
 'use client';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
@@ -16,7 +16,15 @@ function SidebarLayoutInner({ children, role }: Props) {
     const searchParams = useSearchParams();
     const { user } = useAuth();
     const t = useTranslations('sidebar');
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     const userData = useMemo(() => {
+        if (!isMounted) return null;
+
         if (user) {
             return user as {
                 firstName?: string;

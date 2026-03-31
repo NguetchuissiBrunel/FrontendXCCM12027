@@ -417,7 +417,7 @@ export default function ExercisesView() {
     <>
       <div className="px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div id="exercises-header" className="mb-8">
           <button
             onClick={() => router.push('/profdashboard?tab=accueil')}
             className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 mb-6"
@@ -446,7 +446,7 @@ export default function ExercisesView() {
                 {refreshing ? 'Actualisation...' : 'Actualiser'}
               </button>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <div id="exercises-stats" className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -473,7 +473,7 @@ export default function ExercisesView() {
         </div>
 
         {/* Recherche et filtres */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div id="exercises-filters" className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -520,7 +520,7 @@ export default function ExercisesView() {
         </div>
 
         {/* Liste des exercices */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div id="exercises-list" className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-gray-800 dark:text-gray-200">

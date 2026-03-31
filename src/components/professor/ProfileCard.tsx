@@ -286,7 +286,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
       {activeTab === 'overview' ? (
         <div className="grid grid-cols-3 gap-8">
           {/* Left: Profile Image & Basic Info */}
-          <div className="space-y-6">
+          <div id="profile-info" className="space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700">
               <div className="relative w-32 h-32 mx-auto mb-4">
                 <img

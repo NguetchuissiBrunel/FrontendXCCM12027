@@ -13,6 +13,8 @@ interface Step {
     position: 'top' | 'bottom' | 'left' | 'right' | 'center';
 }
 
+const EMPTY_STEPS: Step[] = [];
+
 const Onboarding = () => {
     const rawPathname = usePathname() || '';
     const searchParams = useSearchParams();
@@ -64,7 +66,7 @@ const Onboarding = () => {
     }), [t]);
 
     let matchedKey = Object.keys(TOUR_STEPS).find(key => rawPathname.endsWith(key)) || rawPathname;
-    let localSteps: Step[] = [];
+    let localSteps: Step[] = EMPTY_STEPS;
     let localStorageKey = '';
 
     if (rawPathname.includes('/profdashboard')) {

@@ -1292,6 +1292,34 @@
       "navTitle": "Navigation Menu",
       "navDesc": "Use this sidebar to easily navigate between sections."
     },
+    "profInscriptions": {
+      "headerTitle": "Enrollments Management",
+      "headerDesc": "View and validate student enrollment requests here.",
+      "listTitle": "Pending Requests",
+      "listDesc": "Manage and validate student requests to access your courses."
+    },
+    "profClasses": {
+      "headerTitle": "My Classes",
+      "headerDesc": "Manage all your classes and course content.",
+      "listTitle": "Classes List",
+      "listDesc": "Access the details of each class and manage students."
+    },
+    "profCompositions": {
+      "headerTitle": "My Exams",
+      "headerDesc": "Manage all your compositions and exams.",
+      "listTitle": "Exams List",
+      "listDesc": "Grade and manage student exam submissions."
+    },
+    "profExercises": {
+      "headerTitle": "Exercises Management",
+      "headerDesc": "Manage all exercises created for your courses.",
+      "statsTitle": "Exercises Statistics",
+      "statsDesc": "Keep an eye on the completion rate and average scores.",
+      "filtersTitle": "Filter Exercises",
+      "filtersDesc": "Quickly find an exercise by its status or course.",
+      "listTitle": "Exercises List",
+      "listDesc": "Review, edit, and grade student submissions."
+    },
     "buttons": {
       "helpText": "Need help?",
       "helpTitle": "Replay tutorial",

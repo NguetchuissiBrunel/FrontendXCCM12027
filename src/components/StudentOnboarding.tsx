@@ -208,24 +208,34 @@ const StudentOnboarding = () => {
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [steps, setSteps] = useState<Step[]>([]);
     const [isWaitingForElement, setIsWaitingForElement] = useState(false);
-    const waitTimeoutRef = useRef<NodeJS.Timeout>();
+    const waitTimeoutRef = useRef<NodeJS.Timeout>(null);
     const retryCountRef = useRef(0);
 
     // Check if current route is a student dashboard page where onboarding should be available
     const isStudentDashboardPage = useCallback(() => {
         const studentRoutes = [
-            '/etudashboard',
-            '/etudashboard/',
-            '/etudashboard/cours',
-            '/etudashboard/exercises',
-            '/etudashboard/submissions',
-            '/etudashboard/echeances',
-            '/etudashboard/profil'
+            'fr/etudashboard',
+            'fr/etudashboard/',
+            'fr/etudashboard/cours',
+            'fr/etudashboard/exercises',
+            'fr/etudashboard/submissions',
+            'fr/etudashboard/echeances',
+            'fr/etudashboard/profil',
+            'en/etudashboard',
+            'en/etudashboard/',
+            'en/etudashboard/cours',
+            'en/etudashboard/exercises',
+            'en/etudashboard/submissions',
+            'en/etudashboard/echeances',
+            'en/etudashboard/profil'
         ];
         
         return studentRoutes.some(route => {
-            if (route === '/etudashboard') {
-                return pathname === '/etudashboard' || pathname === '/etudashboard/';
+            if (route === 'fr/etudashboard') {
+                return pathname === 'fr/etudashboard' || pathname === 'fr/etudashboard/';
+            }
+            else if (route === 'en/etudashboard') {
+                return pathname === 'en/etudashboard' || pathname === 'en/etudashboard/';
             }
             return pathname === route || pathname.startsWith(route + '/');
         });
@@ -233,17 +243,17 @@ const StudentOnboarding = () => {
 
     // Get steps for current page
     const getStepsForCurrentPage = useCallback(() => {
-        if (pathname === '/etudashboard' || pathname === '/etudashboard/') {
+        if (pathname === 'fr/etudashboard' || pathname === 'fr/etudashboard/' || pathname === 'en/etudashboard' || pathname === 'en/etudashboard/') {
             return HOME_PAGE_STEPS;
-        } else if (pathname === '/etudashboard/cours') {
+        } else if (pathname === 'fr/etudashboard/cours' || pathname === 'en/etudashboard/cours') {
             return COURSES_PAGE_STEPS;
-        } else if (pathname === '/etudashboard/exercises') {
+        } else if (pathname === 'fr/etudashboard/exercises' || pathname === 'en/etudashboard/exercises') {
             return EXERCISES_PAGE_STEPS;
-        } else if (pathname === '/etudashboard/submissions') {
+        } else if (pathname === 'fr/etudashboard/submissions' || pathname === 'en/etudashboard/submissions') {
             return SUBMISSIONS_PAGE_STEPS;
-        } else if (pathname === '/etudashboard/echeances') {
+        } else if (pathname === 'fr/etudashboard/echeances' || pathname === 'en/etudashboard/echeances') {
             return DEADLINES_PAGE_STEPS;
-        } else if (pathname === '/etudashboard/profil') {
+        } else if (pathname === 'fr/etudashboard/profil' || pathname === 'en/etudashboard/profil') {
             return PROFILE_PAGE_STEPS;
         }
         return [];

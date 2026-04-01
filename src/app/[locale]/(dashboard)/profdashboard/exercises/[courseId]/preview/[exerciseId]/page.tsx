@@ -4,14 +4,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useExercise } from '@/hooks/useExercise';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Clock, FileText, CheckCircle, AlertCircle, Eye, Loader2 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 
 export default function PreviewExercisePage() {
+    const t = useTranslations('teacherDashboard.exercisePreview');
+    const locale = useLocale();
     const params = useParams();
     const router = useRouter();
-    const courseId = parseInt(params.courseId as string);
-    const exerciseId = parseInt(params.exerciseId as string);
+    const courseId = parseInt(params?.courseId as string);
+    const exerciseId = parseInt(params?.exerciseId as string);
 
     const {
         exercise,
@@ -21,6 +23,10 @@ export default function PreviewExercisePage() {
 
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [answeredCount, setAnsweredCount] = useState(0);
+
+    const formatDate = (value: string) => {
+        return new Date(value).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US');
+    };
 
     // Initialiser les réponses quand l'exercice est chargé
     useEffect(() => {
@@ -53,7 +59,7 @@ export default function PreviewExercisePage() {
             <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-300">Chargement de l'aperçu...</p>
+                    <p className="text-gray-600 dark:text-gray-300">{t('loading')}</p>
                 </div>
             </div>
         );
@@ -64,15 +70,15 @@ export default function PreviewExercisePage() {
             <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
                 <div className="text-center max-w-md">
                     <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Exercice non trouvé</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('notFoundTitle')}</h2>
                     <p className="text-gray-600 dark:text-gray-300 mb-6">
-                        L'exercice demandé n'existe pas ou vous n'y avez pas accès.
+                        {t('notFoundDescription')}
                     </p>
                     <button
                         onClick={() => router.push(`/profdashboard/exercises/${courseId}`)}
                         className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
-                        Retour aux exercices
+                        {t('backToExercises')}
                     </button>
                 </div>
             </div>
@@ -88,9 +94,9 @@ export default function PreviewExercisePage() {
                         <div className="flex items-center gap-3">
                             <Eye className="w-6 h-6" />
                             <div>
-                                <h2 className="font-bold text-lg">Mode Aperçu Étudiant</h2>
+                                <h2 className="font-bold text-lg">{t('bannerTitle')}</h2>
                                 <p className="text-sm text-blue-100">
-                                    Ceci est une prévisualisation de l'exercice tel que les étudiants le verront
+                                    {t('bannerDescription')}
                                 </p>
                             </div>
                         </div>
@@ -98,7 +104,7 @@ export default function PreviewExercisePage() {
                             onClick={() => window.close()}
                             className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
                         >
-                            Fermer
+                            {t('close')}
                         </button>
                     </div>
                 </div>
@@ -110,7 +116,7 @@ export default function PreviewExercisePage() {
                         className="flex items-center gap-2 text-purple-600 hover:text-purple-700 mb-6 transition-colors"
                     >
                         <ArrowLeft size={20} />
-                        <span>Retour</span>
+                        <span>{t('back')}</span>
                     </button>
 
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700 shadow-sm">
@@ -128,18 +134,18 @@ export default function PreviewExercisePage() {
                             {exercise.dueDate && (
                                 <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-3 py-1.5 rounded-full">
                                     <Clock size={16} />
-                                    <span>Échéance: {new Date(exercise.dueDate).toLocaleDateString('fr-FR')}</span>
+                                    <span>{t('dueDate', { date: formatDate(exercise.dueDate) })}</span>
                                 </div>
                             )}
 
                             <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
                                 <FileText size={16} />
-                                <span>Score max: {exercise.maxScore} points</span>
+                                <span>{t('maxScore', { score: exercise.maxScore })}</span>
                             </div>
 
                             <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
                                 <CheckCircle size={16} />
-                                <span>{exercise.questions?.length || 0} questions</span>
+                                <span>{t('questionCount', { count: exercise.questions?.length || 0 })}</span>
                             </div>
                         </div>
                     </div>
@@ -149,10 +155,10 @@ export default function PreviewExercisePage() {
                 <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Progression des réponses (simulation)
+                            {t('progressLabel')}
                         </span>
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {answeredCount} / {exercise.questions?.length || 0} répondues
+                            {t('progressCount', { answered: answeredCount, total: exercise.questions?.length || 0 })}
                         </span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -179,9 +185,9 @@ export default function PreviewExercisePage() {
                                             {index + 1}
                                         </div>
                                         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                            {question.type === 'TEXT' && 'Réponse libre'}
-                                            {question.type === 'MULTIPLE_CHOICE' && 'Choix multiple'}
-                                            {question.type === 'CODE' && 'Code'}
+                                            {question.type === 'TEXT' && t('typeText')}
+                                            {question.type === 'MULTIPLE_CHOICE' && t('typeMultipleChoice')}
+                                            {question.type === 'CODE' && t('typeCode')}
                                         </span>
                                     </div>
 
@@ -191,7 +197,7 @@ export default function PreviewExercisePage() {
                                 </div>
 
                                 <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-sm font-medium rounded-full">
-                                    {question.points} point{question.points > 1 ? 's' : ''}
+                                    {t('points', { count: question.points })}
                                 </div>
                             </div>
 
@@ -201,7 +207,7 @@ export default function PreviewExercisePage() {
                                     value={answers[question.id] || ''}
                                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                                     className="w-full h-32 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                                    placeholder="Tapez votre réponse ici..."
+                                    placeholder={t('textAnswerPlaceholder')}
                                 />
                             )}
 
@@ -232,13 +238,13 @@ export default function PreviewExercisePage() {
                             {question.type === 'CODE' && (
                                 <div>
                                     <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                                        Écrivez votre code dans le langage de votre choix :
+                                        {t('codeHint')}
                                     </div>
                                     <textarea
                                         value={answers[question.id] || ''}
                                         onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                                         className="w-full h-48 px-4 py-3 font-mono text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-900 text-gray-100 resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                                        placeholder="// Votre code ici..."
+                                        placeholder={t('codePlaceholder')}
                                         spellCheck="false"
                                     />
                                 </div>
@@ -252,11 +258,11 @@ export default function PreviewExercisePage() {
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div className="text-sm text-gray-600 dark:text-gray-400">
                             <span className="font-medium">
-                                {answeredCount} / {exercise.questions?.length || 0} questions répondues
+                                {t('questionsAnswered', { answered: answeredCount, total: exercise.questions?.length || 0 })}
                             </span>
                             {answeredCount === exercise.questions?.length && (
                                 <span className="ml-2 text-green-600 dark:text-green-400">
-                                    ✓ Prêt à soumettre
+                                    {t('readyToSubmit')}
                                 </span>
                             )}
                         </div>
@@ -264,9 +270,9 @@ export default function PreviewExercisePage() {
                         <button
                             disabled
                             className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg opacity-50 cursor-not-allowed font-semibold shadow-md"
-                            title="Mode aperçu - soumission désactivée"
+                            title={t('submitDisabledTitle')}
                         >
-                            Soumettre l'exercice (Aperçu)
+                            {t('submitPreview')}
                         </button>
                     </div>
                 </div>
@@ -277,11 +283,10 @@ export default function PreviewExercisePage() {
                         <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                         <div>
                             <h3 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
-                                Mode Aperçu
+                                {t('previewModeTitle')}
                             </h3>
                             <p className="text-yellow-700 dark:text-yellow-400 text-sm">
-                                Ceci est une prévisualisation. Les réponses saisies ne seront pas enregistrées.
-                                Cette vue montre exactement ce que les étudiants verront lorsqu'ils accéderont à cet exercice.
+                                {t('previewModeDescription')}
                             </p>
                         </div>
                     </div>

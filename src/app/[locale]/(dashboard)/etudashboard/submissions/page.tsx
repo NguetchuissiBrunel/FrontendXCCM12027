@@ -21,13 +21,14 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 // Importer le type User généré
 import type { User } from '@/lib/models/User'; // Ajustez le chemin selon votre structure
 
 export default function SubmissionDetailsPage() {
   const t = useTranslations('submissionDetails');
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const submissionId = params?.submissionId ? parseInt(params.submissionId as string) : NaN;
@@ -87,13 +88,13 @@ export default function SubmissionDetailsPage() {
     a.download = `soumission-${submission.studentName}-${exercise.title}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Soumission téléchargée');
+    toast.success(t('downloadSuccess'));
   };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return t('generalInfo.notRecorded');
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -162,10 +163,10 @@ export default function SubmissionDetailsPage() {
   }
 
   // Utiliser le nom complet avec gestion des valeurs optionnelles
-  const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilisateur';
+  const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('studentInfo.defaultUser');
 
   // Utiliser `specialization` comme défini dans le type User
-  const userLevel = user.specialization || 'Étudiant';
+  const userLevel = user.specialization || t('studentInfo.defaultLevel');
 
   return (
     <div className="space-y-8">
@@ -186,7 +187,7 @@ export default function SubmissionDetailsPage() {
                 {t('title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                {exercise?.title || 'Exercice'}
+                {exercise?.title || t('exerciseLabel')}
               </p>
             </div>
 
@@ -319,12 +320,12 @@ export default function SubmissionDetailsPage() {
                               {index + 1}
                             </div>
                             <span className="font-medium text-gray-800 dark:text-gray-200">
-                              {question?.text || `Question ${answer.questionId}`}
+                              {question?.text || t('questionLabel', { id: answer.questionId })}
                             </span>
                           </div>
                           {question?.points && (
                             <div className="text-sm text-gray-600 dark:text-gray-400">
-                              {question.points} point{question.points > 1 ? 's' : ''}
+                              {t('points', { value: question.points, plural: question.points > 1 ? 's' : '' })}
                             </div>
                           )}
                         </div>
@@ -337,17 +338,17 @@ export default function SubmissionDetailsPage() {
                       </div>
 
                       <div className="mb-3">
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Votre réponse :</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('yourAnswer')}</div>
                         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
                           <p className="text-gray-800 dark:text-gray-200 whitespace-pre-line">
-                            {answer.answer || 'Aucune réponse'}
+                            {answer.answer || t('noAnswer')}
                           </p>
                         </div>
                       </div>
 
                       {answer.feedback && (
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Feedback :</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('feedbackLabel')}</div>
                           <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800">
                             <p className="text-gray-700 dark:text-gray-300 text-sm">
                               {answer.feedback}
@@ -363,7 +364,7 @@ export default function SubmissionDetailsPage() {
               <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                 <FileText className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-400">
-                  Aucune réponse disponible
+                  {t('noAnswersAvailable')}
                 </p>
               </div>
             )}
@@ -375,14 +376,14 @@ export default function SubmissionDetailsPage() {
           {/* Informations étudiant */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Informations étudiant
+              {t('studentInfo.title')}
             </h3>
 
             <div className="space-y-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <UserIcon className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Nom</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('studentInfo.name')}</span>
                 </div>
                 <p className="font-medium text-gray-800 dark:text-gray-200">
                   {submission.studentName}
@@ -393,7 +394,7 @@ export default function SubmissionDetailsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Mail className="w-5 h-5 text-gray-500" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Email</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('studentInfo.email')}</span>
                   </div>
                   <p className="text-gray-800 dark:text-gray-200">
                     {submission.studentEmail}
@@ -404,7 +405,7 @@ export default function SubmissionDetailsPage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Award className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">ID étudiant</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('studentInfo.studentId')}</span>
                 </div>
                 <p className="text-gray-800 dark:text-gray-200 font-mono">
                   {submission.studentId}
@@ -416,13 +417,13 @@ export default function SubmissionDetailsPage() {
           {/* Métadonnées techniques */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Métadonnées techniques
+              {t('techMeta.title')}
             </h3>
 
             <div className="space-y-3">
               {submission.ipAddress && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Adresse IP</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{t('techMeta.ipAddress')}</div>
                   <p className="text-gray-800 dark:text-gray-200 font-mono text-sm">
                     {submission.ipAddress}
                   </p>
@@ -431,7 +432,7 @@ export default function SubmissionDetailsPage() {
 
               {submission.userAgent && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Navigateur</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{t('techMeta.browser')}</div>
                   <p className="text-gray-800 dark:text-gray-200 text-sm truncate" title={submission.userAgent}>
                     {submission.userAgent.substring(0, 50)}...
                   </p>
@@ -440,7 +441,7 @@ export default function SubmissionDetailsPage() {
 
               {submission.lastModifiedAt && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Dernière modification</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{t('techMeta.lastModified')}</div>
                   <p className="text-gray-800 dark:text-gray-200 text-sm">
                     {formatDate(submission.lastModifiedAt)}
                   </p>
@@ -452,7 +453,7 @@ export default function SubmissionDetailsPage() {
           {/* Actions rapides */}
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-6 border border-purple-200 dark:border-gray-700">
             <h3 className="font-bold text-gray-800 dark:text-white mb-3">
-              Actions
+              {t('actions.title')}
             </h3>
             <div className="space-y-2">
               <button
@@ -460,21 +461,21 @@ export default function SubmissionDetailsPage() {
                 className="w-full py-2.5 text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
                 <Eye size={16} />
-                Revoir l'exercice
+                {t('actions.reviewExercise')}
               </button>
               <button
                 onClick={handleDownload}
                 className="w-full py-2.5 text-center border border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
                 <Download size={16} />
-                Télécharger JSON
+                {t('actions.downloadJson')}
               </button>
               <button
                 onClick={refetchSubmission}
                 className="w-full py-2.5 text-center border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
                 <RefreshCw size={16} />
-                Actualiser
+                {t('actions.refresh')}
               </button>
             </div>
           </div>

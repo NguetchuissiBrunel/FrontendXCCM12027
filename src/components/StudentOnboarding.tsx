@@ -231,19 +231,13 @@ const StudentOnboarding = () => {
         ];
         
         return studentRoutes.some(route => {
-            if (route === '/fr/etudashboard') {
-                return pathname === '/fr/etudashboard' || pathname === '/fr/etudashboard/';
-            }
-            else if (route === '/en/etudashboard') {
-                return pathname === '/en/etudashboard' || pathname === '/en/etudashboard/';
-            }
-            return pathname === route || pathname.startsWith(route + '/');
+            return pathname === route;
         });
     }, [pathname]);
 
     // Get steps for current page
     const getStepsForCurrentPage = useCallback(() => {
-        if (pathname === '/fr/etudashboard' || pathname === '/fr/etudashboard/' || pathname === '/en/etudashboard' || pathname === '/en/etudashboard/') {
+        if (pathname === '/fr/etudashboard' || pathname === '/en/etudashboard') {
             return HOME_PAGE_STEPS;
         } else if (pathname === '/fr/etudashboard/cours' || pathname === '/en/etudashboard/cours') {
             return COURSES_PAGE_STEPS;

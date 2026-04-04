@@ -549,6 +549,7 @@ const StudentOnboarding = () => {
 
 // Helper to position tooltip based on target rect and preferred position
 function getTooltipStyles(targetRect: DOMRect | null, position?: string, highlight?: boolean): React.CSSProperties {
+    // Pour les étapes sans élément ciblé (comme la dernière étape)
     if (!targetRect || highlight === false) {
         return {
             position: 'fixed',
@@ -556,50 +557,117 @@ function getTooltipStyles(targetRect: DOMRect | null, position?: string, highlig
             left: '50%',
             transform: 'translate(-50%, -50%)',
             zIndex: 10000,
-            maxWidth: '90vw'
+            maxWidth: 'min(420px, calc(100vw - 40px))',
+            width: 'auto',
+            minWidth: '280px'
         };
     }
 
     const spacing = 20;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const tooltipWidth = 384; // max-w-md = 24rem = 384px
-    const tooltipHeight = 300; // approximate height
-
-    let top: number, left: number;
+    const tooltipWidth = Math.min(400, viewportWidth - 40);
+    const tooltipHeight = 280;
     
-    switch (position) {
-        case 'top':
-            top = targetRect.top - spacing - tooltipHeight;
-            left = targetRect.left + targetRect.width / 2;
-            break;
-        case 'bottom':
+    // Calculer l'espace disponible autour de l'élément
+    const spaceAbove = targetRect.top;
+    const spaceBelow = viewportHeight - targetRect.bottom;
+    const spaceLeft = targetRect.left;
+    const spaceRight = viewportWidth - targetRect.right;
+    
+    let top: number;
+    
+    // Déterminer la position verticale
+    if (position === 'top') {
+        // Essayer de mettre au-dessus
+        if (spaceAbove >= tooltipHeight + spacing) {
+            top = targetRect.top - tooltipHeight - spacing;
+        } 
+        // Sinon en dessous
+        else if (spaceBelow >= tooltipHeight + spacing) {
             top = targetRect.bottom + spacing;
-            left = targetRect.left + targetRect.width / 2;
-            break;
-        case 'left':
-            top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
-            left = targetRect.left - spacing - tooltipWidth;
-            break;
-        case 'right':
-            top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
-            left = targetRect.right + spacing;
-            break;
-        default:
+        }
+        // Sinon centrer
+        else {
+            top = (viewportHeight - tooltipHeight) / 2;
+        }
+    } 
+    else if (position === 'bottom') {
+        // Essayer de mettre en dessous
+        if (spaceBelow >= tooltipHeight + spacing) {
             top = targetRect.bottom + spacing;
-            left = targetRect.left + targetRect.width / 2;
+        }
+        // Sinon au-dessus
+        else if (spaceAbove >= tooltipHeight + spacing) {
+            top = targetRect.top - tooltipHeight - spacing;
+        }
+        // Sinon centrer
+        else {
+            top = (viewportHeight - tooltipHeight) / 2;
+        }
     }
-
-    // Adjust to keep tooltip in viewport
-    if (left + tooltipWidth / 2 > viewportWidth - spacing) {
-        left = viewportWidth - tooltipWidth / 2 - spacing;
+    else if (position === 'left') {
+        // Position à gauche
+        if (spaceLeft >= tooltipWidth + spacing) {
+            return {
+                position: 'fixed',
+                top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
+                left: targetRect.left - tooltipWidth - spacing,
+                zIndex: 10000,
+                maxWidth: `${tooltipWidth}px`,
+                width: 'auto',
+                minWidth: '280px'
+            };
+        }
+        // Fallback: mettre en dessous
+        if (spaceBelow >= tooltipHeight + spacing) {
+            top = targetRect.bottom + spacing;
+        } else {
+            top = targetRect.top - tooltipHeight - spacing;
+        }
     }
-    if (left - tooltipWidth / 2 < spacing) {
-        left = tooltipWidth / 2 + spacing;
+    else if (position === 'right') {
+        // Position à droite
+        if (spaceRight >= tooltipWidth + spacing) {
+            return {
+                position: 'fixed',
+                top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
+                left: targetRect.right + spacing,
+                zIndex: 10000,
+                maxWidth: `${tooltipWidth}px`,
+                width: 'auto',
+                minWidth: '280px'
+            };
+        }
+        // Fallback: mettre en dessous
+        if (spaceBelow >= tooltipHeight + spacing) {
+            top = targetRect.bottom + spacing;
+        } else {
+            top = targetRect.top - tooltipHeight - spacing;
+        }
+    }
+    else {
+        // Position par défaut: en dessous si possible, sinon au-dessus
+        if (spaceBelow >= tooltipHeight + spacing) {
+            top = targetRect.bottom + spacing;
+        } else if (spaceAbove >= tooltipHeight + spacing) {
+            top = targetRect.top - tooltipHeight - spacing;
+        } else {
+            top = (viewportHeight - tooltipHeight) / 2;
+        }
     }
     
+    // Position horizontale: centrée par rapport à l'élément
+    let left = targetRect.left + targetRect.width / 2;
+    
+    // Ajuster pour ne pas déborder horizontalement
+    const minLeft = tooltipWidth / 2 + spacing;
+    const maxLeft = viewportWidth - tooltipWidth / 2 - spacing;
+    left = Math.min(maxLeft, Math.max(minLeft, left));
+    
+    // Vérifier que le tooltip ne dépasse pas en haut ou en bas
     if (top + tooltipHeight > viewportHeight - spacing) {
-        top = targetRect.top - tooltipHeight - spacing;
+        top = viewportHeight - tooltipHeight - spacing;
     }
     if (top < spacing) {
         top = spacing;
@@ -609,9 +677,11 @@ function getTooltipStyles(targetRect: DOMRect | null, position?: string, highlig
         position: 'fixed',
         top: top,
         left: left,
-        transform: 'translateX(-50%) translateY(0)',
+        transform: 'translateX(-50%)',
         zIndex: 10000,
-        maxWidth: '90vw'
+        maxWidth: `${tooltipWidth}px`,
+        width: 'auto',
+        minWidth: '280px'
     };
 }
 

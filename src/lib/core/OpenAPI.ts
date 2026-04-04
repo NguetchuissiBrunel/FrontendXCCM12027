@@ -21,8 +21,8 @@ export type OpenAPIConfig = {
 
 export const OpenAPI: OpenAPIConfig = {
 
-     BASE: 'https://xccm1-backend-eews.onrender.com',
-    //BASE: 'https://xccm1-backend-eews.onrender.com',
+     //BASE: 'https://xccm1-backend-eews.onrender.com',
+    BASE: 'http://localhost:8082',
 
     VERSION: '1.0.0',
     WITH_CREDENTIALS: false,

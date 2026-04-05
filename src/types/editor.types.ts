@@ -50,17 +50,23 @@ export interface Author {
 /**
  * Question within an exercise
  */
-export interface Question {
-  question: string;
+export interface QuestionData {
+  text: string;
   options: string[];
-  réponse: string;  // Correct answer
 }
+
+/**
+ * Alias for compatibility
+ */
+export type Question = QuestionData;
 
 /**
  * Exercise containing multiple questions
  */
 export interface Exercise {
-  questions: Question[];
+  title: string;
+  type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CODE';
+  questions: QuestionData[];
 }
 
 // ============================================================================
@@ -89,23 +95,28 @@ export interface Paragraph {
   title: string;
   content: string;
   notions: string[];  // Array of notion content (strings)
+  introduction?: string;
   exercise?: Exercise;
 }
 
 /**
- * Chapter - contains paragraphs
+ * Chapter - contains paragraphs and optional exercise
  */
 export interface Chapter {
   title: string;
   paragraphs: Paragraph[];
+  introduction?: string;
+  exercise?: Exercise;
 }
 
 /**
- * Section (Partie) - contains chapters
+ * Section (Partie) - contains chapters and optional exercise
  */
 export interface Section {
   title: string;
   chapters: Chapter[];
+  introduction?: string;
+  exercise?: Exercise;
 }
 
 /**
@@ -120,6 +131,7 @@ export interface Course {
   likes: number;
   downloads: number;
   author: Author;
+  introduction?: string;
   conclusion: string;
   learningObjectives: string[];
   sections: Section[];
@@ -149,6 +161,7 @@ export interface TableOfContentsItem {
   children: TableOfContentsItem[];
   collapsed?: boolean;
   content?: any;  // HTML content for this item
+  attrs?: any;    // Node attributes (introduction, exercise, etc.)
 }
 
 // ============================================================================

@@ -22,17 +22,40 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
   // const [isHovered, setIsHovered] = useState(false);
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const introRef = useRef<HTMLTextAreaElement>(null);
 
   useLayoutEffect(() => {
-    if (titleRef.current) {
-      titleRef.current.style.height = 'auto';
-      titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
-    }
-  }, [node.attrs.title]);
+    const adjustHeight = (ref: React.RefObject<HTMLTextAreaElement | null>) => {
+      if (ref.current) {
+        ref.current.style.height = 'auto';
+        ref.current.style.height = `${ref.current.scrollHeight}px`;
+      }
+    };
+
+    const timeout = setTimeout(() => {
+      adjustHeight(titleRef);
+      adjustHeight(introRef);
+    }, 0);
+
+    return () => clearTimeout(timeout);
+  }, [node.attrs.title, node.attrs.introduction]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateAttributes({ title: e.target.value });
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
+
+  const handleIntroChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateAttributes({ introduction: e.target.value });
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
 
   return (
     <NodeViewWrapper
       className="paragraphe-node"
+      data-id={node.attrs.id}
       style={{
         position: 'relative',
         border: '1px solid transparent',
@@ -50,7 +73,7 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
         <textarea
           ref={titleRef}
           value={node.attrs.title}
-          onChange={(e) => updateAttributes({ title: e.target.value })}
+          onChange={handleTitleChange}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           rows={1}
@@ -77,10 +100,74 @@ export default function ParagrapheNodeView({ node, updateAttributes }: NodeViewP
           className="node-paragraph-input placeholder-gray-400"
           placeholder="Titre du paragraphe..."
         />
+        <textarea
+          ref={introRef}
+          value={node.attrs.introduction}
+          onChange={handleIntroChange}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          rows={1}
+          style={{
+            display: 'block',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            backgroundColor: 'transparent',
+            resize: 'none',
+            overflow: 'hidden',
+            minHeight: '1.2em',
+            fontSize: '16px',
+            lineHeight: '1.6',
+            color: '#1F2937', // gray-900
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            padding: 0,
+            margin: '10px 0 0 0',
+            fontFamily: 'inherit'
+          }}
+          placeholder="Introduction du paragraphe..."
+        />
       </div>
 
       {/* Editable Content */}
       <NodeViewContent className="content" />
+
+      {/* Add Exercise Button - Only in Editor */}
+      {window.location.pathname.includes('editor') && (
+        <div contentEditable={false} style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.dispatchEvent(
+              new CustomEvent('xccm:open-exercise-modal', {
+                detail: { nodeId: node.attrs.id }
+              })
+            );
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 12px',
+            fontSize: '12px',
+            fontWeight: 600,
+            color: '#D97706',
+            border: '1px dashed #fbd38d',
+            borderRadius: '6px',
+            background: 'transparent',
+            cursor: 'pointer',
+            opacity: 0.7,
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+          title="Ajouter un exercice dans ce paragraphe"
+        >
+          ＋ Exercice
+        </button>
+      </div>
+      )}
     </NodeViewWrapper>
   );
 }

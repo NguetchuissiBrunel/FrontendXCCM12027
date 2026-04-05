@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   GripVertical, Trash2, Edit2, Eye,
@@ -10,17 +12,20 @@ import {
   recomputeAllNumbers, getAllowedChildTypes
 } from './TableOfContentsUtils';
 import ActionMenu from './ActionMenu';
+import { useLocale } from 'next-intl';
 
 interface TableOfContentsProps {
   className?: string;
   onSave?: (items: TableOfContentsItem[]) => void;
   items: TableOfContentsItem[];
   onItemClick?: (itemId: string) => void;
-  // Props for compatibility with new feature set if we want to support editing from TOC (optional)
   onItemMove?: (itemId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   onAddItem?: (type: ItemType, title?: string, parentId?: string) => void;
   onItemRename?: (itemId: string, newTitle: string) => void;
   onItemDelete?: (itemId: string) => void;
+  onItemDuplicate?: (itemId: string) => void;
+  onItemPaste?: (targetId: string, item: TableOfContentsItem) => void;
+  onItemCopy?: (item: TableOfContentsItem) => void;
   selectedText?: string;
 }
 
@@ -32,31 +37,56 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   onAddItem,
   onItemRename,
   onItemDelete,
+  onItemDuplicate,
+  onItemPaste,
+  onItemCopy,
   onItemMove,
   selectedText = ''
 }) => {
+  const locale = useLocale();
+
+  // Traductions
+  const t = useMemo(() => {
+    if (locale === 'fr') {
+      return {
+        title: 'Table des matières',
+        emptyMessage: 'Glissez et déposez des éléments de la structure ici',
+        rename: 'Renommer',
+        delete: 'Supprimer',
+        dropNotAllowed: 'Déplacement non autorisé',
+        untitled: 'Sans titre',
+      };
+    } else {
+      return {
+        title: 'Table of Contents',
+        emptyMessage: 'Drag and drop elements from the structure here',
+        rename: 'Rename',
+        delete: 'Delete',
+        dropNotAllowed: 'Move not allowed',
+        untitled: 'Untitled',
+      };
+    }
+  }, [locale]);
+
   const [tocItems, setTocItems] = useState<TableOfContentsItem[]>(initialItems || []);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [expandedTitles, setExpandedTitles] = useState<string[]>([]);
   const resizableRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState<number>(300); // reduced default width
+  const [width, setWidth] = useState<number>(300);
   const [isResizing, setIsResizing] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startWidth, setStartWidth] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // History for Undo (Ctrl+Z)
   const [history, setHistory] = useState<TableOfContentsItem[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // État pour l'élément en cours de glissement
   const [draggedItem, setDraggedItem] = useState<TableOfContentsItem | null>(null);
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | 'inside' | null>(null);
   const [dropAllowed, setDropAllowed] = useState<boolean>(true);
 
-  // États pour le menu contextuel
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     position: ContextMenuPosition;
@@ -67,24 +97,19 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     item: null
   });
 
-  // État pour l'élément en cours de renommage
   const [renamingItemId, setRenamingItemId] = useState<string | null>(null);
   const [newItemTitle, setNewItemTitle] = useState<string>('');
   const renameInputRef = useRef<HTMLInputElement>(null);
 
-  // État pour le presse-papier
   const [clipboard, setClipboard] = useState<TableOfContentsItem | null>(null);
 
-  // Mettre à jour les items quand initialItems change
   useEffect(() => {
     if (initialItems) {
       setTocItems(initialItems);
     }
   }, [initialItems]);
 
-  // Initialiser la largeur et gérer les événements globaux
   useEffect(() => {
-    // Fermer le menu contextuel lors d'un clic en dehors
     const handleClickOutside = (e: MouseEvent) => {
       if (contextMenu.visible && !(e.target as HTMLElement).closest('.context-menu')) {
         setContextMenu(prev => ({ ...prev, visible: false }));
@@ -100,7 +125,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     };
   }, [contextMenu.visible]);
 
-  // Save to history when tocItems change from any action (except initial load or undo)
   const addToHistory = useCallback((items: TableOfContentsItem[]) => {
     setHistory(prev => {
       const newHistory = prev.slice(0, historyIndex + 1);
@@ -129,7 +153,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo]);
 
-  // Handle initial items and first history entry
   useEffect(() => {
     if (initialItems && tocItems.length === 0) {
       setTocItems(initialItems);
@@ -138,7 +161,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     }
   }, [initialItems]);
 
-  // Focus sur l'input de renommage quand il devient visible
   useEffect(() => {
     if (renamingItemId && renameInputRef.current) {
       renameInputRef.current.focus();
@@ -160,12 +182,29 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     setIsDraggingOver(false);
 
     try {
-      // Trying to handle drop from external source or internal reorder
-      // If it's internal reorder, it's specific item drop, handled by handleItemDrop usually
-      // But if dropped on the container generally?
-      const data = e.dataTransfer.getData('application/json');
+      const data = e.dataTransfer.getData('application/xccm-knowledge');
       if (data) {
-        // Implementation dependent on what we drag
+        const item = JSON.parse(data);
+        const rootAllowed = ['course', 'section'].includes(item.type);
+        if (rootAllowed) {
+          setTocItems(prev => {
+            const newItem: TableOfContentsItem = {
+              id: `${item.id}-${Date.now()}`,
+              title: item.title || item.data?.title || t.untitled,
+              type: item.type,
+              level: item.type === 'course' ? 0 : 1,
+              number: '',
+              children: [],
+              collapsed: false,
+              content: item.content
+            };
+            const updatedItems = [...prev, newItem];
+            const renumbered = recomputeAllNumbers(updatedItems);
+            addToHistory(renumbered);
+            if (onSave) onSave(renumbered);
+            return renumbered;
+          });
+        }
       }
     } catch (error) {
       console.error('Error parsing dropped data:', error);
@@ -249,24 +288,19 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   const handleContextMenu = useCallback((e: React.MouseEvent, item: TableOfContentsItem) => {
     e.preventDefault();
 
-    // Calculer la position optimale pour le menu contextuel
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // Estimer la taille du menu (ajuster selon vos besoins)
     const menuWidth = 220;
     const menuHeight = 300;
 
-    // Calculer la position optimale
     let x = e.clientX;
     let y = e.clientY;
 
-    // Ajustement horizontal si le menu dépasse à droite
     if (x + menuWidth > viewportWidth) {
       x = Math.max(0, viewportWidth - menuWidth - 10);
     }
 
-    // Ajustement vertical si le menu dépasse en bas
     if (y + menuHeight > viewportHeight) {
       y = Math.max(0, viewportHeight - menuHeight - 10);
     }
@@ -289,94 +323,29 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     };
 
     const itemToCopy = findItem(tocItems);
-    if (itemToCopy) setClipboard(itemToCopy);
+    if (itemToCopy) {
+      setClipboard(itemToCopy);
+      if (onItemCopy) {
+        onItemCopy(itemToCopy);
+      }
+    }
     closeContextMenu();
-  }, [tocItems, closeContextMenu]);
+  }, [tocItems, onItemCopy, closeContextMenu]);
 
   const pasteItem = useCallback((targetId: string) => {
     if (!clipboard) return;
-
-    const deepCloneItem = (item: TableOfContentsItem): TableOfContentsItem => {
-      return {
-        ...item,
-        id: `${item.id}-copy-${Date.now()}`,
-        children: item.children.map(child => deepCloneItem(child))
-      };
-    };
-
-    const clonedItem = deepCloneItem(clipboard);
-
-    setTocItems(prevItems => {
-      const pasteRecursively = (items: TableOfContentsItem[], targetId: string): TableOfContentsItem[] => {
-        return items.map(item => {
-          if (item.id === targetId) {
-            const isAllowedChild = getAllowedChildTypes(item.type).includes(clonedItem.type);
-
-            if (isAllowedChild) {
-              const adjustLevel = (item: TableOfContentsItem, newLevel: number): TableOfContentsItem => {
-                return {
-                  ...item,
-                  level: newLevel,
-                  children: item.children.map(child => adjustLevel(child, newLevel + 1))
-                };
-              };
-
-              const adjustedItem = adjustLevel(clonedItem, item.level + 1);
-              return { ...item, children: [...item.children, adjustedItem] };
-            }
-            return item;
-          }
-          return { ...item, children: pasteRecursively(item.children, targetId) };
-        });
-      };
-
-      const updatedItems = pasteRecursively(prevItems, targetId);
-      const renumberedItems = recomputeAllNumbers(updatedItems);
-      addToHistory(renumberedItems);
-      if (onSave) onSave(renumberedItems);
-      return renumberedItems;
-    });
-
+    if (onItemPaste) {
+      onItemPaste(targetId, clipboard);
+    }
     closeContextMenu();
-  }, [clipboard, onSave, closeContextMenu]);
+  }, [clipboard, onItemPaste, closeContextMenu]);
 
   const duplicateItem = useCallback((itemId: string) => {
-    setTocItems(prevItems => {
-      const findAndDuplicate = (items: TableOfContentsItem[]): { items: TableOfContentsItem[], duplicated: boolean } => {
-        const result: TableOfContentsItem[] = [];
-        let duplicated = false;
-
-        for (const item of items) {
-          result.push({ ...item });
-
-          if (item.id === itemId) {
-            const duplicate = {
-              ...item,
-              id: `${item.id}-duplicate-${Date.now()}`,
-              title: `${item.title} (copie)`,
-              children: [...item.children]
-            };
-            result.push(duplicate);
-            duplicated = true;
-          } else {
-            const childResult = findAndDuplicate(item.children);
-            result[result.length - 1].children = childResult.items;
-            duplicated = duplicated || childResult.duplicated;
-          }
-        }
-
-        return { items: result, duplicated };
-      };
-
-      const { items: updatedItems } = findAndDuplicate(prevItems);
-      const renumberedItems = recomputeAllNumbers(updatedItems);
-      addToHistory(renumberedItems);
-      if (onSave) onSave(renumberedItems);
-      return renumberedItems;
-    });
-
+    if (onItemDuplicate) {
+      onItemDuplicate(itemId);
+    }
     closeContextMenu();
-  }, [onSave, closeContextMenu]);
+  }, [onItemDuplicate, closeContextMenu]);
 
   const viewItem = useCallback((itemId: string) => {
     if (onItemClick) {
@@ -386,7 +355,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   }, [closeContextMenu, onItemClick]);
 
   const renameItem = useCallback((itemId: string) => {
-    // Trouver l'élément à renommer
     const findItem = (items: TableOfContentsItem[]): TableOfContentsItem | null => {
       for (const item of items) {
         if (item.id === itemId) return item;
@@ -430,11 +398,17 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     setRenamingItemId(null);
   }, []);
 
-  // Fonctions pour le glisser-déposer
   const handleDragStart = useCallback((e: React.DragEvent, item: TableOfContentsItem) => {
     e.stopPropagation();
+
+    if (item.type === 'exercise') {
+      e.preventDefault();
+      return;
+    }
+
     setDraggedItem(item);
-    e.dataTransfer.setData('text/plain', item.id);
+    e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(item));
+    e.dataTransfer.setData('internal-xccm-id', item.id);
     e.dataTransfer.effectAllowed = 'move';
 
     if (e.currentTarget instanceof HTMLElement) {
@@ -450,7 +424,16 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
     if (!draggedItem || draggedItem.id === item.id) return;
 
-    // Vérifier si l'élément peut être déposé à cet endroit
+    const isTargetExercise = item.type === 'exercise';
+
+    if (isTargetExercise) {
+      setDragOverItemId(item.id);
+      setDropAllowed(false);
+      setDropPosition(null);
+      e.dataTransfer.dropEffect = 'none';
+      return;
+    }
+
     const isSibling = draggedItem.type === item.type;
     const isChild = getAllowedChildTypes(item.type).includes(draggedItem.type);
     const canDrop = isSibling || isChild;
@@ -463,9 +446,8 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       const relativeY = e.clientY - rect.top;
 
       if (isSibling && isChild) {
-        // Both allowed? Unusual but if so, top/bottom = before/after, middle = inside
-        if (relativeY < rect.height * 0.25) setDropPosition('before');
-        else if (relativeY > rect.height * 0.75) setDropPosition('after');
+        if (relativeY < rect.height * 0.4) setDropPosition('before');
+        else if (relativeY > rect.height * 0.7) setDropPosition('after');
         else setDropPosition('inside');
       } else if (isSibling) {
         if (relativeY < rect.height / 2) setDropPosition('before');
@@ -494,17 +476,14 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
     if (!draggedItem || draggedItem.id === targetItem.id) return;
 
-    // Determine drop type
     const isSibling = draggedItem.type === targetItem.type;
     const isChild = getAllowedChildTypes(targetItem.type).includes(draggedItem.type);
 
     if (isSibling || isChild) {
-      // Use the position calculated during dragOver
       const position = dropPosition || (isChild ? 'inside' : 'after');
-      onItemMove(draggedItem.id, targetItem.id, position);
-      // Note: onItemMove caller should update items which will trigger tocItems update via prop
-      // However, if we want Ctrl+Z to work locally even before parent update, we might need more logic.
-      // For now, assuming parent update is fast. 
+      if (onItemMove) {
+        onItemMove?.(draggedItem.id, targetItem.id, position);
+      }
     }
 
     setDraggedItem(null);
@@ -512,7 +491,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     setDropPosition(null);
     setDropAllowed(true);
 
-    // Nettoyer les effets visuels
     document.querySelectorAll('.dragging').forEach(el => {
       el.classList.remove('dragging');
     });
@@ -525,19 +503,16 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     setDropPosition(null);
     setDropAllowed(true);
 
-    // Nettoyer les effets visuels
     document.querySelectorAll('.dragging').forEach(el => {
       el.classList.remove('dragging');
     });
   }, []);
 
   const canDropItem = useCallback((sourceItem: TableOfContentsItem, targetItem: TableOfContentsItem): boolean => {
-    // Check if source can be child of target
+    if (!sourceItem || !targetItem) return false;
     const allowedChildTypes = getAllowedChildTypes(targetItem.type);
-    // OR if they are siblings (same type) for reordering
     const isSibling = sourceItem.type === targetItem.type;
-
-    return allowedChildTypes.includes(sourceItem.type) || isSibling;
+    return (allowedChildTypes && allowedChildTypes.includes(sourceItem.type)) || isSibling;
   }, []);
 
   const renderItemIcon = (itemType: ItemType) => {
@@ -545,14 +520,12 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     return <IconComponent size={14} />;
   };
 
-  // Rendre les items de la table des matières (extrait du rendu principal)
   const memoizedTocItems = useMemo(() => {
     if (!tocItems || tocItems.length === 0) return null;
 
     const renderItems = (itemsList: TableOfContentsItem[]) => itemsList.map((item) => {
       const isDragTarget = dragOverItemId === item.id;
 
-      // Custom borders/background for drag feedback
       let dragClasses = '';
       if (isDragTarget) {
         if (!dropAllowed) {
@@ -568,7 +541,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
       return (
         <div key={item.id} className="mb-1 relative">
-          {/* Indicators for before/after reordering */}
           {isDragTarget && dropAllowed && dropPosition === 'before' && (
             <div className="absolute -top-1 left-0 right-0 h-1 bg-purple-500 rounded-full z-10" />
           )}
@@ -577,7 +549,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             className={`group flex items-center p-2 border-l-4 ${getItemColor(item.type)} rounded-r shadow-sm transition-all duration-200 hover:shadow-md ${getIndentation(item.level)} ${dragClasses} ${!isDragTarget ? 'bg-white dark:bg-gray-800' : ''}`}
             onContextMenu={(e) => handleContextMenu(e, item)}
             onClick={() => onItemClick && onItemClick(item.id)}
-            draggable
+            draggable={item.type !== 'exercise'}
             onDragStart={(e) => handleDragStart(e, item)}
             onDragOver={(e) => handleItemDragOver(e, item)}
             onDragLeave={handleItemDragLeave}
@@ -586,7 +558,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
           >
             {isDragTarget && !dropAllowed && (
               <div className="absolute inset-0 bg-red-400/5 dark:bg-red-400/10 pointer-events-none rounded flex items-center justify-center">
-                <span className="text-[10px] font-bold text-red-600 dark:text-red-400 opacity-80 uppercase tracking-tighter">Déplacement non autorisé</span>
+                <span className="text-[10px] font-bold text-red-600 dark:text-red-400 opacity-80 uppercase tracking-tighter">{t.dropNotAllowed}</span>
               </div>
             )}
             <div className="mr-1.5 text-gray-400 cursor-move opacity-50 group-hover:opacity-100 dark:text-gray-500">
@@ -607,8 +579,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             <div className="mr-2 text-gray-600 dark:text-gray-400">
               {renderItemIcon(item.type)}
             </div>
-
-            {/* {item.number}: - Removed as requested */}
 
             {renamingItemId === item.id ? (
               <div className="flex-grow flex">
@@ -649,21 +619,20 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
               <button
                 className="text-gray-400 hover:text-purple-600 transition-colors duration-200"
                 onClick={(e) => { e.stopPropagation(); renameItem(item.id); }}
-                title="Renommer"
+                title={t.rename}
               >
                 <Edit2 size={14} />
               </button>
               <button
                 className="text-gray-400 hover:text-red-600 transition-colors duration-200"
                 onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
-                title="Supprimer"
+                title={t.delete}
               >
                 <Trash2 size={14} />
               </button>
             </div>
           </div>
 
-          {/* Indicator for after reordering */}
           {isDragTarget && dropAllowed && dropPosition === 'after' && (
             <div className="absolute -bottom-1 left-0 right-0 h-1 bg-purple-500 rounded-full z-10" />
           )}
@@ -685,6 +654,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     dropAllowed,
     renamingItemId,
     expandedTitles,
+    t,
     handleContextMenu,
     handleDragStart,
     handleItemDragOver,
@@ -714,7 +684,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
         onDrop={handleDrop}
       >
         <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
-          <h3 className="font-bold text-sm text-gray-800 dark:text-white">Table des Matières</h3>
+          <h3 className="font-bold text-sm text-gray-800 dark:text-white">{t.title}</h3>
         </div>
 
         <div className="p-2 flex-grow overflow-y-auto">
@@ -722,7 +692,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             <div>{memoizedTocItems}</div>
           ) : (
             <div className="text-center py-6 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-              <p className="font-medium text-sm">Glissez et déposez des éléments de la structure ici</p>
+              <p className="font-medium text-sm">{t.emptyMessage}</p>
               <FileText className="mx-auto mt-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
             </div>
           )}
@@ -744,7 +714,6 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
           onRenameItem={renameItem}
           canPaste={!!clipboard}
           onDragStart={(itemId) => {
-            // Logique pour démarrer le drag via menu si nécessaire
             closeContextMenu();
           }}
         />

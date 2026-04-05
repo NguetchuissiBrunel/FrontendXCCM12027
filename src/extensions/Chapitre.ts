@@ -37,9 +37,9 @@ declare module '@tiptap/core' {
 export default Node.create<ChapitreOptions>({
   name: 'chapitre',
 
-  group: 'block',
+  group: 'block xccm-chapter',
 
-  content: 'block+',
+  content: '(paragraphe | exercice)+',
 
   defining: true,
 
@@ -84,6 +84,15 @@ export default Node.create<ChapitreOptions>({
           };
         },
       },
+      introduction: {
+        default: '',
+        parseHTML: element => element.getAttribute('data-introduction'),
+        renderHTML: attributes => {
+          return {
+            'data-introduction': attributes.introduction,
+          };
+        },
+      },
     };
   },
 
@@ -103,11 +112,11 @@ export default Node.create<ChapitreOptions>({
     return {
       setChapitre:
         () =>
-        ({ commands }) => {
-          // Generate unique ID for this chapitre
-          const id = `chapitre-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return commands.wrapIn(this.name, { id });
-        },
+          ({ commands }) => {
+            // Generate unique ID for this chapitre
+            const id = `chapitre-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return commands.wrapIn(this.name, { id });
+          },
     };
   },
 

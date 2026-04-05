@@ -1,4 +1,6 @@
 'use client';
+import toast from 'react-hot-toast';
+import './tiptap-editor.css';
 
 import React, { useRef, useState } from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
@@ -11,10 +13,13 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Dropcursor from '@tiptap/extension-dropcursor';
+import Gapcursor from '@tiptap/extension-gapcursor';
 import FontFamily from '@tiptap/extension-font-family';
-import { Extension } from '@tiptap/core';
-
+import { Fragment, Slice, Node as PMNode, Schema } from '@tiptap/pm/model';
+import { QuickExerciseModal, QuestionData } from './QuickExerciseModal';
+import { QuestionType } from '@/types/exercise';
 // Custom XCCM Hierarchy Nodes
+import Heading from '../../extensions/Heading';
 import ResizableImage from '../../extensions/ResizableImage';
 import Section from '../../extensions/Section';
 import Chapitre from '../../extensions/Chapitre';
@@ -82,7 +87,6 @@ const fontOptions = [
 
 const headingOptions = [
   { value: 'paragraph', label: 'Normal Text', color: '#000000' },
-  { value: 1, label: 'Cours', color: '#3B82F6' },  // Blue - H1 (kept as heading)
   { value: 'section', label: 'Section', color: '#8B5CF6' },  // Purple - Custom Node
   { value: 'chapitre', label: 'Chapitre', color: '#10B981' },  // Green - Custom Node
   { value: 'paragraphe', label: 'Paragraphe', color: '#F59E0B' },  // Orange - Custom Node
@@ -90,9 +94,162 @@ const headingOptions = [
   { value: 'exercice', label: 'Exercice', color: '#6366F1' },  // Indigo - Custom Node
 ];
 
+const itemTypeFrench: Record<string, string> = {
+  course: 'Cours',
+  section: 'Partie',
+  chapter: 'Chapitre',
+  paragraph: 'Paragraphe',
+  notion: 'Notion',
+  exercise: 'Exercice'
+};
+
+const nodeTypeFrench: Record<string, string> = {
+  heading: 'Titre de cours',
+  section: 'Partie',
+  chapitre: 'Chapitre',
+  paragraphe: 'Paragraphe',
+  notion: 'Notion',
+  exercice: 'Exercice'
+};
+
 export interface MainEditorRef {
-  handleTOCAction: (action: 'rename' | 'delete' | 'move', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' }) => void;
+  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any) => void;
 }
+
+let globalIdCounter = 0;
+
+/**
+ * Recursively clones a node and all its children, assigning new unique IDs.
+ * Use this when pasting or dropping content to avoid React key collisions.
+ */
+const regenerateIds = (node: PMNode): PMNode => {
+  if (node.isText) {
+    return node;
+  }
+
+  const children: PMNode[] = [];
+  node.content.forEach(child => {
+    children.push(regenerateIds(child));
+  });
+
+  const attrs = { ...node.attrs };
+  if (attrs.id !== undefined) {
+    const timestamp = Date.now();
+    const sessionIdx = ++globalIdCounter;
+    const entropy = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID().split('-')[0]
+      : Math.random().toString(36).substring(2, 11);
+    attrs.id = `${node.type.name}-${timestamp}-${sessionIdx}-${entropy}`;
+  }
+
+  return node.type.create(attrs, Fragment.fromArray(children), node.marks);
+};
+
+const typeMap: Record<string, string> = {
+  course: 'heading',
+  section: 'section',
+  chapter: 'chapitre',
+  paragraph: 'paragraphe',
+  notion: 'notion',
+  exercise: 'exercice'
+};
+
+/**
+ * Converts a TOC item (JSON) into a TipTap node JSON.
+ * This is used for both Drag & Drop and TOC Paste.
+ */
+const transformTOCItemToNodeJson = (item: any): any => {
+  const nodeType = typeMap[item.type] || 'paragraph';
+
+  const attrs: any = {
+    id: `tmp-${Math.random().toString(36).substr(2, 5)}`,
+    title: item.title || item.data?.title || 'Sans titre',
+  };
+
+  if (item.type === 'course') {
+    // Return a dummy object if called directly on course, 
+    // but handleDrop should handle flattening before calling this.
+    return {
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Course flattened' }]
+    };
+  }
+
+  let content: any[] = [];
+
+  // Intro text restoration if any
+  if (item.data?.introduction || item.introduction) {
+    attrs.introduction = item.data?.introduction || item.introduction;
+  }
+
+  // Notion content restoration
+  if (item.type === 'notion') {
+    // Initial paragraph with notion content if it was flat text
+    if (typeof item.data === 'string') {
+      content.push({ type: 'paragraph', content: [{ type: 'text', text: item.data }] });
+    }
+
+    if (item.content) {
+      // If we have HTML content, we should ideally parse it, but for now fallback to simple text
+      // to avoid complex browser dep in this helper if possible.
+      // But we already have some logic below. Let's keep it but make it safer.
+      const tempDiv = typeof document !== 'undefined' ? document.createElement('div') : null;
+      if (tempDiv) {
+        tempDiv.innerHTML = item.content.trim ? item.content.trim() : "";
+        const parsed: any[] = [];
+        tempDiv.childNodes.forEach((node) => {
+          if (node.nodeType === 3 && node.textContent?.trim()) { // 3 = TEXT_NODE
+            parsed.push({ type: 'text', text: node.textContent });
+          } else if (node.nodeName === 'P') {
+            const pContent: any[] = [];
+            node.childNodes.forEach((child) => {
+              if (child.nodeType === 3 && child.textContent) {
+                pContent.push({ type: 'text', text: child.textContent });
+              }
+            });
+            if (pContent.length > 0) {
+              parsed.push({ type: 'paragraph', content: pContent });
+            }
+          }
+        });
+        if (parsed.length > 0) content = [...content, ...parsed];
+      }
+    }
+  }
+
+  // Exercise content restoration
+  if (item.type === 'exercise' && item.data?.questions) {
+    const questionsText = (item.data.questions || [])
+      .map((q: any, i: number) => `${i + 1}. ${q.text || q.question}`)
+      .join('\n\n');
+    content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
+  }
+
+  // Handle children by flattening them (always return an array of nodes)
+  const childNodes: any[] = [];
+  if (item.children && Array.isArray(item.children)) {
+    item.children.forEach((child: any) => {
+      const result = transformTOCItemToNodeJson(child);
+      if (Array.isArray(result)) {
+        childNodes.push(...result);
+      } else {
+        childNodes.push(result);
+      }
+    });
+  }
+
+  return {
+    type: nodeType,
+    attrs,
+    content: [...content, ...childNodes]
+  };
+};
+
+import Document from '@tiptap/extension-document';
+
+const CustomDocument = Document.extend({
+  content: 'section*',
+});
 
 export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   initialContent,
@@ -100,6 +257,10 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   onEditorReady
 }, ref) => {
   const [zoom, setZoom] = useState(100);
+  const [showQuickExerciseModal, setShowQuickExerciseModal] = useState(false);
+  // Stores the ID of the node that triggered exercise creation (Section/Chapitre buttons)
+  // null means: use cursor position (toolbar button)
+  const [targetNodeId, setTargetNodeId] = useState<string | null>(null);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
@@ -116,97 +277,22 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     },
   })
 
-  React.useImperativeHandle(ref, () => ({
-    handleTOCAction: (action, itemId, payload) => {
-      if (!editor) return;
-
-      if (action === 'rename' && typeof payload === 'string') {
-        const newTitle = payload;
-        // Find node with data-id or id attribute matching itemId
-        // TipTap doesn't have a direct "find node by attribute" index, so we traverse.
-        editor.state.doc.descendants((node, pos) => {
-          if (node.attrs.id === itemId) {
-            // Found it. Update title.
-            // Check if it's a heading or custom node that stores title in attrs
-            if (node.attrs.title !== undefined) {
-              editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'title', newTitle));
-              return false; // Stop traversal
-            }
-          }
-        });
-      } else if (action === 'delete') {
-        editor.state.doc.descendants((node, pos) => {
-          if (node.attrs.id === itemId) {
-            editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
-            return false; // Stop traversal
-          }
-        });
-      } else if (action === 'move' && typeof payload === 'object') {
-        const { targetId, position } = payload as { targetId: string, position: 'before' | 'after' | 'inside' };
-
-        let sourcePos: number | null = null;
-        let sourceNode: any = null;
-        let targetPos: number | null = null;
-        let targetNode: any = null;
-
-        // Pass 1: Find items
-        editor.state.doc.descendants((node, pos) => {
-          if (node.attrs.id === itemId) {
-            sourcePos = pos;
-            sourceNode = node;
-          }
-          if (node.attrs.id === targetId) {
-            targetPos = pos;
-            targetNode = node;
-          }
-        });
-
-        if (sourcePos !== null && targetPos !== null && sourceNode && targetNode) {
-          const tr = editor.state.tr;
-
-          // If moving to same position, do nothing
-          if (sourcePos === targetPos) return;
-
-          // Delete source first? 
-          // Better to clone, insert, then delete original.
-          // But if we insert first, positions change.
-          // If we delete first, positions change.
-          // Deleting first is easier if we adjust targetPos.
-
-          tr.delete(sourcePos as number, (sourcePos as number) + sourceNode.nodeSize);
-
-          // Adjust targetPos if source was before target
-          let adjustedTargetPos = targetPos as number;
-          if ((sourcePos as number) < (targetPos as number)) {
-            adjustedTargetPos -= sourceNode.nodeSize;
-          }
-
-          // Calculate insert position relative to adjusted target
-          let insertPos = adjustedTargetPos;
-          if (position === 'after') {
-            insertPos = adjustedTargetPos + targetNode.nodeSize;
-          } else if (position === 'inside') {
-            // Insert at end of content
-            insertPos = adjustedTargetPos + targetNode.nodeSize - 1;
-          } else {
-            // before
-            insertPos = adjustedTargetPos;
-          }
-
-          tr.insert(insertPos, sourceNode);
-          editor.view.dispatch(tr);
-        }
-      }
-    }
-  }));
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      CustomDocument,
+      StarterKit.configure({
+        document: false,
+        heading: false, // Disable default heading to use our custom one
+      }),
+      Heading.configure({
+        levels: [1, 2, 3, 4, 5, 6],
+      }),
       Dropcursor.configure({
         color: '#a78bfa', // Purple to match your theme
         width: 3,
       }),
+      Gapcursor,
       FontFamily.configure({
         types: ['textStyle'],
       }),
@@ -246,123 +332,250 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
         try {
           const draggedItem = JSON.parse(jsonData);
 
-          const typeMap: Record<string, string> = {
-            course: 'heading',
-            section: 'section',
-            chapter: 'chapitre',
-            paragraph: 'paragraphe',
-            notion: 'notion',
-            exercise: 'exercice'
-          };
-
-          const buildNode = (item: any): any => {
-            const nodeType = typeMap[item.type] || 'paragraph';
-            const attrs: any = {
-              id: item.id,
-              title: item.title || item.data?.title || 'Sans titre',
-            };
-
-            if (item.type === 'course') {
-              attrs.level = 1;
-              // For course, we return the heading node itself, children handled separately
-              return {
-                type: 'heading',
-                attrs,
-                content: [{ type: 'text', text: attrs.title }]
-              };
-            }
-
-            const children = (item.children || []).map(buildNode);
-
-            // Default: empty for structural nodes
-            let content: any[] = [];
-
-            // Special handling for notion: title text + full content
-            if (item.type === 'notion') {
-              // Title as first text
-              content.push({ type: 'paragraph', content: [{ type: 'text', text: attrs.title }] });
-
-              // Add actual content if present
-              if (item.content) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = item.content.trim();
-
-                const parsed: any[] = [];
-                tempDiv.childNodes.forEach((node) => {
-                  if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-                    parsed.push({ type: 'text', text: node.textContent });
-                  } else if (node.nodeName === 'P') {
-                    const pContent: any[] = [];
-                    node.childNodes.forEach((child) => {
-                      if (child.nodeType === Node.TEXT_NODE && child.textContent) {
-                        pContent.push({ type: 'text', text: child.textContent });
-                      }
-                    });
-                    if (pContent.length > 0) {
-                      parsed.push({ type: 'paragraph', content: pContent });
-                    }
-                  }
-                });
-
-                content = [...content, ...parsed];
-              }
-            }
-
-            // Exercise: simple question list
-            if (item.type === 'exercise' && item.data?.questions) {
-              const questionsText = item.data.questions
-                .map((q: any, i: number) => `${i + 1}. ${q.question}`)
-                .join('\n\n');
-              content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
-            }
-
-            return {
-              type: nodeType,
-              attrs,
-              content: [...content, ...children]
-            };
-          };
-
-          // Main handling logic
           const coords = { left: event.clientX, top: event.clientY };
           const posResult = view.posAtCoords(coords);
           if (!posResult) return false;
 
           if (draggedItem.type === 'course') {
-            // Flatten logic for Course: Heading -> Siblings
-            const courseHeading = buildNode(draggedItem);
-            const childrenNodes = (draggedItem.children || []).map((child: any) => buildNode(child));
-
-            const nodesToInsert = [courseHeading, ...childrenNodes].map(n => view.state.schema.nodeFromJSON(n));
-
-            // Insert all nodes sequentially
-            let currentPos = posResult.pos;
+            // Flatten logic for Course
+            const children = draggedItem.children || [];
             const tr = view.state.tr;
-            nodesToInsert.forEach(node => {
-              tr.insert(currentPos, node);
-              currentPos += node.nodeSize;
+            let currentPos = posResult.pos;
+
+            children.forEach((child: any) => {
+              const nodeJson = transformTOCItemToNodeJson(child);
+              const nodes = Array.isArray(nodeJson) ? nodeJson : [nodeJson];
+              nodes.forEach(nj => {
+                const node = view.state.schema.nodeFromJSON(nj);
+                const finalNode = regenerateIds(node);
+                tr.insert(currentPos, finalNode);
+                currentPos += finalNode.nodeSize;
+              });
             });
             view.dispatch(tr);
           } else {
-            // Standard nested insertion for other types
-            const contentToInsert = buildNode(draggedItem);
-            const node = view.state.schema.nodeFromJSON(contentToInsert);
-            view.dispatch(view.state.tr.insert(posResult.pos, node));
-          }
+            const contentToInsertJson = transformTOCItemToNodeJson(draggedItem);
+            const node = view.state.schema.nodeFromJSON(contentToInsertJson);
+            const finalNode = regenerateIds(node);
 
+            let $pos = view.state.doc.resolve(posResult.pos);
+            let insertPos = posResult.pos;
+
+            let targetDepth = -1;
+            for (let d = $pos.depth; d >= 0; d--) {
+              const parent = $pos.node(d);
+              const index = $pos.index(d);
+              if (parent.canReplaceWith(index, index, finalNode.type)) {
+                targetDepth = d;
+                break;
+              }
+            }
+
+            if (targetDepth !== -1) {
+              if (targetDepth < $pos.depth) {
+                insertPos = $pos.after(targetDepth + 1);
+              }
+              view.dispatch(view.state.tr.insert(insertPos, finalNode));
+            } else {
+              view.dispatch(view.state.tr.insert(posResult.pos, finalNode));
+            }
+          }
           return true;
         } catch (error) {
           console.error('Drop error:', error);
           return false;
         }
       },
+      transformPasted: (slice) => {
+        const nodes: PMNode[] = [];
+        slice.content.forEach(node => {
+          nodes.push(regenerateIds(node));
+        });
+        return new Slice(Fragment.fromArray(nodes), slice.openStart, slice.openEnd);
+      },
     },
     onCreate: ({ editor }) => {
-      // Notify parent component that editor is ready
       onEditorReady?.(editor);
     },
     onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });
+
+  const copiedNodeJsonRef = useRef<any>(null);
+
+  React.useImperativeHandle(ref, () => ({
+    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: any) => {
+      if (!editor) return;
+
+      if (action === 'rename' && typeof payload === 'string') {
+        const newTitle = payload;
+        editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            if (node.attrs.title !== undefined) {
+              editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'title', newTitle));
+              return false;
+            }
+          }
+        });
+      } else if (action === 'delete') {
+        let deleted = false;
+        editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+          if (deleted) return false;
+          if (node.attrs.id === itemId) {
+            editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+            deleted = true;
+            return false;
+          }
+        });
+
+        // Hierarchical fallback match (e.g. "chapter-1-1-2")
+        if (!deleted && itemId.includes('-')) {
+          const hierarchyInfo: Record<string, { level: number, typeName: string }> = {
+            course: { level: 0, typeName: 'heading' },
+            section: { level: 1, typeName: 'section' },
+            chapter: { level: 2, typeName: 'chapitre' },
+            paragraph: { level: 3, typeName: 'paragraphe' },
+            notion: { level: 4, typeName: 'notion' },
+            exercise: { level: 5, typeName: 'exercice' }
+          };
+
+          const parts = itemId.split('-');
+          const itemTypeCode = parts[0];
+          const config = hierarchyInfo[itemTypeCode];
+
+          if (config) {
+            let counters = [0, 0, 0, 0, 0, 0];
+            editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+              if (deleted) return false;
+
+              const nodeConfig = Object.values(hierarchyInfo).find(c => c.typeName === node.type.name);
+              if (nodeConfig) {
+                const level = nodeConfig.level;
+                counters[level]++;
+                for (let i = level + 1; i < counters.length; i++) counters[i] = 0;
+
+                const currentId = `${itemTypeCode}-${counters.slice(0, config.level + 1).join('-')}`;
+                if (currentId === itemId) {
+                  editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+                  deleted = true;
+                  return false;
+                }
+              }
+            });
+          }
+        }
+      } else if (action === 'duplicate') {
+        editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            const newNode = regenerateIds(node);
+            const finalAttrs = { ...newNode.attrs };
+            let finalContent = newNode.content;
+
+            if (finalAttrs.title) {
+              finalAttrs.title = `${finalAttrs.title} (copie)`;
+            }
+
+            if (newNode.type.name === 'heading') {
+              const text = newNode.textContent;
+              finalContent = (editor.state.schema as any).Fragment.fromArray([
+                editor.state.schema.text(`${text} (copie)`)
+              ]);
+            }
+
+            const finalNode = newNode.type.create(finalAttrs, finalContent, newNode.marks);
+            editor.view.dispatch(editor.state.tr.insert(pos + node.nodeSize, finalNode));
+            return false;
+          }
+        });
+      } else if (action === 'move' && typeof payload === 'object') {
+        const { targetId, position } = payload as { targetId: string, position: 'before' | 'after' | 'inside' };
+        let sourcePos: number | null = null;
+        let sourceNode: PMNode | null = null;
+        let targetPos: number | null = null;
+        let targetNode: PMNode | null = null;
+
+        editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            sourcePos = pos;
+            sourceNode = node;
+          }
+          if (node.attrs.id === targetId) {
+            targetPos = pos;
+            targetNode = node;
+          }
+        });
+
+        if (sourcePos !== null && targetPos !== null && sourceNode && targetNode) {
+          const tr = editor.view.state.tr;
+          tr.delete(sourcePos, sourcePos + (sourceNode as PMNode).nodeSize);
+          let adjustedTargetPos = targetPos as number;
+          if (sourcePos < (targetPos as number)) adjustedTargetPos -= (sourceNode as PMNode).nodeSize;
+
+          let insertPos = adjustedTargetPos;
+          if (position === 'after') insertPos = adjustedTargetPos + (targetNode as PMNode).nodeSize;
+          else if (position === 'inside') insertPos = adjustedTargetPos + (targetNode as PMNode).nodeSize - 1;
+
+          tr.insert(insertPos, sourceNode);
+          editor.view.dispatch(tr);
+        }
+      } else if (action === 'copy') {
+        editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            copiedNodeJsonRef.current = node.toJSON();
+            return false;
+          }
+        });
+      } else if (action === 'paste') {
+        const itemToPaste = payload;
+        editor.view.state.doc.descendants((node: PMNode, pos: number) => {
+          if (node.attrs.id === itemId) {
+            let interimNode;
+            if (copiedNodeJsonRef.current && copiedNodeJsonRef.current.attrs?.id === itemToPaste?.id) {
+              interimNode = editor.state.schema.nodeFromJSON(copiedNodeJsonRef.current);
+            } else {
+              interimNode = editor.state.schema.nodeFromJSON(transformTOCItemToNodeJson(itemToPaste));
+            }
+            const finalNode = regenerateIds(interimNode);
+
+            let $pos = editor.view.state.doc.resolve(pos + node.nodeSize - 1);
+            let insertPos = pos + node.nodeSize - 1;
+
+            let targetDepth = -1;
+            for (let d = $pos.depth; d >= 0; d--) {
+              const parent = $pos.node(d);
+              const index = $pos.index(d);
+              if (parent.canReplaceWith(index, index, finalNode.type)) {
+                targetDepth = d;
+                break;
+              }
+            }
+
+            if (targetDepth !== -1) {
+              if (targetDepth < $pos.depth) {
+                insertPos = $pos.after(targetDepth + 1);
+              }
+              editor.view.dispatch(editor.state.tr.insert(insertPos, finalNode));
+            } else {
+              editor.view.dispatch(editor.state.tr.insert(pos + node.nodeSize - 1, finalNode));
+            }
+            return false;
+          }
+        });
+      }
+    }
+  }), [editor]);
+
+  // Listen for exercise modal open events dispatched from Chapitre/Section NodeViews
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<{ nodeId: string }>;
+      // Store the target node ID — handleCreateQuickExercise will use it for direct insertion
+      setTargetNodeId(customEvent.detail?.nodeId ?? null);
+      setShowQuickExerciseModal(true);
+    };
+    window.addEventListener('xccm:open-exercise-modal', handler);
+    return () => window.removeEventListener('xccm:open-exercise-modal', handler);
+  }, []);
+
   const editorState = useEditorState({
     editor,
     selector: (ctx) => {
@@ -409,6 +622,59 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     },
   });
 
+  const smartInsertNode = (type: string, attrs: any = {}) => {
+    if (!editor) return;
+    const { state, view } = editor;
+    const { schema, tr, selection } = state;
+    const nodeType = schema.nodes[type];
+    if (!nodeType) return;
+
+    // Standard title if not provided
+    const finalAttrs = { ...attrs };
+    if (!finalAttrs.id) {
+      const timestamp = Date.now();
+      const sessionIdx = ++globalIdCounter;
+      const entropy = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID().split('-')[0]
+        : Math.random().toString(36).substring(2, 11);
+      finalAttrs.id = `${type}-${timestamp}-${sessionIdx}-${entropy}`;
+    }
+
+    if (!finalAttrs.title && type !== 'heading') {
+      finalAttrs.title = nodeTypeFrench[type] || 'Sans titre';
+    }
+
+
+
+    const node = nodeType.createAndFill(finalAttrs);
+    if (!node) return;
+
+    const $pos = selection.$from;
+    let targetDepth = -1;
+
+    // Look for a depth that accepts this node type
+    for (let d = $pos.depth; d >= 0; d--) {
+      const parent = $pos.node(d);
+      const index = $pos.index(d);
+      if (parent.canReplaceWith(index, index, nodeType)) {
+        targetDepth = d;
+        break;
+      }
+    }
+
+    if (targetDepth !== -1) {
+      let insertPos = selection.from;
+      // If we are nested too deep, insert after the current node at the target depth
+      if (targetDepth < $pos.depth) {
+        insertPos = $pos.after(targetDepth + 1);
+      }
+      view.dispatch(tr.insert(insertPos, node).scrollIntoView());
+    } else {
+      // Fallback: standard Tiptap insertion which might split (but usually schema forbids it now)
+      editor.chain().focus().insertContent(node.toJSON()).run();
+    }
+  };
+
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -425,6 +691,131 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+
+  const handleCreateQuickExercise = (data: { title: string; type: QuestionType; questions: QuestionData[] }) => {
+    if (!editor) return;
+
+    const { title, type, questions } = data;
+
+    // Formatting the exercise content as TipTap nodes
+    const questionsItems = questions.map((q) => {
+      const itemContent: any[] = [
+        {
+          type: 'paragraph',
+          content: [{
+            type: 'text',
+            text: q.text
+          }]
+        }
+      ];
+
+      // If MCQ, add the options as an ordered list (for alpha numbering a, b, c...)
+      if (type === 'MULTIPLE_CHOICE' && q.options && q.options.length > 0) {
+        itemContent.push({
+          type: 'orderedList',
+          content: q.options.filter((opt: string) => opt.trim() !== '').map((opt: string) => ({
+            type: 'listItem',
+            content: [{
+              type: 'paragraph',
+              content: [{ type: 'text', text: opt }]
+            }]
+          }))
+        });
+      }
+
+      return {
+        type: 'listItem',
+        content: itemContent
+      };
+    });
+
+    const exerciseNode = {
+      type: 'exercice',
+      attrs: {
+        id: `exercice-${Date.now()}`,
+        title: title,
+      },
+      content: [{
+        type: 'orderedList',
+        content: questionsItems
+      }]
+    };
+
+    // Build the ProseMirror node from the JSON definition
+    const { state, view } = editor;
+    const { schema, tr, selection } = state;
+    const nodeType = schema.nodes['exercice'];
+    if (!nodeType) return;
+
+    const timestamp = Date.now();
+    const sessionIdx = ++globalIdCounter;
+    const entropy = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID().split('-')[0]
+      : Math.random().toString(36).substring(2, 11);
+
+    const exerciceNodeJson = {
+      type: 'exercice',
+      attrs: {
+        id: `exercice-${timestamp}-${sessionIdx}-${entropy}`,
+        title: title,
+      },
+      content: [{
+        type: 'orderedList',
+        content: questionsItems
+      }]
+    };
+
+    const pmNode = state.schema.nodeFromJSON(exerciceNodeJson);
+
+    if (targetNodeId) {
+      // ── DIRECT BY-ID INSERTION ──────────────────────────────────────────
+      // The exercise was triggered from a Chapitre/Section NodeView button.
+      // We insert directly as the last child of that node, regardless of
+      // where the cursor is. This bypasses smartInsertNode which would always
+      // pick the nearest ancestor (often a paragraphe).
+      let inserted = false;
+      editor.state.doc.descendants((node, pos) => {
+        if (inserted) return false;
+        if (node.attrs.id === targetNodeId) {
+          // pos + nodeSize - 1 is the position just inside the closing tag
+          const insertPos = pos + node.nodeSize - 1;
+          try {
+            view.dispatch(tr.insert(insertPos, pmNode).scrollIntoView());
+            inserted = true;
+          } catch (_) {
+            // Fallback to cursor-based if the position is invalid
+          }
+          return false;
+        }
+      });
+      setTargetNodeId(null);
+      if (inserted) return;
+    }
+
+    // ── CURSOR-BASED SMART INSERTION (toolbar button) ──────────────────────
+    // Walk up ancestors from cursor to find the nearest node that accepts exercice
+    const $pos = selection.$from;
+    let targetDepth = -1;
+    for (let d = $pos.depth; d >= 0; d--) {
+      const parent = $pos.node(d);
+      const index = $pos.index(d);
+      if (parent.canReplaceWith(index, index, nodeType)) {
+        targetDepth = d;
+        break;
+      }
+    }
+
+    if (targetDepth !== -1) {
+      let insertPos = selection.from;
+      if (targetDepth < $pos.depth) {
+        insertPos = $pos.after(targetDepth + 1);
+      }
+      view.dispatch(tr.insert(insertPos, pmNode).scrollIntoView());
+    } else {
+      // Fallback: try a generic insertContent as last resort
+      editor.chain().focus().insertContent(exerciceNodeJson).run();
+    }
+  };
 
   const ToolbarButton = ({
     onClick,
@@ -463,17 +854,19 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       if (value === 'paragraph') {
         editor?.chain().focus().setParagraph().run();
       } else if (value === 'section') {
-        editor?.chain().focus().setSection().run();
+        smartInsertNode('section');
       } else if (value === 'chapitre') {
-        editor?.chain().focus().setChapitre().run();
+        smartInsertNode('chapitre');
       } else if (value === 'paragraphe') {
-        editor?.chain().focus().setParagraphe().run();
+        smartInsertNode('paragraphe');
       } else if (value === 'notion') {
-        editor?.chain().focus().setNotion().run();
+        smartInsertNode('notion');
       } else if (value === 'exercice') {
-        editor?.chain().focus().setExercice().run();
+        smartInsertNode('exercice');
+      } else if (typeof value === 'number' && value === 1) {
+        smartInsertNode('heading', { level: 1 });
       } else if (typeof value === 'number') {
-        editor?.chain().focus().toggleHeading({ level: value as 1 | 2 | 3 | 4 | 5 | 6 }).run();
+        editor?.chain().focus().toggleHeading({ level: value as any }).run();
       }
     };
 
@@ -637,6 +1030,17 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               <div className="flex items-center gap-1">
                 <Sigma size={16} />
                 <span className="text-xs font-bold hidden xl:inline">Équation</span>
+              </div>
+            </ToolbarButton>
+
+            <ToolbarButton
+              onClick={() => setShowQuickExerciseModal(true)}
+              title="Créer un Exercice Rapide"
+              isActive={false}
+            >
+              <div className="flex items-center gap-1">
+                <FaListOl size={16} />
+                <span className="text-xs font-bold hidden xl:inline">Exercice</span>
               </div>
             </ToolbarButton>
 
@@ -876,12 +1280,14 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             />
             <div className="flex gap-2 justify-end">
               <button
+                type="button"
                 onClick={() => setShowLinkModal(false)}
                 className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => {
                   if (linkUrl) {
                     editor?.chain().focus().setLink({ href: linkUrl }).run();
@@ -897,6 +1303,12 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           </div>
         </div>
       )}
+
+      <QuickExerciseModal
+        isOpen={showQuickExerciseModal}
+        onClose={() => setShowQuickExerciseModal(false)}
+        onSave={handleCreateQuickExercise}
+      />
     </>
   );
 });

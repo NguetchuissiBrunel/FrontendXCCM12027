@@ -129,9 +129,11 @@ export const mockCourse1: Course = {
   sections: [
     {
       title: 'Les Fondamentaux de la Compilation',
+      introduction: 'Cette section explore les bases théoriques nécessaires à la compréhension des compilateurs.',
       chapters: [
         {
           title: 'Introduction à la Théorie des Langages',
+          introduction: 'Le premier chapitre définit les concepts de langages formels et d\'automates.',
           paragraphs: [
             {
               title: 'Qu\'est-ce que la Théorie des Langages?',
@@ -142,27 +144,27 @@ export const mockCourse1: Course = {
                 'Les grammaires formelles décrivent la structure syntaxique des langages.'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Qu\'est-ce qu\'un alphabet dans un langage formel?',
+                    text: 'Qu\'est-ce qu\'un alphabet dans un langage formel?',
                     options: [
                       'Un ensemble de symboles de base',
                       'Une règle de grammaire',
                       'Un type de compilateur',
                       'Une phase d\'analyse'
-                    ],
-                    réponse: 'Un ensemble de symboles de base'
-                  },
+                    ],},
                   {
-                    question: 'Quel type d\'automate reconnaît les langages réguliers?',
+                    text: 'Quel type d\'automate reconnaît les langages réguliers?',
                     options: [
                       'Automate à pile',
                       'Machine de Turing',
                       'Automate fini',
                       'Réseau de neurones'
-                    ],
-                    réponse: 'Automate fini'
-                  }
+                    ],}
                 ]
               }
             },
@@ -190,17 +192,19 @@ export const mockCourse1: Course = {
                 'Les expressions régulières sont utilisées pour définir les patterns de tokens.'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quel est le rôle principal du lexer?',
+                    text: 'Quel est le rôle principal du lexer?',
                     options: [
                       'Générer du code machine',
                       'Transformer les caractères en tokens',
                       'Optimiser le code',
                       'Vérifier la sémantique'
-                    ],
-                    réponse: 'Transformer les caractères en tokens'
-                  }
+                    ],}
                 ]
               }
             },
@@ -350,17 +354,19 @@ export const mockCourse3: Course = {
                 'Le cycle de vie des composants'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quelle est la différence entre props et state?',
+                    text: 'Quelle est la différence entre props et state?',
                     options: [
                       'Props sont immutables, state peut être modifié',
                       'Props sont modifiables, state est immuable',
                       'Il n\'y a pas de différence',
                       'Props sont pour les données, state pour les fonctions'
-                    ],
-                    réponse: 'Props sont immutables, state peut être modifié'
-                  }
+                    ],}
                 ]
               }
             },
@@ -445,17 +451,19 @@ export const mockCourse4: Course = {
                 'Feature engineering'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quelle méthode est utilisée pour gérer les valeurs manquantes?',
+                    text: 'Quelle méthode est utilisée pour gérer les valeurs manquantes?',
                     options: [
                       'Suppression des lignes',
                       'Imputation par la moyenne',
                       'Imputation par la médiane',
                       'Toutes ces réponses'
-                    ],
-                    réponse: 'Toutes ces réponses'
-                  }
+                    ],}
                 ]
               }
             }
@@ -550,17 +558,19 @@ export const mockCourse5: Course = {
                 'Alignement et proximité'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quel est le but de la hiérarchie visuelle?',
+                    text: 'Quel est le but de la hiérarchie visuelle?',
                     options: [
                       'Rendre l\'interface belle',
                       'Guider l\'attention de l\'utilisateur',
                       'Réduire les couleurs',
                       'Augmenter la complexité'
-                    ],
-                    réponse: 'Guider l\'attention de l\'utilisateur'
-                  }
+                    ],}
                 ]
               }
             },
@@ -617,17 +627,19 @@ export const mockCourse6: Course = {
                 'Backlinks et autorité'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quel est l\'objectif principal du SEO?',
+                    text: 'Quel est l\'objectif principal du SEO?',
                     options: [
                       'Augmenter la vitesse du site',
                       'Améliorer le classement dans les moteurs de recherche',
                       'Créer du contenu viral',
                       'Augmenter les abonnés sur les réseaux sociaux'
-                    ],
-                    réponse: 'Améliorer le classement dans les moteurs de recherche'
-                  }
+                    ],}
                 ]
               }
             }
@@ -782,17 +794,19 @@ export const mockCourse9: Course = {
                 'ISO et bruit numérique'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quel paramètre contrôle la profondeur de champ?',
+                    text: 'Quel paramètre contrôle la profondeur de champ?',
                     options: [
                       'Ouverture',
                       'Vitesse d\'obturation',
                       'ISO',
                       'Balance des blancs'
-                    ],
-                    réponse: 'Ouverture'
-                  }
+                    ],}
                 ]
               }
             }
@@ -903,17 +917,19 @@ export const mockCourse11: Course = {
                 'Applications pratiques'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quel est le bénéfice principal de la répétition espacée?',
+                    text: 'Quel est le bénéfice principal de la répétition espacée?',
                     options: [
                       'Réduire le temps d\'étude',
                       'Améliorer la rétention à long terme',
                       'Apprendre plus vite initialement',
                       'Diminuer l\'effort mental'
-                    ],
-                    réponse: 'Améliorer la rétention à long terme'
-                  }
+                    ],}
                 ]
               }
             }
@@ -959,17 +975,19 @@ export const mockCourse12: Course = {
                 'Objectifs et rationalité'
               ],
               exercise: {
-                questions: [
+                
+
+                  'title': 'Exercice d\'application',
+
+                  'type': 'MULTIPLE_CHOICE',questions: [
                   {
-                    question: 'Quelle est la caractéristique principale d\'un agent intelligent?',
+                    text: 'Quelle est la caractéristique principale d\'un agent intelligent?',
                     options: [
                       'Sa capacité à apprendre',
                       'Son autonomie',
                       'Sa vitesse de calcul',
                       'Sa taille mémoire'
-                    ],
-                    réponse: 'Son autonomie'
-                  }
+                    ],}
                 ]
               }
             }

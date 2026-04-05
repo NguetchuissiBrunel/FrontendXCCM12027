@@ -1,4 +1,4 @@
-import { CourseData, Section, Chapter, Paragraph, ExerciseQuestion } from '@/types/course';
+import { CourseData, Section, Chapter, Paragraph, QuestionData, SubItem } from '@/types/course';
 import { extractTOC } from './extractTOC';
 import { TableOfContentsItem } from '@/types/editor.types';
 
@@ -10,17 +10,60 @@ import { TableOfContentsItem } from '@/types/editor.types';
 export const extractTextFromContent = (content: any): string => {
     if (!content) return '';
     if (typeof content === 'string') return content;
+    
+    /**
+     * @param node The current node to extract text from
+     * @param index The index of the node within its parent's content
+     * @param parentType The type of the parent node (e.g., 'orderedList')
+     * @param listDepth The nesting level of lists (0 = top level, 1 = first list, 2 = nested list...)
+     */
+    const extract = (node: any, index: number = 0, parentType?: string, listDepth: number = 0): string => {
+        if (!node) return '';
+        if (typeof node === 'string') return node;
+        
+        let text = '';
+        if (node.type === 'text') {
+            text = node.text || '';
+        } else if (node.type === 'math') {
+            text = ` $${node.attrs?.tex || ''}$ `;
+        } else if (node.content && Array.isArray(node.content)) {
+            // Increase listDepth ONLY when entering a list node
+            const nextListDepth = (node.type === 'orderedList' || node.type === 'bulletList') ? listDepth + 1 : listDepth;
+            text = node.content.map((child: any, i: number) => extract(child, i, node.type, nextListDepth)).join('');
+        }
+
+        // Add formatting/structure based on node type
+        if (node.type === 'paragraph' || node.type === 'heading') {
+            return text.trim() ? text.trim() + '\n' : '';
+        }
+        
+        if (node.type === 'listItem') {
+            // Indentation: 2 spaces per level of nesting (starting from depth 2)
+            const indent = '  '.repeat(Math.max(0, listDepth - 1));
+            
+            if (parentType === 'orderedList') {
+                // Formatting: 1. 2. 3. for top level (depth 1), a) b) c) for nested (depth 2+)
+                if (listDepth > 1) {
+                    const letter = String.fromCharCode(96 + (index + 1)); // 97 is 'a'
+                    return `${indent}${letter}) ${text.trim()}\n`;
+                }
+                return `${indent}${index + 1}. ${text.trim()}\n`;
+            }
+            return `${indent}• ${text.trim()}\n`;
+        }
+        
+        if (node.type === 'bulletList' || node.type === 'orderedList') {
+            return text + '\n';
+        }
+        
+        return text;
+    };
+
     if (Array.isArray(content)) {
-        return content.map((node: any) => {
-            if (node.type === 'text') return node.text;
-            if (node.type === 'math') return ` $${node.attrs?.tex || ''}$ `;
-            if (node.content) return extractTextFromContent(node.content);
-            return '';
-        }).join('');
+        return content.map((node: any, i: number) => extract(node, i)).join('').trim();
     }
-    if (content.type === 'doc' && content.content) return extractTextFromContent(content.content);
-    if (content.content) return extractTextFromContent(content.content);
-    return '';
+    
+    return extract(content).trim();
 };
 
 export function transformTiptapToCourseData(apiCourse: any): CourseData {
@@ -52,65 +95,177 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
         }).join('').trim();
     };
 
-    // 2. Parcourir l'arbre TOC pour construire la structure (récursif pour gérer l'imbrication)
-    const processItems = (items: TableOfContentsItem[]): any[] => {
+    /**
+     * Filtre les nœuds TipTap pour retirer les notions et exercices du flux de texte principal
+     * car ils sont affichés dans des sections dédiées.
+     */
+    const filterSpecialNodes = (nodes: any[]): any[] => {
+        if (!nodes || !Array.isArray(nodes)) return nodes;
+        return nodes.filter(node => node.type !== 'notion' && node.type !== 'exercice' && node.type !== 'exercise').map(node => ({
+            ...node,
+            content: node.content ? filterSpecialNodes(node.content) : undefined
+        }));
+    };
+
+    // 2. Parcourir l'arbre TOC pour construire la structure
+    let extractedCourseTitle: string | undefined = undefined;
+    let extractedCourseIntroduction: string | undefined = undefined;
+
+    const processItems = (items: TableOfContentsItem[]): Section[] => {
         const sections: Section[] = [];
 
         items.forEach(item => {
+            if (item.type === 'course') {
+                extractedCourseTitle = extractedCourseTitle || item.title;
+                extractedCourseIntroduction = extractedCourseIntroduction || item.attrs?.introduction || '';
+
+                // Convert course children to sections (useful when no explicit section nodes exist)
+                if (item.children && item.children.length > 0) {
+                    sections.push(...processItems(item.children));
+                }
+
+                return;
+            }
+
             if (item.type === 'section') {
                 const section: Section = {
+                    id: item.id,
                     title: item.title || "Section sans titre",
+                    introduction: item.attrs?.introduction || "",
                     chapters: [],
-                    paragraphs: []
+                    paragraphs: [],
+                    exercises: [],
+                    children: [],
+                    subItems: []
                 };
 
-                // Split children into chapters and paragraphs
                 item.children.forEach(child => {
                     if (child.type === 'chapter') {
                         const chapter: Chapter = {
+                            id: child.id,
                             title: child.title || "Chapitre sans titre",
-                            paragraphs: []
+                            introduction: child.attrs?.introduction || "",
+                            paragraphs: [],
+                            exercises: [],
+                            children: [],
+                            subItems: []
                         };
 
-                        // Paragraphs inside chapter
                         child.children.forEach(grandChild => {
-                            if (['paragraph', 'notion', 'exercise'].includes(grandChild.type)) {
-                                chapter.paragraphs.push({
-                                    title: grandChild.title || "",
-                                    content: grandChild.content || [],
-                                    notions: grandChild.type === 'notion' ? [grandChild.title] : [],
-                                    exercise: grandChild.type === 'exercise' ? { questions: [] } : undefined
+                            if (grandChild.type === 'paragraph') {
+                                const paragraph: Paragraph = {
+                                    id: grandChild.id,
+                                    title: grandChild.title || "Paragraphe sans titre",
+                                    introduction: grandChild.attrs?.introduction || "",
+                                    content: filterSpecialNodes(grandChild.content || []),
+                                    notions: [],
+                                    exercises: [],
+                                    children: [],
+                                    subItems: []
+                                };
+
+                                (grandChild.children || []).forEach(cc => {
+                                    if (cc.type === 'notion') {
+                                        const notionText = extractTextFromContent(cc.content);
+                                        paragraph.notions.push(notionText);
+                                        paragraph.subItems!.push({ type: 'notion', data: notionText });
+                                    } else if (cc.type === 'exercise') {
+                                        const exData = {
+                                            title: cc.title || "Exercice",
+                                            content: cc.content,
+                                            questions: cc.attrs?.questions,
+                                            id: cc.id
+                                        };
+                                        paragraph.exercises?.push(exData);
+                                        paragraph.subItems!.push({ type: 'exercise', data: exData });
+                                    }
                                 });
+
+                                chapter.paragraphs.push(paragraph);
+                                chapter.children?.push({ type: 'paragraph', data: paragraph });
+                            } else if (grandChild.type === 'exercise') {
+                                const exData = {
+                                    title: grandChild.title || "Exercice",
+                                    content: grandChild.content,
+                                    questions: grandChild.attrs?.questions,
+                                    id: grandChild.id
+                                };
+                                chapter.exercises?.push(exData);
+                                chapter.subItems!.push({ type: 'exercise', data: exData });
                             }
                         });
+                        chapter.subItems = (child.children || []).map(gc => {
+                            if (gc.type === 'paragraph') {
+                                const p = chapter.paragraphs.find(para => para.id === gc.id);
+                                return p ? { type: 'paragraph' as const, data: p } : null;
+                            } else if (gc.type === 'exercise') {
+                                const e = chapter.exercises?.find(ex => ex.id === gc.id);
+                                return e ? { type: 'exercise' as const, data: e } : null;
+                            }
+                            return null;
+                        }).filter(Boolean) as SubItem[];
+
                         section.chapters!.push(chapter);
-                    } else if (['paragraph', 'notion', 'exercise'].includes(child.type)) {
-                        section.paragraphs!.push({
-                            title: child.title || "",
-                            content: child.content || [],
-                            notions: child.type === 'notion' ? [child.title] : [],
-                            exercise: child.type === 'exercise' ? { questions: [] } : undefined
+                        section.children?.push({ type: 'chapter', data: chapter });
+                    } else if (child.type === 'paragraph') {
+                        const paragraph: Paragraph = {
+                            id: child.id,
+                            title: child.title || "Paragraphe sans titre",
+                            introduction: child.attrs?.introduction || "",
+                            content: filterSpecialNodes(child.content || []),
+                            notions: [],
+                            exercises: [],
+                            children: [],
+                            subItems: []
+                        };
+
+                        (child.children || []).forEach(cc => {
+                            if (cc.type === 'notion') {
+                                const notionText = extractTextFromContent(cc.content);
+                                paragraph.notions.push(notionText);
+                                paragraph.subItems!.push({ type: 'notion', data: notionText });
+                            } else if (cc.type === 'exercise') {
+                                const exData = {
+                                    title: cc.title || "Exercice",
+                                    content: cc.content,
+                                    questions: cc.attrs?.questions,
+                                    id: cc.id
+                                };
+                                paragraph.exercises?.push(exData);
+                                paragraph.subItems!.push({ type: 'exercise', data: exData });
+                            }
                         });
+
+                        section.paragraphs!.push(paragraph);
+                        section.children?.push({ type: 'paragraph', data: paragraph });
+                    } else if (child.type === 'exercise') {
+                        const exData = {
+                            title: child.title || "Exercice",
+                            content: child.content,
+                            questions: child.attrs?.questions,
+                            id: child.id
+                        };
+                        section.exercises?.push(exData);
+                        section.subItems!.push({ type: 'exercise', data: exData });
                     }
                 });
+                
+                // Final order for Section subItems
+                section.subItems = (item.children || []).map(child => {
+                    if (child.type === 'chapter') {
+                        const c = section.chapters?.find(ch => ch.id === child.id);
+                        return c ? { type: 'chapter' as const, data: c } : null;
+                    } else if (child.type === 'paragraph') {
+                        const p = section.paragraphs?.find(pa => pa.id === child.id);
+                        return p ? { type: 'paragraph' as const, data: p } : null;
+                    } else if (child.type === 'exercise') {
+                        const e = section.exercises?.find(ex => ex.id === child.id);
+                        return e ? { type: 'exercise' as const, data: e } : null;
+                    }
+                    return null;
+                }).filter(Boolean) as SubItem[];
+
                 sections.push(section);
-            } else if (item.type === 'chapter') {
-                // If chapter is at top level, wrap it in a dummy section or handle it
-                const chapter: Chapter = {
-                    title: item.title || "Chapitre sans titre",
-                    paragraphs: []
-                };
-                item.children.forEach(child => {
-                    if (['paragraph', 'notion', 'exercise'].includes(child.type)) {
-                        chapter.paragraphs.push({
-                            title: child.title || "",
-                            content: child.content || [],
-                            notions: child.type === 'notion' ? [child.title] : [],
-                            exercise: child.type === 'exercise' ? { questions: [] } : undefined
-                        });
-                    }
-                });
-                sections.push({ title: "", chapters: [chapter], paragraphs: [] });
             }
         });
 
@@ -120,22 +275,31 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
     const sections = processItems(toc);
 
     // 3. Retourner l'objet final formaté
+    const computedTitle = (apiCourse.title && apiCourse.title.toString().trim() && apiCourse.title.toString().trim() !== 'Nouveau cours')
+        ? apiCourse.title
+        : (extractedCourseTitle || "Titre non disponible");
+
+    const computedIntroduction = (apiCourse.description && apiCourse.description.toString().trim())
+        ? apiCourse.description
+        : (extractedCourseIntroduction || "");
+
     return {
         id: apiCourse.id || 0,
-        title: apiCourse.title || "Titre non disponible",
+        title: computedTitle,
         category: apiCourse.category || "Formation",
         image: apiCourse.coverImage || apiCourse.image || "/images/Capture2.png",
         viewCount: apiCourse.viewCount || 0,
         likeCount: apiCourse.likeCount || 0,
         downloadCount: apiCourse.downloadCount || 0,
         author: {
+            id: apiCourse.author?.id,
             name: apiCourse.author
                 ? (apiCourse.author.name || `${apiCourse.author.firstName || ''} ${apiCourse.author.lastName || ''}`.trim() || "Auteur inconnu")
                 : "Auteur inconnu",
             image: apiCourse.author?.image || apiCourse.author?.photoUrl || "",
             designation: apiCourse.author?.designation
         },
-        introduction: apiCourse.description || "",
+        introduction: computedIntroduction,
         conclusion: "",
         learningObjectives: [],
         sections: sections

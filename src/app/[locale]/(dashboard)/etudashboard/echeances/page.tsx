@@ -13,7 +13,7 @@ interface User {
   lastName: string;
   role: string;
   specialization?: string;
-  level?: string;
+  grade?: string;
 }
 
 export default function StudentDeadlines() {
@@ -62,7 +62,7 @@ export default function StudentDeadlines() {
   if (!user) return null;
 
   const displayName = `${user.firstName} ${user.lastName}`;
-  const userLevel = user.specialization || user.level || 'Étudiant';
+  const userLevel = user.specialization || user.grade || 'Étudiant';
 
   return (
     <div className="space-y-8">

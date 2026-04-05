@@ -154,7 +154,7 @@ export default function StudentCourses() {
   if (!user) return null;
 
   const displayName = `${user.firstName || ''} ${user.lastName || ''}`;
-  const userLevel = user.specialization || (user as any).level || 'Étudiant';
+  const userLevel = user.specialization || (user as any).grade || 'Étudiant';
 
   return (
     <>

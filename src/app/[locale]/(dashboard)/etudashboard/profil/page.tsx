@@ -16,7 +16,7 @@ interface User {
   role: string;
   photoUrl?: string;
   specialization?: string;
-  level?: string;
+  grade?: string;
   university?: string;
   city?: string;
   promotion?: string;
@@ -141,7 +141,7 @@ export default function StudentProfile() {
   if (!user || !editedUser) return null;
 
   const displayName = `${editedUser.firstName} ${editedUser.lastName}`;
-  const userLevel = editedUser.specialization || editedUser.level || 'Étudiant';
+  const userLevel = editedUser.specialization || editedUser.grade || 'Étudiant';
   const defaultAvatar = '/images/pp.jpeg';
 
   const grades = [
@@ -270,13 +270,13 @@ export default function StudentProfile() {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={editedUser.level || ''}
-                    onChange={(e) => handleChange('level', e.target.value)}
+                    value={editedUser.grade || ''}
+                    onChange={(e) => handleChange('grade', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={editedUser.level || "Ex: Master 2"}
+                    placeholder={editedUser.grade || "Ex: Master 2"}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.level || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.grade || 'Non spécifié'}</p>
                 )}
               </div>
 

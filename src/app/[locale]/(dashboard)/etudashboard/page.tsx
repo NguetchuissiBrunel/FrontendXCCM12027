@@ -22,7 +22,7 @@ interface User {
   role: string;
   photoUrl?: string;
   specialization?: string;
-  level?: string;
+  grade?: string;
   university?: string;
   city?: string;
 }
@@ -296,7 +296,7 @@ export default function StudentHome() {
   if (!user) return null;
 
   const displayName = `${user.firstName} ${user.lastName}`;
-  const userLevel = user.specialization || user.level || 'Étudiant';
+  const userLevel = user.specialization || user.grade || 'Étudiant';
 
   return (
     <div className="space-y-8">

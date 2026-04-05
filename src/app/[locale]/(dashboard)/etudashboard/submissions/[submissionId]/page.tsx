@@ -31,7 +31,7 @@ interface AppUser {
   role: string;
   photoUrl?: string;
   specialization?: string;
-  level?: string;
+  grade?: string;
 }
 
 export default function SubmissionDetailsPage() {
@@ -173,7 +173,7 @@ export default function SubmissionDetailsPage() {
   }
 
   const displayName = `${user.firstName} ${user.lastName}`;
-  const userLevel = user.specialization || user.level || 'Étudiant';
+  const userLevel = user.specialization || user.grade || 'Étudiant';
   const exerciseTitle = submission.exerciseTitle || 'Exercice';
 
   return (

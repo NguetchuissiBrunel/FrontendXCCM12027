@@ -186,7 +186,8 @@ export default function StudentProfile() {
           {/* Left Column - Profile Info */}
           <div className="col-span-1 space-y-6">
             {/* Profile Picture */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+            <div id="profile-info" className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+
               <div className="relative w-32 h-32 mx-auto mb-4">
                 <img
                   src={editedUser.photoUrl || defaultAvatar}
@@ -348,7 +349,8 @@ export default function StudentProfile() {
           {/* Right Column - Stats */}
           <div className="col-span-2 space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-6">
+            <div id="profile-stats" className="grid grid-cols-3 gap-6">
+
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <BookOpen className="text-purple-600 dark:text-purple-400" size={32} />

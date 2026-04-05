@@ -73,7 +73,8 @@ export default function StudentDeadlines() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl shadow-purple-100/50 dark:shadow-none border border-purple-100 dark:border-gray-700">
+      <div id="calendar-view" className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl shadow-purple-100/50 dark:shadow-none border border-purple-100 dark:border-gray-700">
+
         <Calendar userId={user.id} />
       </div>
     </div>

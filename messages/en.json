@@ -1276,7 +1276,37 @@
       "pendingTitle": "To Do",
       "pendingDesc": "Don't miss a single task! Your pending tasks are listed here.",
       "navTitle": "Navigation",
-      "navDesc": "Use the sidebar to navigate between sections."
+      "navDesc": "Use the sidebar to navigate between sections.",
+      "submissionsTitle": "My Submissions",
+      "submissionsDesc": "View the status of your submitted work and your grades.",
+      "quickActionsTitle": "Quick Actions",
+      "quickActionsDesc": "Access your exercises and assignments in one click.",
+      "coursesPageTitle": "Course Management",
+      "coursesPageDesc": "Find all the courses you participate in here.",
+      "exploreLibraryTitle": "Explore Library",
+      "exploreLibraryDesc": "Discover new courses and enrich your knowledge.",
+      "exercisesPageTitle": "Your Exercises",
+      "exercisesPageDesc": "Find all your exercises, whether to do or already graded.",
+      "exercisesStatsTitle": "Overview",
+      "exercisesStatsDesc": "A quick look at your progress and performance.",
+      "exercisesFiltersTitle": "Smart Filtering",
+      "exercisesFiltersDesc": "Easily search for an exercise by name or status.",
+      "exercisesListTitle": "Detailed List",
+      "exercisesListDesc": "Access the content of each exercise and start working.",
+      "submissionsPageTitle": "My Submissions",
+      "submissionsPageDesc": "Find the history of all your submitted assignments and their corrections here.",
+      "submissionsListTitle": "Detailed History",
+      "submissionsListDesc": "Click on a submission to see grade details and teacher feedback.",
+      "deadlinesPageTitle": "Your Deadlines",
+      "deadlinesPageDesc": "Don't miss any more deadlines with your personalized calendar.",
+      "calendarViewTitle": "Interactive Calendar",
+      "calendarViewDesc": "Visualize your upcoming assignments and exams for the month.",
+      "profilePageTitle": "Your Profile",
+      "profilePageDesc": "Manage your personal information and track your academic success.",
+      "profileInfoTitle": "Personal Information",
+      "profileInfoDesc": "Update your information and profile photo.",
+      "profileStatsTitle": "Academic Success",
+      "profileStatsDesc": "Visualize your badges, completed courses, and attendance."
     },
     "prof": {
       "dashboardTitle": "Control Center",
@@ -1328,3 +1358,5 @@
     }
   }
 }
+
+

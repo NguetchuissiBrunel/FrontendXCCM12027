@@ -162,7 +162,8 @@ export default function StudentCourses() {
         <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-8">Mes Cours</h1>
 
         {enrolledCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div id="courses-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
             {enrolledCourses.map((course) => (
               <div
                 key={course.id}
@@ -275,11 +276,12 @@ export default function StudentCourses() {
                 Explorez la bibliothèque pour trouver des cours intéressants et commencez votre apprentissage !
               </p>
               <Link href="/bibliotheque">
-                <button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-3">
+                <button id="explore-library-btn" className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-3">
                   <BookOpen className="h-6 w-6" />
                   Explorer la bibliothèque
                 </button>
               </Link>
+
             </div>
           </div>
         )}

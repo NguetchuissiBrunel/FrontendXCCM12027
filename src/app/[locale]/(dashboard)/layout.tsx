@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google';
 import Navbar from '@/components/layout/Navbar';
 import { AuthProvider } from "@/contexts/AuthContext";
 import Onboarding from '@/components/Onboarding';
+import StudentOnboarding from '@/components/StudentOnboarding';
+
 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -27,7 +29,9 @@ export default function RootLayout({
             {children}
           </div>
           <Onboarding />
+          <StudentOnboarding />
         </AuthProvider>
+
       </div>
     </div>
   );

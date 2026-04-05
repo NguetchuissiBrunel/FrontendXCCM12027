@@ -650,8 +650,9 @@ export default function StudentExercisesPage() {
           </div>
 
           {/* Statistiques */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
+          <div id="exercises-stats" className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-lg">
                   <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -724,8 +725,9 @@ export default function StudentExercisesPage() {
         </div>
 
         {/* Barre de filtres */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 mb-6 border border-gray-200 dark:border-gray-700">
+        <div id="exercises-filters" className="bg-white dark:bg-gray-800 rounded-xl p-5 mb-6 border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col lg:flex-row gap-4">
+
             {/* Recherche */}
             <div className="flex-1">
               <div className="relative">
@@ -850,8 +852,9 @@ export default function StudentExercisesPage() {
         ) : (
           <>
             {/* Liste des exercices */}
-            <div className="space-y-4">
+            <div id="exercises-list" className="space-y-4">
               {filteredExercises.map((data) => {
+
                 const statusBadge = getStatusBadge(data.studentStatus);
                 const dueDateStatus = getDueDateStatus(data.exercise);
                 const StatusIcon = statusBadge.icon;

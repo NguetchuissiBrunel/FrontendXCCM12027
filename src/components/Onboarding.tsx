@@ -56,14 +56,8 @@ const Onboarding = () => {
     }), [t]);
 
     const TOUR_STEPS: Record<string, Step[]> = useMemo(() => ({
-        '/etudashboard': [
-            { target: '#welcome-section', title: t('etu.welcomeTitle'), description: t('etu.welcomeDesc'), position: 'bottom' },
-            { target: '#stats-overview', title: t('etu.statsTitle'), description: t('etu.statsDesc'), position: 'left' },
-            { target: '#my-courses', title: t('etu.coursesTitle'), description: t('etu.coursesDesc'), position: 'top' },
-            { target: '#pending-exercises', title: t('etu.pendingTitle'), description: t('etu.pendingDesc'), position: 'left' },
-            { target: '#sidebar-nav', title: t('etu.navTitle'), description: t('etu.navDesc'), position: 'right' }
-        ]
-    }), [t]);
+        // Student onboarding moved to dedicated StudentOnboarding component
+    }), []);
 
     let matchedKey = Object.keys(TOUR_STEPS).find(key => rawPathname.endsWith(key)) || rawPathname;
     let localSteps: Step[] = EMPTY_STEPS;
@@ -76,6 +70,7 @@ const Onboarding = () => {
         localSteps = TOUR_STEPS[matchedKey];
         localStorageKey = `hasSeenTour_${matchedKey}`;
     }
+
 
     const [isActive, setIsActive] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);

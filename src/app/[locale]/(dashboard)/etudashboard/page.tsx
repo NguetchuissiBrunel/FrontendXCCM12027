@@ -518,8 +518,9 @@ export default function StudentHome() {
           </div>
 
           {/* Dernières soumissions */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
+          <div id="my-submissions" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
+
               <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <Award className="text-green-500 w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-sm md:text-base">Mes soumissions</span>
@@ -583,8 +584,9 @@ export default function StudentHome() {
           </div>
 
           {/* Actions rapides */}
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 md:p-5 border border-purple-200 dark:border-gray-700">
+          <div id="quick-actions" className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 md:p-5 border border-purple-200 dark:border-gray-700">
             <h3 className="font-bold text-gray-800 dark:text-white mb-3 text-sm md:text-base">
+
               Actions rapides
             </h3>
             <div className="space-y-2">

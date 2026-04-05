@@ -21,11 +21,14 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useLocale, useTranslations } from 'next-intl';
 
 // Importer le type User généré
 import type { User } from '@/lib/models/User'; // Ajustez le chemin selon votre structure
 
 export default function SubmissionDetailsPage() {
+  const t = useTranslations('submissionDetails');
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const submissionId = params?.submissionId ? parseInt(params.submissionId as string) : NaN;
@@ -85,13 +88,13 @@ export default function SubmissionDetailsPage() {
     a.download = `soumission-${submission.studentName}-${exercise.title}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Soumission téléchargée');
+    toast.success(t('downloadSuccess'));
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Non disponible';
+    if (!dateString) return t('generalInfo.notRecorded');
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -101,10 +104,10 @@ export default function SubmissionDetailsPage() {
   };
 
   const calculateTimeSpent = () => {
-    if (!submission?.timeSpent) return 'Non enregistré';
+    if (!submission?.timeSpent) return t('generalInfo.notRecorded');
     const minutes = Math.floor(submission.timeSpent / 60);
     const seconds = submission.timeSpent % 60;
-    return `${minutes} min ${seconds} sec`;
+    return t('generalInfo.timeSpentValue', { minutes, seconds });
   };
 
   const getScoreColor = (score?: number, maxScore?: number) => {
@@ -123,7 +126,7 @@ export default function SubmissionDetailsPage() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de la soumission...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">{t('loading')}</p>
         </div>
 
       </div>
@@ -135,23 +138,23 @@ export default function SubmissionDetailsPage() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Soumission non trouvée</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('notFoundTitle')}</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {submissionError?.message || exerciseError?.message || 'Cette soumission n\'existe pas ou vous n\'y avez pas accès.'}
+            {submissionError?.message || exerciseError?.message || t('notFoundDesc')}
           </p>
           <div className="space-y-3">
             <button
               onClick={() => router.push('/etudashboard/submissions')}
               className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Retour à mes soumissions
+              {t('backToSubmissions')}
             </button>
             <button
               onClick={() => refetchSubmission()}
               className="w-full px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
-              Réessayer
+              {t('retry')}
             </button>
           </div>
         </div>
@@ -160,10 +163,10 @@ export default function SubmissionDetailsPage() {
   }
 
   // Utiliser le nom complet avec gestion des valeurs optionnelles
-  const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilisateur';
+  const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('studentInfo.defaultUser');
 
   // Utiliser `specialization` comme défini dans le type User
-  const userLevel = user.specialization || 'Étudiant';
+  const userLevel = user.specialization || t('studentInfo.defaultLevel');
 
   return (
     <div className="space-y-8">
@@ -174,17 +177,17 @@ export default function SubmissionDetailsPage() {
           className="flex items-center gap-2 text-purple-600 hover:text-purple-700 mb-6 transition-colors"
         >
           <ArrowLeft size={20} />
-          <span>Retour à mes soumissions</span>
+          <span>{t('backToSubmissions')}</span>
         </button>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700 shadow-sm">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="max-w-3xl">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Détails de la soumission
+                {t('title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                {exercise?.title || 'Exercice'}
+                {exercise?.title || t('exerciseLabel')}
               </p>
             </div>
 
@@ -194,14 +197,14 @@ export default function SubmissionDetailsPage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Download size={18} />
-                Télécharger
+                {t('download')}
               </button>
               <button
                 onClick={() => router.push(`/etudashboard/exercises/${submission.exerciseId}`)}
                 className="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors flex items-center gap-2"
               >
                 <Eye size={18} />
-                Voir l'exercice
+                {t('viewExercise')}
               </button>
             </div>
           </div>
@@ -214,7 +217,7 @@ export default function SubmissionDetailsPage() {
           {/* Carte de statut */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Statut de la soumission
+              {t('generalInfo.statusTitle')}
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -224,25 +227,25 @@ export default function SubmissionDetailsPage() {
                     {submission.graded ? (
                       <>
                         <CheckCircle className="w-5 h-5 text-green-500" />
-                        <span className="font-medium text-green-600 dark:text-green-400">Noté</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">{t('generalInfo.graded')}</span>
                       </>
                     ) : (
                       <>
                         <Clock className="w-5 h-5 text-yellow-500" />
-                        <span className="font-medium text-yellow-600 dark:text-yellow-400">En attente de correction</span>
+                        <span className="font-medium text-yellow-600 dark:text-yellow-400">{t('generalInfo.pending')}</span>
                       </>
                     )}
                   </div>
                   {submission.gradedAt && (
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Corrigé le {formatDate(submission.gradedAt)}
-                      {submission.gradedBy && ` par ${submission.gradedBy}`}
+                      {t('generalInfo.gradedAt', { date: formatDate(submission.gradedAt) })}
+                      {submission.gradedBy && t('generalInfo.gradedBy', { name: submission.gradedBy })}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Score</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('generalInfo.scoreLabel')}</div>
                   <div className="flex items-baseline">
                     <span className={`text-3xl font-bold ${getScoreColor(submission.score, submission.maxScore)}`}>
                       {submission.score !== undefined ? submission.score : '--'}
@@ -262,7 +265,7 @@ export default function SubmissionDetailsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="w-5 h-5 text-purple-500" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Soumis le</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{t('generalInfo.submittedOn')}</span>
                   </div>
                   <p className="text-gray-800 dark:text-gray-200">
                     {formatDate(submission.submittedAt)}
@@ -272,7 +275,7 @@ export default function SubmissionDetailsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Timer className="w-5 h-5 text-blue-500" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Temps passé</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{t('generalInfo.timeSpent')}</span>
                   </div>
                   <p className="text-gray-800 dark:text-gray-200">
                     {calculateTimeSpent()}
@@ -287,7 +290,7 @@ export default function SubmissionDetailsPage() {
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-500" />
-                Feedback du correcteur
+                {t('feedbackTitle')}
               </h3>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
@@ -301,7 +304,7 @@ export default function SubmissionDetailsPage() {
           <div id="submissions-list" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
 
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Réponses soumises
+              {t('answersTitle')}
             </h3>
 
             {submission.answers && submission.answers.length > 0 ? (
@@ -318,12 +321,12 @@ export default function SubmissionDetailsPage() {
                               {index + 1}
                             </div>
                             <span className="font-medium text-gray-800 dark:text-gray-200">
-                              {question?.text || `Question ${answer.questionId}`}
+                              {question?.text || t('questionLabel', { id: answer.questionId })}
                             </span>
                           </div>
                           {question?.points && (
                             <div className="text-sm text-gray-600 dark:text-gray-400">
-                              {question.points} point{question.points > 1 ? 's' : ''}
+                              {t('points', { value: question.points, plural: question.points > 1 ? 's' : '' })}
                             </div>
                           )}
                         </div>
@@ -336,17 +339,17 @@ export default function SubmissionDetailsPage() {
                       </div>
 
                       <div className="mb-3">
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Votre réponse :</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('yourAnswer')}</div>
                         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
                           <p className="text-gray-800 dark:text-gray-200 whitespace-pre-line">
-                            {answer.answer || 'Aucune réponse'}
+                            {answer.answer || t('noAnswer')}
                           </p>
                         </div>
                       </div>
 
                       {answer.feedback && (
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Feedback :</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('feedbackLabel')}</div>
                           <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800">
                             <p className="text-gray-700 dark:text-gray-300 text-sm">
                               {answer.feedback}
@@ -362,7 +365,7 @@ export default function SubmissionDetailsPage() {
               <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                 <FileText className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-400">
-                  Aucune réponse disponible
+                  {t('noAnswersAvailable')}
                 </p>
               </div>
             )}
@@ -374,14 +377,14 @@ export default function SubmissionDetailsPage() {
           {/* Informations étudiant */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Informations étudiant
+              {t('studentInfo.title')}
             </h3>
 
             <div className="space-y-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <UserIcon className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Nom</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('studentInfo.name')}</span>
                 </div>
                 <p className="font-medium text-gray-800 dark:text-gray-200">
                   {submission.studentName}
@@ -392,7 +395,7 @@ export default function SubmissionDetailsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Mail className="w-5 h-5 text-gray-500" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Email</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('studentInfo.email')}</span>
                   </div>
                   <p className="text-gray-800 dark:text-gray-200">
                     {submission.studentEmail}
@@ -403,7 +406,7 @@ export default function SubmissionDetailsPage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Award className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">ID étudiant</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('studentInfo.studentId')}</span>
                 </div>
                 <p className="text-gray-800 dark:text-gray-200 font-mono">
                   {submission.studentId}
@@ -415,13 +418,13 @@ export default function SubmissionDetailsPage() {
           {/* Métadonnées techniques */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Métadonnées techniques
+              {t('techMeta.title')}
             </h3>
 
             <div className="space-y-3">
               {submission.ipAddress && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Adresse IP</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{t('techMeta.ipAddress')}</div>
                   <p className="text-gray-800 dark:text-gray-200 font-mono text-sm">
                     {submission.ipAddress}
                   </p>
@@ -430,7 +433,7 @@ export default function SubmissionDetailsPage() {
 
               {submission.userAgent && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Navigateur</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{t('techMeta.browser')}</div>
                   <p className="text-gray-800 dark:text-gray-200 text-sm truncate" title={submission.userAgent}>
                     {submission.userAgent.substring(0, 50)}...
                   </p>
@@ -439,7 +442,7 @@ export default function SubmissionDetailsPage() {
 
               {submission.lastModifiedAt && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Dernière modification</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{t('techMeta.lastModified')}</div>
                   <p className="text-gray-800 dark:text-gray-200 text-sm">
                     {formatDate(submission.lastModifiedAt)}
                   </p>
@@ -451,7 +454,7 @@ export default function SubmissionDetailsPage() {
           {/* Actions rapides */}
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-6 border border-purple-200 dark:border-gray-700">
             <h3 className="font-bold text-gray-800 dark:text-white mb-3">
-              Actions
+              {t('actions.title')}
             </h3>
             <div className="space-y-2">
               <button
@@ -459,21 +462,21 @@ export default function SubmissionDetailsPage() {
                 className="w-full py-2.5 text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
                 <Eye size={16} />
-                Revoir l'exercice
+                {t('actions.reviewExercise')}
               </button>
               <button
                 onClick={handleDownload}
                 className="w-full py-2.5 text-center border border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
                 <Download size={16} />
-                Télécharger JSON
+                {t('actions.downloadJson')}
               </button>
               <button
                 onClick={refetchSubmission}
                 className="w-full py-2.5 text-center border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
                 <RefreshCw size={16} />
-                Actualiser
+                {t('actions.refresh')}
               </button>
             </div>
           </div>

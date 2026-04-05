@@ -15,7 +15,7 @@ export default function ProfDashboardSPA() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
 
-    const tab = searchParams.get('tab') || 'accueil';
+    const tab = searchParams?.get('tab') || 'accueil';
 
     useEffect(() => {
         setMounted(true);

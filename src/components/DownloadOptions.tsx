@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Download, FileText, File as FilePdf, X, Layout, Tv, BookUp } from 'lucide-react';
 
 interface DownloadOptionsProps {
@@ -20,6 +21,7 @@ export default function DownloadOptions({
     isPdfLoading,
     isWordLoading
 }: DownloadOptionsProps) {
+    const t = useTranslations('downloadOptions');
     const [showPdfOrientations, setShowPdfOrientations] = React.useState(false);
 
     if (!isOpen) return null;
@@ -47,8 +49,8 @@ export default function DownloadOptions({
                             <Download size={32} />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black tracking-tight">Exporter le cours</h2>
-                            <p className="text-purple-100 font-medium opacity-90">Choisissez le format</p>
+                            <h2 className="text-3xl font-black tracking-tight">{t('title')}</h2>
+                            <p className="text-purple-100 font-medium opacity-90">{t('description')}</p>
                         </div>
                     </div>
                 </div>
@@ -67,8 +69,8 @@ export default function DownloadOptions({
                                     <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                         <FilePdf size={40} className="text-red-500" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Format PDF</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Idéal pour l'impression et la lecture stable</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('pdfOption.title')}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('pdfOption.description')}</p>
                                 </div>
                                 {isPdfLoading && null}
                             </button>
@@ -83,8 +85,8 @@ export default function DownloadOptions({
                                     <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                         <FileText size={40} className="text-blue-500" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Format Word</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Idéal pour l'édition et la prise de notes</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('wordOption.title')}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wordOption.description')}</p>
                                 </div>
                                 {isWordLoading && null}
                             </button>
@@ -95,7 +97,7 @@ export default function DownloadOptions({
                                 onClick={() => setShowPdfOrientations(false)}
                                 className="text-purple-600 font-bold flex items-center gap-2 mb-6 hover:translate-x-[-4px] transition-transform"
                             >
-                                ← Retour au choix du format
+                                {t('pdfOrientation.back')}
                             </button>
 
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Orientation du PDF</h3>
@@ -108,7 +110,7 @@ export default function DownloadOptions({
                                     <div className="w-16 h-24 border-2 border-purple-300 rounded-md mx-auto mb-4 group-hover:bg-white flex items-center justify-center">
                                         <BookUp className="text-purple-500" />
                                     </div>
-                                    <span className="font-bold text-gray-700 dark:text-gray-300">Portrait</span>
+                                    <span className="font-bold text-gray-700 dark:text-gray-300">{t('pdfOrientation.portrait')}</span>
                                 </button>
 
                                 <button
@@ -118,7 +120,7 @@ export default function DownloadOptions({
                                     <div className="w-24 h-16 border-2 border-purple-300 rounded-md mx-auto mb-4 group-hover:bg-white flex items-center justify-center mt-4">
                                         <Tv className="text-purple-500" />
                                     </div>
-                                    <span className="font-bold text-gray-700 dark:text-gray-300">Paysage</span>
+                                    <span className="font-bold text-gray-700 dark:text-gray-300">{t('pdfOrientation.landscape')}</span>
                                 </button>
                             </div>
                         </div>

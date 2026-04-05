@@ -4,10 +4,12 @@ import PendingEnrollmentsList from '@/components/dashboard/PendingEnrollmentsLis
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { useLoading } from '@/contexts/LoadingContext';
 
 export default function InscriptionsView() {
+    const t = useTranslations('teacherDashboard');
     const { user, loading: authLoading } = useAuth();
     const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
     const [isMounted, setIsMounted] = useState(false);
@@ -53,13 +55,13 @@ export default function InscriptionsView() {
                             <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
-                            Retour au Dashboard
+                            {t('inscriptions.backToDashboard')}
                         </button>
                         <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                            Gestion des <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">Inscriptions</span>
+                            {t('inscriptions.title')}
                         </h1>
                         <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
-                            Consultez et validez les demandes d'accès des étudiants à vos contenus pédagogiques.
+                            {t('inscriptions.subtitle')}
                         </p>
                     </div>
 
@@ -72,7 +74,7 @@ export default function InscriptionsView() {
 
                 {/* Simple Footer/Info */}
                 <div className="mt-8 text-center text-gray-400 text-sm">
-                    <p>© {new Date().getFullYear()} XCCM1 • Plateforme Pédagogique Intelligente</p>
+                    <p>{t('inscriptions.footer', { year: new Date().getFullYear() })}</p>
                 </div>
             </div>
         </>

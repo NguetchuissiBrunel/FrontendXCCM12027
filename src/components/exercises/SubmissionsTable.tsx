@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Submission, Exercise } from '@/types/exercise';
 import {
   CheckCircle,
@@ -38,6 +38,7 @@ export default function SubmissionsTable({
   onGradeSubmission,
   filter
 }: SubmissionsTableProps) {
+  const locale = useLocale();
   const t = useTranslations('exercises.table');
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
@@ -121,7 +122,7 @@ export default function SubmissionsTable({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -349,7 +350,7 @@ export default function SubmissionsTable({
             {t('noResults')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Essayez de modifier vos critères de recherche
+            {t('modifySearch')}
           </p>
         </div>
       )}
@@ -360,7 +361,7 @@ export default function SubmissionsTable({
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-4">
               <span className="font-medium text-gray-800 dark:text-gray-200">
-                {selectedRows.length} soumission{selectedRows.length !== 1 ? 's' : ''} sélectionnée{selectedRows.length !== 1 ? 's' : ''}
+                {selectedRows.length} {selectedRows.length !== 1 ? t('submissions') : t('submission')} {selectedRows.length !== 1 ? t('selecteds') : t('selected')}
               </span>
               <div className="flex gap-2">
                 <button
@@ -370,7 +371,7 @@ export default function SubmissionsTable({
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Noter en masse
+                  {t('bulkGrade')}
                 </button>
                 <button
                   onClick={() => {
@@ -379,13 +380,13 @@ export default function SubmissionsTable({
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  Exporter
+                  {t('export')}
                 </button>
                 <button
                   onClick={() => setSelectedRows([])}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Annuler
+                  {t('cancel')}
                 </button>
               </div>
             </div>

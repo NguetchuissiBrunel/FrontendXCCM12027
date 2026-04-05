@@ -22,6 +22,7 @@ import { FaTimes, FaBook, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { Sparkles } from 'lucide-react';
 import { mockCourseData, flattenCourseStructure } from '@/data/mockEditorData';
 import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS } from '@/types/editor.types';
+import { useTranslations } from 'next-intl';
 
 interface StructureDeCoursProps {
   onClose: () => void;
@@ -61,17 +62,18 @@ const getItemBgClass = (type: ItemType) => {
 };
 
 export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) => {
+  const t = useTranslations('editor.structureDeCours');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<ItemType | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // Filter types with exact color codes from ITEM_COLORS
   const filterTypes: { type: ItemType; label: string; color: string }[] = [
-    { type: 'course', label: 'Course', color: ITEM_COLORS.course },
-    { type: 'section', label: 'Section', color: ITEM_COLORS.section },
-    { type: 'chapter', label: 'Chapter', color: ITEM_COLORS.chapter },
-    { type: 'paragraph', label: 'Paragraph', color: ITEM_COLORS.paragraph },
-    { type: 'notion', label: 'Notion', color: ITEM_COLORS.notion },
+    { type: 'course', label: t('types.course'), color: ITEM_COLORS.course },
+    { type: 'section', label: t('types.section'), color: ITEM_COLORS.section },
+    { type: 'chapter', label: t('types.chapter'), color: ITEM_COLORS.chapter },
+    { type: 'paragraph', label: t('types.paragraph'), color: ITEM_COLORS.paragraph },
+    { type: 'notion', label: t('types.notion'), color: ITEM_COLORS.notion },
   ];
 
   const toggleFilter = (type: ItemType) => {
@@ -368,7 +370,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     <div className="flex h-full flex-col bg-white dark:bg-gray-800">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Import Knowledge</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('title')}</h2>
         <button onClick={onClose} className="text-gray-400 dark:text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300">
           <FaTimes className="text-sm" />
         </button>
@@ -379,7 +381,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         <div className="relative">
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t('searchPlaceholder')}
             value={searchTerm}
             suppressHydrationWarning
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -397,7 +399,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           <svg className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Filters</span>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('filters')}</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {filterTypes.map(({ type, label, color }) => (
@@ -432,12 +434,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       <div className="border-t border-gray-200 dark:border-gray-700 bg-purple-50/50 dark:bg-purple-900/10 p-4">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-          <span className="text-xs font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">Expert Corner</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">{t('expertCornerTitle')}</span>
         </div>
         <div className="space-y-3">
           {[
-            { name: "Optimal Structure", advice: "Alternate between theoretical concepts and exercises to maximize retention." },
-            { name: "Engagement", advice: "Keep your paragraphs short (< 300 words) for smooth reading." }
+            { name: t('expertTips.optimalStructureName'), advice: t('expertTips.optimalStructureAdvice') },
+            { name: t('expertTips.engagementName'), advice: t('expertTips.engagementAdvice') }
           ].map((expert, i) => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-purple-100 dark:border-purple-800">
               <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-1">{expert.name}</p>

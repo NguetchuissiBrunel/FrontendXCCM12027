@@ -284,6 +284,8 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       StarterKit.configure({
         document: false,
         heading: false, // Disable default heading to use our custom one
+        dropCursor: false,
+        gapCursor: false,
       }),
       Heading.configure({
         levels: [1, 2, 3, 4, 5, 6],

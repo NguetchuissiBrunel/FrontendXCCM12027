@@ -1,12 +1,9 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { AuthProvider } from "@/contexts/AuthContext"; 
-
-
-const inter = Inter({ subsets: ['latin'] });
+import { dashboardFont } from '../fonts';
 
 export const metadata: Metadata = {
   title: 'XCCM1 - Plateforme de création de contenu pédagogique',
@@ -20,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
    
-      <div className={inter.className}>
+      <div className={dashboardFont.className}>
         <div className="min-h-screen flex flex-col">
         <AuthProvider>
           <Navbar />

@@ -1,103 +1,213 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, Sparkles, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 interface Step {
-    target: string; // CSS Selector or "body" for general
+    target: string;
     title: string;
     description: string;
     position: 'top' | 'bottom' | 'left' | 'right' | 'center';
 }
 
-const EMPTY_STEPS: Step[] = [];
-
 const Onboarding = () => {
-    const rawPathname = usePathname() || '';
-    const searchParams = useSearchParams();
-    const currentTab = searchParams?.get('tab') || 'accueil';
     const t = useTranslations('onboarding');
+    const pathname = usePathname();
 
-    // Mémoriser profSteps et TOUR_STEPS pour éviter des recréations inutiles
-    const profSteps: Record<string, Step[]> = useMemo(() => ({
-        'accueil': [
-            { target: '#dashboard-header', title: t('prof.dashboardTitle'), description: t('prof.dashboardDesc'), position: 'bottom' },
-            { target: '#quick-actions', title: t('prof.actionsTitle'), description: t('prof.actionsDesc'), position: 'bottom' },
-            { target: '#teacher-stats', title: t('prof.statsTitle'), description: t('prof.statsDesc'), position: 'bottom' },
-            { target: '#profile-card', title: t('prof.profileTitle'), description: t('prof.profileDesc'), position: 'top' },
-            { target: '#exercise-actions', title: t('prof.exercisesTitle'), description: t('prof.exercisesDesc'), position: 'top' },
-            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
-        ],
-        'inscriptions': [
-            { target: '#inscriptions-header', title: t('profInscriptions.headerTitle'), description: t('profInscriptions.headerDesc'), position: 'bottom' },
-            { target: '#inscriptions-list', title: t('profInscriptions.listTitle'), description: t('profInscriptions.listDesc'), position: 'top' },
-            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
-        ],
-        'classes': [
-            { target: '#classes-header', title: t('profClasses.headerTitle'), description: t('profClasses.headerDesc'), position: 'bottom' },
-            { target: '#classes-list', title: t('profClasses.listTitle'), description: t('profClasses.listDesc'), position: 'top' },
-            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
-        ],
-        'compositions': [
-            { target: '#compositions-header', title: t('profCompositions.headerTitle'), description: t('profCompositions.headerDesc'), position: 'bottom' },
-            { target: '#compositions-list', title: t('profCompositions.listTitle'), description: t('profCompositions.listDesc'), position: 'top' },
-            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
-        ],
-        'exercices': [
-            { target: '#exercises-header', title: t('profExercises.headerTitle'), description: t('profExercises.headerDesc'), position: 'bottom' },
-            { target: '#exercises-stats', title: t('profExercises.statsTitle'), description: t('profExercises.statsDesc'), position: 'bottom' },
-            { target: '#exercises-filters', title: t('profExercises.filtersTitle'), description: t('profExercises.filtersDesc'), position: 'bottom' },
-            { target: '#exercises-list', title: t('profExercises.listTitle'), description: t('profExercises.listDesc'), position: 'top' },
-            { target: '#sidebar-nav', title: t('prof.navTitle'), description: t('prof.navDesc'), position: 'right' }
-        ]
-    }), [t]);
+    const normalizedPath = useMemo(
+        () => pathname?.replace(/^\/(fr|en)(?=\/|$)/, '') || '/',
+        [pathname]
+    );
 
-    const TOUR_STEPS: Record<string, Step[]> = useMemo(() => ({
+    const getTourSteps = useCallback((): Record<string, Step[]> => ({
+        '/profdashboard': [
+            {
+                target: '#dashboard-header',
+                title: t('teacher.steps.control.title'),
+                description: t('teacher.steps.control.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#quick-actions',
+                title: t('teacher.steps.quickActions.title'),
+                description: t('teacher.steps.quickActions.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#teacher-stats',
+                title: t('teacher.steps.stats.title'),
+                description: t('teacher.steps.stats.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#profile-card',
+                title: t('teacher.steps.profile.title'),
+                description: t('teacher.steps.profile.description'),
+                position: 'top'
+            },
+            {
+                target: '#exercise-actions',
+                title: t('teacher.steps.exercises.title'),
+                description: t('teacher.steps.exercises.description'),
+                position: 'top'
+            },
+            {
+                target: '#sidebar-nav',
+                title: t('teacher.steps.navigation.title'),
+                description: t('teacher.steps.navigation.description'),
+                position: 'right'
+            }
+        ],
+        '/editor': [
+            {
+                target: '#sidebar-toc',
+                title: t('editor.steps.toc.title'),
+                description: t('editor.steps.toc.description'),
+                position: 'right'
+            },
+            {
+                target: '#sidebar-toc',
+                title: t('editor.steps.dragDrop.title'),
+                description: t('editor.steps.dragDrop.description'),
+                position: 'right'
+            },
+            {
+                target: '#main-editor-container',
+                title: t('editor.steps.main.title'),
+                description: t('editor.steps.main.description'),
+                position: 'center'
+            },
+            {
+                target: '#editor-toolbar',
+                title: t('editor.steps.toolbar.title'),
+                description: t('editor.steps.toolbar.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#right-icon-bar',
+                title: t('editor.steps.rightBar.title'),
+                description: t('editor.steps.rightBar.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-structure',
+                title: t('editor.steps.structure.title'),
+                description: t('editor.steps.structure.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-info',
+                title: t('editor.steps.info.title'),
+                description: t('editor.steps.info.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-preview',
+                title: t('editor.steps.preview.title'),
+                description: t('editor.steps.preview.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-feedback',
+                title: t('editor.steps.feedback.title'),
+                description: t('editor.steps.feedback.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-my-courses',
+                title: t('editor.steps.myCourses.title'),
+                description: t('editor.steps.myCourses.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-exercises',
+                title: t('editor.steps.exercises.title'),
+                description: t('editor.steps.exercises.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-grading',
+                title: t('editor.steps.grading.title'),
+                description: t('editor.steps.grading.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-workshops',
+                title: t('editor.steps.workshops.title'),
+                description: t('editor.steps.workshops.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-settings',
+                title: t('editor.steps.settings.title'),
+                description: t('editor.steps.settings.description'),
+                position: 'left'
+            },
+            {
+                target: '#btn-save-course',
+                title: t('editor.steps.save.title'),
+                description: t('editor.steps.save.description'),
+                position: 'left'
+            }
+        ],
         '/etudashboard': [
-            { target: '#welcome-section', title: t('etu.welcomeTitle'), description: t('etu.welcomeDesc'), position: 'bottom' },
-            { target: '#stats-overview', title: t('etu.statsTitle'), description: t('etu.statsDesc'), position: 'left' },
-            { target: '#my-courses', title: t('etu.coursesTitle'), description: t('etu.coursesDesc'), position: 'top' },
-            { target: '#pending-exercises', title: t('etu.pendingTitle'), description: t('etu.pendingDesc'), position: 'left' },
-            { target: '#sidebar-nav', title: t('etu.navTitle'), description: t('etu.navDesc'), position: 'right' }
+            {
+                target: '#welcome-section',
+                title: t('etu.welcomeTitle'),
+                description: t('etu.welcomeDesc'),
+                position: 'bottom'
+            },
+            {
+                target: '#stats-overview',
+                title: t('etu.statsTitle'),
+                description: t('etu.statsDesc'),
+                position: 'bottom'
+            },
+            {
+                target: '#my-courses',
+                title: t('etu.coursesTitle'),
+                description: t('etu.coursesDesc'),
+                position: 'top'
+            },
+            {
+                target: '#pending-exercises',
+                title: t('etu.pendingTitle'),
+                description: t('etu.pendingDesc'),
+                position: 'left'
+            },
+            {
+                target: '#my-submissions',
+                title: t('etu.submissionsTitle'),
+                description: t('etu.submissionsDesc'),
+                position: 'left'
+            },
+            {
+                target: '#quick-actions',
+                title: t('etu.quickActionsTitle'),
+                description: t('etu.quickActionsDesc'),
+                position: 'left'
+            }
         ]
     }), [t]);
 
-    let matchedKey = Object.keys(TOUR_STEPS).find(key => rawPathname.endsWith(key)) || rawPathname;
-    let localSteps: Step[] = EMPTY_STEPS;
-    let localStorageKey = '';
-
-    if (rawPathname.includes('/profdashboard')) {
-        localSteps = profSteps[currentTab] || profSteps['accueil'];
-        localStorageKey = `hasSeenTour_/profdashboard_${currentTab}`;
-    } else if (TOUR_STEPS[matchedKey]) {
-        localSteps = TOUR_STEPS[matchedKey];
-        localStorageKey = `hasSeenTour_${matchedKey}`;
-    }
+    const tours = useMemo(() => getTourSteps(), [getTourSteps]);
+    const steps = useMemo(() => tours[normalizedPath] || [], [tours, normalizedPath]);
 
     const [isActive, setIsActive] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-    const [steps, setSteps] = useState<Step[]>([]);
-    const tourRef = useRef<HTMLDivElement>(null);
 
     const updateTargetRect = useCallback(() => {
         if (!isActive || !steps[currentStep]) return;
 
         const selector = steps[currentStep].target;
-        if (selector === 'body') {
-            setTargetRect(null);
-            return;
-        }
-
         const element = document.querySelector(selector);
         if (element) {
             const rect = element.getBoundingClientRect();
             setTargetRect(rect);
-
-            // Scroll to element if not visible
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else {
             setTargetRect(null);
@@ -105,31 +215,28 @@ const Onboarding = () => {
     }, [isActive, currentStep, steps]);
 
     useEffect(() => {
-        if (localSteps.length > 0) {
-            setSteps(localSteps);
-            const hasSeen = localStorage.getItem(localStorageKey);
+        if (steps.length > 0) {
+            const hasSeen = localStorage.getItem(`hasSeenTour_${normalizedPath}`);
             if (!hasSeen) {
-                // Wait a bit for the page to render
-                const timer = setTimeout(() => {
-                    setIsActive(true);
-                }, 1000);
+                const timer = setTimeout(() => setIsActive(true), 1000);
                 return () => clearTimeout(timer);
             }
         } else {
             setIsActive(false);
-            setSteps([]);
         }
-    }, [rawPathname, currentTab, localStorageKey, localSteps]);
+    }, [steps.length, normalizedPath]);
 
     useEffect(() => {
-        updateTargetRect();
-        window.addEventListener('resize', updateTargetRect);
-        window.addEventListener('scroll', updateTargetRect);
-        return () => {
-            window.removeEventListener('resize', updateTargetRect);
-            window.removeEventListener('scroll', updateTargetRect);
-        };
-    }, [updateTargetRect]);
+        if (isActive) {
+            updateTargetRect();
+            window.addEventListener('resize', updateTargetRect);
+            window.addEventListener('scroll', updateTargetRect);
+            return () => {
+                window.removeEventListener('resize', updateTargetRect);
+                window.removeEventListener('scroll', updateTargetRect);
+            };
+        }
+    }, [isActive, updateTargetRect]);
 
     const handleNext = () => {
         if (currentStep < steps.length - 1) {
@@ -148,7 +255,7 @@ const Onboarding = () => {
     const handleEnd = () => {
         setIsActive(false);
         setCurrentStep(0);
-        localStorage.setItem(localStorageKey, 'true');
+        localStorage.setItem(`hasSeenTour_${normalizedPath}`, 'true');
     };
 
     const handleRestart = () => {
@@ -158,17 +265,16 @@ const Onboarding = () => {
 
     if (!isActive && !steps.length) return null;
 
-    // Button to restart tour (can be used in settings or dashboard)
     if (!isActive) {
         return (
             <button
                 onClick={handleRestart}
                 className="fixed bottom-6 right-6 p-4 bg-purple-600 text-white rounded-full shadow-2xl hover:scale-110 transition-all z-50 group"
-                title={t('buttons.helpTitle')}
+                title={t('buttons.reviewTutorial')}
             >
                 <HelpCircle className="w-6 h-6" />
                 <span className="absolute right-full mr-4 bg-gray-800 text-white text-xs py-1 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {t('buttons.helpText')}
+                    {t('buttons.needHelp')}
                 </span>
             </button>
         );
@@ -178,7 +284,6 @@ const Onboarding = () => {
 
     return (
         <div className="fixed inset-0 z-[9999] pointer-events-none">
-            {/* SVG Overlay for Spotlight */}
             <svg className="absolute inset-0 w-full h-full pointer-events-auto">
                 <defs>
                     <mask id="spotlight-mask">
@@ -208,7 +313,6 @@ const Onboarding = () => {
                 />
             </svg>
 
-            {/* Focused Frame */}
             <AnimatePresence>
                 {targetRect && (
                     <motion.div
@@ -225,7 +329,6 @@ const Onboarding = () => {
                 )}
             </AnimatePresence>
 
-            {/* Tooltip Content */}
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -288,7 +391,6 @@ const Onboarding = () => {
                             </div>
                         </div>
 
-                        {/* Progress Badge */}
                         <div className="absolute -top-3 -left-3 bg-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-white dark:border-gray-800 shadow-sm">
                             {currentStep + 1} / {steps.length}
                         </div>
@@ -299,18 +401,17 @@ const Onboarding = () => {
     );
 };
 
-// Helper to position tooltip based on target rect and preferred position
-function getTooltipStyles(targetRect: DOMRect | null, position?: string): React.CSSProperties {
-    if (!targetRect) {
-        return { position: 'relative' };
-    }
-
-    // Vérifie si l'élément se trouve dans la moitié inférieure de l'écran
-    // Si oui, on affiche le tooltip en haut pour ne pas le cacher, et vice versa.
+function getTooltipStyles(targetRect: DOMRect | null, _position?: string): React.CSSProperties {
+    if (!targetRect) return { 
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 10000 
+    };
     const isTargetInBottomHalf = targetRect.top > window.innerHeight / 2;
-
     return {
-        position: 'fixed', // Utilisé fixed par rapport à l'écran pour garantir un positionnement stable
+        position: 'fixed',
         ...(isTargetInBottomHalf ? { top: '2rem' } : { bottom: '2rem' }),
         left: '50%',
         transform: 'translateX(-50%)',

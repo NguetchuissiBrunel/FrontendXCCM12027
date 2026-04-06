@@ -69,7 +69,8 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
       </div>
 
       {/* User Profile */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+      <div id="user-profile" className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+
         <div className="flex items-center gap-3">
           <Image
             src={photoUrl}

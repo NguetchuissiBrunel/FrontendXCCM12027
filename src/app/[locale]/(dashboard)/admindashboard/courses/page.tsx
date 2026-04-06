@@ -1,12 +1,20 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FaTrash, FaSearch, FaBook, FaEye, FaCheckCircle, FaTimesCircle, FaFileAlt, FaUserGraduate } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaBook, FaCheckCircle, FaUserGraduate } from 'react-icons/fa';
 import { AdministrationService as AdminService } from '@/lib/services/AdministrationService';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { useLoading } from '@/contexts/LoadingContext';
+import { useTranslations } from 'next-intl';
 
-const StatsCard = ({ title, value, icon, color }: any) => (
+interface StatsCardProps {
+    title: string;
+    value: number | string;
+    icon: React.ReactNode;
+    color: string;
+}
+
+const StatsCard = ({ title, value, icon, color }: StatsCardProps) => (
     <motion.div
         whileHover={{ y: -5 }}
         className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800"
@@ -24,7 +32,24 @@ const StatsCard = ({ title, value, icon, color }: any) => (
 );
 
 export default function AdminCoursesPage() {
-    const [courses, setCourses] = useState<any[]>([]);
+    const t = useTranslations('adminDashboard.courses');
+    interface CourseItem {
+        id: number;
+        title?: string;
+        description?: string;
+        category?: string;
+        status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED' | string;
+        author?: {
+            name?: string;
+            designation?: string;
+        };
+        approvedEnrollmentsCount?: number;
+    }
+    interface EnrollmentItem {
+        status?: string;
+        course?: { id?: number };
+    }
+    const [courses, setCourses] = useState<CourseItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [stats, setStats] = useState({
         total: 0,
@@ -48,16 +73,16 @@ export default function AdminCoursesPage() {
                 AdminService.getAllEnrollments()
             ]);
 
-            const coursesData = res.data || [];
-            const enrollmentsData = enrollRes.data || [];
+            const coursesData = (res.data || []) as CourseItem[];
+            const enrollmentsData = (enrollRes.data || []) as EnrollmentItem[];
 
             // Filtrer et enrichir les cours avec le nombre d'inscriptions approuvées
             const processedCourses = coursesData
-                .filter((c: any) => c.status === 'PUBLISHED')
-                .map((course: any) => ({
+                .filter((c) => c.status === 'PUBLISHED')
+                .map((course) => ({
                     ...course,
                     approvedEnrollmentsCount: enrollmentsData.filter(
-                        (e: any) => e.course?.id === course.id && e.status === 'APPROVED'
+                        (e) => e.course?.id === course.id && e.status === 'APPROVED'
                     ).length
                 }));
 
@@ -65,13 +90,13 @@ export default function AdminCoursesPage() {
 
             setStats({
                 total: coursesData.length,
-                active: coursesData.filter((c: any) => c.status === 'PUBLISHED').length,
-                draft: coursesData.filter((c: any) => c.status === 'DRAFT').length,
-                archived: coursesData.filter((c: any) => c.status === 'ARCHIVED').length,
+                active: coursesData.filter((c) => c.status === 'PUBLISHED').length,
+                draft: coursesData.filter((c) => c.status === 'DRAFT').length,
+                archived: coursesData.filter((c) => c.status === 'ARCHIVED').length,
             });
         } catch (error) {
             console.error("Error fetching courses:", error);
-            toast.error("Erreur lors de la récupération des cours");
+            toast.error(t('toast.loadError'));
             setCourses([]);
         } finally {
             stopLoading();
@@ -79,33 +104,33 @@ export default function AdminCoursesPage() {
     };
 
     const handleDelete = async (courseId: number) => {
-        toast((t) => (
+        toast((toastRef) => (
             <div className="flex flex-col gap-3">
-                <p className="font-bold">Êtes-vous sûr de vouloir supprimer ce cours ?</p>
+                <p className="font-bold">{t('delete.confirm')}</p>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => toast.dismiss(t.id)}
+                        onClick={() => toast.dismiss(toastRef.id)}
                         className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold"
                     >
-                        Annuler
+                        {t('actions.cancel')}
                     </button>
                     <button
                         onClick={async () => {
-                            toast.dismiss(t.id);
+                            toast.dismiss(toastRef.id);
                             try {
                                 // Appel API réel
                                 await AdminService.deleteCourse1(courseId);
-                                toast.success("Cours supprimé avec succès");
+                                toast.success(t('toast.deleteSuccess'));
                                 // Rafraîchissement complet depuis le serveur
                                 fetchCourses();
                             } catch (error) {
                                 console.error("Error deleting course:", error);
-                                toast.error("Erreur lors de la suppression sur le serveur");
+                                toast.error(t('toast.deleteError'));
                             }
                         }}
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold"
                     >
-                        Supprimer
+                        {t('actions.delete')}
                     </button>
                 </div>
             </div>
@@ -113,10 +138,10 @@ export default function AdminCoursesPage() {
     };
 
     const getStatusBadge = (status: string) => {
-        const badges: any = {
-            'PUBLISHED': { label: 'Actif', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-            'DRAFT': { label: 'Brouillon', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-            'ARCHIVED': { label: 'Archivé', color: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400' },
+        const badges: Record<string, { label: string; color: string }> = {
+            'PUBLISHED': { label: t('status.active'), color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+            'DRAFT': { label: t('status.draft'), color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+            'ARCHIVED': { label: t('status.archived'), color: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400' },
         };
         const badge = badges[status] || badges['DRAFT'];
         return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${badge.color}`}>{badge.label}</span>;
@@ -134,8 +159,8 @@ export default function AdminCoursesPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold dark:text-white">Gestion des Cours</h1>
-                    <p className="text-slate-500 dark:text-slate-400">Liste de tous les cours créés par les enseignants.</p>
+                    <h1 className="text-2xl font-bold dark:text-white">{t('title')}</h1>
+                    <p className="text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
                 </div>
                 <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full text-purple-600 dark:text-purple-400">
                     <FaBook size={24} />
@@ -145,13 +170,13 @@ export default function AdminCoursesPage() {
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <StatsCard
-                    title="Total Cours"
+                    title={t('stats.totalCourses')}
                     value={globalLoading && courses.length === 0 ? "..." : stats.total}
                     icon={<FaBook size={20} />}
                     color="bg-purple-600"
                 />
                 <StatsCard
-                    title="Cours Actifs"
+                    title={t('stats.activeCourses')}
                     value={globalLoading && courses.length === 0 ? "..." : stats.active}
                     icon={<FaCheckCircle size={20} />}
                     color="bg-green-600"
@@ -162,7 +187,7 @@ export default function AdminCoursesPage() {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
                 <input
                     type="text"
-                    placeholder="Rechercher un cours..."
+                    placeholder={t('searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-slate-800 dark:text-white"
@@ -174,7 +199,7 @@ export default function AdminCoursesPage() {
             ) : filteredCourses.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <FaBook className="mx-auto text-slate-300 dark:text-slate-700 mb-4" size={48} />
-                    <p className="text-slate-500 dark:text-slate-400">Aucun cours trouvé</p>
+                    <p className="text-slate-500 dark:text-slate-400">{t('empty')}</p>
                 </div>
             ) : (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -182,12 +207,12 @@ export default function AdminCoursesPage() {
                         <table className="w-full">
                             <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Titre</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Auteur</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Catégorie</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Statut</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Inscrits</th>
-                                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{t('table.title')}</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{t('table.author')}</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{t('table.category')}</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{t('table.status')}</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{t('table.enrolled')}</th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{t('table.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -204,19 +229,19 @@ export default function AdminCoursesPage() {
                                                     <FaBook className="text-purple-600 dark:text-purple-400" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold text-slate-900 dark:text-white">{course.title}</p>
+                                                    <p className="font-semibold text-slate-900 dark:text-white">{course.title || t('untitled')}</p>
                                                     <p className="text-xs text-slate-500 dark:text-slate-400">{course.description?.substring(0, 50)}...</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                                {course.author ? `${course.author.designation} ${course.author.name}` : 'Enseignant inconnu'}
+                                                {course.author ? `${course.author.designation} ${course.author.name}` : t('unknownTeacher')}
                                             </p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-full text-xs font-medium">
-                                                {course.category || 'Non catégorisé'}
+                                                {course.category || t('uncategorized')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -234,7 +259,7 @@ export default function AdminCoursesPage() {
                                             <button
                                                 onClick={() => handleDelete(course.id)}
                                                 className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                                                title="Supprimer"
+                                                title={t('actions.delete')}
                                             >
                                                 <FaTrash />
                                             </button>

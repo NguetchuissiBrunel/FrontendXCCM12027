@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { BookOpen, Users, GraduationCap, MapPin, Building2, Award, Heart, Eye, Download, LayoutTemplate, ChevronRight, BookUp } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
@@ -64,9 +65,10 @@ interface TeacherStats {
 }
 
 export default function TeacherProfilePage() {
+  const t = useTranslations('teacherProfile');
   const params = useParams();
   const router = useRouter();
-  const teacherId = params.id as string;
+  const teacherId = params?.id as string;
   const { startLoading, stopLoading } = useLoading();
   const { loading: authLoading } = useAuth();
 
@@ -101,7 +103,7 @@ export default function TeacherProfilePage() {
       const teacherResponse = await GestionDesUtilisateursService.getTeacherById1(teacherId);
 
       if (!teacherResponse.success || !teacherResponse.data) {
-        throw new Error('Enseignant non trouvé');
+        throw new Error(t('notFoundTitle'));
       }
 
       const teacherData = teacherResponse.data as Teacher;
@@ -146,8 +148,8 @@ export default function TeacherProfilePage() {
 
     } catch (err: any) {
       console.error('❌ Erreur chargement profil enseignant:', err);
-      setError(err.message || 'Impossible de charger le profil');
-      toast.error('Erreur de chargement du profil');
+      setError(err.message || t('loadError'));
+      toast.error(t('loadErrorToast'));
     } finally {
       setLoading(false);
     }
@@ -171,23 +173,23 @@ export default function TeacherProfilePage() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center pt-16">
         <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md border border-red-100 dark:border-red-900/30">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Enseignant non trouvé
+            {t('notFoundTitle')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {error || "Cet enseignant n'existe pas ou a été supprimé"}
+            {error || t('notFoundDescription')}
           </p>
           <button
             onClick={() => router.push('/bibliotheque')}
             className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors font-semibold"
           >
-            Retour à la bibliothèque
+            {t('backToLibrary')}
           </button>
         </div>
       </div>
     );
   }
 
-  const displayName = `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim() || 'Enseignant';
+  const displayName = `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim() || t('teacherFallbackName');
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -218,7 +220,7 @@ export default function TeacherProfilePage() {
                 <div className="flex flex-wrap items-center gap-4 text-white/90">
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
                     <GraduationCap className="w-4 h-4" />
-                    <span>{teacher.grade || 'Enseignant expert'}</span>
+                    <span>{teacher.grade || t('expertTeacher')}</span>
                   </div>
                   {teacher.certification && (
                     <div className="flex items-center gap-2 bg-purple-500/40 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
@@ -241,7 +243,7 @@ export default function TeacherProfilePage() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-purple-100 dark:border-purple-900/30">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-700">
                   <BookOpen className="w-5 h-5 text-purple-600" />
-                  À propos
+                  {t('about')}
                 </h2>
 
                 <div className="space-y-5">
@@ -251,7 +253,7 @@ export default function TeacherProfilePage() {
                         <Building2 className="w-5 h-5 text-purple-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-1">Université / Établissement</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-1">{t('university')}</p>
                         <p className="font-semibold text-gray-800 dark:text-gray-200">
                           {teacher.university}
                         </p>
@@ -265,7 +267,7 @@ export default function TeacherProfilePage() {
                         <MapPin className="w-5 h-5 text-purple-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-1">Localisation</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-1">{t('location')}</p>
                         <p className="font-semibold text-gray-800 dark:text-gray-200">
                           {teacher.city}
                         </p>
@@ -275,7 +277,7 @@ export default function TeacherProfilePage() {
 
                   {teacher.subjects && teacher.subjects.length > 0 && (
                     <div className="pt-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-3">Domaines d'expertise</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-3">{t('expertiseDomains')}</p>
                       <div className="flex flex-wrap gap-2">
                         {teacher.subjects.map((subject, idx) => (
                           <span
@@ -295,7 +297,7 @@ export default function TeacherProfilePage() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-purple-100 dark:border-purple-900/30">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-700">
                   <Award className="w-5 h-5 text-purple-600" />
-                  Impact académique
+                  {t('academicImpact')}
                 </h2>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -306,9 +308,9 @@ export default function TeacherProfilePage() {
                     <div className="text-3xl font-black text-gray-900 dark:text-white">
                       {stats.totalClasses}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase tracking-wider">
-                      Classes
-                    </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                          {t('stats.classes')}
+                        </div>
                   </div>
 
                   <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-4 border border-purple-100 dark:border-purple-900/30 text-center flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300">
@@ -319,7 +321,7 @@ export default function TeacherProfilePage() {
                       {stats.totalCourses}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase tracking-wider">
-                      Cours
+                      {t('stats.courses')}
                     </div>
                   </div>
 
@@ -333,7 +335,7 @@ export default function TeacherProfilePage() {
                           {stats.totalStudents}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
-                          Étudiants inscrits
+                          {t('stats.students')}
                         </div>
                       </div>
                     </div>
@@ -347,10 +349,10 @@ export default function TeacherProfilePage() {
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
                   <LayoutTemplate className="w-8 h-8 text-purple-600" />
-                  Classes de cours
+                  {t('classSectionsTitle')}
                 </h2>
                 <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 px-4 py-1.5 rounded-full font-bold text-sm">
-                  {courseClasses.length} {courseClasses.length > 1 ? 'Classes' : 'Classe'}
+                  {t('classesCount', { count: courseClasses.length })}
                 </span>
               </div>
 
@@ -360,10 +362,10 @@ export default function TeacherProfilePage() {
                     <LayoutTemplate className="w-10 h-10 text-gray-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                    Aucune classe disponible
+                    {t('noClassTitle')}
                   </h3>
                   <p className="text-gray-500 max-w-md mx-auto">
-                    Cet enseignant n'a pas encore publié de classe de cours.
+                    {t('noClassDescription')}
                   </p>
                 </div>
               ) : (
@@ -383,12 +385,12 @@ export default function TeacherProfilePage() {
 
                         <div className="absolute top-4 left-4 flex gap-2">
                           <span className="bg-white/95 backdrop-blur-sm text-purple-700 text-xs font-black px-3 py-1.5 rounded-xl uppercase shadow-sm tracking-wider">
-                            {cls.theme || 'Général'}
+                            {cls.theme || t('generalTheme')}
                           </span>
                           {cls.status === 'OPEN' && (
                             <span className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl uppercase shadow-sm flex items-center gap-1">
                               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                              Ouvert
+                              {t('statusOpen')}
                             </span>
                           )}
                         </div>
@@ -417,7 +419,7 @@ export default function TeacherProfilePage() {
                         <div className="flex items-center justify-between mb-4">
                           <h4 className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                             <BookOpen className="w-4 h-4 text-purple-500" />
-                            Cours inclus ({cls.courses?.length || 0})
+                            {t('includedCourses', { count: cls.courses?.length || 0 })}
                           </h4>
 
                           {/* Bouton d'inscription à l'entièreté de la classe */}
@@ -431,7 +433,7 @@ export default function TeacherProfilePage() {
 
                         {(!cls.courses || cls.courses.length === 0) ? (
                           <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
-                            <p className="text-gray-500 text-sm">Aucun cours n'a encore été ajouté à cette classe.</p>
+                            <p className="text-gray-500 text-sm">{t('noClassCourse')}</p>
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -488,14 +490,14 @@ export default function TeacherProfilePage() {
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
                       <BookOpen className="w-8 h-8 text-indigo-600" />
-                      Cours Libres
+                      {t('freeCoursesTitle')}
                     </h2>
                     <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-4 py-1.5 rounded-full font-bold text-sm">
-                      {standaloneCourses.length} {standaloneCourses.length > 1 ? 'Cours' : 'Cours'}
+                      {t('freeCoursesCount', { count: standaloneCourses.length })}
                     </span>
                   </div>
                   <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-                    Ces cours sont publiés indépendamment de toute classe et accessibles directement.
+                    {t('freeCoursesDescription')}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {standaloneCourses.map((course) => (
@@ -542,4 +544,3 @@ export default function TeacherProfilePage() {
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-// src/app/(dashboard)/etudashboard/exercises/[exerciseId]/submit/page.tsx - VERSION UNIFIÉE
+// src/app/(dashboard)/etudashboard/exercises/[exerciseId]/submit/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,12 +7,14 @@ import { useExercise, useSubmitExercise, useSubmissionPermission } from '@/hooks
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 import { useLoading } from '@/contexts/LoadingContext';
 
 export default function SubmitExercisePage() {
+  const t = useTranslations('exerciseSubmit');
   const params = useParams();
   const router = useRouter();
-  const exerciseId = parseInt(params.exerciseId as string);
+  const exerciseId = parseInt(params?.exerciseId as string);
   const { loading: authLoading } = useAuth();
 
   const {
@@ -89,7 +91,7 @@ export default function SubmitExercisePage() {
     });
 
     if (unansweredQuestions.length > 0) {
-      toast.error(`Veuillez répondre aux questions : ${unansweredQuestions.join(', ')}`);
+      toast.error(t('unansweredError', { numbers: unansweredQuestions.join(', ') }));
       return;
     }
 
@@ -107,17 +109,17 @@ export default function SubmitExercisePage() {
       );
 
       if (result.success) {
-        toast.success('✅ Exercice soumis avec succès !');
+        toast.success(t('submitSuccess'));
         await refetchExercise();
         setTimeout(() => {
           router.push('/etudashboard');
         }, 1500);
       } else {
-        toast.error(result.message || 'Erreur lors de la soumission');
+        toast.error(result.message || t('submitError'));
       }
     } catch (err) {
       console.error('Erreur soumission:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la soumission';
+      const errorMessage = err instanceof Error ? err.message : t('submitError');
       toast.error(errorMessage);
     }
   };
@@ -131,15 +133,15 @@ export default function SubmitExercisePage() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Exercice non trouvé</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('notFound.title')}</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            L'exercice demandé n'existe pas ou vous n'y avez pas accès.
+            {t('notFound.message')}
           </p>
           <button
             onClick={() => router.push('/etudashboard')}
             className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
-            Retour au dashboard
+            {t('backToDashboard')}
           </button>
         </div>
       </div>
@@ -151,22 +153,22 @@ export default function SubmitExercisePage() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-20 flex items-center justify-center">
         <div className="text-center max-w-md">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Exercice déjà soumis</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('alreadySubmitted.title')}</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Vous avez déjà soumis cet exercice le {new Date().toLocaleDateString('fr-FR')}.
+            {t('alreadySubmitted.message', { date: new Date().toLocaleDateString('fr-FR') })}
           </p>
           <div className="space-y-3">
             <button
               onClick={() => router.push('/etudashboard')}
               className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Voir ma soumission
+              {t('viewSubmission')}
             </button>
             <button
               onClick={() => router.push('/etudashboard/exercises')}
               className="w-full px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
             >
-              Voir d'autres exercices
+              {t('viewOtherExercises')}
             </button>
           </div>
         </div>
@@ -177,14 +179,13 @@ export default function SubmitExercisePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* En-tête */}
         <div className="mb-8">
           <button
             onClick={() => router.push('/etudashboard/exercises')}
             className="flex items-center gap-2 text-purple-600 hover:text-purple-700 mb-6 transition-colors"
           >
             <ArrowLeft size={20} />
-            <span>Retour aux exercices</span>
+            <span>{t('backToExercises')}</span>
           </button>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700 shadow-sm">
@@ -201,30 +202,29 @@ export default function SubmitExercisePage() {
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-3 py-1.5 rounded-full">
                 <Clock size={16} />
-                <span>Échéance: {new Date(exercise.dueDate || '').toLocaleDateString('fr-FR')}</span>
+                <span>{t('dueDate')}: {new Date(exercise.dueDate || '').toLocaleDateString('fr-FR')}</span>
               </div>
 
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
                 <FileText size={16} />
-                <span>Score max: {exercise.maxScore} points</span>
+                <span>{t('maxScore')}: {exercise.maxScore} {t('points')}</span>
               </div>
 
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
                 <CheckCircle size={16} />
-                <span>{exercise.questions?.length || 0} questions</span>
+                <span>{exercise.questions?.length || 0} {t('questions')}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Barre de progression */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Progression des réponses
+              {t('progress')}
             </span>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {answeredCount} / {exercise.questions?.length || 0} répondues
+              {answeredCount} / {exercise.questions?.length || 0} {t('answered')}
             </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -237,7 +237,6 @@ export default function SubmitExercisePage() {
           </div>
         </div>
 
-        {/* Questions */}
         <div className="space-y-6 mb-8">
           {exercise.questions?.map((question, index) => (
             <div
@@ -251,9 +250,9 @@ export default function SubmitExercisePage() {
                       {index + 1}
                     </div>
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      {question.type === 'TEXT' && 'Réponse libre'}
-                      {question.type === 'MULTIPLE_CHOICE' && 'Choix multiple'}
-                      {question.type === 'CODE' && 'Code'}
+                      {question.type === 'TEXT' && t('questionType.text')}
+                      {question.type === 'MULTIPLE_CHOICE' && t('questionType.multipleChoice')}
+                      {question.type === 'CODE' && t('questionType.code')}
                     </span>
                   </div>
 
@@ -263,17 +262,16 @@ export default function SubmitExercisePage() {
                 </div>
 
                 <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-sm font-medium rounded-full">
-                  {question.points} point{question.points > 1 ? 's' : ''}
+                  {question.points} {question.points > 1 ? t('pointsPlural') : t('pointsSingular')}
                 </div>
               </div>
 
-              {/* Zone de réponse */}
               {question.type === 'TEXT' && (
                 <textarea
                   value={answers[question.id] || ''}
                   onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                   className="w-full h-32 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  placeholder="Tapez votre réponse ici..."
+                  placeholder={t('textPlaceholder')}
                 />
               )}
 
@@ -304,13 +302,13 @@ export default function SubmitExercisePage() {
               {question.type === 'CODE' && (
                 <div>
                   <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                    Écrivez votre code dans le langage de votre choix :
+                    {t('codeHint')}
                   </div>
                   <textarea
                     value={answers[question.id] || ''}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                     className="w-full h-48 px-4 py-3 font-mono text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-900 text-gray-100 resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    placeholder="// Votre code ici..."
+                    placeholder={t('codePlaceholder')}
                     spellCheck="false"
                   />
                 </div>
@@ -319,16 +317,15 @@ export default function SubmitExercisePage() {
           ))}
         </div>
 
-        {/* Bouton de soumission (sticky) */}
         <div className="sticky bottom-6 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               <span className="font-medium">
-                {answeredCount} / {exercise.questions?.length || 0} questions répondues
+                {answeredCount} / {exercise.questions?.length || 0} {t('answered')}
               </span>
               {answeredCount === exercise.questions?.length && (
                 <span className="ml-2 text-green-600 dark:text-green-400">
-                  ✓ Prêt à soumettre
+                  ✓ {t('readyToSubmit')}
                 </span>
               )}
             </div>
@@ -341,10 +338,10 @@ export default function SubmitExercisePage() {
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Soumission en cours...
+                  {t('submitting')}
                 </div>
               ) : (
-                'Soumettre l\'exercice'
+                t('submit')
               )}
             </button>
           </div>

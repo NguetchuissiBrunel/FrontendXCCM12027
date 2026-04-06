@@ -1,52 +1,18 @@
-/**
- * COURSE STRUCTURE COMPONENT - WITH SINGLE-SELECT FILTERS
- * 
- * Right sidebar panel displaying hierarchical course library.
- * Full hierarchy: Course → Section → Chapter → Paragraph → Notion → Exercise
- * 
- * Features:
- * - Dark mode support
- * - Single-select content type filters using exact color codes
- * - Shows selected type with full child hierarchy
- * - Search functionality
- * - Drag & drop support (full hierarchy preserved)
- * 
- * @author JOHAN
- * @date November 2025
- */
-
 'use client';
 
-import React, { useState } from 'react';
-import { FaTimes, FaBook, FaChevronRight, FaChevronDown } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaTimes, FaBook, FaChevronRight, FaChevronDown, FaSpinner } from 'react-icons/fa';
 import { Sparkles } from 'lucide-react';
-import { mockCourseData, flattenCourseStructure } from '@/data/mockEditorData';
+import { mockCourseData } from '@/data/mockEditorData';
 import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS } from '@/types/editor.types';
 import { useTranslations } from 'next-intl';
+import { CourseControllerService } from '@/lib/services/CourseControllerService';
+import { toast } from 'react-hot-toast';
+import { ApiResponseListCourseResponse } from '@/lib/models/ApiResponseListCourseResponse';
 
 interface StructureDeCoursProps {
   onClose: () => void;
 }
-
-// Pre-flatten data once for performance
-const flattenedItems = flattenCourseStructure(mockCourseData);
-
-// Helper: Get full item with all nested children by ID
-const getItemWithHierarchy = (itemId: string): any => {
-  const root = flattenedItems.find(item => item.id === itemId);
-  if (!root) return null;
-
-  const buildTree = (current: any): any => {
-    return {
-      ...current,
-      children: flattenedItems
-        .filter(child => child.parentId === current.id)
-        .map(buildTree)
-    };
-  };
-
-  return buildTree(root);
-};
 
 // Helper to get background color class for items
 const getItemBgClass = (type: ItemType) => {
@@ -66,18 +32,72 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<ItemType | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  
+  // Courses state: combined mock + database
+  const [courses, setCourses] = useState<Course[]>(() => 
+    mockCourseData.map(c => ({ ...c, id: c.id + 10000 }))
+  );
+  const [decomposedCache, setDecomposedCache] = useState<Record<string, Section[]>>({});
+  const [loadingDecomposition, setLoadingDecomposition] = useState<string | null>(null);
 
-  // Filter types with exact color codes from ITEM_COLORS
-  const filterTypes: { type: ItemType; label: string; color: string }[] = [
-    { type: 'course', label: t('types.course'), color: ITEM_COLORS.course },
-    { type: 'section', label: t('types.section'), color: ITEM_COLORS.section },
-    { type: 'chapter', label: t('types.chapter'), color: ITEM_COLORS.chapter },
-    { type: 'paragraph', label: t('types.paragraph'), color: ITEM_COLORS.paragraph },
-    { type: 'notion', label: t('types.notion'), color: ITEM_COLORS.notion },
-  ];
+  // Load cache and fetch DB courses on mount
+  useEffect(() => {
+    // 1. Load from localStorage
+    const savedCache = localStorage.getItem('xcsm_decomposed_courses');
+    if (savedCache) {
+      try {
+        setDecomposedCache(JSON.parse(savedCache));
+      } catch (e) {
+        // Silently fail
+      }
+    }
+
+    // 2. Fetch courses from DB
+    const fetchCourses = async () => {
+      try {
+        const resp: ApiResponseListCourseResponse = await CourseControllerService.getAllCourses();
+        if (resp && resp.data) {
+          // Map DB courses to the Editor's Course type
+          const dbCoursesMapped: Course[] = resp.data.map((c) => ({
+            id: c.id ?? 0, 
+            title: c.title || 'Sans titre',
+            category: c.category || 'Général',
+            image: c.coverImage || '/images/courses/default.jpg',
+            views: c.viewCount || 0,
+            likes: c.likeCount || 0,
+            downloads: c.downloadCount || 0,
+            author: {
+              name: c.author?.name || 'Auteur inconnu',
+              image: c.author?.image || '/images/blog/author-01.png'
+            },
+            conclusion: '',
+            learningObjectives: [],
+            sections: [] 
+          }));
+          
+          setCourses(prev => {
+            // Keep DB courses first, then mock courses (IDs >= 10000)
+            const mockCourses = prev.filter(c => c.id >= 10000);
+            return [...dbCoursesMapped, ...mockCourses];
+          });
+        }
+      } catch (err) {
+        // Silent error to avoid triggering dev error overlays
+        toast.error("Erreur lors de la récupération des cours de la base de données");
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  // Sync cache with localStorage
+  useEffect(() => {
+    if (Object.keys(decomposedCache).length > 0) {
+      localStorage.setItem('xcsm_decomposed_courses', JSON.stringify(decomposedCache));
+    }
+  }, [decomposedCache]);
 
   const toggleFilter = (type: ItemType) => {
-    // Single-select: toggle off if same, otherwise switch to new type
     setActiveFilter(prev => prev === type ? null : type);
   };
 
@@ -93,18 +113,82 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     });
   };
 
-  // Check if item title matches search
+  const decomposeCourse = async (course: Course) => {
+    // Ensure we have a valid URL before attempting fetch
+    const xcsmUrl = process.env.NEXT_PUBLIC_XCSM_API_URL || 'http://localhost:8083/api/xcsm';
+    
+    setLoadingDecomposition(course.id.toString());
+    
+    try {
+      // Use AbortController for timeout to prevent hanging fetches
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const response = await fetch(xcsmUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: course.id, 
+          title: course.title,
+          category: course.category,
+          sections: []
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const sections = Array.isArray(data) ? data : (data.sections || []);
+      
+      setDecomposedCache(prev => ({
+        ...prev,
+        [course.id.toString()]: sections
+      }));
+      
+      toggleExpansion(`course-${course.id}`);
+      
+      // Persist to cache
+      const currentCache = JSON.parse(localStorage.getItem('xcsm_decomposed_courses') || '{}');
+      currentCache[course.id.toString()] = sections;
+      localStorage.setItem('xcsm_decomposed_courses', JSON.stringify(currentCache));
+
+    } catch (err) {
+      // Silently handle to avoid showing error overlays in certain dev environments
+      // but still notify the user via Toast
+      if (err instanceof Error && err.name === 'AbortError') {
+        toast.error("Le service de décomposition a mis trop de temps à répondre.");
+      } else {
+        toast.error('Service de décomposition indisponible.');
+      }
+    } finally {
+      setLoadingDecomposition(null);
+    }
+  };
+
+  const onCourseClick = (course: Course, itemId: string) => {
+    const hasSections = (course.sections && course.sections.length > 0) || decomposedCache[course.id.toString()];
+    
+    if (hasSections) {
+      toggleExpansion(itemId);
+    } else {
+      decomposeCourse(course);
+    }
+  };
+
   const matchesSearch = (title: string) => {
     if (!searchTerm) return true;
     return title.toLowerCase().includes(searchTerm.toLowerCase());
   };
 
-  // Check if we should show this type (based on active filter)
   const shouldShowType = (type: ItemType): boolean => {
-    // No filter = show all
     if (!activeFilter) return true;
-
-    // Show the filtered type and all its children
     const hierarchy: Record<ItemType, ItemType[]> = {
       'course': ['course', 'section', 'chapter', 'paragraph', 'notion'],
       'section': ['section', 'chapter', 'paragraph', 'notion'],
@@ -113,15 +197,27 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       'notion': ['notion'],
       'exercise': [],
     };
-
     return hierarchy[activeFilter].includes(type);
   };
 
-  // Render notion (no search filtering)
+  const getItemWithHierarchy = (itemId: string): Course | Section | Chapter | Paragraph | null => {
+    const parts = itemId.split('-');
+    if (parts[0] !== 'course') return null;
+    
+    const courseId = parts[1];
+    const course = courses.find(c => c.id.toString() === courseId);
+    if (!course) return null;
+
+    const sections = (course.sections && course.sections.length > 0) ? course.sections : decomposedCache[course.id.toString()] || [];
+    
+    if (parts.length === 2) return { ...course, sections };
+
+    // For simplicity, we return the course with its sections for D&D at course level
+    return { ...course, id: parseInt(courseId), sections };
+  };
+
   const renderNotion = (notion: string, parentId: string, index: number) => {
     const itemId = `${parentId}-notion-${index}`;
-
-    // Check filter only (no search when rendering as child)
     if (!shouldShowType('notion')) return null;
 
     return (
@@ -131,28 +227,19 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         draggable
         onDragStart={(e) => {
           const fullItem = getItemWithHierarchy(itemId);
-          if (fullItem) {
-            e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-          }
+          if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
         }}
       >
-        <div
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ backgroundColor: ITEM_COLORS.notion }}
-        />
-        <span className="flex-1 text-xs font-medium" style={{ color: ITEM_COLORS.notion }}>
-          {notion}
-        </span>
+        <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: ITEM_COLORS.notion }} />
+        <span className="flex-1 text-xs font-medium" style={{ color: ITEM_COLORS.notion }}>{notion}</span>
       </div>
     );
   };
 
-  // Render paragraph as child (no search filtering)
   const renderParagraphChild = (paragraph: Paragraph, parentId: string, index: number) => {
     const itemId = `${parentId}-paragraph-${index}`;
     const isExpanded = expandedItems.has(itemId);
     const hasNotions = paragraph.notions && paragraph.notions.length > 0;
-
     if (!shouldShowType('paragraph')) return null;
 
     return (
@@ -163,16 +250,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           draggable
           onDragStart={(e) => {
             const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) {
-              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-            }
+            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
           }}
         >
           <div className="flex items-center gap-2.5">
             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ITEM_COLORS.paragraph }} />
-            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.paragraph }}>
-              {paragraph.title}
-            </span>
+            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.paragraph }}>{paragraph.title}</span>
           </div>
           {hasNotions && (
             <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.paragraph }}>
@@ -180,7 +263,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             </button>
           )}
         </div>
-
         {isExpanded && hasNotions && (
           <div className="mt-2 space-y-1.5 pl-4">
             {paragraph.notions?.map((notion, idx) => renderNotion(notion, itemId, idx))}
@@ -190,12 +272,10 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     );
   };
 
-  // Render chapter as child
   const renderChapterChild = (chapter: Chapter, parentId: string, index: number) => {
     const itemId = `${parentId}-chapter-${index}`;
     const isExpanded = expandedItems.has(itemId);
     const hasParagraphs = chapter.paragraphs && chapter.paragraphs.length > 0;
-
     if (!shouldShowType('chapter')) return null;
 
     return (
@@ -206,16 +286,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           draggable
           onDragStart={(e) => {
             const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) {
-              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-            }
+            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
           }}
         >
           <div className="flex items-center gap-2.5">
             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ITEM_COLORS.chapter }} />
-            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.chapter }}>
-              {chapter.title}
-            </span>
+            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.chapter }}>{chapter.title}</span>
           </div>
           {hasParagraphs && (
             <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.chapter }}>
@@ -223,7 +299,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             </button>
           )}
         </div>
-
         {isExpanded && hasParagraphs && (
           <div className="mt-2 space-y-1.5 pl-4">
             {chapter.paragraphs.map((para, idx) => renderParagraphChild(para, itemId, idx))}
@@ -233,12 +308,10 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     );
   };
 
-  // Render section as child
   const renderSectionChild = (section: Section, parentId: string, index: number) => {
     const itemId = `${parentId}-section-${index}`;
     const isExpanded = expandedItems.has(itemId);
     const hasChapters = section.chapters && section.chapters.length > 0;
-
     if (!shouldShowType('section')) return null;
 
     return (
@@ -249,16 +322,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           draggable
           onDragStart={(e) => {
             const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) {
-              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-            }
+            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
           }}
         >
           <div className="flex items-center gap-2.5">
             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ITEM_COLORS.section }} />
-            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.section }}>
-              {section.title}
-            </span>
+            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.section }}>{section.title}</span>
           </div>
           {hasChapters && (
             <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.section }}>
@@ -266,7 +335,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             </button>
           )}
         </div>
-
         {isExpanded && hasChapters && (
           <div className="mt-2 space-y-1.5 pl-4">
             {section.chapters.map((chap, idx) => renderChapterChild(chap, itemId, idx))}
@@ -276,11 +344,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     );
   };
 
-  // Render course (top level)
-  const renderCourse = (course: Course, index: number) => {
-    const itemId = `course-${index}`;
+  const renderCourse = (course: Course) => {
+    const itemId = `course-${course.id}`;
     const isExpanded = expandedItems.has(itemId);
-    const hasSections = course.sections && course.sections.length > 0;
+    const sections = (course.sections && course.sections.length > 0) ? course.sections : decomposedCache[course.id.toString()];
+    const hasSections = sections && sections.length > 0;
+    const isLoading = loadingDecomposition === course.id.toString();
     const hasVisibleChildren = hasSections && shouldShowType('section');
 
     if (!matchesSearch(course.title)) return null;
@@ -289,94 +358,81 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       <div key={itemId}>
         <div
           className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md ${getItemBgClass('course')}`}
-          onClick={() => hasVisibleChildren ? toggleExpansion(itemId) : null}
+          onClick={() => onCourseClick(course, itemId)}
           draggable
           onDragStart={(e) => {
             const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) {
-              e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
-            }
+            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
           }}
         >
           <div className="flex items-center gap-2.5">
             <FaBook className="h-5 w-5 shrink-0" style={{ color: ITEM_COLORS.course }} />
-            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.course }}>
-              {course.title}
-            </span>
+            <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.course }}>{course.title}</span>
           </div>
-          {hasVisibleChildren && (
-            <button className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.course }}>
-              {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {isLoading && <FaSpinner className="h-4 w-4 animate-spin text-blue-500" />}
+            {(hasVisibleChildren || !hasSections) && (
+              <button disabled={isLoading} className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.course }}>
+                {isExpanded ? <FaChevronDown className="h-4 w-4" /> : <FaChevronRight className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
         </div>
-
-        {isExpanded && hasVisibleChildren && hasSections && (
+        {isExpanded && hasVisibleChildren && sections && (
           <div className="mt-2 space-y-1.5">
-            {course.sections.map((sec, idx) => renderSectionChild(sec, itemId, idx))}
+            {sections.map((sec, idx) => renderSectionChild(sec, itemId, idx))}
           </div>
         )}
       </div>
     );
   };
 
-  // Render content based on active filter
-  const renderFilteredContent = () => {
-    if (!activeFilter) {
-      // No filter - show all courses
-      return mockCourseData.map((course, idx) => renderCourse(course, idx));
-    }
+  const filterTypes: { type: ItemType; label: string; color: string }[] = [
+    { type: 'course', label: t('types.course'), color: ITEM_COLORS.course },
+    { type: 'section', label: t('types.section'), color: ITEM_COLORS.section },
+    { type: 'chapter', label: t('types.chapter'), color: ITEM_COLORS.chapter },
+    { type: 'paragraph', label: t('types.paragraph'), color: ITEM_COLORS.paragraph },
+    { type: 'notion', label: t('types.notion'), color: ITEM_COLORS.notion },
+  ];
 
-    // Render based on active filter type
+  const renderFilteredContent = () => {
+    const dataToFilter = courses;
+    if (!activeFilter) return dataToFilter.map((course) => renderCourse(course));
+
     switch (activeFilter) {
-      case 'course':
-        return mockCourseData.map((course, idx) => renderCourse(course, idx));
+      case 'course': return dataToFilter.map((course) => renderCourse(course));
       case 'section':
-        return mockCourseData.flatMap(course =>
-          course.sections.map((sec, idx) => renderSectionChild(sec, `course-${mockCourseData.indexOf(course)}`, idx))
-        );
+        return dataToFilter.flatMap(course => {
+          const sections = (course.sections && course.sections.length > 0) ? course.sections : decomposedCache[course.id.toString()] || [];
+          return sections.map((sec, idx) => renderSectionChild(sec, `course-${course.id}`, idx));
+        });
       case 'chapter':
-        return mockCourseData.flatMap(course =>
-          course.sections.flatMap(sec =>
-            sec.chapters.map((chap, idx) => renderChapterChild(chap, `course-${mockCourseData.indexOf(course)}-section-${course.sections.indexOf(sec)}`, idx))
-          )
-        );
+        return dataToFilter.flatMap(course => {
+          const sections = (course.sections && course.sections.length > 0) ? course.sections : decomposedCache[course.id.toString()] || [];
+          return sections.flatMap(sec => sec.chapters.map((chap, idx) => renderChapterChild(chap, `course-${course.id}-section-${sections.indexOf(sec)}`, idx)));
+        });
       case 'paragraph':
-        return mockCourseData.flatMap(course =>
-          course.sections.flatMap(sec =>
-            sec.chapters.flatMap(chap =>
-              chap.paragraphs.map((para, idx) => renderParagraphChild(para, `course-${mockCourseData.indexOf(course)}-section-${course.sections.indexOf(sec)}-chapter-${sec.chapters.indexOf(chap)}`, idx))
-            )
-          )
-        );
+        return dataToFilter.flatMap(course => {
+          const sections = (course.sections && course.sections.length > 0) ? course.sections : decomposedCache[course.id.toString()] || [];
+          return sections.flatMap(sec => sec.chapters.flatMap(chap => chap.paragraphs.map((para, idx) => renderParagraphChild(para, `course-${course.id}-section-${sections.indexOf(sec)}-chapter-${sec.chapters.indexOf(chap)}`, idx))));
+        });
       case 'notion':
-        return mockCourseData.flatMap((course, courseIdx) =>
-          course.sections.flatMap((sec, secIdx) =>
-            sec.chapters.flatMap((chap, chapIdx) =>
-              chap.paragraphs.flatMap((para, paraIdx) =>
-                para.notions.map((notion, notionIdx) =>
-                  renderNotion(notion, `course-${courseIdx}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIdx}`, notionIdx)
-                )
-              )
-            )
-          )
-        );
-      default:
-        return mockCourseData.map((course, idx) => renderCourse(course, idx));
+        return dataToFilter.flatMap(course => {
+          const sections = (course.sections && course.sections.length > 0) ? course.sections : decomposedCache[course.id.toString()] || [];
+          return sections.flatMap((sec, secIdx) => sec.chapters.flatMap((chap, chapIdx) => chap.paragraphs.flatMap((para, paraIdx) => para.notions.map((notion, notionIdx) => renderNotion(notion, `course-${course.id}-section-${secIdx}-chapter-${chapIdx}-paragraph-${paraIdx}`, notionIdx)))));
+        });
+      default: return dataToFilter.map((course) => renderCourse(course));
     }
   };
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-gray-800">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('title')}</h2>
         <button onClick={onClose} className="text-gray-400 dark:text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300">
           <FaTimes className="text-sm" />
         </button>
       </div>
-
-      {/* Search */}
       <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <div className="relative">
           <input
@@ -392,8 +448,6 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           </svg>
         </div>
       </div>
-
-      {/* Filters */}
       <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <div className="mb-2 flex items-center gap-1.5">
           <svg className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,31 +460,15 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             <button
               key={type}
               onClick={() => toggleFilter(type)}
-              className={`
-                cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium transition-all
-                ${activeFilter === type
-                  ? 'ring-2 ring-offset-1 dark:ring-offset-gray-800 shadow-sm outline-2 outline outline-black dark:outline-white'
-                  : 'hover:opacity-80'}
-              `}
-              style={{
-                backgroundColor: color,
-                color: 'white',
-              }}
-            >
-              {label}
-            </button>
+              className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium transition-all ${activeFilter === type ? 'ring-2 ring-offset-1 dark:ring-offset-gray-800 shadow-sm outline-2 outline outline-black dark:outline-white' : 'hover:opacity-80'}`}
+              style={{ backgroundColor: color, color: 'white' }}
+            >{label}</button>
           ))}
         </div>
       </div>
-
-      {/* Course List */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        <div className="space-y-2">
-          {renderFilteredContent()}
-        </div>
+        <div className="space-y-2">{renderFilteredContent()}</div>
       </div>
-
-      {/* Expert Corner */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-purple-50/50 dark:bg-purple-900/10 p-4">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />

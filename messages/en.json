@@ -153,6 +153,22 @@
         "dragDrop": {
           "title": "Drag and Drop",
           "description": "Organize your content by dragging elements from the structure panel directly into the editor."
+        },
+        "exercises": {
+          "title": "Exercise Management",
+          "description": "Create and manage exercises associated with your course to test student knowledge."
+        },
+        "grading": {
+          "title": "Grading & Feedback",
+          "description": "Grade student submissions and provide personalized feedback to help them improve."
+        },
+        "workshops": {
+          "title": "Workshops",
+          "description": "Organize collaborative work sessions or practical workshops."
+        },
+        "settings": {
+          "title": "Course Properties",
+          "description": "Configure advanced course settings and properties."
         }
       }
     }

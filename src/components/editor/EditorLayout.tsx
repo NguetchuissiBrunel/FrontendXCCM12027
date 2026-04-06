@@ -797,7 +797,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               colorClass="text-orange-600 dark:text-orange-400"
             />
             <IconButton
-              icon={<FaTasks />}
+              icon={<FaTasks id="icon-exercises" />}
               label={t('panels.exercises')}
               panelType="exercises"
               badge={exercises.length}
@@ -805,7 +805,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               disabled={!currentCourseId}
             />
             <IconButton
-              icon={<FaGraduationCap />}
+              icon={<FaGraduationCap id="icon-grading" />}
               label={t('panels.grading')}
               panelType="grading"
               badge={exerciseStats.pendingGrading}
@@ -813,13 +813,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               disabled={!currentCourseId}
             />
             <IconButton
-              icon={<FaChalkboardTeacher />}
+              icon={<FaChalkboardTeacher id="icon-workshops" />}
               label={t('panels.workshops')}
               panelType="worksheet"
               colorClass="text-indigo-600 dark:text-indigo-400"
             />
             <IconButton
-              icon={<FaCog />}
+              icon={<FaCog id="icon-settings" />}
               label={t('panels.properties')}
               panelType="properties"
               colorClass="text-gray-600 dark:text-gray-400"

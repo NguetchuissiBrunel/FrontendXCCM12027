@@ -69,6 +69,12 @@ const Onboarding = () => {
                 position: 'right'
             },
             {
+                target: '#sidebar-toc',
+                title: t('editor.steps.dragDrop.title'),
+                description: t('editor.steps.dragDrop.description'),
+                position: 'right'
+            },
+            {
                 target: '#main-editor-container',
                 title: t('editor.steps.main.title'),
                 description: t('editor.steps.main.description'),
@@ -90,6 +96,54 @@ const Onboarding = () => {
                 target: '#icon-structure',
                 title: t('editor.steps.structure.title'),
                 description: t('editor.steps.structure.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-info',
+                title: t('editor.steps.info.title'),
+                description: t('editor.steps.info.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-preview',
+                title: t('editor.steps.preview.title'),
+                description: t('editor.steps.preview.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-feedback',
+                title: t('editor.steps.feedback.title'),
+                description: t('editor.steps.feedback.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-my-courses',
+                title: t('editor.steps.myCourses.title'),
+                description: t('editor.steps.myCourses.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-exercises',
+                title: t('editor.steps.exercises.title'),
+                description: t('editor.steps.exercises.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-grading',
+                title: t('editor.steps.grading.title'),
+                description: t('editor.steps.grading.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-workshops',
+                title: t('editor.steps.workshops.title'),
+                description: t('editor.steps.workshops.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-settings',
+                title: t('editor.steps.settings.title'),
+                description: t('editor.steps.settings.description'),
                 position: 'left'
             },
             {

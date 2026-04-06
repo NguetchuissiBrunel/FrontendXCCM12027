@@ -153,6 +153,22 @@
         "dragDrop": {
           "title": "Glisser-Déposer",
           "description": "Organisez votre contenu en faisant glisser des éléments depuis le panneau de structure directement dans l'éditeur."
+        },
+        "exercises": {
+          "title": "Gestion des Exercices",
+          "description": "Créez et gérez les exercices associés à votre cours pour tester les connaissances des étudiants."
+        },
+        "grading": {
+          "title": "Correction & Notation",
+          "description": "Notez les soumissions de vos étudiants et donnez des retours personnalisés."
+        },
+        "workshops": {
+          "title": "Ateliers",
+          "description": "Organisez des sessions de travail collaboratif ou des ateliers pratiques."
+        },
+        "settings": {
+          "title": "Propriétés du Cours",
+          "description": "Configurez les paramètres avancés de votre cours."
         }
       }
     }

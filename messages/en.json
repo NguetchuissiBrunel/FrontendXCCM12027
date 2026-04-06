@@ -107,6 +107,54 @@
           "description": "Use this sidebar to navigate easily through all sections of your teacher area."
         }
       }
+    },
+    "editor": {
+      "steps": {
+        "toc": {
+          "title": "Table of Contents",
+          "description": "View and organize your course structure. Click to navigate instantly."
+        },
+        "main": {
+          "title": "Editing Area",
+          "description": "Write your content here. Formatting is rich and flexible."
+        },
+        "toolbar": {
+          "title": "Toolbar",
+          "description": "Formatting, images, equations, and quick exercises at your fingertips."
+        },
+        "rightBar": {
+          "title": "Panel Menu",
+          "description": "Access advanced tools: structure, exercises, PDF preview, etc."
+        },
+        "structure": {
+          "title": "Structure & Import",
+          "description": "Manage your course hierarchy or import existing knowledge."
+        },
+        "save": {
+          "title": "Save & Publish",
+          "description": "Save your changes or publish your course for your students."
+        },
+        "info": {
+          "title": "Course Information",
+          "description": "Quickly edit your course metadata (title, category, author, and description)."
+        },
+        "preview": {
+          "title": "PDF Preview",
+          "description": "Generate a real-time preview of your course in PDF or Word format."
+        },
+        "feedback": {
+          "title": "Comments & Feedback",
+          "description": "Check what students and peers think about your course and manage their feedback."
+        },
+        "myCourses": {
+          "title": "My Creations",
+          "description": "Easily access your other courses to switch projects or copy content."
+        },
+        "dragDrop": {
+          "title": "Drag and Drop",
+          "description": "Organize your content by dragging elements from the structure panel directly into the editor."
+        }
+      }
     }
   },
   "sidebar": {

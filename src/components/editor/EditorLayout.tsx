@@ -687,7 +687,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         type={confirmConfig.type === 'publish' ? 'info' : 'warning'}
       />
       {/* Navbar at the top */}
-      <nav className="h-16 flex-none z-10">
+      <nav id="navbar" className="h-16 flex-none z-10">
         <Navbar />
       </nav>
 
@@ -695,6 +695,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Sidebar for TOC */}
         <aside
+          id="sidebar-toc"
           className={`${showSidebar ? 'w-80' : 'w-0'
             } flex-none bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out relative z-0 print:hidden`}
         >
@@ -729,6 +730,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
         {/* Toggle Sidebar Button */}
         <button
+          id="btn-toggle-toc"
           onClick={() => setShowSidebar(!showSidebar)}
           className={`absolute top-24 z-20 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'
             }`}
@@ -738,7 +740,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         </button>
 
         {/* Main Editor Area */}
-        <main className="flex-1 flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900 relative z-0 overflow-hidden">
+        <main id="main-editor-container" className="flex-1 flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900 relative z-0 overflow-hidden">
           <MainEditor
             initialContent=""
             onContentChange={handleEditorChange}
@@ -760,27 +762,27 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         {/* RIGHT SECTION - Unified Sidebar + Panel Area */}
         <div className="flex print:hidden relative">
           {/* Main Sidebar - Unified */}
-          <div className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-3 z-20">
+          <div id="right-icon-bar" className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-3 z-20">
             <IconButton
-              icon={<FaList />}
+              icon={<FaList id="icon-structure" />}
               label={t('panels.structure')}
               panelType="structure"
               colorClass="text-purple-600 dark:text-purple-400"
             />
             <IconButton
-              icon={<FaInfo />}
+              icon={<FaInfo id="icon-info" />}
               label={t('panels.info')}
               panelType="info"
               colorClass="text-blue-600 dark:text-blue-400"
             />
             <IconButton
-              icon={<FaEye />}
+              icon={<FaEye id="icon-preview" />}
               label={t('panels.pdfPreview')}
               panelType="preview"
               colorClass="text-cyan-600 dark:text-cyan-400"
             />
             <IconButton
-              icon={<FaComments />}
+              icon={<FaComments id="icon-feedback" />}
               label={t('panels.feedback')}
               panelType="feedback"
               colorClass="text-green-600 dark:text-green-400"
@@ -789,7 +791,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             <div className="flex-grow" />
 
             <IconButton
-              icon={<FaFolderOpen />}
+              icon={<FaFolderOpen id="icon-my-courses" />}
               label={t('panels.myCourses')}
               panelType="author"
               colorClass="text-orange-600 dark:text-orange-400"
@@ -827,6 +829,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
             {/* Bottom Actions */}
             <button
+              id="btn-save-course"
               onClick={() => triggerSaveConfirm(false)}
               className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title={t('toolbar.save')}
@@ -834,6 +837,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               <FaSave className="text-lg" />
             </button>
             <button
+              id="btn-publish-course"
               onClick={() => triggerSaveConfirm(true)}
               className="flex h-10 w-10 items-center justify-center rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 transition-colors"
               title={t('toolbar.publish')}

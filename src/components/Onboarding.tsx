@@ -60,6 +60,82 @@ const Onboarding = () => {
                 description: t('teacher.steps.navigation.description'),
                 position: 'right'
             }
+        ],
+        '/editor': [
+            {
+                target: '#sidebar-toc',
+                title: t('editor.steps.toc.title'),
+                description: t('editor.steps.toc.description'),
+                position: 'right'
+            },
+            {
+                target: '#main-editor-container',
+                title: t('editor.steps.main.title'),
+                description: t('editor.steps.main.description'),
+                position: 'center'
+            },
+            {
+                target: '#editor-toolbar',
+                title: t('editor.steps.toolbar.title'),
+                description: t('editor.steps.toolbar.description'),
+                position: 'bottom'
+            },
+            {
+                target: '#right-icon-bar',
+                title: t('editor.steps.rightBar.title'),
+                description: t('editor.steps.rightBar.description'),
+                position: 'left'
+            },
+            {
+                target: '#icon-structure',
+                title: t('editor.steps.structure.title'),
+                description: t('editor.steps.structure.description'),
+                position: 'left'
+            },
+            {
+                target: '#btn-save-course',
+                title: t('editor.steps.save.title'),
+                description: t('editor.steps.save.description'),
+                position: 'left'
+            }
+        ],
+        '/etudashboard': [
+            {
+                target: '#welcome-section',
+                title: t('etu.welcomeTitle'),
+                description: t('etu.welcomeDesc'),
+                position: 'bottom'
+            },
+            {
+                target: '#stats-overview',
+                title: t('etu.statsTitle'),
+                description: t('etu.statsDesc'),
+                position: 'bottom'
+            },
+            {
+                target: '#my-courses',
+                title: t('etu.coursesTitle'),
+                description: t('etu.coursesDesc'),
+                position: 'top'
+            },
+            {
+                target: '#pending-exercises',
+                title: t('etu.pendingTitle'),
+                description: t('etu.pendingDesc'),
+                position: 'left'
+            },
+            {
+                target: '#my-submissions',
+                title: t('etu.submissionsTitle'),
+                description: t('etu.submissionsDesc'),
+                position: 'left'
+            },
+            {
+                target: '#quick-actions',
+                title: t('etu.quickActionsTitle'),
+                description: t('etu.quickActionsDesc'),
+                position: 'left'
+            }
         ]
     }), [t]);
 

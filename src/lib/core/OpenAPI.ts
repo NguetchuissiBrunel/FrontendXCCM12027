@@ -22,8 +22,6 @@ export type OpenAPIConfig = {
 export const OpenAPI: OpenAPIConfig = {
 
 
-    //BASE: 'https://xccm1-backend-eews.onrender.com',
-
     BASE: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8082',
 
     VERSION: '1.0.0',

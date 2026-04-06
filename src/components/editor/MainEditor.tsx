@@ -924,7 +924,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       <div className="w-full h-full flex flex-col bg-white dark:bg-gray-900">
 
         {/* Toolbar */}
-        <div className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
+        <div id="editor-toolbar" className="border-b border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800">
           <div className="flex gap-2 items-center flex-wrap">
             <HeadingDropdown />
             <FontDropdown />

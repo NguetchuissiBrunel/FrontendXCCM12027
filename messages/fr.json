@@ -107,6 +107,54 @@
           "description": "Utilisez cette barre latérale pour naviguer facilement entre toutes les sections de votre espace enseignant."
         }
       }
+    },
+    "editor": {
+      "steps": {
+        "toc": {
+          "title": "Table des Matières",
+          "description": "Visualisez et organisez la structure de votre cours. Cliquez pour naviguer instantanément."
+        },
+        "main": {
+          "title": "Zone d'Édition",
+          "description": "Rédigez votre contenu ici. Le formatage est riche et flexible."
+        },
+        "toolbar": {
+          "title": "Barre d'Outils",
+          "description": "Formatage, images, équations et exercices rapides à portée de main."
+        },
+        "rightBar": {
+          "title": "Menu des Panneaux",
+          "description": "Accédez aux outils avancés : structure, exercices, aperçu PDF, etc."
+        },
+        "structure": {
+          "title": "Structure & Import",
+          "description": "Gérez la hiérarchie de votre cours ou importez des connaissances existantes."
+        },
+        "save": {
+          "title": "Sauvegarde & Publication",
+          "description": "Enregistrez vos modifications ou publiez votre cours pour vos étudiants."
+        },
+        "info": {
+          "title": "Informations du Cours",
+          "description": "Modifiez rapidement les métadonnées de votre cours (titre, catégorie, auteur et description)."
+        },
+        "preview": {
+          "title": "Aperçu PDF",
+          "description": "Générez un aperçu en temps réel de votre cours au format PDF ou Word."
+        },
+        "feedback": {
+          "title": "Commentaires & Retours",
+          "description": "Consultez les avis des étudiants et de vos pairs sur votre cours."
+        },
+        "myCourses": {
+          "title": "Mes Créations",
+          "description": "Accédez facilement à vos autres cours pour changer de projet ou copier du contenu."
+        },
+        "dragDrop": {
+          "title": "Glisser-Déposer",
+          "description": "Organisez votre contenu en faisant glisser des éléments depuis le panneau de structure directement dans l'éditeur."
+        }
+      }
     }
   },
   "sidebar": {

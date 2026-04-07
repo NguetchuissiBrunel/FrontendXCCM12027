@@ -17,14 +17,18 @@ import Paragraphe from '../extensions/Paragraphe';
 import Notion from '../extensions/Notion';
 import Exercice from '../extensions/Exercice';
 import Math from '../extensions/Math';
+import { useTracking } from '../hooks/useTracking';
 
 interface CourseContentRendererProps {
     content: any;
     forceLight?: boolean;
     nodeIndex?: number | null;
+    notionTitle?: string;
 }
 
-const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, forceLight = false, nodeIndex = null }) => {
+const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, forceLight = false, nodeIndex = null, notionTitle = "General" }) => {
+    const { trackReading } = useTracking(notionTitle);
+    
     // Helper to ensure content is a valid Doc structure
     const [validContent, setValidContent] = useState<JSONContent>({ type: 'doc', content: [] });
 
@@ -85,8 +89,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, 
         }
 
         setValidContent(processedContent);
-    }, [content]);
-
+    }, [content, nodeIndex]);
 
     const editor = useEditor({
         editable: false,
@@ -139,8 +142,9 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, 
         return null;
     }
 
+    // Attach tracking ref to the top-level container.
     return (
-        <div className="course-content-renderer">
+        <div className="course-content-renderer" ref={trackReading(nodeIndex || 0, notionTitle)}>
             <EditorContent editor={editor} />
         </div>
     );

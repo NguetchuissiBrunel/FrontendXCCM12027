@@ -14,6 +14,7 @@ import {
   FaFileAlt
 } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
+import { useTracking } from '@/hooks/useTracking';
 
 interface ExerciseViewerProps {
   exercise: Exercise;
@@ -32,6 +33,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { trackEvent } = useTracking(exercise.title);
 
   useEffect(() => {
     // Utiliser directement les questions de l'exercice
@@ -89,6 +91,13 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
 
       setSubmitted(true);
       toast.success(t('submitSuccess'));
+      
+      // Track the exercise submission behavior event
+      trackEvent({
+        eventType: "EXERCISE_SUBMITTED",
+        notion: exercise.title || "General",
+        metadata: { questionsCount: questions.length }
+      });
 
     } catch (error: unknown) {
       console.error(t('submitErrorLog'), error);

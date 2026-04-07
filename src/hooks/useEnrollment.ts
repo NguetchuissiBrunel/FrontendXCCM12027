@@ -79,7 +79,7 @@ export function useEnrollment(courseId?: number) {
 
     setLoading(true);
     try {
-      await EnrollmentService.unenroll();
+      await EnrollmentService.unenroll(enrollment?.id!);
       setEnrollment(null);
       setIsEnrolled(false);
       setProgress(0);

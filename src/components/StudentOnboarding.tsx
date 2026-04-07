@@ -530,7 +530,7 @@ function getTooltipStyles(targetRect: DOMRect | null, position?: string, highlig
         top = spaceBelow >= tooltipHeight + spacing ? targetRect.bottom + spacing : (spaceAbove >= tooltipHeight + spacing ? targetRect.top - tooltipHeight - spacing : (viewportHeight - tooltipHeight) / 2);
     }
     
-    let left = Math.min(viewportWidth - tooltipWidth / 2 - spacing, Math.max(tooltipWidth / 2 + spacing, targetRect.left + targetRect.width / 2));
+    const left = Math.min(viewportWidth - tooltipWidth / 2 - spacing, Math.max(tooltipWidth / 2 + spacing, targetRect.left + targetRect.width / 2));
     
     return {
         position: 'fixed',

@@ -77,7 +77,7 @@ export const recomputeAllNumbers = (items: TableOfContentsItem[]): TableOfConten
     // Create a deep copy to avoid mutating state directly if needed, though usually we replace state.
     const newItems = JSON.parse(JSON.stringify(items));
 
-    let counters: number[] = [];
+    const counters: number[] = [];
 
     // Recursive function is better for flat list if we had one, but here we have a tree.
     // Wait, the input is a tree or a flat list?

@@ -284,8 +284,8 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       StarterKit.configure({
         document: false,
         heading: false, // Disable default heading to use our custom one
-        dropCursor: false,
-        gapCursor: false,
+        dropcursor: false,
+        gapcursor: false,
       }),
       Heading.configure({
         levels: [1, 2, 3, 4, 5, 6],
@@ -360,7 +360,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             const node = view.state.schema.nodeFromJSON(contentToInsertJson);
             const finalNode = regenerateIds(node);
 
-            let $pos = view.state.doc.resolve(posResult.pos);
+            const $pos = view.state.doc.resolve(posResult.pos);
             let insertPos = posResult.pos;
 
             let targetDepth = -1;
@@ -445,7 +445,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           const config = hierarchyInfo[itemTypeCode];
 
           if (config) {
-            let counters = [0, 0, 0, 0, 0, 0];
+            const counters = [0, 0, 0, 0, 0, 0];
             editor.view.state.doc.descendants((node: PMNode, pos: number) => {
               if (deleted) return false;
 
@@ -538,7 +538,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             }
             const finalNode = regenerateIds(interimNode);
 
-            let $pos = editor.view.state.doc.resolve(pos + node.nodeSize - 1);
+            const $pos = editor.view.state.doc.resolve(pos + node.nodeSize - 1);
             let insertPos = pos + node.nodeSize - 1;
 
             let targetDepth = -1;

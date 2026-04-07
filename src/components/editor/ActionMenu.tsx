@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import {
     Trash2, Copy, ClipboardPaste,
     GripVertical, Edit2, FileText, BookOpen,
@@ -43,6 +44,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
     onRenameItem,
     canPaste
 }) => {
+    const t = useTranslations('editor.actionMenu');
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -134,13 +136,13 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
 
         return (
             <div className="border-t border-gray-100 pt-1.5 mt-1 px-1">
-                <div className="text-xs font-medium text-purple-600 mb-1 px-1">Ajouter</div>
+                <div className="text-xs font-medium text-purple-600 mb-1 px-1">{t('add')}</div>
                 <div className="flex flex-wrap gap-1 px-1">
                     {allowedChildTypes.includes('section') && (
                         <button
                             className="p-1 text-xs rounded-md bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors flex items-center justify-center"
                             onClick={() => onAddItem('section', item.id)}
-                            title="Ajouter une partie"
+                            title={t('addSection')}
                         >
                             <Layers size={12} />
                         </button>
@@ -149,7 +151,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                         <button
                             className="p-1 text-xs rounded-md bg-green-50 text-green-600 hover:bg-green-100 transition-colors flex items-center justify-center"
                             onClick={() => onAddItem('chapter', item.id)}
-                            title="Ajouter un chapitre"
+                            title={t('addChapter')}
                         >
                             <BookOpen size={12} />
                         </button>
@@ -158,7 +160,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                         <button
                             className="p-1 text-xs rounded-md bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors flex items-center justify-center"
                             onClick={() => onAddItem('paragraph', item.id)}
-                            title="Ajouter un paragraphe"
+                            title={t('addParagraph')}
                         >
                             <FileText size={12} />
                         </button>
@@ -167,7 +169,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                         <button
                             className="p-1 text-xs rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center"
                             onClick={() => onAddItem('notion', item.id)}
-                            title="Ajouter une notion"
+                            title={t('addNotion')}
                         >
                             <Lightbulb size={12} />
                         </button>
@@ -176,7 +178,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                         <button
                             className="p-1 text-xs rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors flex items-center justify-center"
                             onClick={() => onAddItem('exercise', item.id)}
-                            title="Ajouter un exercice"
+                            title={t('addExercise')}
                         >
                             <HelpCircle size={12} />
                         </button>
@@ -210,7 +212,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     </button>
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5 pl-5">
-                    {item.type.charAt(0).toUpperCase() + item.type.slice(1)} {item.number}
+                    {t(`types.${item.type}`)} {item.number}
                 </div>
             </div>
 
@@ -220,7 +222,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     onClick={() => onViewItem(item.id)}
                 >
                     <ArrowUpRight size={12} className="text-indigo-500" />
-                    <span>Ouvrir</span>
+                    <span>{t('open')}</span>
                 </button>
 
                 <button
@@ -228,7 +230,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     onClick={() => onRenameItem(item.id)}
                 >
                     <Edit2 size={12} className="text-violet-500" />
-                    <span>Renommer</span>
+                    <span>{t('rename')}</span>
                 </button>
 
                 <button
@@ -236,7 +238,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     onClick={() => onCopyItem(item.id)}
                 >
                     <Copy size={12} className="text-blue-500" />
-                    <span>Copier</span>
+                    <span>{t('copy')}</span>
                 </button>
 
                 <button
@@ -245,7 +247,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     disabled={!canPaste}
                 >
                     <ClipboardPaste size={12} className={canPaste ? 'text-green-500' : 'text-gray-400'} />
-                    <span>Coller</span>
+                    <span>{t('paste')}</span>
                 </button>
 
                 <button
@@ -253,7 +255,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     onClick={() => onDuplicateItem(item.id)}
                 >
                     <Copy size={12} className="text-purple-500" />
-                    <span>Dupliquer</span>
+                    <span>{t('duplicate')}</span>
                 </button>
 
                 <button
@@ -261,7 +263,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     onClick={() => onDragStart(item.id)}
                 >
                     <GripVertical size={12} className="text-gray-500" />
-                    <span>Déplacer</span>
+                    <span>{t('move')}</span>
                 </button>
             </div>
 
@@ -273,7 +275,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     onClick={() => onDeleteItem(item.id)}
                 >
                     <Trash2 size={12} className="text-red-500" />
-                    <span>Supprimer</span>
+                    <span>{t('delete')}</span>
                 </button>
             </div>
 

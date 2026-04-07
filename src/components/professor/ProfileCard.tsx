@@ -6,6 +6,7 @@ import { Users, Award, Clock, Activity, BarChart, TrendingUp } from 'lucide-reac
 import { FaPen, FaSave } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
+import { useTranslations } from 'next-intl';
 
 export interface Professor {
   id: string;
@@ -54,6 +55,7 @@ interface ProfileCardProps {
 }
 
 export default function ProfileCard({ professor, coursesStats, onUpdate }: ProfileCardProps) {
+  const t = useTranslations('teacherDashboard.profileCard');
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -92,7 +94,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
         const userId = userData.id; // C'est l'UUID
 
         if (!userId) {
-          throw new Error('ID utilisateur non trouvé');
+          throw new Error(t('userIdNotFound'));
         }
 
         const updatePayload = {
@@ -121,7 +123,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
 
         if (!response.success) {
           console.error('[ProfileCard] Échec de la mise à jour du profil:', response);
-          throw new Error(response.error || 'Failed to update profile');
+          throw new Error(response.error || t('profileUpdateError'));
         }
 
         // Mettre à jour le localStorage avec les nouvelles données
@@ -147,11 +149,11 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
           });
         }
 
-        toast.success('Profil mis à jour avec succès !');
+        toast.success(t('profileUpdateSuccess'));
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde du profil');
+      toast.error(error instanceof Error ? error.message : t('profileUpdateError'));
     } finally {
       setIsSaving(false);
     }
@@ -181,7 +183,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
       const validation = CloudinaryService.validateFile(file);
       if (!validation.valid) {
         console.warn('[ProfileCard] Validation de fichier échouée:', validation.error);
-        toast.error(validation.error || 'Fichier invalide');
+        toast.error(validation.error || t('invalidFile'));
         return;
       }
 
@@ -194,10 +196,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
         photoUrl: url
       }));
 
-      toast.success('Photo téléchargée avec succès !');
+      toast.success(t('photoUploadSuccess'));
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');
+      toast.error(error instanceof Error ? error.message : t('photoUploadError'));
     }
   };
 
@@ -226,13 +228,13 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
   return (
     <div id="profile-card" className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">Profil de l&apos;Enseignant</h2>
+        <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400">{t('title')}</h2>
         {!isEditing ? (
           <button
             onClick={handleEdit}
             className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg flex items-center gap-2"
           >
-            <FaPen size={20} /> Modifier
+            <FaPen size={20} /> {t('edit')}
           </button>
         ) : (
           <div className="flex gap-3">
@@ -240,7 +242,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
               onClick={handleCancel}
               className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
-              Annuler
+              {t('cancel')}
             </button>
             <button
               onClick={handleSave}
@@ -248,10 +250,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
               className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
             >
               {isSaving ? (
-                'Enregistrement...'
+                `${t('save')}...`
               ) : (
                 <span className="flex items-center gap-2">
-                  <FaSave size={20} /> Enregistrer
+                  <FaSave size={20} /> {t('save')}
                 </span>
               )}
             </button>
@@ -268,7 +270,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
             }`}
         >
-          Aperçu
+          {t('overview')}
         </button>
         <button
           onClick={() => setActiveTab('courses')}
@@ -277,14 +279,14 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
             }`}
         >
-          Statistiques par Cours
+          {t('coursesStatsTab')}
         </button>
       </div>
 
       {activeTab === 'overview' ? (
         <div className="grid grid-cols-3 gap-8">
           {/* Left: Profile Image & Basic Info */}
-          <div className="space-y-6">
+          <div id="profile-info" className="space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-purple-200 dark:border-gray-700">
               <div className="relative w-32 h-32 mx-auto mb-4">
                 <img
@@ -325,14 +327,14 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                       value={editedProfessor.name.split(' ')[0]}
                       onChange={(e) => handleNameChange('firstName', e.target.value)}
                       className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700 border border-purple-300 dark:border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="Prénom"
+                      placeholder={t('firstName')}
                     />
                     <input
                       type="text"
                       value={editedProfessor.name.split(' ').slice(1).join(' ')}
                       onChange={(e) => handleNameChange('lastName', e.target.value)}
                       className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700 border border-purple-300 dark:border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="Nom"
+                      placeholder={t('lastName')}
                     />
                   </div>
                 ) : (
@@ -343,69 +345,69 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
 
             <div className="space-y-3">
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Ville:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('city')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedProfessor.city}
                     onChange={(e) => handleChange('city', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={`Actuel: ${professor.city || 'Non spécifié'}`}
+                    placeholder={t('current', { value: professor.city || t('notSpecified') })}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.city || professor.city || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.city || professor.city || t('notSpecified')}</p>
                 )}
               </div>
 
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Université:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('university')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedProfessor.university}
                     onChange={(e) => handleChange('university', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={`Actuel: ${professor.university || 'Non spécifié'}`}
+                    placeholder={t('current', { value: professor.university || t('notSpecified') })}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.university || professor.university || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.university || professor.university || t('notSpecified')}</p>
                 )}
               </div>
 
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Grade:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('grade')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedProfessor.grade}
                     onChange={(e) => handleChange('grade', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={`Actuel: ${professor.grade || 'Non spécifié'}`}
+                    placeholder={t('current', { value: professor.grade || t('notSpecified') })}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.grade || professor.grade || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.grade || professor.grade || t('notSpecified')}</p>
                 )}
               </div>
 
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Certification:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('certification')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedProfessor.certification}
                     onChange={(e) => handleChange('certification', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={`Actuel: ${professor.certification || 'Non spécifié'}`}
+                    placeholder={t('current', { value: professor.certification || t('notSpecified') })}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.certification || professor.certification || 'Non Spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.certification || professor.certification || t('notSpecified')}</p>
                 )}
               </div>
 
               {/* Adresse e-mail */}
               {professor.email && (
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-100 dark:border-indigo-900/30">
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold mb-1">Adresse e-mail</p>
+                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold mb-1">{t('emailLabel')}</p>
                   <p className="text-sm font-semibold text-gray-800 dark:text-white break-all">{professor.email}</p>
                 </div>
               )}
@@ -420,14 +422,14 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <Users className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Étudiants</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('studentsLabel')}</p>
                 <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">
-                  {editedProfessor.totalStudents > 0 ? editedProfessor.totalStudents : 'Aucun'}
+                  {editedProfessor.totalStudents > 0 ? editedProfessor.totalStudents : t('none')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {editedProfessor.publications > 0
-                    ? `sur ${editedProfessor.publications} cours publiés`
-                    : 'aucun cours publié'}
+                    ? t('publishedCoursesLabel', { count: editedProfessor.publications })
+                    : t('nonePublishedCourse')}
                 </p>
               </div>
 
@@ -435,14 +437,14 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <Activity className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Taux de participation</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('participationRate')}</p>
                 <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">
                   {editedProfessor.participationRate}%
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {editedProfessor.activeStudents > 0
-                    ? `${editedProfessor.activeStudents} étudiants actifs`
-                    : 'aucun étudiant actif'}
+                    ? t('activeStudents', { count: editedProfessor.activeStudents })
+                    : t('noneActiveStudent')}
                 </p>
               </div>
 
@@ -450,12 +452,12 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <Award className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Cours Publiés</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('publishedCoursesTitle')}</p>
                 <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">
                   {editedProfessor.publications}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  cours créés
+                  {t('coursesCreated')}
                 </p>
               </div>
             </div>
@@ -466,12 +468,12 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <BarChart className="text-purple-600 dark:text-purple-400" size={24} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Progression Moyenne</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('averageProgress')}</p>
                 <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {editedProfessor.averageProgress}%
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  moyenne de tous les cours
+                  {t('allCoursesAverage')}
                 </p>
               </div>
 
@@ -479,14 +481,14 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <TrendingUp className="text-purple-600 dark:text-purple-400" size={24} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Exercices Totaux</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('exercisesLabel')}</p>
                 <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {editedProfessor.totalExercises}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {editedProfessor.totalExercises > 0
-                    ? `dans ${editedProfessor.publications} cours`
-                    : 'aucun exercice créé'}
+                    ? t('inCourses', { count: editedProfessor.publications })
+                    : t('noneExerciseCreated')}
                 </p>
               </div>
             </div>
@@ -498,26 +500,26 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                     <Clock className="text-purple-600 dark:text-purple-400" size={24} />
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Étudiants Terminés</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('completedStudents')}</p>
                   <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                     {editedProfessor.completedStudents}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    ont complété leurs cours
+                    {t('completedCoursesHint')}
                   </p>
                 </div>
                 <div>
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                     <div className="text-purple-600 dark:text-purple-400 text-xl">📈</div>
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Taux de Complétion</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('completionRateLabel')}</p>
                   <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                     {editedProfessor.totalStudents > 0
                       ? `${Math.round((editedProfessor.completedStudents / editedProfessor.totalStudents) * 100)}%`
                       : '0%'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    des étudiants ont terminé
+                    {t('completionRateHint')}
                   </p>
                 </div>
               </div>
@@ -526,7 +528,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
             {/* Performance Distribution - Seulement si on a des données */}
             {(editedProfessor.performanceDistribution.some(item => item.value > 0) || editedProfessor.publications > 0) && (
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-8 border border-purple-200 dark:border-purple-900/30">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Distribution des performances des étudiants</h3>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('performanceDistribution')}</h3>
 
                 {/* Chart */}
                 <div className="flex justify-center mb-8">
@@ -587,17 +589,15 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
             {/* Message si aucune donnée */}
             {editedProfessor.publications === 0 && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-900/30">
-                <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400 mb-3">
-                  📚 Commencez votre parcours d'enseignement
-                </h3>
+                <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400 mb-3">📚 {t('startTeachingTitle')}</h3>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                  Vous n'avez pas encore publié de cours. Créez votre premier cours pour :
+                  {t('startTeachingDesc')}
                 </p>
                 <ul className="text-sm text-yellow-600 dark:text-yellow-400 space-y-1 list-disc pl-5">
-                  <li>Suivre les statistiques de vos étudiants</li>
-                  <li>Analyser les performances d'apprentissage</li>
-                  <li>Recevoir des feedbacks sur vos contenus</li>
-                  <li>Gérer les inscriptions et participations</li>
+                  <li>{t('startTeachingItem1')}</li>
+                  <li>{t('startTeachingItem2')}</li>
+                  <li>{t('startTeachingItem3')}</li>
+                  <li>{t('startTeachingItem4')}</li>
                 </ul>
               </div>
             )}
@@ -608,10 +608,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
         <div className="space-y-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-              Détails des statistiques par cours
+              {t('coursesStatsTitle')}
             </h3>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {coursesStats?.length || 0} cours
+              {t('coursesCount', { count: coursesStats?.length || 0 })}
             </span>
           </div>
 
@@ -629,13 +629,13 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-white dark:bg-gray-700 p-3 rounded-lg">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Inscrits</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('enrolled')}</p>
                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
                           {courseItem.totalEnrolled}
                         </p>
                       </div>
                       <div className="bg-white dark:bg-gray-700 p-3 rounded-lg">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Actifs</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('active')}</p>
                         <p className="text-2xl font-bold text-gray-800 dark:text-white">
                           {courseItem.activeStudents}
                         </p>
@@ -644,7 +644,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Participation</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{t('participation')}</span>
                         <span className="font-semibold text-purple-600 dark:text-purple-400">
                           {courseItem.participationRate}%
                         </span>
@@ -659,7 +659,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Progression</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{t('progression')}</span>
                         <span className="font-semibold text-green-600 dark:text-green-400">
                           {courseItem.averageProgress}%
                         </span>
@@ -674,19 +674,19 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
 
                     <div className="grid grid-cols-3 gap-3 text-sm">
                       <div className="text-center">
-                        <p className="text-gray-500 dark:text-gray-400">Terminés</p>
+                        <p className="text-gray-500 dark:text-gray-400">{t('completedTitle')}</p>
                         <p className="font-bold text-gray-800 dark:text-white">
                           {courseItem.completedStudents}
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-gray-500 dark:text-gray-400">Exercices</p>
+                        <p className="text-gray-500 dark:text-gray-400">{t('exercisesTitle')}</p>
                         <p className="font-bold text-gray-800 dark:text-white">
                           {courseItem.totalExercises}
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-gray-500 dark:text-gray-400">Taux</p>
+                        <p className="text-gray-500 dark:text-gray-400">{t('rate')}</p>
                         <p className="font-bold text-gray-800 dark:text-white">
                           {courseItem.totalEnrolled > 0
                             ? `${Math.round((courseItem.completedStudents / courseItem.totalEnrolled) * 100)}%`
@@ -700,19 +700,19 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                       courseItem.acceptedEnrollments !== undefined ||
                       courseItem.rejectedEnrollments !== undefined) && (
                         <div className="mt-2 rounded-xl bg-white dark:bg-gray-700 p-3 border border-gray-100 dark:border-gray-600">
-                          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">Inscriptions</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">{t('enrollments')}</p>
                           <div className="grid grid-cols-3 gap-2 text-xs text-center">
                             <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg py-2">
                               <p className="font-bold text-amber-700 dark:text-amber-400 text-lg">{courseItem.pendingEnrollments ?? 0}</p>
-                              <p className="text-amber-600 dark:text-amber-500">En attente</p>
+                              <p className="text-amber-600 dark:text-amber-500">{t('pending')}</p>
                             </div>
                             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg py-2">
                               <p className="font-bold text-green-700 dark:text-green-400 text-lg">{courseItem.acceptedEnrollments ?? 0}</p>
-                              <p className="text-green-600 dark:text-green-500">Acceptés</p>
+                              <p className="text-green-600 dark:text-green-500">{t('accepted')}</p>
                             </div>
                             <div className="bg-red-50 dark:bg-red-900/20 rounded-lg py-2">
                               <p className="font-bold text-red-700 dark:text-red-400 text-lg">{courseItem.rejectedEnrollments ?? 0}</p>
-                              <p className="text-red-600 dark:text-red-500">Rejetés</p>
+                              <p className="text-red-600 dark:text-red-500">{t('rejected')}</p>
                             </div>
                           </div>
                         </div>
@@ -722,7 +722,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                       onClick={() => handleViewCourseDetails(courseItem.courseId)}
                       className="w-full mt-4 px-4 py-2 bg-purple-600 dark:bg-purple-500 text-white text-sm rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors"
                     >
-                      Voir les détails complets
+                      {t('viewFullDetails')}
                     </button>
                   </div>
                 </div>
@@ -736,10 +736,10 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 </svg>
               </div>
               <p className="text-gray-600 dark:text-gray-400 mb-2">
-                Aucune statistique de cours disponible
+                {t('noCourseStats')}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
-                Les statistiques apparaîtront une fois que vos cours auront des étudiants inscrits.
+                {t('noCourseStatsHint')}
               </p>
               <button
                 onClick={() => window.location.href = '/editor'}
@@ -748,7 +748,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Créer un cours
+                {t('createCourse')}
               </button>
             </div>
           )}

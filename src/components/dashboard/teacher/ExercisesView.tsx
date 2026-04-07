@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocale, useTranslations } from 'next-intl';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { ExerciseService } from '@/lib3/services/ExerciseService';
@@ -102,6 +103,8 @@ const useExerciseSync = () => {
 // ============ COMPOSANT PRINCIPAL ============
 
 export default function ExercisesView() {
+  const t = useTranslations('teacherDashboard');
+  const locale = useLocale();
   const router = useRouter();
   const { user } = useAuth();
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
@@ -129,8 +132,8 @@ export default function ExercisesView() {
   // Fonction pour normaliser les données de cours
   const normalizeCourseData = (course: any): CourseData => ({
     id: course.id || 0,
-    title: course.title || 'Cours sans titre',
-    category: course.category || course.categoryName || 'Non catégorisé'
+    title: course.title || t('exercises.fallbackCourseTitle'),
+    category: course.category || course.categoryName || t('exercises.courseUncategorized')
   });
 
   // Charger un cours avec cache
@@ -245,12 +248,12 @@ export default function ExercisesView() {
       console.log(`🎯 ${allExercises.length} exercices chargés avec succès`);
 
       if (forceRefresh) {
-        toast.success(`${allExercises.length} exercices actualisés`);
+        toast.success(t('exercises.syncSuccess', { count: allExercises.length }));
       }
 
     } catch (error) {
       console.error('❌ Erreur chargement exercices:', error);
-      toast.error('Erreur de chargement des exercices');
+      toast.error(t('exercises.loadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -318,7 +321,7 @@ export default function ExercisesView() {
 
   const handleManageExercise = (exercise: ExerciseWithStats) => {
     if (!exercise.id || !exercise.courseId) {
-      toast.error('Exercice invalide');
+      toast.error(t('exercises.invalidExercise'));
       return;
     }
 
@@ -394,9 +397,9 @@ export default function ExercisesView() {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - lastRefresh.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return `Il y a ${diffInSeconds}s`;
-    if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)}min`;
-    return `Il y a ${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 60) return t('exercises.lastRefreshSeconds', { count: diffInSeconds });
+    if (diffInSeconds < 3600) return t('exercises.lastRefreshMinutes', { count: Math.floor(diffInSeconds / 60) });
+    return t('exercises.lastRefreshHours', { count: Math.floor(diffInSeconds / 3600) });
   };
 
   const totalPending = exercises.reduce((sum, ex) => sum + ex.pendingSubmissions, 0);
@@ -415,22 +418,22 @@ export default function ExercisesView() {
     <>
       <div className="px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div id="exercises-header" className="mb-8">
           <button
             onClick={() => router.push('/profdashboard?tab=accueil')}
             className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 mb-6"
           >
             <ArrowLeft size={20} />
-            Retour au dashboard
+            {t('exercises.backToDashboard')}
           </button>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Tous mes exercices
+                {t('exercises.title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-300">
-                Gérez et suivez tous vos exercices en un seul endroit
+                {t('exercises.description')}
               </p>
             </div>
 
@@ -441,28 +444,28 @@ export default function ExercisesView() {
                 className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'Actualisation...' : 'Actualiser'}
+                {refreshing ? t('exercises.refreshing') : t('exercises.refresh')}
               </button>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <div id="exercises-stats" className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
                       {exercises.length}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Exercices</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t('exercises.statsExercises')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                       {totalPending}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">À corriger</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t('exercises.statsToGrade')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {gradedPercentage}%
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Corrigés</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t('exercises.statsGraded')}</div>
                   </div>
                 </div>
               </div>
@@ -471,13 +474,13 @@ export default function ExercisesView() {
         </div>
 
         {/* Recherche et filtres */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div id="exercises-filters" className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Rechercher un exercice, un cours..."
+                placeholder={t('exercises.searchPlaceholder')}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -492,7 +495,7 @@ export default function ExercisesView() {
                   : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
               >
-                Tous
+                {t('exercises.filters.all')}
               </button>
               <button
                 onClick={() => setSelectedFilter('pending')}
@@ -502,7 +505,7 @@ export default function ExercisesView() {
                   }`}
               >
                 <AlertCircle className="w-4 h-4" />
-                À corriger
+                {t('exercises.filters.pending')}
               </button>
               <button
                 onClick={() => setSelectedFilter('graded')}
@@ -511,21 +514,21 @@ export default function ExercisesView() {
                   : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
               >
-                Corrigés
+                {t('exercises.filters.graded')}
               </button>
             </div>
           </div>
         </div>
 
         {/* Liste des exercices */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div id="exercises-list" className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-gray-800 dark:text-gray-200">
-                {filteredExercises.length} exercice(s) trouvé(s)
+                {t('exercises.foundCount', { count: filteredExercises.length })}
               </h2>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Dernière actualisation: {formatLastRefresh()}
+                {t('exercises.lastRefresh')}: {formatLastRefresh()}
               </div>
             </div>
           </div>
@@ -535,7 +538,7 @@ export default function ExercisesView() {
               <div className="p-8 text-center">
                 <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-400">
-                  {searchTerm ? 'Aucun exercice correspondant à votre recherche' : 'Aucun exercice créé pour le moment'}
+                  {searchTerm ? t('exercises.noResults') : t('exercises.noExercises')}
                 </p>
                 {!searchTerm && exercises.length === 0 && (
                   <button
@@ -543,7 +546,7 @@ export default function ExercisesView() {
                     className="mt-4 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
                   >
                     <PlusCircle className="w-4 h-4" />
-                    Créer votre premier cours
+                    {t('exercises.createCourseAction')}
                   </button>
                 )}
               </div>
@@ -566,7 +569,7 @@ export default function ExercisesView() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-                          {exercise.courseCategory || 'Non catégorisé'}
+                          {exercise.courseCategory || t('exercises.courseUncategorized')}
                         </span>
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                           {exercise.courseTitle}
@@ -575,13 +578,13 @@ export default function ExercisesView() {
                         {exercise.pendingSubmissions > 0 && (
                           <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getBadgeColor(exercise.pendingSubmissions)}`}>
                             {getExerciseStatusIcon(exercise.pendingSubmissions)}
-                            {exercise.pendingSubmissions} à corriger
+                            {t('exercises.pendingSubmissions', { count: exercise.pendingSubmissions })}
                           </span>
                         )}
 
                         {exercise.totalSubmissions === 0 && (
                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                            Aucune soumission
+                            {t('exercises.noSubmissions')}
                           </span>
                         )}
                       </div>
@@ -592,7 +595,7 @@ export default function ExercisesView() {
                             {exercise.title}
                           </h3>
                           <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
-                            {exercise.description || 'Pas de description'}
+                            {exercise.description || t('exercises.noDescription')}
                           </p>
                         </div>
 
@@ -602,7 +605,7 @@ export default function ExercisesView() {
                               {exercise.maxScore} pts
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Score max
+                              {t('exercises.maxScore')}
                             </div>
                           </div>
 
@@ -612,7 +615,7 @@ export default function ExercisesView() {
                                 {exercise.averageScore.toFixed(1)}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                Moyenne
+                                {t('exercises.averageScore')}
                               </div>
                             </div>
                           )}
@@ -623,7 +626,10 @@ export default function ExercisesView() {
                         <div className="mb-3">
                           <div className="flex justify-between text-xs mb-1">
                             <span className="text-gray-600 dark:text-gray-400">
-                              Soumissions: {exercise.totalSubmissions - exercise.pendingSubmissions} corrigées sur {exercise.totalSubmissions}
+                              {t('exercises.progressSummary', {
+                                graded: exercise.totalSubmissions - exercise.pendingSubmissions,
+                                total: exercise.totalSubmissions
+                              })}
                             </span>
                             <span className="text-gray-600 dark:text-gray-400">
                               {exercise.totalSubmissions > 0
@@ -646,21 +652,23 @@ export default function ExercisesView() {
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          {exercise.totalSubmissions} soumissions
+                          {t('exercises.totalSubmissions', { count: exercise.totalSubmissions })}
                         </span>
                         <span className="flex items-center gap-1">
                           <FileText className="w-4 h-4" />
-                          {exercise.questions?.length || 0} questions
+                          {t('exercises.questionsCount', { count: exercise.questions?.length || 0 })}
                         </span>
                         {exercise.dueDate && (
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            Échéance: {new Date(exercise.dueDate).toLocaleDateString('fr-FR')}
+                            {t('exercises.dueDate', {
+                              date: new Date(exercise.dueDate).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')
+                            })}
                           </span>
                         )}
                         <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                           <CheckCircle className="w-4 h-4" />
-                          Publié
+                          {t('exercises.statusPublished')}
                         </span>
                       </div>
                     </div>
@@ -673,7 +681,7 @@ export default function ExercisesView() {
                         >
 
                           <AlertCircle className="w-4 h-4" />
-                          gerer
+                          {t('exercises.viewExercises')}
 
                         </button>
 
@@ -683,13 +691,13 @@ export default function ExercisesView() {
                             disabled={exercise.totalSubmissions === 0}
                             className="flex-1 px-3 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Soumissions
+                            {t('exercises.reviewSubmissions')}
                           </button>
                           <button
                             onClick={() => handleEditExercise(exercise)}
                             className="flex-1 px-3 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                           >
-                            Éditer
+                            {t('exercises.editExercise')}
                           </button>
                         </div>
                       </div>
@@ -705,47 +713,47 @@ export default function ExercisesView() {
         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Statut des soumissions</h4>
+              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('exercises.submissionsStatus')}</h4>
               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <span>Plus de 3 soumissions à corriger</span>
+                  <span>{t('exercises.legendPendingHigh')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <span>1-3 soumissions à corriger</span>
+                  <span>{t('exercises.legendPendingMedium')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span>Toutes les soumissions corrigées</span>
+                  <span>{t('exercises.legendPendingDone')}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Mises à jour</h4>
+              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('exercises.updates')}</h4>
               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
-                  <span>En cours de mise à jour</span>
+                  <span>{t('exercises.legendUpdating')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span>Récemment mis à jour</span>
+                  <span>{t('exercises.legendUpdated')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <RefreshCw className="w-3 h-3 text-gray-500" />
-                  <span>Auto-refresh toutes les 30s</span>
+                  <span>{t('exercises.legendAutoRefresh')}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Actions</h4>
+              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('exercises.actions')}</h4>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>• Cliquez sur &quot;Actualiser&quot; pour forcer le rafraîchissement</p>
-                <p>• Les modifications se synchronisent entre onglets</p>
-                <p>• Les exercices sont mis en cache pour 30s</p>
+                <p>• {t('exercises.legendActionRefresh')}</p>
+                <p>• {t('exercises.legendActionSync')}</p>
+                <p>• {t('exercises.legendActionCache')}</p>
               </div>
             </div>
           </div>

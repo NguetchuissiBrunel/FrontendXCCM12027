@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { Award, BookOpen, Clock } from 'lucide-react';
 import { OpenAPI } from '@/lib/core/OpenAPI';
-
+import { useTranslations } from 'next-intl';
 import { useLoading } from '@/contexts/LoadingContext';
 
 interface User {
@@ -16,7 +16,7 @@ interface User {
   role: string;
   photoUrl?: string;
   specialization?: string;
-  level?: string;
+  grade?: string;
   university?: string;
   city?: string;
   promotion?: string;
@@ -29,13 +29,12 @@ interface User {
 }
 
 export default function StudentProfile() {
+  const t = useTranslations('studentProfile');
   const [user, setUser] = useState<User | null>(null);
   const [editedUser, setEditedUser] = useState<User | null>(null);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
-
-  // Plus besoin du useEffect synchronisé
 
   useEffect(() => {
     startLoading();
@@ -91,10 +90,10 @@ export default function StudentProfile() {
       setUser(editedUser);
       setIsEditing(false);
 
-      toast.success('Profil mis à jour avec succès !');
+      toast.success(t('saveSuccess'));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      toast.error('Erreur lors de la sauvegarde du profil');
+      toast.error(t('saveError'));
     } finally {
       stopLoading();
     }
@@ -112,12 +111,12 @@ export default function StudentProfile() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        toast.error('Veuillez sélectionner une image valide');
+        toast.error(t('photoInvalidType'));
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("L'image ne doit pas dépasser 5Mo");
+        toast.error(t('photoTooLarge'));
         return;
       }
 
@@ -141,27 +140,27 @@ export default function StudentProfile() {
   if (!user || !editedUser) return null;
 
   const displayName = `${editedUser.firstName} ${editedUser.lastName}`;
-  const userLevel = editedUser.specialization || editedUser.level || 'Étudiant';
+  const userLevel = editedUser.specialization || editedUser.grade || t('studentDefault');
   const defaultAvatar = '/images/pp.jpeg';
 
   const grades = [
-    { subject: 'Excellent', value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
-    { subject: 'Bien', value: 25, color: 'bg-purple-400' },
-    { subject: 'Passable', value: 20, color: 'bg-purple-300 dark:bg-purple-400' },
-    { subject: 'Faible', value: 20, color: 'bg-purple-200 dark:bg-purple-300' },
+    { subject: t('grades.excellent'), value: 35, color: 'bg-purple-600 dark:bg-purple-500' },
+    { subject: t('grades.good'), value: 25, color: 'bg-purple-400' },
+    { subject: t('grades.passable'), value: 20, color: 'bg-purple-300 dark:bg-purple-400' },
+    { subject: t('grades.poor'), value: 20, color: 'bg-purple-200 dark:bg-purple-300' },
   ];
 
   return (
     <>
       <div className="flex-1 p-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">Mon Profil Étudiant</h1>
+          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">{t('title')}</h1>
           {!isEditing ? (
             <button
               onClick={handleEdit}
               className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors shadow-lg"
             >
-              ✏️ Modifier
+              ✏️ {t('edit')}
             </button>
           ) : (
             <div className="flex gap-3">
@@ -169,14 +168,14 @@ export default function StudentProfile() {
                 onClick={handleCancel}
                 className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button
                 onClick={handleSave}
                 disabled={globalLoading}
                 className="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg"
               >
-                {globalLoading ? 'Enregistrement...' : '💾 Enregistrer'}
+                {globalLoading ? t('saving') : t('save')}
               </button>
             </div>
           )}
@@ -186,7 +185,8 @@ export default function StudentProfile() {
           {/* Left Column - Profile Info */}
           <div className="col-span-1 space-y-6">
             {/* Profile Picture */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+            <div id="profile-info" className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+
               <div className="relative w-32 h-32 mx-auto mb-4">
                 <img
                   src={editedUser.photoUrl || defaultAvatar}
@@ -219,7 +219,7 @@ export default function StudentProfile() {
               </div>
 
               <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">No. Étudiant</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('studentId')}</p>
                 <p className="font-semibold text-gray-800 dark:text-white">{editedUser.id}</p>
 
                 {isEditing ? (
@@ -229,14 +229,14 @@ export default function StudentProfile() {
                       value={editedUser.firstName}
                       onChange={(e) => handleChange('firstName', e.target.value)}
                       className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700 border border-purple-300 dark:border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="Prénom"
+                      placeholder={t('firstNamePlaceholder')}
                     />
                     <input
                       type="text"
                       value={editedUser.lastName}
                       onChange={(e) => handleChange('lastName', e.target.value)}
                       className="w-full px-3 py-2 text-center text-xl font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700 border border-purple-300 dark:border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="Nom"
+                      placeholder={t('lastNamePlaceholder')}
                     />
                   </div>
                 ) : (
@@ -247,99 +247,93 @@ export default function StudentProfile() {
 
             {/* Profile Details */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 space-y-4">
-              {/* Spécialisation */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Spécialisation:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('specialization')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.specialization || ''}
                     onChange={(e) => handleChange('specialization', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={editedUser.specialization || "Ex: Informatique"}
+                    placeholder={t('specializationPlaceholder')}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.specialization || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.specialization || t('notSpecified')}</p>
                 )}
               </div>
 
-              {/* Niveau */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Niveau:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('level')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
-                    value={editedUser.level || ''}
-                    onChange={(e) => handleChange('level', e.target.value)}
+                    value={editedUser.grade || ''}
+                    onChange={(e) => handleChange('grade', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={editedUser.level || "Ex: Master 2"}
+                    placeholder={t('levelPlaceholder')}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.level || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.grade || t('notSpecified')}</p>
                 )}
               </div>
 
-              {/* Université */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Université:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('university')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.university || ''}
                     onChange={(e) => handleChange('university', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={editedUser.university || "Ex: ENSPY"}
+                    placeholder={t('universityPlaceholder')}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.university || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.university || t('notSpecified')}</p>
                 )}
               </div>
 
-              {/* Ville */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Ville:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('city')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.city || ''}
                     onChange={(e) => handleChange('city', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={editedUser.city || "Ex: Yaoundé"}
+                    placeholder={t('cityPlaceholder')}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.city || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.city || t('notSpecified')}</p>
                 )}
               </div>
 
-              {/* Majeure */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Majeure:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('major')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.major || ''}
                     onChange={(e) => handleChange('major', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={editedUser.major || "Ex: Intelligence Artificielle"}
+                    placeholder={t('majorPlaceholder')}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.major || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.major || t('notSpecified')}</p>
                 )}
               </div>
 
-              {/* Mineure */}
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">Mineure:</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('minor')}:</p>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedUser.minor || ''}
                     onChange={(e) => handleChange('minor', e.target.value)}
                     className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={editedUser.minor || "Ex: Data Science"}
+                    placeholder={t('minorPlaceholder')}
                   />
                 ) : (
-                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.minor || 'Non spécifié'}</p>
+                  <p className="font-semibold text-gray-800 dark:text-white">{editedUser.minor || t('notSpecified')}</p>
                 )}
               </div>
             </div>
@@ -348,12 +342,13 @@ export default function StudentProfile() {
           {/* Right Column - Stats */}
           <div className="col-span-2 space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-6">
+            <div id="profile-stats" className="grid grid-cols-3 gap-6">
+
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <BookOpen className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Nombre de cours participé</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('stats.coursesParticipated')}</p>
                 <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">0</p>
               </div>
 
@@ -361,7 +356,7 @@ export default function StudentProfile() {
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <Award className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Certifications obtenues</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('stats.certifications')}</p>
                 <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">0</p>
               </div>
 
@@ -369,7 +364,7 @@ export default function StudentProfile() {
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
                   <Clock className="text-purple-600 dark:text-purple-400" size={32} />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Assiduité</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('stats.attendance')}</p>
                 <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">
                   {editedUser.averageGrade || '0'}%
                 </p>
@@ -378,7 +373,7 @@ export default function StudentProfile() {
 
             {/* Grade Distribution */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Répartition des Notes</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('gradeDistribution.title')}</h3>
 
               <div className="space-y-6">
                 {grades.map((grade, index) => (
@@ -464,7 +459,7 @@ export default function StudentProfile() {
             {/* Interests & Activities */}
             {(user.interests && user.interests.length > 0) && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Centres d'intérêt</h3>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('interests')}</h3>
                 <div className="flex flex-wrap gap-2">
                   {user.interests.map((interest, index) => (
                     <span

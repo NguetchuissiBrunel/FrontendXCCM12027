@@ -4,6 +4,7 @@ import CompositionsCard from '@/components/professor/CompositionsCard';
 import CreateCourseModal from '@/components/create-course/page';
 import toast from 'react-hot-toast';
 import { BookOpen, X, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
 import ManageClassCoursesModal from '@/components/professor/ManageClassCoursesModal';
 import { useTeacherDashboard, parseId } from '@/hooks/useTeacherDashboard';
@@ -14,6 +15,7 @@ interface ClassesViewProps {
 }
 
 export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
+  const t = useTranslations('teacherDashboard');
   const {
     user,
     allClasses,
@@ -54,13 +56,9 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
       setSelectedClassIdForCourses(classIdNum);
       setIsManageCoursesModalOpen(true);
     } else {
-      toast.error("ID de classe invalide");
+      toast.error(t('classes.invalidClassId'));
     }
   };
-
-  if (loading) {
-    return <DashboardSkeleton />;
-  }
 
   if (!user) return null;
 
@@ -95,7 +93,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-purple-700 dark:text-purple-400">
-                Sélectionnez une Classe
+                {t('classes.selectClassTitle')}
               </h3>
               <button
                 onClick={() => setIsCourseSelectionModalOpen(false)}
@@ -106,7 +104,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
             </div>
 
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Choisissez la classe pour laquelle vous souhaitez gérer les exercices :
+              {t('classes.selectClassDescription')}
             </p>
 
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -126,12 +124,12 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
                         {course.class}
                       </span>
                       <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">
-                        {course.participants} participants
+                        {t('home.courseSelection.participants', { count: course.participants })}
                       </span>
                     </div>
                     {course.courseStats?.totalExercises !== undefined && (
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {course.courseStats.totalExercises} exercice(s)
+                        {t('home.courseSelection.exercises', { count: course.courseStats.totalExercises })}
                       </div>
                     )}
                   </div>
@@ -144,7 +142,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
                 onClick={() => setIsCourseSelectionModalOpen(false)}
                 className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                Annuler
+                {t('classes.cancel')}
               </button>
             </div>
           </div>
@@ -153,7 +151,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
 
       {/* En-tête de la page Mes Classes */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6 mt-4">
+        <div id={mode === 'classes' ? 'classes-header' : 'compositions-header'} className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6 mt-4">
           <div>
             <button
               onClick={() => router.push('/profdashboard?tab=accueil')}
@@ -162,22 +160,23 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
               <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Retour au Dashboard
+              {t('classes.backToDashboard')}
             </button>
             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Gestion de vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">{mode === 'classes' ? 'Classes' : 'Compositions'}</span>
+              {t('classes.manageTitle', { type: t(`classes.${mode}`) })}
             </h1>
             <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
-              {mode === 'classes' 
-                ? 'Consultez et scindez vos cours en créant différentes classes.'
-                : 'Gérez vos compositions et supports de cours structurés.'}
+              {mode === 'classes'
+                ? t('classes.classesDescription')
+                : t('classes.compositionsDescription')}
             </p>
           </div>
         </div>
 
-        {currentCompositions.length > 0 ? (
-          <CompositionsCard
-            title={mode === 'classes' ? "Mes Classes de cours" : "Mes Compositions"}
+        <div id={mode === 'classes' ? 'classes-list' : 'compositions-list'}>
+          {currentCompositions.length > 0 ? (
+            <CompositionsCard
+              title={mode === 'classes' ? t('classes.myClassesTitle') : t('classes.myCompositionsTitle')}
             compositions={currentCompositions}
             onDelete={mode === 'classes' ? handleDeleteClass : handleDeleteCourse}
             onCreateClick={() => setIsModalOpen(true)}
@@ -191,7 +190,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
               if (mode === 'compositions') {
                 router.push(`/editor?courseId=${id}`);
               } else {
-                toast.error("L'édition des classes n'est pas encore disponible");
+                toast.error(t('classes.editNotAvailable'));
               }
             }}
             getCourseStats={(id) => {
@@ -206,22 +205,23 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
             <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              {mode === 'classes' ? 'Mes Classes de Cours' : 'Mes Compositions'}
+              {mode === 'classes' ? t('classes.myClassesTitle') : t('classes.myCompositionsTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {mode === 'classes' 
-                ? "Vous n'avez pas encore de classe. Créez votre première classe."
-                : "Vous n'avez pas encore de composition. Créez votre premier cours."}
+              {mode === 'classes'
+                ? t('classes.noClasses')
+                : t('classes.noCompositions')}
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
             >
               <Plus size={20} />
-              {mode === 'classes' ? 'Créer une classe' : 'Créer un cours'}
+              {mode === 'classes' ? t('classes.createClass') : t('classes.createCourse')}
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Section de débogage optionnelle (à cacher en production) */}
@@ -234,7 +234,7 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
             onClick={() => loadDashboardData()}
             className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
           >
-            Réessayer le chargement
+            {t('home.retryLoad')}
           </button>
         </div>
       )}

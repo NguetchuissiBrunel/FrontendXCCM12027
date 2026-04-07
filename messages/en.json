@@ -6,6 +6,173 @@
       "en": "English"
     }
   },
+  "onboarding": {
+    "buttons": {
+      "reviewTutorial": "Review tutorial",
+      "needHelp": "Need help?",
+      "finish": "Finish",
+      "next": "Next",
+      "helpTitle": "Dashboard Guide"
+    },
+    "student": {
+      "steps": {
+        "welcome": {
+          "title": "Welcome to your space!",
+          "description": "Here you can see a summary of your activity and your statistics."
+        },
+        "stats": {
+          "title": "Your Statistics",
+          "description": "Keep an eye on your average and pending exercises."
+        },
+        "courses": {
+          "title": "My Courses",
+          "description": "Quickly access all the courses you are enrolled in."
+        },
+        "todo": {
+          "title": "To Do",
+          "description": "Don't miss any exercise. Your pending tasks are listed here."
+        },
+        "navigation": {
+          "title": "Navigation",
+          "description": "Use the sidebar to move between the different sections."
+        }
+      }
+    },
+    "etu": {
+      "welcomeTitle": "Welcome to your space!",
+      "welcomeDesc": "Here you can see a summary of your activity and statistics.",
+      "statsTitle": "Your Statistics",
+      "statsDesc": "Keep an eye on your average and pending exercises.",
+      "coursesTitle": "My Courses",
+      "coursesDesc": "Quickly access all the courses you are enrolled in.",
+      "pendingTitle": "To Do",
+      "pendingDesc": "Don't miss a single task! Your pending tasks are listed here.",
+      "navTitle": "Navigation",
+      "navDesc": "Use the sidebar to navigate between sections.",
+      "submissionsTitle": "My Submissions",
+      "submissionsDesc": "View the status of your submitted work and your grades.",
+      "quickActionsTitle": "Quick Actions",
+      "quickActionsDesc": "Access your exercises and assignments in one click.",
+      "coursesPageTitle": "Course Management",
+      "coursesPageDesc": "Find all the courses you participate in here.",
+      "exploreLibraryTitle": "Explore Library",
+      "exploreLibraryDesc": "Discover new courses and enrich your knowledge.",
+      "exercisesPageTitle": "Your Exercises",
+      "exercisesPageDesc": "Find all your exercises, whether to do or already graded.",
+      "exercisesStatsTitle": "Overview",
+      "exercisesStatsDesc": "A quick look at your progress and performance.",
+      "exercisesFiltersTitle": "Smart Filtering",
+      "exercisesFiltersDesc": "Easily search for an exercise by name or status.",
+      "exercisesListTitle": "Detailed List",
+      "exercisesListDesc": "Access the content of each exercise and start working.",
+      "submissionsPageTitle": "My Submissions",
+      "submissionsPageDesc": "Find the history of all your submitted assignments and their corrections here.",
+      "submissionsListTitle": "Detailed History",
+      "submissionsListDesc": "Click on a submission to see grade details and teacher feedback.",
+      "deadlinesPageTitle": "Your Deadlines",
+      "deadlinesPageDesc": "Don't miss any more deadlines with your personalized calendar.",
+      "calendarViewTitle": "Interactive Calendar",
+      "calendarViewDesc": "Visualize your upcoming assignments and exams for the month.",
+      "profilePageTitle": "Your Profile",
+      "profilePageDesc": "Manage your personal information and track your academic success.",
+      "profileInfoTitle": "Personal Information",
+      "profileInfoDesc": "Update your information and profile photo.",
+      "profileStatsTitle": "Academic Success",
+      "profileStatsDesc": "Visualize your badges, completed courses, and attendance."
+    },
+    "teacher": {
+      "steps": {
+        "control": {
+          "title": "Control Center",
+          "description": "Manage your courses and enrollments from this dedicated space."
+        },
+        "quickActions": {
+          "title": "Quick Actions",
+          "description": "Create a new course or manage enrollments in one click."
+        },
+        "stats": {
+          "title": "Statistical Overview",
+          "description": "See student engagement across your courses."
+        },
+        "profile": {
+          "title": "Your Expert Profile",
+          "description": "Your teaching performance and information are grouped here."
+        },
+        "exercises": {
+          "title": "Exercise Management",
+          "description": "Quickly access exercise creation and grading."
+        },
+        "navigation": {
+          "title": "Navigation Menu",
+          "description": "Use this sidebar to navigate easily through all sections of your teacher area."
+        }
+      }
+    },
+    "editor": {
+      "steps": {
+        "toc": {
+          "title": "Table of Contents",
+          "description": "View and organize your course structure. Click to navigate instantly."
+        },
+        "main": {
+          "title": "Editing Area",
+          "description": "Write your content here. Formatting is rich and flexible."
+        },
+        "toolbar": {
+          "title": "Toolbar",
+          "description": "Formatting, images, equations, and quick exercises at your fingertips."
+        },
+        "rightBar": {
+          "title": "Panel Menu",
+          "description": "Access advanced tools: structure, exercises, PDF preview, etc."
+        },
+        "structure": {
+          "title": "Structure & Import",
+          "description": "Manage your course hierarchy or import existing knowledge."
+        },
+        "save": {
+          "title": "Save & Publish",
+          "description": "Save your changes or publish your course for your students."
+        },
+        "info": {
+          "title": "Course Information",
+          "description": "Quickly edit your course metadata (title, category, author, and description)."
+        },
+        "preview": {
+          "title": "PDF Preview",
+          "description": "Generate a real-time preview of your course in PDF or Word format."
+        },
+        "feedback": {
+          "title": "Comments & Feedback",
+          "description": "Check what students and peers think about your course and manage their feedback."
+        },
+        "myCourses": {
+          "title": "My Creations",
+          "description": "Easily access your other courses to switch projects or copy content."
+        },
+        "dragDrop": {
+          "title": "Drag and Drop",
+          "description": "Organize your content by dragging elements from the structure panel directly into the editor."
+        },
+        "exercises": {
+          "title": "Exercise Management",
+          "description": "Create and manage exercises associated with your course to test student knowledge."
+        },
+        "grading": {
+          "title": "Grading & Feedback",
+          "description": "Grade student submissions and provide personalized feedback to help them improve."
+        },
+        "workshops": {
+          "title": "Workshops",
+          "description": "Organize collaborative work sessions or practical workshops."
+        },
+        "settings": {
+          "title": "Course Properties",
+          "description": "Configure advanced course settings and properties."
+        }
+      }
+    }
+  },
   "sidebar": {
     "online": "Online",
     "mainMenu": "Main menu",
@@ -49,7 +216,7 @@
     "darkMode": "Dark mode",
     "student": "Student",
     "teacher": "Teacher",
-    "myAccount": "My account",
+    "myAccount": "My Space",
     "logout": "Log out",
     "login": "Sign in",
     "register": "Sign up"
@@ -111,7 +278,8 @@
   },
   "common": {
     "confirm": "Confirm",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "retry": "Retry"
   },
   "contact": {
     "validation": {
@@ -339,6 +507,75 @@
       "description": "Advanced settings",
       "hint": "Course configuration"
     },
+    "actionMenu": {
+      "types": {
+        "course": "Course",
+        "section": "Section",
+        "chapter": "Chapter",
+        "paragraph": "Paragraph",
+        "notion": "Notion",
+        "exercise": "Exercise"
+      },
+      "add": "Add",
+      "addSection": "Add a section",
+      "addChapter": "Add a chapter",
+      "addParagraph": "Add a paragraph",
+      "addNotion": "Add a notion",
+      "addExercise": "Add an exercise",
+      "open": "Open",
+      "rename": "Rename",
+      "copy": "Copy",
+      "paste": "Paste",
+      "duplicate": "Duplicate",
+      "move": "Move",
+      "delete": "Delete"
+    },
+    "myCoursesPanel": {
+      "fetchErrorLog": "Error while fetching courses:",
+      "deleteSuccess": "Course deleted successfully.",
+      "deleteError": "Unable to delete the course.",
+      "statusError": "Unable to change the status.",
+      "published": "Course published!",
+      "draft": "Course moved back to draft.",
+      "untitled": "Untitled",
+      "defaultCategory": "Computer science",
+      "unknownDate": "Unknown date",
+      "deleteTitle": "Delete course",
+      "deleteMessage": "Do you really want to delete this course? This action cannot be undone.",
+      "deleteConfirm": "Delete",
+      "unpublishTitle": "Unpublish course",
+      "publishTitle": "Publish course",
+      "unpublishMessage": "Do you want to move this course back to draft? It will no longer be visible to students.",
+      "publishMessage": "Do you want to publish this course? It will become visible to all students.",
+      "unpublishConfirm": "Unpublish",
+      "publishConfirm": "Publish",
+      "header": "My courses",
+      "empty": "No saved courses yet.",
+      "createdOn": "Created on",
+      "publishedBadge": "Published",
+      "draftBadge": "Draft",
+      "loadInEditor": "Load into editor",
+      "deleteAction": "Delete"
+    },
+    "structureDeCours": {
+      "title": "Import Knowledge",
+      "searchPlaceholder": "Search...",
+      "filters": "Filters",
+      "types": {
+        "course": "Course",
+        "section": "Section",
+        "chapter": "Chapter",
+        "paragraph": "Paragraph",
+        "notion": "Notion"
+      },
+      "expertCornerTitle": "Expert Corner",
+      "expertTips": {
+        "optimalStructureName": "Optimal Structure",
+        "optimalStructureAdvice": "Alternate between theoretical concepts and exercises to maximize retention.",
+        "engagementName": "Engagement",
+        "engagementAdvice": "Keep your paragraphs short (< 300 words) for smooth reading."
+      }
+    },
     "exercises": {
       "panelTitle": "Exercise management",
       "noCourse": "Load or create a course to manage exercises",
@@ -410,6 +647,8 @@
     "pdfError": "Error generating PDF",
     "docxSuccess": "Word document generated successfully",
     "docxError": "Error generating Word document",
+    "defaultCategory": "Training",
+    "defaultAuthor": "Author",
     "structureCourse": "Structure your course to see the preview...",
     "platform": "Learning Platform",
     "exercice": "Exercise",
@@ -479,7 +718,8 @@
       "questionMinOptions": "Question {n} must have at least 2 options",
       "optionEmpty": "Option {o} of question {n} is empty",
       "totalExceedsMax": "Total points ({total}) exceeds maximum score ({max})",
-      "points": "Points:"
+      "points": "Points:",
+      "optionLabel": "Option"
     },
     "stats": {
       "title": "Exercise statistics",
@@ -504,12 +744,20 @@
       "freeAnswer": "Free answer",
       "multipleChoice": "Multiple choice",
       "successRate": "Success rate",
-      "commonDifficulties": "Common difficulties:"
+      "commonDifficulties": "Common difficulties:",
+      "unavailable": "Statistics are currently unavailable.",
+      "code": "Code"
     },
     "viewer": {
+      "submitErrorLog": "Error while submitting:",
       "unansweredError": "Please answer all questions ({count} unanswered)",
       "submitSuccess": "Exercise submitted successfully!",
       "submitError": "Error submitting",
+      "questionFallback": "Question",
+      "question": "question",
+      "questions": "questions",
+      "point": "point",
+      "points": "points",
       "progress": "Progress",
       "answered": "answered",
       "noQuestions": "This exercise contains no questions.",
@@ -1254,5 +1502,979 @@
       "retry": "Retry",
       "invalidCourseData": "Invalid course data"
     }
+  },
+  "studentCourses": {
+    "title": "My courses",
+    "categoryDefault": "Training",
+    "coursePrefix": "Course #",
+    "unknownAuthor": "Unknown",
+    "error": {
+      "loadFailed": "Unable to load your courses. Please try again later.",
+      "title": "Oops!"
+    },
+    "unknownDate": "Unknown date",
+    "unenrollConfirm": "Are you sure you want to unenroll from this course?",
+    "unenrollSuccess": "Unenrolled successfully",
+    "unenrollError": "Error during unenrollment",
+    "studentDefault": "Student",
+    "active": "Active",
+    "pending": "Pending",
+    "progress": "Progress",
+    "enrolledOn": "Enrolled on",
+    "viewCourse": "View course",
+    "unenrollTooltip": "Unenroll",
+    "noCourses": {
+      "title": "You have no courses yet",
+      "description": "Explore the library to find interesting courses and start learning!"
+    },
+    "exploreLibrary": "Explore the library"
+  },
+  "courseExercises": {
+    "coursePrefix": "Course #",
+    "defaultDescription": "Course description...",
+    "defaultInstructor": "Example Professor",
+    "error": {
+      "loadData": "Error loading data",
+      "title": "Loading error",
+      "generic": "Unable to load exercises"
+    },
+    "loading": "Loading...",
+    "studentDefault": "Student",
+    "status": {
+      "graded": "Graded",
+      "submitted": "Submitted",
+      "pending": "Pending"
+    },
+    "instructor": "Instructor",
+    "stats": {
+      "total": "Exercises",
+      "submitted": "Submitted"
+    },
+    "searchPlaceholder": "Search for an exercise...",
+    "filter": {
+      "all": "All exercises",
+      "pending": "Pending",
+      "submitted": "Submitted",
+      "graded": "Graded"
+    },
+    "sort": {
+      "dueDate": "Sort by date",
+      "title": "Sort by title",
+      "points": "Sort by points"
+    },
+    "refresh": "Refresh",
+    "noExercises": {
+      "title": "No exercises found",
+      "filtered": "No exercises match your search criteria.",
+      "empty": "No exercises are available for this course at the moment."
+    },
+    "resetFilters": "Reset filters",
+    "points": "points",
+    "questions": "questions",
+    "dueDate": {
+      "passed": "Due date passed",
+      "label": "Due date"
+    },
+    "yourScore": "Your score",
+    "view": "View",
+    "viewSubmission": "View submission",
+    "start": "Start",
+    "showing": "Showing {count} exercise(s) on {total}",
+    "backToDashboard": "Back to dashboard",
+    "viewFullCourse": "View full course"
+  },
+  "deadlines": {
+    "title": "Deadlines",
+    "description": "Manage your schedule and personal deadlines",
+    "studentDefault": "Student"
+  },
+  "exerciseSubmit": {
+    "unansweredError": "Please answer questions: {numbers}",
+    "submitSuccess": "Exercise submitted successfully!",
+    "submitError": "Error submitting",
+    "notFound": {
+      "title": "Exercise not found",
+      "message": "The requested exercise does not exist or you do not have access."
+    },
+    "backToDashboard": "Back to dashboard",
+    "alreadySubmitted": {
+      "title": "Exercise already submitted",
+      "message": "You already submitted this exercise on {date}."
+    },
+    "viewSubmission": "View my submission",
+    "viewOtherExercises": "View other exercises",
+    "backToExercises": "Back to exercises",
+    "dueDate": "Due date",
+    "maxScore": "Max score",
+    "points": "points",
+    "questions": "questions",
+    "progress": "Progress",
+    "answered": "answered",
+    "questionType": {
+      "text": "Free text",
+      "multipleChoice": "Multiple choice",
+      "code": "Code"
+    },
+    "pointsSingular": "point",
+    "pointsPlural": "points",
+    "textPlaceholder": "Type your answer here...",
+    "codeHint": "Write your code in the language of your choice:",
+    "codePlaceholder": "// Your code here...",
+    "readyToSubmit": "Ready to submit",
+    "submitting": "Submitting...",
+    "submit": "Submit exercise"
+  },
+  "exerciseDetails": {
+    "notFound": {
+      "title": "Exercise not found",
+      "message": "The requested exercise does not exist or is no longer accessible."
+    },
+    "backToList": "Back to list",
+    "exerciseLabel": "Exercise",
+    "noDescription": "No description available for this exercise.",
+    "maxPoints": "Max Points",
+    "dueDate": "Due date",
+    "noDueDate": "No limit",
+    "questions": "Questions",
+    "items": "items",
+    "attempts": "Attempts",
+    "singleAttempt": "1 only",
+    "startExercise": "Start exercise",
+    "cannotSubmit": "You cannot participate in this exercise.",
+    "viewResult": "View my result",
+    "instructions": {
+      "title": "Important instructions",
+      "item1": "Once started, you must complete the exercise for your answers to be saved.",
+      "item2": "Ensure you have a stable connection before starting.",
+      "item3": "Any attempt to leave the page may invalidate your session."
+    }
+  },
+  "studentExercises": {
+    "title": "My exercises",
+    "subtitle": "Track your progress on {total} exercise(s) in {courseCount} approved course(s)",
+    "stats": {
+      "total": "Total",
+      "notStarted": "Not started",
+      "inProgress": "In progress",
+      "submitted": "Submitted",
+      "graded": "Graded"
+    },
+    "searchPlaceholder": "Search for an exercise...",
+    "filter": {
+      "all": "All",
+      "notStarted": "Not started",
+      "inProgress": "In progress",
+      "submitted": "Submitted",
+      "graded": "Graded"
+    },
+    "allCourses": "All courses",
+    "status": {
+      "not_started": "Not started",
+      "in_progress": "In progress",
+      "submitted": "Submitted",
+      "graded": "Graded"
+    },
+    "dueDate": {
+      "passed": "Due date passed",
+      "today": "Today",
+      "days": "{count} day(s)"
+    },
+    "points": "points",
+    "questions": "question(s)",
+    "actions": {
+      "start": "Start",
+      "viewResults": "View results",
+      "viewStats": "Stats",
+      "details": "Details"
+    },
+    "noExercises": {
+      "title": "No exercises found",
+      "filtered": "No exercises match your search criteria.",
+      "noCourses": "You are not enrolled in any approved course."
+    },
+    "resetFilters": "Reset filters",
+    "exploreCourses": "Explore courses",
+    "showing": "Showing {count} exercise(s) of {total}",
+    "averageScore": "Average score",
+    "openDeadlines": "open deadlines",
+    "closedDeadlines": "closed deadlines"
+  },
+  "studentProfile": {
+    "title": "My Student Profile",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveSuccess": "Profile updated successfully!",
+    "saveError": "Error saving profile",
+    "photoInvalidType": "Please select a valid image",
+    "photoTooLarge": "Image must not exceed 5MB",
+    "studentDefault": "Student",
+    "grades": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "passable": "Passable",
+      "poor": "Poor"
+    },
+    "studentId": "Student No.",
+    "firstNamePlaceholder": "First name",
+    "lastNamePlaceholder": "Last name",
+    "specialization": "Specialization",
+    "specializationPlaceholder": "e.g., Computer Science",
+    "notSpecified": "Not specified",
+    "level": "Level",
+    "levelPlaceholder": "e.g., Master 2",
+    "university": "University",
+    "universityPlaceholder": "e.g., ENSPY",
+    "city": "City",
+    "cityPlaceholder": "e.g., Yaoundé",
+    "major": "Major",
+    "majorPlaceholder": "e.g., Artificial Intelligence",
+    "minor": "Minor",
+    "minorPlaceholder": "e.g., Data Science",
+    "stats": {
+      "coursesParticipated": "Number of courses participated",
+      "certifications": "Certifications obtained",
+      "attendance": "Attendance"
+    },
+    "gradeDistribution": {
+      "title": "Grade Distribution"
+    },
+    "interests": "Interests"
+  },
+  "submissionDetails": {
+    "backToSubmissions": "Back to my submissions",
+    "title": "Submission Details",
+    "download": "Download",
+    "viewExercise": "View Exercise",
+    "generalInfo": {
+      "statusTitle": "Submission Status",
+      "graded": "Graded",
+      "pending": "Pending correction",
+      "gradedAt": "Graded on {date}",
+      "gradedBy": " by {name}",
+      "scoreLabel": "Score",
+      "submittedOn": "Submitted on",
+      "timeSpent": "Time spent",
+      "timeSpentValue": "{minutes} min {seconds} sec",
+      "notRecorded": "Not recorded"
+    },
+    "feedbackTitle": "Grader Feedback",
+    "answersTitle": "Submitted Answers",
+    "points": "{value} point{plural}",
+    "yourAnswer": "Your answer:",
+    "noAnswer": "No answer",
+    "feedbackLabel": "Feedback:",
+    "noAnswersAvailable": "No answers available",
+    "studentInfo": {
+      "title": "Student Information",
+      "name": "Name",
+      "email": "Email",
+      "studentId": "Student ID",
+      "defaultUser": "User",
+      "defaultLevel": "Student"
+    },
+    "techMeta": {
+      "title": "Technical Metadata",
+      "ipAddress": "IP Address",
+      "browser": "Browser",
+      "lastModified": "Last Modified"
+    },
+    "actions": {
+      "title": "Actions",
+      "reviewExercise": "Review Exercise",
+      "downloadJson": "Download JSON",
+      "refresh": "Refresh"
+    },
+    "loading": "Loading submission...",
+    "notFoundTitle": "Submission Not Found",
+    "notFoundDesc": "This submission does not exist or you do not have access to it.",
+    "retry": "Retry",
+    "downloadSuccess": "Submission downloaded",
+    "questionLabel": "Question {id}",
+    "exerciseLabel": "Exercise"
+  },
+  "studentDashboard": {
+    "welcome": "Welcome {name}!",
+    "quote": "'Success is not final, failure is not fatal: it is the courage to continue that counts.'",
+    "stats": {
+      "average": "Average",
+      "submissions": "Submissions",
+      "pending": "Pending",
+      "completed": "Completed"
+    },
+    "courses": {
+      "title": "My Courses",
+      "explore": "Explore library →",
+      "active": "Active",
+      "progress": "Progress",
+      "viewExercises": "View exercises",
+      "continue": "Continue",
+      "noCoursesTitle": "No courses available",
+      "noCoursesDesc": "You are not enrolled in any courses.",
+      "discover": "Discover courses"
+    },
+    "exercises": {
+      "pendingTitle": "Pending Exercises",
+      "dueDate": "Due date:",
+      "view": "View",
+      "start": "Start",
+      "viewAll": "View all ({count})",
+      "noPending": "No pending exercises",
+      "noPendingAction": "No pending exercises"
+    },
+    "submissions": {
+      "title": "My Submissions",
+      "submittedOn": "Submitted on",
+      "pending": "Pending",
+      "viewDetails": "View details",
+      "noSubmissions": "No submissions",
+      "viewAvailable": "View available exercises"
+    },
+    "actions": {
+      "title": "Quick Actions",
+      "viewAll": "View all exercises",
+      "startExercise": "Start an exercise"
+    }
+  },
+  "adminDashboard": {
+    "profile": {
+      "title": "My admin profile",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "notSpecified": "Not specified",
+      "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "role": "Administrator",
+        "email": "Email:",
+        "city": "City:",
+        "phone": "Phone:"
+      },
+      "placeholders": {
+        "email": "admin@xccm.tn",
+        "city": "New York",
+        "phone": "+1 XXX XXX XXXX"
+      },
+      "stats": {
+        "totalUsers": "Total users",
+        "adminAccess": "Admin access"
+      },
+      "privileges": {
+        "title": "Administrator privileges",
+        "usersTitle": "User management",
+        "usersDesc": "Create, edit and delete accounts",
+        "coursesTitle": "Course management",
+        "coursesDesc": "Supervise and moderate content",
+        "analyticsTitle": "Complete statistics",
+        "analyticsDesc": "Access to all analytical data",
+        "systemTitle": "System configuration",
+        "systemDesc": "Advanced platform settings"
+      },
+      "unavailable": {
+        "title": "Profile unavailable",
+        "description": "You must be logged in as an administrator to access this page.",
+        "login": "Sign in"
+      },
+      "toast": {
+        "profileUpdated": "Profile updated successfully!",
+        "profileUpdatedLocal": "Profile updated locally",
+        "saveError": "Error while saving profile",
+        "invalidImage": "Please select a valid image",
+        "imageTooLarge": "Image must not exceed 5MB"
+      },
+      "errors": {
+        "loadUserData": "Error loading user data:",
+        "saveProfile": "Error while saving profile:"
+      }
+    },
+    "students": {
+      "title": "Students",
+      "registered": "{count} registered",
+      "searchPlaceholder": "Search a student...",
+      "notAvailable": "N/A",
+      "notSpecifiedF": "Not specified",
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "university": "University",
+        "actions": "Actions",
+        "empty": "No student found"
+      },
+      "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm password",
+        "university": "University",
+        "specialization": "Specialization",
+        "city": "City"
+      },
+      "placeholders": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@student.edu",
+        "university": "University of Science",
+        "specialization": "Computer Science"
+      },
+      "actions": {
+        "add": "Add",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "creating": "Creating...",
+        "addStudent": "Add student"
+      },
+      "modal": {
+        "title": "New student"
+      },
+      "details": {
+        "role": "Student"
+      },
+      "delete": {
+        "confirm": "Are you sure you want to delete this student?"
+      },
+      "toast": {
+        "loadError": "Unable to load students list",
+        "deleteSuccess": "Student deleted successfully",
+        "deleteError": "Error while deleting",
+        "passwordMismatch": "Passwords do not match",
+        "createSuccess": "Student added successfully",
+        "createError": "Error while creating"
+      }
+    },
+    "teachers": {
+      "title": "Teachers management",
+      "registered": "{count} registered teachers",
+      "searchPlaceholder": "Search a teacher...",
+      "notAvailable": "N/A",
+      "notSpecified": "Not specified",
+      "notSpecifiedF": "Not specified",
+      "notSpecifiedP": "Not specified",
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "subjects": "Subjects",
+        "actions": "Actions",
+        "empty": "No teacher found"
+      },
+      "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm password",
+        "subjects": "Subjects / Specialization",
+        "city": "City",
+        "university": "University",
+        "grade": "Grade"
+      },
+      "placeholders": {
+        "firstName": "Albert",
+        "lastName": "Einstein",
+        "email": "albert.einstein@univ.edu",
+        "subjects": "Physics, Mathematics"
+      },
+      "actions": {
+        "add": "Add",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "creating": "Creating...",
+        "addTeacher": "Add teacher"
+      },
+      "modal": {
+        "title": "Add a teacher"
+      },
+      "details": {
+        "role": "Teacher"
+      },
+      "delete": {
+        "confirm": "Are you sure you want to delete this teacher?"
+      },
+      "toast": {
+        "loadError": "Error loading teachers",
+        "deleteSuccess": "Teacher deleted successfully",
+        "deleteError": "Error while deleting",
+        "passwordMismatch": "Passwords do not match",
+        "createSuccess": "Teacher added successfully",
+        "createError": "Error while creating"
+      }
+    },
+    "courses": {
+      "title": "Course management",
+      "subtitle": "List of all courses created by teachers.",
+      "searchPlaceholder": "Search a course...",
+      "empty": "No course found",
+      "untitled": "Untitled",
+      "unknownTeacher": "Unknown teacher",
+      "uncategorized": "Uncategorized",
+      "stats": {
+        "totalCourses": "Total courses",
+        "activeCourses": "Active courses"
+      },
+      "table": {
+        "title": "Title",
+        "author": "Author",
+        "category": "Category",
+        "status": "Status",
+        "enrolled": "Enrolled",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "draft": "Draft",
+        "archived": "Archived"
+      },
+      "actions": {
+        "delete": "Delete",
+        "cancel": "Cancel"
+      },
+      "delete": {
+        "confirm": "Are you sure you want to delete this course?"
+      },
+      "toast": {
+        "loadError": "Error fetching courses",
+        "deleteSuccess": "Course deleted successfully",
+        "deleteError": "Error while deleting on server"
+      }
+    }
+  },
+  "teacherDashboard": {
+    "home": {
+      "welcome": "Welcome {name}!",
+      "subtitle": "Glad to see you again. Here is the status of your teaching today.",
+      "stats": {
+        "students": "Students",
+        "courses": "Courses",
+        "toGrade": "To grade",
+        "score": "Score"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "newCourse": "New Course",
+        "enrollments": "Enrollments ({count})",
+        "createExercise": "Create an exercise",
+        "createCourseFirst": "Create a course first"
+      },
+      "systemStatus": {
+        "title": "System status",
+        "coursesActive": "{count} active courses",
+        "exercisesCreated": "{count} exercises created"
+      },
+      "courseSelection": {
+        "title": "Select a Class",
+        "description": "Choose the class for which you want to manage exercises:",
+        "participants": "{count} participants",
+        "exercises": "{count} exercise(s)"
+      },
+      "cancel": "Cancel",
+      "retryLoad": "Retry loading",
+      "errorLabel": "Error:",
+      "invalidClassId": "Invalid class ID"
+    },
+    "classes": {
+      "selectClassTitle": "Select a Class",
+      "selectClassDescription": "Choose the class for which you want to manage exercises:",
+      "cancel": "Cancel",
+      "backToDashboard": "Back to dashboard",
+      "manageTitle": "Manage your {type}",
+      "classes": "Classes",
+      "compositions": "Compositions",
+      "classesDescription": "Browse and split your courses by creating different classes.",
+      "compositionsDescription": "Manage your compositions and structured course materials.",
+      "myClassesTitle": "My Course Classes",
+      "myCompositionsTitle": "My Compositions",
+      "noClasses": "You don't have any classes yet. Create your first class.",
+      "noCompositions": "You don't have any compositions yet. Create your first course.",
+      "createClass": "Create a class",
+      "createCourse": "Create a course",
+      "editNotAvailable": "Class editing is not available yet",
+      "invalidClassId": "Invalid class ID",
+      "deleteClassTitle": "Delete class",
+      "deleteClassMessage": "Do you really want to delete this course class? This action is irreversible.",
+      "deleteButton": "Delete",
+      "manageCourses": "Manage courses",
+      "published": "Published",
+      "draft": "Draft"
+    },
+    "inscriptions": {
+      "backToDashboard": "Back to dashboard",
+      "title": "Enrollment management",
+      "subtitle": "Review and validate student access requests to your teaching materials.",
+      "footer": "© {year} XCCM1 • Intelligent Learning Platform"
+    },
+    "pendingEnrollments": {
+      "loading": "Loading requests...",
+      "emptyTitle": "Everything is up to date!",
+      "emptyDescription": "There are no pending enrollment requests at the moment.",
+      "requestsTitle": "Requests ({count})",
+      "actionRequired": "Action required",
+      "requestedOn": "Requested on {date}",
+      "accept": "Accept",
+      "reject": "Reject",
+      "acceptedSuccess": "Enrollment accepted successfully",
+      "rejectedSuccess": "Enrollment rejected successfully",
+      "operationError": "Operation failed. Please try again.",
+      "student": "Student"
+    },
+    "manageClassCoursesModal": {
+      "title": "Manage courses in the class",
+      "classLabel": "Class: {name}",
+      "assignedCoursesTitle": "Courses in this class ({count})",
+      "noAssignedCourses": "No course has been added to this class yet.",
+      "availableCoursesTitle": "Available courses ({count})",
+      "noCoursesYet": "You haven't created any courses yet. Please create one first.",
+      "allCoursesAdded": "All your courses are already in this class.",
+      "add": "Add",
+      "remove": "Remove",
+      "published": "Published",
+      "draft": "Draft",
+      "close": "Close",
+      "errorLoading": "Error loading courses",
+      "addSuccess": "Course added to the class",
+      "removeSuccess": "Course removed from the class",
+      "addError": "Unable to add the course to the class",
+      "removeError": "Unable to remove this course"
+    },
+    "createCourseModal": {
+      "move": "Move",
+      "createClassTitle": "Create a class",
+      "createCourseTitle": "Create a course",
+      "description": "Share your knowledge with your students",
+      "titleLabel": "Title {type}",
+      "classType": "for the class",
+      "courseType": "for the course",
+      "titlePlaceholder": "Ex: Systems Architecture",
+      "mainThemeLabel": "Main theme",
+      "selectPlaceholder": "Select...",
+      "customCategoryPlaceholder": "Enter your custom theme",
+      "coverImageLabel": "Cover image",
+      "resourcesLabel": "Resources (PDF, DOC)",
+      "jpgPngHint": "JPG, PNG (Max 2MB)",
+      "removeResource": "Remove",
+      "addResource": "Add a resource",
+      "programDescriptionLabel": "Program description",
+      "programDescriptionPlaceholder": "What will students learn?",
+      "cancel": "Cancel",
+      "createClassAction": "Create class",
+      "createCourseAction": "Create course",
+      "uploadErrorInvalidFile": "Invalid file",
+      "uploadErrorFailed": "Image upload failed",
+      "drag": "Move",
+      "category": {
+        "computerScience": "Computer Science",
+        "mathematics": "Mathematics",
+        "physics": "Physics",
+        "languages": "Languages",
+        "other": "+ Other category"
+      }
+    },
+    "profExercisesCreate": {
+      "loginRequired": "Please sign in",
+      "invalidClassId": "Invalid class ID",
+      "classWithoutCourse": "This class has no course.",
+      "classNotFound": "Class not found.",
+      "classLoadError": "Error while loading class information.",
+      "createSuccess": "Exercise created successfully!",
+      "createError": "Error while creating the exercise",
+      "createUnexpectedError": "Unexpected error while creating the exercise",
+      "cancelConfirm": "Do you really want to cancel creation? All data will be lost.",
+      "previewInfo": "Exercise preview (local data only)",
+      "invalidParamsTitle": "Invalid parameters",
+      "invalidParamsDescription": "The page URL is incorrect.",
+      "backToDashboard": "Back to dashboard",
+      "loadingInfo": "Loading information...",
+      "noCourseTitle": "No linked course",
+      "noCourseDescription": "The class \"{className}\" has no course. Exercises must be linked to a course.",
+      "backToClass": "Back to class",
+      "newExercise": "New exercise",
+      "dashboard": "Dashboard",
+      "createTitle": "Exercise creation",
+      "back": "Back",
+      "preview": "Preview"
+    },
+    "compositionsCard": {
+      "deleteClassTitle": "Delete class",
+      "deleteClassMessage": "Do you really want to delete this course class? This action is irreversible.",
+      "delete": "Delete",
+      "createCourse": "Create a course",
+      "createClass": "Create a class",
+      "manageCourses": "Manage courses",
+      "editCourse": "Edit course",
+      "editClass": "Edit class",
+      "removeCourse": "Remove",
+      "category": "Category:",
+      "theme": "Theme:",
+      "participants": "{count} participants",
+      "courses": "{count} courses",
+      "classes": "{count} classes",
+      "exercises": "{count} exercises",
+      "students": "{count} students",
+      "open": "Open",
+      "closed": "Closed",
+      "archived": "Archived",
+      "draft": "Draft",
+      "totalSummary": "Total : {count} {type} • {exercises} exercises • {students} students"
+    },
+    "profileCard": {
+      "title": "Teacher profile",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "overview": "Overview",
+      "coursesStatsTab": "Course statistics",
+      "photoUploadSuccess": "Photo uploaded successfully!",
+      "photoUploadError": "Photo upload failed",
+      "invalidFile": "Invalid file",
+      "profileUpdateSuccess": "Profile updated successfully!",
+      "profileUpdateError": "Profile save failed",
+      "userIdNotFound": "User ID not found",
+      "nameLabel": "Full name",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "city": "City",
+      "university": "University",
+      "grade": "Grade",
+      "certification": "Certification",
+      "current": "Current: {value}",
+      "notSpecified": "Not specified",
+      "students": "{count} students",
+      "publishedCourses": "{count} published courses",
+      "activeStudents": "{count} active students",
+      "participationRate": "Participation rate",
+      "averageProgress": "Average progress",
+      "exercises": "{count} exercises",
+      "completed": "{count} completed",
+      "emailLabel": "Email address",
+      "studentsLabel": "Total students",
+      "none": "None",
+      "nonePublishedCourse": "no published course",
+      "noneActiveStudent": "no active student",
+      "publishedCoursesLabel": "across {count} published courses",
+      "publishedCoursesTitle": "Published courses",
+      "coursesCreated": "courses created",
+      "allCoursesAverage": "average across all courses",
+      "exercisesLabel": "Total exercises",
+      "noneExerciseCreated": "no exercise created",
+      "inCourses": "in {count} courses",
+      "completedStudents": "Completed students",
+      "completedCoursesHint": "have completed their courses",
+      "completionRateLabel": "Completion rate",
+      "completionRateHint": "of students completed",
+      "performanceDistribution": "Student performance distribution",
+      "startTeachingTitle": "Start your teaching journey",
+      "startTeachingDesc": "You have not published any course yet. Create your first course to:",
+      "startTeachingItem1": "Track your students' statistics",
+      "startTeachingItem2": "Analyze learning performance",
+      "startTeachingItem3": "Receive feedback on your content",
+      "startTeachingItem4": "Manage enrollments and participation",
+      "coursesStatsTitle": "Course statistics details",
+      "coursesCount": "{count} courses",
+      "enrolled": "Enrolled",
+      "active": "Active",
+      "participation": "Participation",
+      "progression": "Progress",
+      "rate": "Rate",
+      "completedTitle": "Completed",
+      "exercisesTitle": "Exercises",
+      "enrollments": "Enrollments",
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "viewFullDetails": "View full details",
+      "noCourseStats": "No course statistics available",
+      "noCourseStatsHint": "Statistics will appear once your courses have enrolled students.",
+      "createCourse": "Create a course"
+    },
+    "exercises": {
+      "title": "My exercises",
+      "description": "Manage your exercises and monitor grading status.",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "statsExercises": "Exercises",
+      "statsToGrade": "To grade",
+      "statsGraded": "Graded",
+      "searchPlaceholder": "Search an exercise, a course...",
+      "filters": {
+        "all": "All",
+        "pending": "Pending",
+        "graded": "Graded"
+      },
+      "noResults": "No exercises match your search",
+      "noExercises": "No exercises created yet",
+      "createCourseAction": "Create an exercise",
+      "courseUncategorized": "Uncategorized",
+      "noDescription": "No description",
+      "dueDate": "Due date: {date}",
+      "submitted": "Submitted",
+      "pendingSubmissions": "{count} pending",
+      "totalSubmissions": "{count} submissions",
+      "averageScore": "Average",
+      "viewExercises": "Manage",
+      "reviewSubmissions": "Submissions",
+      "editExercise": "Edit",
+      "actions": "Actions",
+      "submissionsStatus": "Submission status",
+      "updates": "Updates",
+      "statusPending": "Pending",
+      "statusGraded": "Graded",
+      "statusOpen": "Open",
+      "statusClosed": "Closed",
+      "statusArchived": "Archived",
+      "loadFailed": "Failed to load exercises",
+      "invalidExercise": "Invalid exercise",
+      "syncSuccess": "{count} exercises refreshed",
+      "backToDashboard": "Back to dashboard",
+      "fallbackCourseTitle": "Untitled course",
+      "foundCount": "{count} exercise(s) found",
+      "lastRefresh": "Last refresh",
+      "lastRefreshSeconds": "{count}s ago",
+      "lastRefreshMinutes": "{count} min ago",
+      "lastRefreshHours": "{count}h ago",
+      "noSubmissions": "No submission",
+      "maxScore": "Max score",
+      "progressSummary": "Submissions: {graded} graded out of {total}",
+      "questionsCount": "{count} questions",
+      "legendPendingHigh": "More than 3 submissions to grade",
+      "legendPendingMedium": "1-3 submissions to grade",
+      "legendPendingDone": "All submissions graded",
+      "legendUpdating": "Updating in progress",
+      "legendUpdated": "Recently updated",
+      "legendAutoRefresh": "Auto-refresh every 30s",
+      "legendActionRefresh": "Click \"Refresh\" to force data refresh",
+      "legendActionSync": "Changes are synchronized across tabs",
+      "legendActionCache": "Exercises are cached for 30s",
+      "statusPublished": "Published"
+    },
+    "exercisePreview": {
+      "loading": "Loading preview...",
+      "notFoundTitle": "Exercise not found",
+      "notFoundDescription": "The requested exercise does not exist or you do not have access to it.",
+      "backToExercises": "Back to exercises",
+      "bannerTitle": "Student Preview Mode",
+      "bannerDescription": "This is a preview of the exercise as students will see it.",
+      "close": "Close",
+      "back": "Back",
+      "dueDate": "Due date: {date}",
+      "maxScore": "Max score: {score} points",
+      "questionCount": "{count} questions",
+      "progressLabel": "Answer progress (simulation)",
+      "progressCount": "{answered} / {total} answered",
+      "typeText": "Free answer",
+      "typeMultipleChoice": "Multiple choice",
+      "typeCode": "Code",
+      "points": "{count} point(s)",
+      "textAnswerPlaceholder": "Type your answer here...",
+      "codeHint": "Write your code in the language of your choice:",
+      "codePlaceholder": "// Your code here...",
+      "questionsAnswered": "{answered} / {total} questions answered",
+      "readyToSubmit": "Ready to submit",
+      "submitDisabledTitle": "Preview mode - submission disabled",
+      "submitPreview": "Submit exercise (Preview)",
+      "previewModeTitle": "Preview Mode",
+      "previewModeDescription": "This is a preview. Entered answers are not saved. This view shows exactly what students will see when opening this exercise."
+    },
+    "exerciseView": {
+      "invalidParamsTitle": "Invalid parameters",
+      "invalidParamsDescription": "The page URL is invalid.",
+      "backToExercises": "Back to exercises",
+      "authRequired": "Please log in",
+      "confirmDelete": "Are you sure you want to delete this exercise? This action is irreversible.",
+      "deleteSuccess": "Exercise deleted successfully",
+      "deleteError": "Error while deleting",
+      "copySuffix": "Copy",
+      "duplicateSuccess": "Exercise duplicated successfully",
+      "duplicateError": "Error while duplicating",
+      "publishInfo": "The exercise is already published (all exercises are published by default).",
+      "publishError": "Error while publishing",
+      "infoMessagePrefix": "Info:",
+      "errorPrefix": "Error:",
+      "closeError": "Error while closing",
+      "downloadPreparing": "Preparing download...",
+      "downloadReady": "File ready for download",
+      "notSet": "Not set",
+      "invalidDate": "Invalid date",
+      "statusUnknown": "Unknown",
+      "statusDraft": "Draft",
+      "statusPublished": "Published",
+      "statusClosed": "Closed",
+      "statusArchived": "Archived",
+      "loadingExercise": "Loading exercise...",
+      "notFoundTitle": "Exercise not found",
+      "notFoundDescription": "The requested exercise does not exist or you do not have access to it.",
+      "retry": "Retry",
+      "backToClass": "Back to class",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "exercises": "Exercises"
+      },
+      "backToClassExercises": "Back to class exercises",
+      "edit": "Edit",
+      "submissions": "Submissions",
+      "questionCount": "{count} question(s)",
+      "description": "Description",
+      "noDescription": "No description provided.",
+      "maxPoints": "Maximum points",
+      "dueDate": "Due date",
+      "createdOn": "Created on",
+      "questionsTitle": "Questions ({count})",
+      "noQuestion": "No question",
+      "typeText": "Free text",
+      "typeMultipleChoice": "Multiple choice",
+      "typeCode": "Code",
+      "optionsLabel": "Options:",
+      "correctAnswer": "Correct answer:",
+      "manualCorrection": "Manual correction",
+      "manualCorrectionHelp": "The teacher will manually grade this answer.",
+      "explanation": "Explanation:",
+      "noQuestionFound": "No questions found",
+      "noQuestionDescription": "This exercise does not contain any questions yet.",
+      "addQuestions": "Add questions",
+      "actionsTitle": "Actions",
+      "editHelp": "Edit details and questions",
+      "submissionsHelp": "View and grade submissions",
+      "duplicate": "Duplicate",
+      "duplicating": "Duplicating...",
+      "createCopy": "Create a copy",
+      "print": "Print",
+      "linkCopied": "Link copied to clipboard",
+      "share": "Share",
+      "deleting": "Deleting...",
+      "deleteExercise": "Delete exercise"
+    }
+  },
+  "teacherProfile": {
+    "notFoundTitle": "Teacher not found",
+    "notFoundDescription": "This teacher does not exist or has been removed.",
+    "backToLibrary": "Back to library",
+    "teacherFallbackName": "Teacher",
+    "expertTeacher": "Expert teacher",
+    "about": "About",
+    "university": "University / Institution",
+    "location": "Location",
+    "expertiseDomains": "Expertise areas",
+    "academicImpact": "Academic impact",
+    "stats": {
+      "classes": "Classes",
+      "courses": "Courses",
+      "students": "Enrolled students"
+    },
+    "classSectionsTitle": "Course classes",
+    "classesCount": "{count} class(es)",
+    "noClassTitle": "No class available",
+    "noClassDescription": "This teacher has not published any class yet.",
+    "generalTheme": "General",
+    "statusOpen": "Open",
+    "includedCourses": "Included courses ({count})",
+    "noClassCourse": "No course has been added to this class yet.",
+    "freeCoursesTitle": "Free courses",
+    "freeCoursesCount": "{count} course(s)",
+    "freeCoursesDescription": "These courses are published outside of any class and can be accessed directly.",
+    "loadError": "Unable to load profile",
+    "loadErrorToast": "Error while loading profile"
   }
 }
+
+

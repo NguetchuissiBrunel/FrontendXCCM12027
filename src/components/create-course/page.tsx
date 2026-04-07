@@ -2,15 +2,17 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, ChevronDown, X, FileText, Image as ImageIcon, Target, Plus, Move } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: { title: string; category: string; description: string; image?: string; file?: any }) => void;
+  onSubmit?: (data: { title: string; category: string; description: string; image?: string; file?: unknown }) => void;
   mode?: 'class' | 'course';
 }
 
 export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'class' }: Props) {
+  const t = useTranslations('teacherDashboard.createCourseModal');
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -94,7 +96,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
       // Validate file
       const validation = CloudinaryService.validateFile(file);
       if (!validation.valid) {
-        alert(validation.error || 'Fichier invalide');
+        alert(validation.error || t('uploadErrorInvalidFile'));
         return;
       }
 
@@ -108,7 +110,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
       setImagePreview(url);
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
-      alert(error instanceof Error ? error.message : 'Erreur lors de l\'upload de l\'image');
+      alert(error instanceof Error ? error.message : t('uploadErrorFailed'));
       setImagePreview(null);
     }
   };
@@ -158,7 +160,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
         >
           <div className="absolute left-6 top-6 flex items-center gap-2 text-purple-200">
             <Move size={20} className="animate-pulse" />
-            <span className="text-xs font-medium">Déplacer</span>
+            <span className="text-xs font-medium">{t('move')}</span>
           </div>
           <button
             onClick={onClose}
@@ -167,9 +169,9 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
             <X size={24} />
           </button>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            {mode === 'class' ? 'Création d\'une Classe' : 'Création d\'un Cours'}
+            {mode === 'class' ? t('createClassTitle') : t('createCourseTitle')}
           </h1>
-          <p className="text-purple-100 mt-2 text-sm font-medium opacity-90">Partagez votre savoir avec vos étudiants</p>
+          <p className="text-purple-100 mt-2 text-sm font-medium opacity-90">{t('description')}</p>
         </div>
 
         {/* Formulaire défilable */}
@@ -179,31 +181,31 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                Titre {mode === 'class' ? 'de la classe' : 'du cours'}
+                {t('titleLabel', { type: mode === 'class' ? t('classType') : t('courseType') })}
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Ex: Architecture des Systèmes"
+                placeholder={t('titlePlaceholder')}
                 className="w-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-xl p-4 outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all shadow-sm"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Thème principal</label>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('mainThemeLabel')}</label>
               <div className="relative group">
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-xl p-4 appearance-none outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all cursor-pointer"
                 >
-                  <option value="" disabled hidden>Sélectionner...</option>
-                  <option value="Informatique">Informatique</option>
-                  <option value="Mathématiques">Mathématiques</option>
-                  <option value="Physique">Physique</option>
-                  <option value="Langues">Langues</option>
-                  <option value="custom">+ Autre catégorie</option>
+                  <option value="" disabled hidden>{t('selectPlaceholder')}</option>
+                  <option value="Informatique">{t('category.computerScience')}</option>
+                  <option value="Mathématiques">{t('category.mathematics')}</option>
+                  <option value="Physique">{t('category.physics')}</option>
+                  <option value="Langues">{t('category.languages')}</option>
+                  <option value="custom">{t('category.other')}</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-4 text-gray-400 group-hover:text-purple-500 pointer-events-none transition-colors" size={20} />
               </div>
@@ -213,7 +215,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
           {formData.category === 'custom' && (
             <input
               type="text"
-              placeholder="Saisissez votre thème personnalisé"
+              placeholder={t('customCategoryPlaceholder')}
               className="w-full bg-transparent text-gray-900 dark:text-gray-100 border-b-2 border-purple-400 p-2 outline-none animate-in slide-in-from-top-2"
               onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
             />
@@ -224,7 +226,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
             {/* Image */}
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <ImageIcon size={18} className="text-purple-500" /> Image de couverture
+                <ImageIcon size={18} className="text-purple-500" /> {t('coverImageLabel')}
               </label>
               <div
                 onClick={() => !imagePreview && imageInputRef.current?.click()}
@@ -240,7 +242,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
                 ) : (
                   <div className="text-center p-4">
                     <Upload size={24} className="mx-auto mb-2 text-purple-500" />
-                    <span className="text-xs font-semibold text-gray-500">JPG, PNG (Max 2Mo)</span>
+                    <span className="text-xs font-semibold text-gray-500">{t('jpgPngHint')}</span>
                   </div>
                 )}
               </div>
@@ -249,7 +251,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
             {/* Document */}
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <FileText size={18} className="text-purple-500" /> Ressources (PDF, DOC)
+                <FileText size={18} className="text-purple-500" /> {t('resourcesLabel')}
               </label>
               <div
                 onClick={() => !fileData && fileInputRef.current?.click()}
@@ -261,12 +263,12 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
                   <div className="flex flex-col items-center p-4 text-center">
                     <FileText size={32} className="text-purple-600 mb-2" />
                     <p className="text-xs font-bold truncate max-w-[150px]">{fileData.name}</p>
-                    <button onClick={(e) => { e.stopPropagation(); setFileData(null) }} className="mt-2 text-xs text-red-500 hover:underline">Supprimer</button>
+                    <button onClick={(e) => { e.stopPropagation(); setFileData(null) }} className="mt-2 text-xs text-red-500 hover:underline">{t('removeResource')}</button>
                   </div>
                 ) : (
                   <div className="text-center p-4">
                     <Plus size={24} className="mx-auto mb-2 text-purple-500" />
-                    <span className="text-xs font-semibold text-gray-500">Ajouter un support</span>
+                    <span className="text-xs font-semibold text-gray-500">{t('addResource')}</span>
                   </div>
                 )}
               </div>
@@ -276,12 +278,12 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
           {/* Description */}
           <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Target size={18} className="text-purple-500" /> Description du programme
+              <Target size={18} className="text-purple-500" /> {t('programDescriptionLabel')}
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Qu'est-ce que les étudiants vont apprendre ?"
+              placeholder={t('programDescriptionPlaceholder')}
               className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-4 dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-32 outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all resize-none"
             />
           </div>
@@ -293,13 +295,13 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
             onClick={onClose}
             className="order-2 sm:order-1 px-8 py-4 text-gray-600 dark:text-gray-400 font-bold hover:text-gray-800 transition-colors"
           >
-            Annuler
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
             className="order-1 sm:order-2 bg-purple-600 hover:bg-purple-700 text-white px-12 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-purple-200 dark:shadow-none transform hover:-translate-y-1 active:scale-95"
           >
-            {mode === 'class' ? 'Créer la classe' : 'Créer le cours'}
+            {mode === 'class' ? t('createClassAction') : t('createCourseAction')}
           </button>
         </div>
       </div>

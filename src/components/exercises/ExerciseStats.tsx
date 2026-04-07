@@ -79,7 +79,7 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
                 {t('loadError')}
               </h4>
               <p className="text-sm text-red-700 dark:text-red-400">
-                {error?.message || 'Les statistiques ne sont pas disponibles pour le moment.'}
+                {error?.message || t('unavailable')}
               </p>
               <button
                 onClick={refetch}
@@ -264,7 +264,7 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
                   {commonDifficulties.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Difficultés courantes:
+                        {t('commonDifficulties')}
                       </div>
                       <ul className="space-y-1">
                         {commonDifficulties.map((difficulty: { answer: string; count: number }, i: number) => (

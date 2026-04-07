@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpen, FileText, Award, Clock, TrendingUp, Users, Loader2 } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
+import { useTranslations } from 'next-intl';
 import { useCourseExercises, useMySubmissions } from '@/hooks/useExercise';
 import { useCourses } from '@/hooks/useCourses';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
@@ -12,6 +13,7 @@ import { EnrichedCourse } from '@/types/enrollment';
 import { toast } from 'react-hot-toast';
 import StudentDashboardSkeleton from '@/components/student/StudentDashboardSkeleton';
 import Sidebar from '@/components/Sidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface User {
   id: string;
@@ -21,7 +23,7 @@ interface User {
   role: string;
   photoUrl?: string;
   specialization?: string;
-  level?: string;
+  grade?: string;
   university?: string;
   city?: string;
 }
@@ -43,8 +45,9 @@ interface DashboardStats {
 }
 
 export default function StudentHome() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const t = useTranslations('studentDashboard');
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
   const { isLoading: globalLoading, startLoading, stopLoading } = useLoading();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrichedCourse[]>([]);
   const [pendingExercises, setPendingExercises] = useState<any[]>([]);
@@ -86,7 +89,7 @@ export default function StudentHome() {
       console.error('Erreur lors du chargement des données étudiant:', error);
       toast.error('Erreur lors du chargement des données');
     } finally {
-      setLoading(false);
+      setDataLoading(false);
       stopLoading();
     }
   };
@@ -232,34 +235,20 @@ export default function StudentHome() {
 
   // Chargement initial
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const currentUser = localStorage.getItem('currentUser');
+    if (authLoading) return;
 
-        if (!currentUser) {
-          router.push('/login');
-          return;
-        }
+    if (!user || !isAuthenticated) {
+      router.push('/login');
+      return;
+    }
 
-        const userData = JSON.parse(currentUser) as User;
+    if (user.role !== 'student') {
+      router.push('/profdashboard');
+      return;
+    }
 
-        // Vérifier le rôle
-        if (userData.role !== 'student') {
-          router.push('/profdashboard');
-          return;
-        }
-
-        setUser(userData);
-        await loadStudentData(userData);
-
-      } catch (error) {
-        console.error('Erreur lors du chargement des données utilisateur:', error);
-        router.push('/login');
-      }
-    };
-
-    loadData();
-  }, [router]);
+    loadStudentData(user as any);
+  }, [authLoading, isAuthenticated, user, router]);
 
   // Recalculer les stats quand les soumissions changent
   useEffect(() => {
@@ -302,14 +291,14 @@ export default function StudentHome() {
   };
 
   // Composant de chargement - Retourne le skeleton pour un meilleur UX
-  if (loading || globalLoading || coursesLoading) {
+  if (dataLoading || authLoading || globalLoading || coursesLoading) {
     return <StudentDashboardSkeleton />;
   }
 
   if (!user) return null;
 
   const displayName = `${user.firstName} ${user.lastName}`;
-  const userLevel = user.specialization || user.level || 'Étudiant';
+  const userLevel = user.specialization || user.grade || 'Étudiant';
 
   return (
     <div className="space-y-8">
@@ -318,10 +307,10 @@ export default function StudentHome() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="max-w-3xl">
             <h1 className="text-2xl md:text-4xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              Bienvenue {user.firstName} !
+              {t('welcome', { name: user.firstName || '' })}
             </h1>
             <p className="text-gray-600 dark:text-gray-300 italic">
-              "Le succès n'est pas final, l'échec n'est pas fatal : c'est le courage de continuer qui compte."
+              {t('quote')}
             </p>
           </div>
 
@@ -332,25 +321,25 @@ export default function StudentHome() {
                 <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
                   {stats.averageScore}%
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Moyenne</div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">{t('stats.average')}</div>
               </div>
               <div className="text-center">
                 <div className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">
                   {stats.totalSubmissions}
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Soumissions</div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">{t('stats.submissions')}</div>
               </div>
               <div className="text-center">
                 <div className="text-xl md:text-2xl font-bold text-red-600">
                   {stats.pendingExercises}
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">En attente</div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">{t('stats.pending')}</div>
               </div>
               <div className="text-center">
                 <div className="text-xl md:text-2xl font-bold text-green-600">
                   {stats.completedExercises}
                 </div>
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Terminés</div>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">{t('stats.completed')}</div>
               </div>
             </div>
           </div>
@@ -363,13 +352,13 @@ export default function StudentHome() {
           <div className="flex items-center justify-between">
             <h2 id="my-courses" className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <BookOpen className="text-purple-600 w-5 h-5 md:w-6 md:h-6" />
-              Mes Cours ({enrolledCourses.length})
+              {t('courses.title')} ({enrolledCourses.length})
             </h2>
             <button
               onClick={() => router.push('/bibliotheque')}
               className="text-purple-600 hover:text-purple-700 font-medium hover:underline text-sm md:text-base"
             >
-              Explorer la bibliothèque →
+              {t('courses.explore')}
             </button>
           </div>
 
@@ -396,7 +385,7 @@ export default function StudentHome() {
                   <div className="p-4 md:p-5">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        Actif
+                        {t('courses.active')}
                       </span>
                       <span className="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
                         {course.category}
@@ -409,7 +398,7 @@ export default function StudentHome() {
                     <div className="space-y-3">
                       <div>
                         <div className="flex justify-between text-xs mb-1 text-gray-500">
-                          <span>Progression</span>
+                          <span>{t('courses.progress')}</span>
                           <span>{course.enrollment?.progress || 0}%</span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
@@ -425,13 +414,13 @@ export default function StudentHome() {
                           onClick={() => handleViewCourseExercises(course.id)}
                           className="flex-1 py-2 text-xs md:text-sm border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                         >
-                          Voir les exercices
+                          {t('courses.viewExercises')}
                         </button>
                         <button
                           onClick={() => router.push(`/courses/${course.id}`)}
                           className="flex-1 py-2 text-xs md:text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
                         >
-                          Continuer
+                          {t('courses.continue')}
                         </button>
                       </div>
                     </div>
@@ -443,16 +432,16 @@ export default function StudentHome() {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-8 md:p-12 text-center border border-dashed border-gray-300 dark:border-gray-700">
               <BookOpen className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg md:text-xl font-medium text-gray-900 dark:text-white mb-2">
-                Aucun cours pour le moment
+                {t('courses.noCoursesTitle')}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Vous n'êtes inscrit à aucun cours.
+                {t('courses.noCoursesDesc')}
               </p>
               <button
                 onClick={() => router.push('/bibliotheque')}
                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
               >
-                Découvrir les cours
+                {t('courses.discover')}
               </button>
             </div>
           )}
@@ -465,7 +454,7 @@ export default function StudentHome() {
             <div className="flex items-center justify-between mb-4">
               <h3 id="pending-exercises" className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <Clock className="text-purple-500 w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-sm md:text-base">Exercices en attente</span>
+                <span className="text-sm md:text-base">{t('exercises.pendingTitle')}</span>
                 <span className="bg-pur-100 border-2 border-radius-full border-purple-700 text-xs px-2 py-0.5 rounded-full">
                   {pendingExercises.length}
                 </span>
@@ -489,7 +478,7 @@ export default function StudentHome() {
                         </p>
                         {exercise.dueDate && (
                           <p className="text-xs text-purple-600 mt-1">
-                            Échéance: {new Date(exercise.dueDate).toLocaleDateString('fr-FR')}
+                            {t('exercises.dueDate')} {new Date(exercise.dueDate).toLocaleDateString('fr-FR')}
                           </p>
                         )}
                       </div>
@@ -499,13 +488,13 @@ export default function StudentHome() {
                         onClick={() => router.push(`/etudashboard/exercises/${exercise.id}`)}
                         className="flex-1 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
-                        Voir
+                        {t('exercises.view')}
                       </button>
                       <button
                         onClick={() => handleStartExercise(exercise.id)}
                         className="flex-1 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
                       >
-                        Commencer
+                        {t('exercises.start')}
                       </button>
                     </div>
                   </div>
@@ -516,7 +505,7 @@ export default function StudentHome() {
                     onClick={() => router.push('/etudashboard/exercises')}
                     className="w-full py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    Voir tous ({pendingExercises.length})
+                    {t('exercises.viewAll', { count: pendingExercises.length })}
                   </button>
                 )}
               </div>
@@ -524,18 +513,19 @@ export default function StudentHome() {
               <div className="text-center py-4">
                 <FileText className="w-6 h-6 md:w-8 md:h-8 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Aucun exercice en attente
+                  {t('exercises.noPending')}
                 </p>
               </div>
             )}
           </div>
 
           {/* Dernières soumissions */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
+          <div id="my-submissions" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
+
               <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <Award className="text-green-500 w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-sm md:text-base">Mes soumissions</span>
+                <span className="text-sm md:text-base">{t('submissions.title')}</span>
               </h3>
             </div>
 
@@ -549,7 +539,7 @@ export default function StudentHome() {
                           {submission.exerciseTitle || 'Exercice'}
                         </h4>
                         <p className="text-xs text-gray-500 mt-1">
-                          Soumis le {new Date(submission.submittedAt).toLocaleDateString('fr-FR')}
+                          {t('submissions.submittedOn')} {new Date(submission.submittedAt).toLocaleDateString('fr-FR')}
                         </p>
                       </div>
                       <div className={`text-sm font-bold ml-2 ${submission.graded ?
@@ -558,7 +548,7 @@ export default function StudentHome() {
                         'text-yellow-600'
                         }`}>
                         {submission.score == undefined ?
-                          'En attente' :
+                          t('submissions.pending') :
                           `${submission.score}/${submission.maxScore}`
                         }
                       </div>
@@ -574,7 +564,7 @@ export default function StudentHome() {
                       onClick={() => handleViewSubmission(submission.id)}
                       className="mt-2 w-full py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                      Voir détails
+                      {t('submissions.viewDetails')}
                     </button>
                   </div>
                 ))}
@@ -583,29 +573,29 @@ export default function StudentHome() {
               <div className="text-center py-4">
                 <FileText className="w-6 h-6 md:w-8 md:h-8 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Aucune soumission
+                  {t('submissions.noSubmissions')}
                 </p>
                 <button
                   onClick={() => router.push('/etudashboard/exercises')}
                   className="mt-2 text-xs text-purple-600 hover:text-purple-700"
                 >
-                  Voir les exercices disponibles
+                  {t('submissions.viewAvailable')}
                 </button>
               </div>
             )}
           </div>
 
           {/* Actions rapides */}
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 md:p-5 border border-purple-200 dark:border-gray-700">
+          <div id="quick-actions" className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 md:p-5 border border-purple-200 dark:border-gray-700">
             <h3 className="font-bold text-gray-800 dark:text-white mb-3 text-sm md:text-base">
-              Actions rapides
+              {t('actions.title')}
             </h3>
             <div className="space-y-2">
               <button
                 onClick={() => router.push('/etudashboard/exercises')}
                 className="w-full py-2 text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
               >
-                Voir tous les exercices
+                {t('actions.viewAll')}
               </button>
               <button
                 onClick={() => {
@@ -619,8 +609,8 @@ export default function StudentHome() {
                 disabled={pendingExercises.length === 0}
               >
                 {pendingExercises.length > 0 ?
-                  'Commencer un exercice' :
-                  'Aucun exercice en attente'
+                  t('actions.startExercise') :
+                  t('exercises.noPendingAction')
                 }
               </button>
             </div>

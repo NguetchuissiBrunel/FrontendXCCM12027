@@ -22,6 +22,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 interface AppUser {
   id: string;
@@ -31,17 +32,17 @@ interface AppUser {
   role: string;
   photoUrl?: string;
   specialization?: string;
-  level?: string;
+  grade?: string;
 }
 
 export default function SubmissionDetailsPage() {
+  const t = useTranslations('submissionDetails');
   const params = useParams();
   const router = useRouter();
-  const submissionId = parseInt(params.submissionId as string);
+  const submissionId = parseInt(params?.submissionId as string);
 
   const [user, setUser] = useState<AppUser | null>(null);
 
-  // Utiliser le hook de soumission
   const {
     submission,
     isLoading: submissionLoading,
@@ -49,7 +50,6 @@ export default function SubmissionDetailsPage() {
     refetch: refetchSubmission
   } = useSubmissionDetails(submissionId);
 
-  // Charger l'utilisateur
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
@@ -70,7 +70,7 @@ export default function SubmissionDetailsPage() {
     const data = {
       student: submission.studentName,
       email: submission.studentEmail,
-      exercise: submission.exerciseTitle || 'Exercice',
+      exercise: submission.exerciseTitle || t('exerciseLabel'),
       score: submission.score,
       maxScore: submission.maxScore,
       submittedAt: submission.submittedAt,
@@ -87,11 +87,11 @@ export default function SubmissionDetailsPage() {
     a.download = `soumission-${submission.studentName}-${submission.exerciseTitle || 'exercice'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('✅ Soumission téléchargée');
+    toast.success(t('downloadSuccess'));
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Non disponible';
+    if (!dateString) return t('notAvailable');
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('fr-FR', {
@@ -102,15 +102,15 @@ export default function SubmissionDetailsPage() {
         minute: '2-digit'
       });
     } catch {
-      return 'Date invalide';
+      return t('invalidDate');
     }
   };
 
   const calculateTimeSpent = () => {
-    if (!submission?.timeSpent) return 'Non enregistré';
+    if (!submission?.timeSpent) return t('timeNotRecorded');
     const minutes = Math.floor(submission.timeSpent / 60);
     const seconds = submission.timeSpent % 60;
-    return `${minutes} min ${seconds} sec`;
+    return t('timeFormat', { minutes, seconds });
   };
 
   const getScoreColor = (score?: number, maxScore?: number) => {
@@ -126,7 +126,7 @@ export default function SubmissionDetailsPage() {
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">{t('loading')}</p>
         </div>
       </div>
     );
@@ -137,7 +137,7 @@ export default function SubmissionDetailsPage() {
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de la soumission...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">{t('loadingSubmission')}</p>
         </div>
       </div>
     );
@@ -148,23 +148,23 @@ export default function SubmissionDetailsPage() {
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center max-w-md p-6">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Soumission non trouvée</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('notFound.title')}</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {submissionError?.message || 'Cette soumission n\'existe pas ou vous n\'y avez pas accès.'}
+            {submissionError?.message || t('notFound.message')}
           </p>
           <div className="space-y-3">
             <button
               onClick={() => router.push('/etudashboard/submissions')}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Retour à mes soumissions
+              {t('backToSubmissions')}
             </button>
             <button
               onClick={() => refetchSubmission()}
               className="w-full px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
-              Réessayer
+              {t('retry')}
             </button>
           </div>
         </div>
@@ -173,8 +173,8 @@ export default function SubmissionDetailsPage() {
   }
 
   const displayName = `${user.firstName} ${user.lastName}`;
-  const userLevel = user.specialization || user.level || 'Étudiant';
-  const exerciseTitle = submission.exerciseTitle || 'Exercice';
+  const userLevel = user.specialization || user.grade || t('studentDefault');
+  const exerciseTitle = submission.exerciseTitle || t('exerciseLabel');
 
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -186,28 +186,25 @@ export default function SubmissionDetailsPage() {
       />
 
       <main className="flex-1 p-4 md:p-8 lg:ml-64">
-        {/* En-tête */}
         <div className="mb-8">
           <button
             onClick={() => router.push('/etudashboard/submissions')}
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 transition-colors"
           >
             <ArrowLeft size={20} />
-            <span>Retour à mes soumissions</span>
+            <span>{t('backToSubmissions')}</span>
           </button>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Détails de la soumission
+                  {t('title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
                   {exerciseTitle}
                 </p>
               </div>
-
-
 
               {submission.exerciseId && (
                 <button
@@ -215,7 +212,7 @@ export default function SubmissionDetailsPage() {
                   className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2 text-sm"
                 >
                   <Eye size={16} />
-                  Voir l'exercice
+                  {t('viewExercise')}
                 </button>
               )}
             </div>
@@ -223,12 +220,10 @@ export default function SubmissionDetailsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Colonne gauche : Contenu principal */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Statut et score */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                Statut de la soumission
+                {t('status.title')}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -238,25 +233,25 @@ export default function SubmissionDetailsPage() {
                       {submission.score !== undefined ? (
                         <>
                           <CheckCircle className="w-5 h-5 text-green-500" />
-                          <span className="font-medium text-green-600">Noté</span>
+                          <span className="font-medium text-green-600">{t('status.graded')}</span>
                         </>
                       ) : (
                         <>
                           <Clock className="w-5 h-5 text-yellow-500" />
-                          <span className="font-medium text-yellow-600">En attente</span>
+                          <span className="font-medium text-yellow-600">{t('status.pending')}</span>
                         </>
                       )}
                     </div>
                     {submission.gradedAt && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Corrigé le {formatDate(submission.gradedAt)}
-                        {submission.gradedBy && ` par ${submission.gradedBy}`}
+                        {t('status.gradedOn', { date: formatDate(submission.gradedAt) })}
+                        {submission.gradedBy && t('status.gradedBy', { name: submission.gradedBy })}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <div className="text-sm text-gray-500 mb-1">Score</div>
+                    <div className="text-sm text-gray-500 mb-1">{t('score')}</div>
                     <div className="flex items-baseline gap-2">
                       <span className={`text-3xl font-bold ${getScoreColor(submission.score, submission.maxScore)}`}>
                         {submission.score !== undefined ? submission.score : '--'}
@@ -276,7 +271,7 @@ export default function SubmissionDetailsPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Calendar className="w-5 h-5 text-blue-500" />
-                      <span className="font-medium text-gray-700">Soumis le</span>
+                      <span className="font-medium text-gray-700">{t('submittedOn')}</span>
                     </div>
                     <p className="text-gray-800 dark:text-gray-200">
                       {formatDate(submission.submittedAt)}
@@ -286,7 +281,7 @@ export default function SubmissionDetailsPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Timer className="w-5 h-5 text-blue-500" />
-                      <span className="font-medium text-gray-700">Temps passé</span>
+                      <span className="font-medium text-gray-700">{t('timeSpent')}</span>
                     </div>
                     <p className="text-gray-800 dark:text-gray-200">
                       {calculateTimeSpent()}
@@ -296,12 +291,11 @@ export default function SubmissionDetailsPage() {
               </div>
             </div>
 
-            {/* Feedback */}
             {submission.feedback && (
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-blue-500" />
-                  Feedback du correcteur
+                  {t('feedback.title')}
                 </h3>
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
@@ -311,10 +305,9 @@ export default function SubmissionDetailsPage() {
               </div>
             )}
 
-            {/* Réponses */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                Réponses soumises
+                {t('answers.title')}
               </h3>
 
               {submission.answers && submission.answers.length > 0 ? (
@@ -328,10 +321,10 @@ export default function SubmissionDetailsPage() {
                           </div>
                           <div>
                             <span className="font-medium text-gray-800 dark:text-gray-200">
-                              Question {index + 1}
+                              {t('answers.question', { number: index + 1 })}
                             </span>
                             <div className="text-sm text-gray-600 dark:text-gray-400">
-                              ID: {answer.questionId}
+                              {t('answers.id', { id: answer.questionId })}
                             </div>
                           </div>
                         </div>
@@ -344,17 +337,17 @@ export default function SubmissionDetailsPage() {
                       </div>
 
                       <div className="mb-3">
-                        <div className="text-sm text-gray-500 mb-1">Votre réponse :</div>
+                        <div className="text-sm text-gray-500 mb-1">{t('answers.yourAnswer')}</div>
                         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
                           <p className="text-gray-800 dark:text-gray-200 whitespace-pre-line">
-                            {answer.answer || 'Aucune réponse'}
+                            {answer.answer || t('answers.noAnswer')}
                           </p>
                         </div>
                       </div>
 
                       {answer.feedback && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
-                          <div className="text-sm text-gray-500 mb-1">Commentaire :</div>
+                          <div className="text-sm text-gray-500 mb-1">{t('feedback.comment')}</div>
                           <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
                             <p className="text-gray-700 dark:text-gray-300 text-sm">
                               {answer.feedback}
@@ -369,26 +362,24 @@ export default function SubmissionDetailsPage() {
                 <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                   <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400">
-                    Aucune réponse disponible
+                    {t('answers.noAnswers')}
                   </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Colonne droite : Informations */}
           <div className="space-y-6">
-            {/* Informations étudiant */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                Informations étudiant
+                {t('studentInfo.title')}
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <User className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-500">Nom</span>
+                    <span className="text-sm text-gray-500">{t('studentInfo.name')}</span>
                   </div>
                   <p className="font-medium text-gray-800 dark:text-gray-200">
                     {submission.studentName}
@@ -399,7 +390,7 @@ export default function SubmissionDetailsPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Mail className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-500">Email</span>
+                      <span className="text-sm text-gray-500">{t('studentInfo.email')}</span>
                     </div>
                     <p className="text-gray-800 dark:text-gray-200">
                       {submission.studentEmail}
@@ -410,7 +401,7 @@ export default function SubmissionDetailsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Award className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-500">ID étudiant</span>
+                    <span className="text-sm text-gray-500">{t('studentInfo.id')}</span>
                   </div>
                   <p className="text-gray-800 dark:text-gray-200 font-mono text-sm">
                     {submission.studentId}
@@ -418,8 +409,6 @@ export default function SubmissionDetailsPage() {
                 </div>
               </div>
             </div>
-
-
 
           </div>
         </div>

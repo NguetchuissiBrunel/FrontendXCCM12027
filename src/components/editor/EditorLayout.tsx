@@ -20,6 +20,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Editor } from '@tiptap/react';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -80,6 +81,7 @@ type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet'
  *   - Right: IconBar (64px fixed) + Panel (288px when open)
  */
 export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
+  const t = useTranslations('editor');
   // State for active right panel
   const [activePanel, setActivePanel] = useState<RightPanelType>('structure');
   const [showSidebar, setShowSidebar] = useState(true);
@@ -174,13 +176,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   // Handle initialization from query params
   useEffect(() => {
-    const isNew = searchParams.get('new') === 'true';
-    const courseIdParam = searchParams.get('courseId');
+    const isNew = searchParams?.get('new') === 'true';
+    const courseIdParam = searchParams?.get('courseId');
 
     if (isNew) {
-      const title = searchParams.get('title');
-      const category = searchParams.get('category');
-      const description = searchParams.get('description');
+      const title = searchParams?.get('title');
+      const category = searchParams?.get('category');
+      const description = searchParams?.get('description');
 
       if (title) setCourseTitle(title);
       if (category) setCourseCategory(category);
@@ -294,7 +296,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       setExercises(mapped);
     } catch (error) {
       console.error('Error loading exercises:', error);
-      toast.error('Erreur de chargement des exercices');
+      toast.error(t('toast.exerciseLoadError'));
     } finally {
       setExerciseLoading(false);
     }
@@ -308,7 +310,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       setSubmissions(subs);
     } catch (error) {
       console.error('Error loading submissions:', error);
-      toast.error('Erreur de chargement des soumissions');
+      toast.error(t('toast.submissionLoadError'));
     } finally {
       setGradingLoading(false);
     }
@@ -325,7 +327,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   // ---------- Exercise handlers (create / edit / save / delete / grade) ----------
   const handleCreateExercise = () => {
     if (!currentCourseId) {
-      toast.error('Créez ou chargez un cours avant de créer un exercice.');
+      toast.error(t('toast.createBeforeExercise'));
       return;
     }
 
@@ -359,7 +361,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           maxScore: exercise.maxScore,
           dueDate: exercise.dueDate,
         });
-        toast.success('Exercice mis à jour');
+        toast.success(t('toast.exerciseUpdated'));
       } else {
         if (!currentCourseId) throw new Error('Course ID manquant');
         await EnseignantService.createExercise(currentCourseId, {
@@ -368,7 +370,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           maxScore: exercise.maxScore,
           dueDate: exercise.dueDate,
         });
-        toast.success('Exercice créé');
+        toast.success(t('toast.exerciseCreated'));
       }
 
       setEditingExercise(null);
@@ -376,23 +378,23 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       calculateExerciseStats();
     } catch (error) {
       console.error('Erreur saving exercise', error);
-      toast.error('Erreur lors de l\'enregistrement de l\'exercice');
+      toast.error(t('toast.exerciseSaveError'));
     } finally {
       setExerciseLoading(false);
     }
   };
 
   const handleDeleteExercise = async (exerciseId: number) => {
-    if (!confirm('Voulez-vous vraiment supprimer cet exercice ?')) return;
+    if (!confirm(t('toast.exerciseDeleteConfirm'))) return;
     try {
       setExerciseLoading(true);
       await EnseignantService.deleteExercise(exerciseId);
-      toast.success('Exercice supprimé');
+      toast.success(t('toast.exerciseDeleted'));
       await loadExercises();
       calculateExerciseStats();
     } catch (error) {
       console.error('Erreur suppression exercice', error);
-      toast.error('Impossible de supprimer l\'exercice');
+      toast.error(t('toast.exerciseDeleteError'));
     } finally {
       setExerciseLoading(false);
     }
@@ -402,13 +404,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     try {
       setGradingLoading(true);
       await EnseignantService.gradeSubmission(submissionId, { score, feedback });
-      toast.success('Soumission notée');
+      toast.success(t('toast.gradeSuccess'));
       if (selectedExercise?.id) await loadSubmissions(selectedExercise.id);
       await loadExercises();
       calculateExerciseStats();
     } catch (error) {
       console.error('Erreur notation', error);
-      toast.error('Échec de la notation');
+      toast.error(t('toast.gradeError'));
     } finally {
       setGradingLoading(false);
     }
@@ -423,7 +425,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     const element = editorDom.querySelector(`[data-id="${itemId}"]`);
 
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus the editor to ensure proper interaction
+      editorInstance.view.focus();
+      
+      // Scroll element to the beginning of viewport (top alignment)
+      // Using 'start' instead of 'center' for accurate positioning at content start
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -500,12 +507,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   const handleSave = async (publish: boolean = false, silent: boolean = false) => {
     if (!editorInstance) {
-      if (!silent) toast.error("L'éditeur n'est pas encore chargé.");
+      if (!silent) toast.error(t('toast.editorNotLoaded'));
       return;
     }
 
     if (!user) {
-      if (!silent) toast.error("Vous devez être connecté pour sauvegarder votre cours.");
+      if (!silent) toast.error(t('toast.notLoggedIn'));
       return;
     }
 
@@ -529,7 +536,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           await CourseControllerService.updateCourseStatus(currentCourseId, 'PUBLISHED');
         }
 
-        if (!silent) toast.success(publish ? "Cours publié avec succès !" : "Cours mis à jour !");
+        if (!silent) toast.success(publish ? t('toast.publishSuccess') : t('toast.updateSuccess'));
       } else {
         // Create new course
         const createData: CourseCreateRequest = {
@@ -554,7 +561,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             await CourseControllerService.updateCourseStatus(createdCourseId, 'PUBLISHED');
           }
 
-          if (!silent) toast.success(publish ? "Cours publié avec succès !" : "Cours créé et sauvegardé !");
+          if (!silent) toast.success(publish ? t('toast.publishSuccess') : t('toast.createSuccess'));
         } else {
           throw new Error("Impossible de récupérer l'ID du cours créé.");
         }
@@ -562,7 +569,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     } catch (error: any) {
       console.error("Erreur sauvegarde :", error);
       const message = error?.response?.data?.message || error?.message || "Erreur de communication avec le serveur.";
-      if (!silent) toast.error(`Échec de la sauvegarde : ${message}`);
+      if (!silent) toast.error(`${t('toast.saveError')} : ${message}`);
     }
   };
 
@@ -589,7 +596,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       editorInstance.commands.setContent('');
     }
     setIsCreateModalOpen(false);
-    toast.success("Nouveau cours initialisé !");
+    toast.success(t('toast.courseInit'));
   };
 
   /**
@@ -671,16 +678,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         isOpen={confirmConfig.isOpen}
         onClose={() => setConfirmConfig({ isOpen: false, type: null })}
         onConfirm={handleConfirmedAction}
-        title={confirmConfig.type === 'publish' ? 'Publier le cours' : 'Sauvegarder le cours'}
+        title={confirmConfig.type === 'publish' ? t('confirm.publishTitle') : t('confirm.saveTitle')}
         message={confirmConfig.type === 'publish'
-          ? 'Êtes-vous sûr de vouloir publier ce cours ? Il sera visible par tous les étudiants.'
-          : 'Voulez-vous enregistrer les modifications actuelles ?'
+          ? t('confirm.publishMessage')
+          : t('confirm.saveMessage')
         }
-        confirmText={confirmConfig.type === 'publish' ? 'Publier maintenant' : 'Enregistrer'}
+        confirmText={confirmConfig.type === 'publish' ? t('confirm.publishConfirm') : t('confirm.saveConfirm')}
         type={confirmConfig.type === 'publish' ? 'info' : 'warning'}
       />
       {/* Navbar at the top */}
-      <nav className="h-16 flex-none z-10">
+      <nav id="navbar" className="h-16 flex-none z-10">
         <Navbar />
       </nav>
 
@@ -688,6 +695,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Sidebar for TOC */}
         <aside
+          id="sidebar-toc"
           className={`${showSidebar ? 'w-80' : 'w-0'
             } flex-none bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out relative z-0 print:hidden`}
         >
@@ -722,16 +730,17 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
         {/* Toggle Sidebar Button */}
         <button
+          id="btn-toggle-toc"
           onClick={() => setShowSidebar(!showSidebar)}
           className={`absolute top-24 z-20 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'
             }`}
-          title={showSidebar ? 'Masquer la table des matières' : 'Afficher la table des matières'}
+          title={showSidebar ? t('toolbar.hideToc') : t('toolbar.showToc')}
         >
           {showSidebar ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         </button>
 
         {/* Main Editor Area */}
-        <main className="flex-1 flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900 relative z-0 overflow-hidden">
+        <main id="main-editor-container" className="flex-1 flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900 relative z-0 overflow-hidden">
           <MainEditor
             initialContent=""
             onContentChange={handleEditorChange}
@@ -753,28 +762,28 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         {/* RIGHT SECTION - Unified Sidebar + Panel Area */}
         <div className="flex print:hidden relative">
           {/* Main Sidebar - Unified */}
-          <div className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-3 z-20">
+          <div id="right-icon-bar" className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-3 z-20">
             <IconButton
-              icon={<FaList />}
-              label="Structure"
+              icon={<FaList id="icon-structure" />}
+              label={t('panels.structure')}
               panelType="structure"
               colorClass="text-purple-600 dark:text-purple-400"
             />
             <IconButton
-              icon={<FaInfo />}
-              label="Infos"
+              icon={<FaInfo id="icon-info" />}
+              label={t('panels.info')}
               panelType="info"
               colorClass="text-blue-600 dark:text-blue-400"
             />
             <IconButton
-              icon={<FaEye />}
-              label="Aperçu PDF"
+              icon={<FaEye id="icon-preview" />}
+              label={t('panels.pdfPreview')}
               panelType="preview"
               colorClass="text-cyan-600 dark:text-cyan-400"
             />
             <IconButton
-              icon={<FaComments />}
-              label="Appréciations"
+              icon={<FaComments id="icon-feedback" />}
+              label={t('panels.feedback')}
               panelType="feedback"
               colorClass="text-green-600 dark:text-green-400"
             />
@@ -782,36 +791,36 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             <div className="flex-grow" />
 
             <IconButton
-              icon={<FaFolderOpen />}
-              label="Mes Cours"
+              icon={<FaFolderOpen id="icon-my-courses" />}
+              label={t('panels.myCourses')}
               panelType="author"
               colorClass="text-orange-600 dark:text-orange-400"
             />
             <IconButton
-              icon={<FaTasks />}
-              label="Exercices"
+              icon={<FaTasks id="icon-exercises" />}
+              label={t('panels.exercises')}
               panelType="exercises"
               badge={exercises.length}
               colorClass="text-blue-600 dark:text-blue-400"
               disabled={!currentCourseId}
             />
             <IconButton
-              icon={<FaGraduationCap />}
-              label="Correction"
+              icon={<FaGraduationCap id="icon-grading" />}
+              label={t('panels.grading')}
               panelType="grading"
               badge={exerciseStats.pendingGrading}
               colorClass="text-indigo-600 dark:text-indigo-400"
               disabled={!currentCourseId}
             />
             <IconButton
-              icon={<FaChalkboardTeacher />}
-              label="Travaux Dirigés"
+              icon={<FaChalkboardTeacher id="icon-workshops" />}
+              label={t('panels.workshops')}
               panelType="worksheet"
               colorClass="text-indigo-600 dark:text-indigo-400"
             />
             <IconButton
-              icon={<FaCog />}
-              label="Propriétés"
+              icon={<FaCog id="icon-settings" />}
+              label={t('panels.properties')}
               panelType="properties"
               colorClass="text-gray-600 dark:text-gray-400"
             />
@@ -820,16 +829,18 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
             {/* Bottom Actions */}
             <button
+              id="btn-save-course"
               onClick={() => triggerSaveConfirm(false)}
               className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="Sauvegarder"
+              title={t('toolbar.save')}
             >
               <FaSave className="text-lg" />
             </button>
             <button
+              id="btn-publish-course"
               onClick={() => triggerSaveConfirm(true)}
               className="flex h-10 w-10 items-center justify-center rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 transition-colors"
-              title="Publier"
+              title={t('toolbar.publish')}
             >
               <FaPaperPlane className="text-lg" />
             </button>
@@ -858,7 +869,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {activePanel === 'info' && (
               <div className="p-4 h-full">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Infos du cours</h2>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('info.panelTitle')}</h2>
                   <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     <FaTimes />
                   </button>
@@ -866,7 +877,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                      Titre du cours
+                      {t('info.courseTitle')}
                     </label>
                     <input
                       type="text"
@@ -878,7 +889,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                      Catégorie
+                      {t('info.category')}
                     </label>
                     <select
                       className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
@@ -893,22 +904,22 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                         }
                       }}
                     >
-                      <option value="Informatique">Informatique</option>
-                      <option value="Mathématiques">Mathématiques</option>
-                      <option value="Physique">Physique</option>
-                      <option value="Langues">Langues</option>
-                      <option value="Autre">Autre</option>
+                      <option value="Informatique">{t('info.categories.computer')}</option>
+                      <option value="Mathématiques">{t('info.categories.mathematics')}</option>
+                      <option value="Physique">{t('info.categories.physics')}</option>
+                      <option value="Langues">{t('info.categories.languages')}</option>
+                      <option value="Autre">{t('info.categories.other')}</option>
                     </select>
                   </div>
 
                   {!["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) && (
                     <div className="animate-in slide-in-from-top-1 duration-200">
                       <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                        Nom de la catégorie
+                        {t('info.categoryName')}
                       </label>
                       <input
                         type="text"
-                        placeholder="Saisissez une catégorie..."
+                        placeholder={t('info.categoryPlaceholder')}
                         className="w-full text-sm py-2 px-3 border-b-2 border-purple-400 bg-purple-50/30 dark:bg-purple-900/10 outline-none focus:border-purple-600 transition-colors"
                         value={courseCategory === "Autre" ? customCategory : courseCategory}
                         onChange={(e) => {
@@ -922,26 +933,26 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                      Description
+                      {t('info.description')}
                     </label>
                     <textarea
                       rows={4}
                       className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors resize-none"
                       value={courseDescription}
                       onChange={(e) => setCourseDescription(e.target.value)}
-                      placeholder="Résumé du cours..."
+                      placeholder={t('info.descriptionPlaceholder')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-                      Image de couverture
+                      {t('info.coverImage')}
                     </label>
                     <ImageUploader
                       currentImageUrl={courseImage}
                       onUploadComplete={(url) => setCourseImage(url)}
                       onUploadError={(err) => toast.error(err)}
-                      placeholder="Changer l'image de couverture"
+                      placeholder={t('info.coverImagePlaceholder')}
                       className="mt-1"
                     />
                   </div>
@@ -949,7 +960,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                   {currentCourseId && (
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-                        ID du cours
+                        {t('info.courseId')}
                       </div>
                       <div className="text-sm font-mono bg-gray-100 dark:bg-gray-700 p-2 rounded">
                         {currentCourseId}
@@ -962,7 +973,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       onClick={() => triggerSaveConfirm(false)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
                     >
-                      <FaSave /> Sauvegarder les infos
+                      <FaSave /> {t('info.saveInfos')}
                     </button>
                   </div>
                 </div>
@@ -973,7 +984,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {activePanel === 'feedback' && (
               <div className="p-4 h-full">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Appréciations</h2>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('feedback.panelTitle')}</h2>
                   <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     <FaTimes />
                   </button>
@@ -981,8 +992,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 <div className="text-sm text-gray-600 dark:text-gray-300">
                   <div className="text-center py-8">
                     <FaComments className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-500">Section en développement</p>
-                    <p className="text-xs text-gray-400 mt-2">Les commentaires et questions arrivent bientôt</p>
+                    <p className="text-gray-500">{t('feedback.comingSoon')}</p>
+                    <p className="text-xs text-gray-400 mt-2">{t('feedback.comingSoonDetail')}</p>
                   </div>
                 </div>
               </div>
@@ -993,7 +1004,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               <MyCoursesPanel
                 onClose={() => setActivePanel(null)}
                 onLoadCourse={(content, courseId, title, category, description, photoUrl) => {
-                  if (editorInstance) {
+                  if (editorInstance && content) {
                     editorInstance.commands.setContent(content);
                     setCurrentCourseId(Number(courseId));
                     setCourseTitle(title);
@@ -1012,7 +1023,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {activePanel === 'worksheet' && (
               <div className="p-4 h-full">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Travaux Dirigés</h2>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('workshops.panelTitle')}</h2>
                   <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     <FaTimes />
                   </button>
@@ -1020,9 +1031,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 <div className="text-sm text-gray-600 dark:text-gray-300">
                   <div className="text-center py-8">
                     <FaChalkboardTeacher className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-500">Gestion des exercices</p>
+                    <p className="text-gray-500">{t('workshops.description')}</p>
                     <p className="text-xs text-gray-400 mt-2">
-                      Utilisez le panneau "Exercices" pour créer et gérer les travaux pratiques
+                      {t('workshops.hint')}
                     </p>
                   </div>
                 </div>
@@ -1033,7 +1044,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             {activePanel === 'properties' && (
               <div className="p-4 h-full">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Propriétés</h2>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('properties.panelTitle')}</h2>
                   <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     <FaTimes />
                   </button>
@@ -1041,8 +1052,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 <div className="text-sm text-gray-600 dark:text-gray-300">
                   <div className="text-center py-8">
                     <FaCog className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-500">Paramètres avancés</p>
-                    <p className="text-xs text-gray-400 mt-2">Configuration du cours</p>
+                    <p className="text-gray-500">{t('properties.description')}</p>
+                    <p className="text-xs text-gray-400 mt-2">{t('properties.hint')}</p>
                   </div>
                 </div>
               </div>
@@ -1054,7 +1065,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <FaTasks /> Gestion des exercices
+                      <FaTasks /> {t('exercises.panelTitle')}
                     </h2>
                     <button
                       onClick={() => setActivePanel(null)}
@@ -1068,7 +1079,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     <div className="text-center py-8">
                       <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        Chargez ou créez un cours pour gérer les exercices
+                        {t('exercises.noCourse')}
                       </p>
                     </div>
                   ) : editingExercise ? (
@@ -1076,40 +1087,40 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       {/* Exercise Editor Component */}
                       <div className="p-2">
                         <h3 className="font-medium mb-4 dark:text-white">
-                          {editingExercise.id ? 'Modifier l\'exercice' : 'Nouvel exercice'}
+                          {editingExercise.id ? t('exercises.editTitle') : t('exercises.newTitle')}
                         </h3>
 
                         <div className="space-y-4">
                           <div>
                             <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                              Titre
+                              {t('exercises.titleLabel')}
                             </label>
                             <input
                               type="text"
                               value={editingExercise.title}
                               onChange={(e) => setEditingExercise({ ...editingExercise, title: e.target.value })}
                               className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-                              placeholder="Titre de l'exercice"
+                              placeholder={t('exercises.titlePlaceholder')}
                             />
                           </div>
 
                           <div>
                             <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                              Description
+                              {t('exercises.descLabel')}
                             </label>
                             <textarea
                               value={editingExercise.description}
                               onChange={(e) => setEditingExercise({ ...editingExercise, description: e.target.value })}
                               className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                               rows={3}
-                              placeholder="Instructions..."
+                              placeholder={t('exercises.descPlaceholder')}
                             />
                           </div>
 
                           <div className="flex gap-4">
                             <div className="flex-1">
                               <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                                Score max
+                                {t('exercises.maxScore')}
                               </label>
                               <input
                                 type="number"
@@ -1121,15 +1132,15 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
                             <div className="flex-1">
                               <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                                Statut
+                                {t('exercises.status')}
                               </label>
                               <select
                                 value={editingExercise.status}
                                 onChange={(e) => setEditingExercise({ ...editingExercise, status: e.target.value as any })}
                                 className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                               >
-                                <option value="DRAFT">Brouillon</option>
-                                <option value="PUBLISHED">Publié</option>
+                                <option value="DRAFT">{t('exercises.draft')}</option>
+                                <option value="PUBLISHED">{t('exercises.published')}</option>
                               </select>
                             </div>
                           </div>
@@ -1139,13 +1150,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                               onClick={() => setEditingExercise(null)}
                               className="flex-1 px-4 py-2 border rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
                             >
-                              Annuler
+                              {t('exercises.cancel')}
                             </button>
                             <button
                               onClick={() => handleSaveExercise(editingExercise)}
                               className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                             >
-                              {editingExercise.id ? 'Mettre à jour' : 'Créer'}
+                              {editingExercise.id ? t('exercises.update') : t('exercises.create')}
                             </button>
                           </div>
                         </div>
@@ -1172,7 +1183,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                         onClick={handleCreateExercise}
                         className="w-full mb-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2"
                       >
-                        <FaPlus /> Nouvel exercice
+                        <FaPlus /> {t('exercises.newExercise')}
                       </button>
 
                       {exerciseLoading ? (
@@ -1199,7 +1210,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                   <div>
                                     <h4 className="font-medium dark:text-white">{exercise.title}</h4>
                                     <p className="text-xs text-gray-500 truncate">
-                                      {exercise.description || 'Pas de description'}
+                                      {exercise.description || t('exercises.noDescription')}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
                                       <span className={`text-xs px-2 py-1 rounded-full ${exercise.status === 'PUBLISHED'
@@ -1209,7 +1220,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                         {exercise.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
                                       </span>
                                       <span className="text-xs text-gray-500">
-                                        Échéance: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
+                                        {t('exercises.deadline')}: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : t('exercises.deadlineNone')}
                                       </span>
                                     </div>
                                   </div>
@@ -1247,7 +1258,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <CheckSquare size={16} /> Correction des exercices
+                      <CheckSquare size={16} /> {t('gradingPanel.panelTitle')}
                     </h2>
                     <button
                       onClick={() => setActivePanel(null)}
@@ -1261,7 +1272,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                     <div className="text-center py-8">
                       <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        Chargez ou créez un cours pour corriger les exercices
+                        {t('gradingPanel.noCourse')}
                       </p>
                     </div>
                   ) : (
@@ -1278,7 +1289,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                 onClick={() => setSelectedExercise(null)}
                                 className="text-sm text-gray-500 hover:text-gray-700"
                               >
-                                ← Retour
+                                {t('gradingPanel.back')}
                               </button>
                             </div>
 
@@ -1304,7 +1315,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                           {submission.studentName}
                                         </h4>
                                         <p className="text-xs text-gray-500">
-                                          Soumis le {new Date(submission.submittedAt).toLocaleDateString()}
+                                          {t('gradingPanel.submittedOn')} {new Date(submission.submittedAt).toLocaleDateString()}
                                         </p>
                                       </div>
                                       <span className={`text-sm font-medium ${submission.graded
@@ -1361,7 +1372,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                       ) : (
                         <>
                           <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                            Sélectionnez un exercice pour voir les soumissions
+                            {t('gradingPanel.selectExercise')}
                           </p>
 
                           {exerciseLoading ? (
@@ -1387,7 +1398,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                                       <div>
                                         <h4 className="font-medium dark:text-white">{exercise.title}</h4>
                                         <p className="text-xs text-gray-500">
-                                          Échéance: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
+                                          {t('exercises.deadline')}: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
                                         </p>
                                       </div>
                                       <div className="text-right">

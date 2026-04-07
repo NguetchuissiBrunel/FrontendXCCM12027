@@ -2,12 +2,13 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Exercise, QuestionStat, GradeDistribution } from '@/types/exercise';
 import { useExerciseStats } from '@/hooks/useExercise';
-import { 
-  BarChart3, 
-  Users, 
-  TrendingUp, 
+import {
+  BarChart3,
+  Users,
+  TrendingUp,
   Clock,
   Award,
   CheckCircle,
@@ -32,6 +33,7 @@ interface StatsData {
 }
 
 export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
+  const t = useTranslations('exercises.stats');
   const { stats, isLoading, error, refetch } = useExerciseStats(exerciseId);
 
   if (isLoading) {
@@ -39,16 +41,16 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            Statistiques de l'exercice
+            {t('title')}
           </h3>
           <div className="flex items-center gap-2">
             <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Chargement...
+              {t('loading')}
             </span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_: unknown, i: number) => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 animate-pulse">
@@ -65,25 +67,25 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            Statistiques de l'exercice
+            {t('title')}
           </h3>
         </div>
-        
+
         <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 border border-red-200 dark:border-red-800">
           <div className="flex items-center gap-3">
             <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
             <div>
               <h4 className="font-medium text-red-800 dark:text-red-300 mb-1">
-                Impossible de charger les statistiques
+                {t('loadError')}
               </h4>
               <p className="text-sm text-red-700 dark:text-red-400">
-                {error?.message || 'Les statistiques ne sont pas disponibles pour le moment.'}
+                {error?.message || t('unavailable')}
               </p>
               <button
                 onClick={refetch}
                 className="mt-3 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
               >
-                Réessayer
+                {t('retry')}
               </button>
             </div>
           </div>
@@ -106,12 +108,12 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-          Statistiques de l'exercice
+          {t('title')}
         </h3>
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-blue-500" />
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            Dernière mise à jour: Maintenant
+            {t('lastUpdate')}
           </span>
         </div>
       </div>
@@ -127,11 +129,11 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
               <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
                 {statsData.submissionCount}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Soumissions</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('submissions')}</div>
             </div>
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Taux de participation
+            {t('participationRate')}
           </div>
         </div>
 
@@ -144,11 +146,11 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
               <div className={`text-2xl font-bold ${getPerformanceColor(statsData.averageScore, statsData.maxPossibleScore)}`}>
                 {statsData.averageScore.toFixed(1)}/{statsData.maxPossibleScore}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Score moyen</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('averageScore')}</div>
             </div>
           </div>
           <div className="text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Performance: </span>
+            <span className="text-gray-600 dark:text-gray-400">{t('performance')}: </span>
             <span className={`font-medium ${getPerformanceColor(statsData.averageScore, statsData.maxPossibleScore)}`}>
               {((statsData.averageScore / statsData.maxPossibleScore) * 100).toFixed(1)}%
             </span>
@@ -164,11 +166,11 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
               <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
                 {statsData.averageTimeSpent}min
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Temps moyen</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('averageTime')}</div>
             </div>
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Temps par étudiant
+            {t('timePerStudent')}
           </div>
         </div>
 
@@ -181,13 +183,13 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
               <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
                 {statsData.completionRate}%
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Taux de complétion</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('completionRate')}</div>
             </div>
           </div>
           <div className="text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Progression: </span>
+            <span className="text-gray-600 dark:text-gray-400">{t('progression')}: </span>
             <span className="font-medium text-green-600 dark:text-green-400">
-              {statsData.completionRate >= 70 ? 'Bon' : 'À améliorer'}
+              {statsData.completionRate >= 70 ? t('good') : t('toImprove')}
             </span>
           </div>
         </div>
@@ -197,13 +199,13 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
       {statsData.gradeDistribution && statsData.gradeDistribution.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-            Distribution des notes
+            {t('gradeDistribution')}
           </h4>
-          
+
           <div className="space-y-4">
             {statsData.gradeDistribution.map((item: GradeDistribution, index: number) => {
               const percentage = item.percentage;
-              
+
               return (
                 <div key={index} className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -211,11 +213,11 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
                       {item.gradeRange}
                     </span>
                     <span className="text-gray-600 dark:text-gray-400">
-                      {item.count} étudiant{item.count !== 1 ? 's' : ''} ({percentage.toFixed(1)}%)
+                      {item.count} {item.count !== 1 ? t('students') : t('student')} ({percentage.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div 
+                    <div
                       className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700"
                       style={{ width: `${percentage}%` }}
                     />
@@ -231,13 +233,13 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
       {statsData.questionStats && statsData.questionStats.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-            Performance par question
+            {t('questionPerformance')}
           </h4>
-          
+
           <div className="space-y-4">
             {statsData.questionStats.map((questionStat: QuestionStat, index: number) => {
               const commonDifficulties = questionStat.commonWrongAnswers.slice(0, 3);
-              
+
               return (
                 <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
@@ -246,29 +248,29 @@ export default function ExerciseStats({ exerciseId }: ExerciseStatsProps) {
                         Q{index + 1}: {questionStat.text}
                       </h5>
                       <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {questionStat.type === 'TEXT' ? 'Réponse libre' :
-                         questionStat.type === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                        {questionStat.type === 'TEXT' ? t('freeAnswer') :
+                          questionStat.type === 'MULTIPLE_CHOICE' ? t('multipleChoice') : t('code')}
                       </div>
                     </div>
                     <div className={`text-lg font-bold ${getPerformanceColor(questionStat.averageScore, 1)}`}>
                       {(questionStat.correctRate * 100).toFixed(1)}%
                     </div>
                   </div>
-                  
+
                   <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Taux de réussite: {(questionStat.correctRate * 100).toFixed(1)}%
+                    {t('successRate')}: {(questionStat.correctRate * 100).toFixed(1)}%
                   </div>
-                  
+
                   {commonDifficulties.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Difficultés courantes:
+                        {t('commonDifficulties')}
                       </div>
                       <ul className="space-y-1">
                         {commonDifficulties.map((difficulty: { answer: string; count: number }, i: number) => (
                           <li key={i} className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                             <Target className="w-3 h-3 text-yellow-500" />
-                            "{difficulty.answer}" ({difficulty.count} étudiant{difficulty.count !== 1 ? 's' : ''})
+                            "{difficulty.answer}" ({difficulty.count} {difficulty.count !== 1 ? t('students') : t('student')})
                           </li>
                         ))}
                       </ul>

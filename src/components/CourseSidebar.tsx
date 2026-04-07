@@ -15,6 +15,7 @@ import {
   Target
 } from 'lucide-react';
 import { CourseData, Section, Chapter, Paragraph } from '@/types/course';
+import { useTranslations } from 'next-intl';
 
 interface SearchResult {
   type: 'section' | 'chapter' | 'paragraph';
@@ -49,6 +50,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   onDownloadRequest,
   isEnrolled
 }) => {
+  const t = useTranslations('course.sidebar');
   const [expandedParts, setExpandedParts] = useState<{ [key: number]: boolean }>({});
   const [expandedChapters, setExpandedChapters] = useState<{ [key: string]: boolean }>({});
   const [activeParagraph, setActiveParagraph] = useState<string>('');
@@ -212,7 +214,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
       <div className="p-4 mt-16 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-900 to-purple-500 text-white">
         <h2 className="text-lg font-bold flex items-center">
           <BookOpen className="h-5 w-5 mr-2" />
-          SOMMAIRE
+          {t('summary')}
         </h2>
       </div>
 
@@ -221,7 +223,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
         <div className="relative">
           <input
             type="text"
-            placeholder="Rechercher..."
+            placeholder={t('search')}
             className="w-full p-2 pl-8 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             value={searchTerm}
             onChange={handleSearch}
@@ -353,7 +355,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <div className="ml-4 p-2 text-xs text-gray-500 dark:text-gray-400">Pas de contenu disponible</div>
+                    <div className="ml-4 p-2 text-xs text-gray-500 dark:text-gray-400">{t('noContent')}</div>
                   )}
                 </div>
               )}
@@ -361,7 +363,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
           ))
         ) : (
           <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-            Aucune section disponible
+            {t('noSection')}
           </div>
         )}
       </nav>
@@ -372,7 +374,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
           className={`fixed bottom-6 right-6 rounded-full p-4 shadow-2xl transition-all hover:scale-110 active:scale-95 z-50 ${
             isEnrolled ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-gray-400 text-white cursor-not-allowed opacity-70'
           }`}
-          title={isEnrolled ? "Télécharger le cours" : "Inscrivez-vous pour télécharger"}
+          title={isEnrolled ? t('download') : "Inscrivez-vous pour télécharger"}
           type="button"
         >
           <Download className="h-8 w-8" />

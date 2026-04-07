@@ -1,9 +1,11 @@
 // components/Sidebar.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText, FolderOpen } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { usePendingCount } from '@/hooks/usePendingCount';
 
 interface SidebarProps {
@@ -14,6 +16,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ userRole, userName, userLevel, activeTab }: SidebarProps) {
+  const t = useTranslations('sidebar');
   const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
   const { pendingCount } = usePendingCount();
 
@@ -32,18 +35,18 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
   }, []);
 
   const studentMenuItems = [
-    { id: 'accueil', label: 'Accueil', icon: Home, href: '/etudashboard' },
-    { id: 'profil', label: 'Mon Profil', icon: User, href: '/etudashboard/profil' },
-    { id: 'cours', label: 'Mes Cours', icon: BookOpen, href: '/etudashboard/cours' },
-    { id: 'echeances', label: 'Échéances', icon: Calendar, href: '/etudashboard/echeances' },
+    { id: 'accueil', label: t('student.home'), icon: Home, href: '/etudashboard' },
+    { id: 'profil', label: t('student.profile'), icon: User, href: '/etudashboard/profil' },
+    { id: 'cours', label: t('student.courses'), icon: BookOpen, href: '/etudashboard/cours' },
+    { id: 'echeances', label: t('student.deadlines'), icon: Calendar, href: '/etudashboard/echeances' },
   ];
 
   const professorMenuItems = [
-    { id: 'accueil', label: 'Accueil', icon: Home, href: '/profdashboard?tab=accueil' },
-    { id: 'inscriptions', label: 'Inscriptions', icon: LucideUsers, href: '/profdashboard?tab=inscriptions' },
-    { id: 'classes', label: 'Mes Classes', icon: FolderOpen, href: '/profdashboard?tab=classes' },
-    { id: 'exercices', label: 'Mes Exercices', icon: FileText, href: '/profdashboard?tab=exercices' },
-    { id: 'compositions', label: 'Mes Compositions', icon: BookOpen, href: '/profdashboard?tab=compositions' },
+    { id: 'accueil', label: t('teacher.home'), icon: Home, href: '/profdashboard?tab=accueil' },
+    { id: 'inscriptions', label: t('teacher.enrollments'), icon: LucideUsers, href: '/profdashboard?tab=inscriptions' },
+    { id: 'classes', label: t('teacher.classes'), icon: FolderOpen, href: '/profdashboard?tab=classes' },
+    { id: 'exercices', label: t('teacher.exercises'), icon: FileText, href: '/profdashboard?tab=exercices' },
+    { id: 'compositions', label: t('teacher.compositions'), icon: BookOpen, href: '/profdashboard?tab=compositions' },
   ];
 
   return (
@@ -61,16 +64,19 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
         </div>
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">XCCM1</h1>
-          <p className="text-xs text-purple-600 dark:text-purple-400">En ligne</p>
+          <p className="text-xs text-purple-600 dark:text-purple-400">{t('online')}</p>
         </div>
       </div>
 
       {/* User Profile */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+      <div id="user-profile" className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-sm dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700">
+
         <div className="flex items-center gap-3">
-          <img
+          <Image
             src={photoUrl}
             alt={userName}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover border-2 border-purple-200 dark:border-purple-500"
           />
           <div>
@@ -81,8 +87,13 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
       </div>
 
       {/* Menu Principal */}
-      <nav>
-        <p className="text-xs uppercase text-gray-500 dark:text-gray-400 mb-4 font-semibold">Menu Principal</p>
+
+      <nav id="sidebar-nav">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold">{t('mainMenu')}</p>
+          <LanguageSwitcher compact />
+        </div>
+
         <ul className="space-y-2">
           {(userRole === 'student' ? studentMenuItems : professorMenuItems).map((item) => {
             const Icon = item.icon;

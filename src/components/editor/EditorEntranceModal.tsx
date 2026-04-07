@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Edit, X, BookOpen, Clock, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocale } from 'next-intl';
 
 interface Props {
     isOpen: boolean;
@@ -12,15 +13,61 @@ interface Props {
 }
 
 export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onModifyExisting }: Props) {
+    const locale = useLocale();
     const [step, setStep] = React.useState<'choice' | 'title'>('choice');
     const [title, setTitle] = React.useState('');
-    const [suggestions] = React.useState([
-        "Introduction à l'Algèbre",
-        "Histoire du Cameroun : Les grandes dates",
-        "Physique : Les lois de Newton",
-        "Littérature : L'art de la dissertation",
-        "Informatique : Algorithmique de base"
-    ]);
+    const suggestions = React.useMemo(() => (
+        locale === 'fr'
+            ? [
+                "Introduction a l'Algebre",
+                "Histoire du Cameroun : les grandes dates",
+                "Physique : les lois de Newton",
+                "Litterature : l'art de la dissertation",
+                "Informatique : algorithmique de base"
+            ]
+            : [
+                'Introduction to Algebra',
+                'History of Cameroon: key dates',
+                "Physics: Newton's laws",
+                'Literature: the art of essay writing',
+                'Computer science: algorithmic basics'
+            ]
+    ), [locale]);
+    const content = React.useMemo(() => (
+        locale === 'fr'
+            ? {
+                welcome: "Bienvenue dans l'Editeur",
+                subtitle: "Que souhaitez-vous faire aujourd'hui ?",
+                createTitle: 'Creer un cours',
+                createDescription: 'Commencer un nouveau projet a partir de zero',
+                editTitle: 'Modifier un cours',
+                editDescription: 'Reprendre le travail sur une de vos compositions',
+                masterpiece: "Quel est le titre de votre futur chef-d'oeuvre ?",
+                titlePlaceholder: 'Ex: Les fondamentaux de la thermodynamique...',
+                smartSuggestions: 'Suggestions intelligentes',
+                back: 'Retour',
+                startEditing: "Commencer l'edition",
+                premiumEditor: 'Editeur premium',
+                autosave: 'Auto-sauvegarde',
+                export: 'Export PDF/Word'
+            }
+            : {
+                welcome: 'Welcome to the XCCM Editor',
+                subtitle: 'What would you like to do today?',
+                createTitle: 'Create a course',
+                createDescription: 'Start a new project from scratch',
+                editTitle: 'Edit a course',
+                editDescription: 'Continue working on one of your compositions',
+                masterpiece: 'What is the title of your future masterpiece?',
+                titlePlaceholder: 'Example: Thermodynamics fundamentals...',
+                smartSuggestions: 'Smart suggestions',
+                back: 'Back',
+                startEditing: 'Start editing',
+                premiumEditor: 'Premium editor',
+                autosave: 'Autosave',
+                export: 'PDF/Word export'
+            }
+    ), [locale]);
 
     if (!isOpen) return null;
 
@@ -58,10 +105,10 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                 <div className="p-8 sm:p-12">
                     <div className="text-center mb-10">
                         <h1 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-4 tracking-tight">
-                            Bienvenue dans l'Éditeur <span className="text-purple-600">XCCM</span>
+                            {content.welcome} <span className="text-purple-600">XCCM</span>
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400 text-lg">
-                            Que souhaitez-vous faire aujourd'hui ?
+                            {content.subtitle}
                         </p>
                     </div>
 
@@ -82,9 +129,9 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                                     <div className="w-16 h-16 bg-purple-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-200 dark:shadow-none group-hover:scale-110 transition-transform">
                                         <Plus size={32} strokeWidth={2.5} />
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Créer un cours</h3>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{content.createTitle}</h3>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
-                                        Commencer un nouveau projet à partir de zéro
+                                        {content.createDescription}
                                     </p>
                                 </button>
 
@@ -96,9 +143,9 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                                     <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200 dark:shadow-none group-hover:scale-110 transition-transform">
                                         <Edit size={28} />
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Modifier un cours</h3>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{content.editTitle}</h3>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
-                                        Reprendre le travail sur une de vos compositions
+                                        {content.editDescription}
                                     </p>
                                 </button>
                             </motion.div>
@@ -112,21 +159,21 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                             >
                                 <div className="space-y-4">
                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">
-                                        Quel est le titre de votre futur chef-d'œuvre ?
+                                        {content.masterpiece}
                                     </label>
                                     <input
                                         type="text"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleFinalCreate()}
-                                        placeholder="Ex: Les fondamentaux de la thermodynamique..."
+                                        placeholder={content.titlePlaceholder}
                                         autoFocus
                                         className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-purple-100 dark:border-gray-700 rounded-2xl focus:border-purple-500 dark:focus:border-purple-500 outline-none text-lg text-gray-900 dark:text-white placeholder-gray-400 transition-all"
                                     />
                                 </div>
 
                                 <div className="space-y-3">
-                                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Suggestions intelligentes</p>
+                                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">{content.smartSuggestions}</p>
                                     <div className="flex flex-wrap gap-2">
                                         {suggestions.map((s, i) => (
                                             <button
@@ -145,14 +192,14 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                                         onClick={() => setStep('choice')}
                                         className="flex-1 py-4 text-gray-500 dark:text-gray-400 font-bold hover:text-gray-700 dark:hover:text-white transition-colors"
                                     >
-                                        Retour
+                                        {content.back}
                                     </button>
                                     <button
                                         onClick={handleFinalCreate}
                                         disabled={!title.trim()}
                                         className="flex-grow-[2] py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        Commencer l'édition
+                                        {content.startEditing}
                                     </button>
                                 </div>
                             </motion.div>
@@ -163,15 +210,15 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                     <div className="mt-12 flex items-center justify-around py-6 border-t border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                             <BookOpen size={16} />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Premium Editor</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider">{content.premiumEditor}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                             <Clock size={16} />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Auto-sauvegarde</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider">{content.autosave}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                             <FileText size={16} />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Export PDF/Word</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider">{content.export}</span>
                         </div>
                     </div>
                 </div>

@@ -20,7 +20,7 @@ export type OpenAPIConfig = {
 };
 
 export const OpenAPI: OpenAPIConfig = {
-    BASE: 'https://chatbotxccm1.onrender.com/api',
+    BASE: process.env.NEXT_PUBLIC_CHATBOT_API_URL || 'https://chatbotxccm1.onrender.com/api',
     VERSION: '1.0.0',
     WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',

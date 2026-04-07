@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Exercise, Question } from '@/types/exercise';
-import { ExerciseService } from '@/lib3/services/ExerciseService';
 import { toast } from 'react-hot-toast';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   FaClock,
   FaCalendarAlt,
@@ -26,6 +26,8 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
   onSubmit,
   readOnly = false
 }) => {
+  const locale = useLocale();
+  const t = useTranslations('exercises.viewer');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -73,7 +75,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
       // Vérifier si toutes les questions sont répondues
       const unanswered = questions.filter(q => !answers[q.id || 0]?.trim());
       if (unanswered.length > 0) {
-        toast.error(`Veuillez répondre à toutes les questions (${unanswered.length} non répondues)`);
+        toast.error(t('unansweredError', { count: unanswered.length }));
         return;
       }
 
@@ -86,11 +88,11 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
       await onSubmit(formattedAnswers);
 
       setSubmitted(true);
-      toast.success('✅ Exercice soumis avec succès !');
+      toast.success(t('submitSuccess'));
 
-    } catch (error: any) {
-      console.error('Erreur lors de la soumission:', error);
-      toast.error(error.message || 'Erreur lors de la soumission');
+    } catch (error: unknown) {
+      console.error(t('submitErrorLog'), error);
+      toast.error(error instanceof Error ? error.message : t('submitError'));
     } finally {
       setLoading(false);
     }
@@ -115,18 +117,18 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
 
   const formatQuestionType = (type?: string) => {
     switch (type) {
-      case 'CODE': return 'Code';
-      case 'MULTIPLE_CHOICE': return 'Choix multiple';
-      default: return 'Réponse texte';
+      case 'CODE': return t('code');
+      case 'MULTIPLE_CHOICE': return t('multipleChoice');
+      default: return t('freeText');
     }
   };
 
   const getQuestionText = (question: Question): string => {
-    return question.text || (question as any).question || `Question`;
+    return question.text || t('questionFallback');
   };
 
   const getQuestionType = (question: Question): string => {
-    return question.type || (question as any).questionType || 'TEXT';
+    return question.type || 'TEXT';
   };
 
   return (
@@ -144,14 +146,14 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
             <FaHashtag className="w-4 h-4" />
-            <span className="font-semibold">{exercise.maxScore} points</span>
+            <span className="font-semibold">{exercise.maxScore} {exercise.maxScore > 1 ? t('points') : t('point')}</span>
           </div>
 
           {exercise.dueDate && (
             <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
               <FaCalendarAlt className="w-4 h-4" />
               <span className="font-semibold">
-                {new Date(exercise.dueDate).toLocaleDateString('fr-FR', {
+                {new Date(exercise.dueDate).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                   day: 'numeric',
                   month: 'long',
                   year: 'numeric'
@@ -163,7 +165,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
           <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
             <FaClock className="w-4 h-4" />
             <span className="font-semibold">
-              {questions.length} question{questions.length > 1 ? 's' : ''}
+              {questions.length} {questions.length > 1 ? t('questions') : t('question')}
             </span>
           </div>
         </div>
@@ -174,10 +176,10 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">
-              Progression : {calculateProgress()}%
+              {t('progress')}: {calculateProgress()}%
             </span>
             <span className="text-sm text-gray-600">
-              {questions.filter(q => answers[q.id || 0]?.trim()).length}/{questions.length} répondues
+              {questions.filter(q => answers[q.id || 0]?.trim()).length}/{questions.length} {t('answered')}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -194,7 +196,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
         {questions.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-xl">
             <FaFileAlt className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Cet exercice ne contient aucune question.</p>
+            <p className="text-gray-600">{t('noQuestions')}</p>
           </div>
         ) : (
           questions.map((question, index) => {
@@ -224,7 +226,7 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
-                      {questionPoints} point{questionPoints > 1 ? 's' : ''}
+                      {questionPoints} {questionPoints > 1 ? t('points') : t('point')}
                     </span>
                   </div>
                 </div>
@@ -236,8 +238,8 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                       <label
                         key={optIndex}
                         className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${currentAnswer === option
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-gray-200 hover:bg-gray-50'
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-200 hover:bg-gray-50'
                           } ${(readOnly || submitted) ? 'cursor-default' : ''}`}
                       >
                         <input
@@ -268,54 +270,54 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
                     onChange={(e) => handleAnswerChange(questionId, e.target.value)}
                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none"
                     rows={4}
-                    placeholder="Votre réponse..."
+                    placeholder={t('answerPlaceholder')}
                     disabled={readOnly || submitted}
                   />
                 ) : questionType === 'CODE' ? (
                   <div>
                     <div className="mb-2 text-sm text-gray-600 flex items-center gap-2">
                       <FaCode className="w-4 h-4" />
-                      Utilisez l'éditeur de code ou écrivez directement ci-dessous
+                      {t('codeEditorHint')}
                     </div>
                     <textarea
                       value={currentAnswer}
                       onChange={(e) => handleAnswerChange(questionId, e.target.value)}
                       className="w-full p-4 font-mono text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none"
                       rows={8}
-                      placeholder="// Écrivez votre code ici..."
+                      placeholder={t('codePlaceholder')}
                       disabled={readOnly || submitted}
                     />
                     <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600">
-                      Support des langages : JavaScript, Python, Java, C++, etc.
+                      {t('codeLanguages')}
                     </div>
                   </div>
                 ) : (
                   <div className="text-gray-500 italic">
-                    Type de question non supporté : {questionType}
+                    {t('unsupportedType')}: {questionType}
                   </div>
                 )}
 
                 {/* Feedback après soumission */}
                 {submitted && question.studentPoints !== undefined && (
                   <div className={`mt-4 p-4 rounded-lg ${question.studentPoints === questionPoints
-                      ? 'bg-green-50 border border-green-200'
-                      : 'bg-yellow-50 border border-yellow-200'
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-yellow-50 border border-yellow-200'
                     }`}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium">
-                        Votre réponse : {question.studentPoints}/{questionPoints} points
+                        {t('yourAnswer', { points: question.studentPoints, max: questionPoints })}
                       </span>
                       {question.correctAnswer && (
                         <span className="text-sm text-gray-600">
-                          Réponse attendue : {question.correctAnswer}
+                          {t('expectedAnswer')}: {question.correctAnswer}
                         </span>
                       )}
                     </div>
                     {question.studentPoints < questionPoints && (
                       <p className="text-sm text-gray-700 mt-1">
                         {question.studentAnswer === question.correctAnswer
-                          ? 'Votre réponse est correcte !'
-                          : 'Vérifiez votre réponse.'}
+                          ? t('correct')
+                          : t('checkAnswer')}
                       </p>
                     )}
                   </div>
@@ -338,18 +340,18 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                  Soumission en cours...
+                  {t('submitting')}
                 </>
               ) : (
                 <>
                   <FiSend className="w-6 h-6" />
-                  Soumettre mes réponses
+                  {t('submit')}
                 </>
               )}
             </div>
           </button>
           <p className="text-center text-gray-500 text-sm mt-3">
-            Après soumission, vous ne pourrez plus modifier vos réponses
+            {t('afterSubmit')}
           </p>
         </div>
       )}
@@ -362,16 +364,16 @@ export const StudentExerciseViewer: React.FC<ExerciseViewerProps> = ({
               <FaCheckCircle className="w-16 h-16 text-green-600" />
             </div>
             <h3 className="text-2xl font-bold text-green-800 mb-2">
-              Exercice soumis avec succès !
+              {t('successTitle')}
             </h3>
             <p className="text-green-700 mb-6 max-w-lg">
-              Votre travail a été enregistré. Vous recevrez une notification une fois qu'il sera corrigé.
+              {t('successText')}
             </p>
             {exercise.studentScore !== undefined && (
               <div className="px-6 py-3 bg-white border border-green-200 rounded-xl">
-                <div className="text-sm text-gray-600">Votre score</div>
+                <div className="text-sm text-gray-600">{t('yourScore')}</div>
                 <div className="text-3xl font-bold text-green-700">
-                  {exercise.studentScore}/{exercise.maxScore} points
+                  {exercise.studentScore}/{exercise.maxScore} {exercise.maxScore > 1 ? t('points') : t('point')}
                 </div>
               </div>
             )}

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FaTimes, FaPlus, FaTrash, FaCheckCircle } from 'react-icons/fa';
 import { QuestionType } from '@/types/exercise';
+import { useLocale } from 'next-intl';
 
 export interface QuestionData {
   text: string;
@@ -16,9 +17,43 @@ interface QuickExerciseModalProps {
 }
 
 export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, onClose, onSave }) => {
+  const locale = useLocale();
   const [title, setTitle] = useState('');
   const [type, setType] = useState<QuestionType>('TEXT');
   const [questions, setQuestions] = useState<QuestionData[]>([{ text: '', options: ['', ''] }]);
+  const content = React.useMemo(() => (
+    locale === 'fr'
+      ? {
+          title: 'Creer un exercice rapide',
+          exerciseTitle: "Titre de l'exercice",
+          exercisePlaceholder: 'Ex: Quiz Chapitre 1',
+          exerciseType: "Type d'exercice",
+          types: { TEXT: 'Texte', MULTIPLE_CHOICE: 'QCM', CODE: 'Code' },
+          questions: 'Questions',
+          questionPlaceholder: 'Votre question...',
+          options: 'Options :',
+          option: 'Option',
+          addOption: 'Ajouter une option',
+          addQuestion: 'Ajouter une question',
+          cancel: 'Annuler',
+          save: 'Sauvegarder'
+        }
+      : {
+          title: 'Create a quick exercise',
+          exerciseTitle: 'Exercise title',
+          exercisePlaceholder: 'Example: Chapter 1 quiz',
+          exerciseType: 'Exercise type',
+          types: { TEXT: 'Text', MULTIPLE_CHOICE: 'MCQ', CODE: 'Code' },
+          questions: 'Questions',
+          questionPlaceholder: 'Your question...',
+          options: 'Options:',
+          option: 'Option',
+          addOption: 'Add an option',
+          addQuestion: 'Add a question',
+          cancel: 'Cancel',
+          save: 'Save'
+        }
+  ), [locale]);
 
   if (!isOpen) return null;
 
@@ -68,7 +103,7 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 border border-purple-200 dark:border-purple-900/30">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Créer un Exercice Rapide</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{content.title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <FaTimes />
           </button>
@@ -76,18 +111,18 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Titre de l'exercice</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{content.exerciseTitle}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Quiz Chapitre 1"
+              placeholder={content.exercisePlaceholder}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-purple-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Type d'exercice</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{content.exerciseType}</label>
             <div className="flex gap-2">
               {(['TEXT', 'MULTIPLE_CHOICE', 'CODE'] as QuestionType[]).map((t) => (
                 <button
@@ -99,14 +134,14 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  {t === 'TEXT' ? 'Texte' : t === 'MULTIPLE_CHOICE' ? 'QCM' : 'Code'}
+                  {content.types[t]}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="max-h-60 overflow-y-auto pr-2 text-gray-800 dark:text-gray-200">
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Questions</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{content.questions}</label>
             <div className="space-y-4">
               {questions.map((q, index) => (
                 <div key={index} className="space-y-2 rounded-lg border border-gray-100 p-3 dark:border-gray-700">
@@ -116,7 +151,7 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
                       type="text"
                       value={q.text}
                       onChange={(e) => handleQuestionChange(index, e.target.value)}
-                      placeholder="Votre question..."
+                      placeholder={content.questionPlaceholder}
                       className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-purple-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm"
                     />
                     <button
@@ -130,14 +165,14 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
 
                   {type === 'MULTIPLE_CHOICE' && (
                     <div className="ml-10 space-y-2">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Options :</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{content.options}</p>
                       {q.options.map((opt, oIndex) => (
                         <div key={oIndex} className="flex gap-2">
                           <input
                             type="text"
                             value={opt}
                             onChange={(e) => handleOptionChange(index, oIndex, e.target.value)}
-                            placeholder={`Option ${oIndex + 1}`}
+                            placeholder={`${content.option} ${oIndex + 1}`}
                             className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 focus:border-purple-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white text-xs"
                           />
                           <button
@@ -153,7 +188,7 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
                         onClick={() => handleAddOption(index)}
                         className="text-[10px] font-bold text-purple-500 hover:text-purple-600 flex items-center gap-1"
                       >
-                        <FaPlus size={8} /> Ajouter une option
+                        <FaPlus size={8} /> {content.addOption}
                       </button>
                     </div>
                   )}
@@ -166,7 +201,7 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
             onClick={handleAddQuestion}
             className="flex items-center gap-2 text-sm font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
           >
-            <FaPlus size={12} /> Ajouter une question
+            <FaPlus size={12} /> {content.addQuestion}
           </button>
         </div>
 
@@ -175,14 +210,14 @@ export const QuickExerciseModal: React.FC<QuickExerciseModalProps> = ({ isOpen, 
             onClick={onClose}
             className="flex-1 rounded-xl border border-gray-300 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            Annuler
+            {content.cancel}
           </button>
           <button
             onClick={handleSave}
             disabled={!title.trim()}
             className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 dark:shadow-none transition-all flex items-center justify-center gap-2"
           >
-            <FaCheckCircle /> Sauvegarder
+            <FaCheckCircle /> {content.save}
           </button>
         </div>
       </div>

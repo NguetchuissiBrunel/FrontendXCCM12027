@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Submission, Exercise, Question } from '@/types/exercise';
 import { useGradeSubmission } from '@/hooks/useExercise';
+import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import {
   X,
@@ -34,6 +35,7 @@ export default function GradingInterface({
   onClose,
   onGradeComplete
 }: GradingInterfaceProps) {
+  const t = useTranslations('exercises.grading');
   const { mutate: gradeSubmission, isPending } = useGradeSubmission();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [scores, setScores] = useState<Record<number, number>>(() => {
@@ -111,7 +113,7 @@ export default function GradingInterface({
   const handleGrade = async () => {
     try {
       if (currentTotalScore > exercise.maxScore) {
-        toast.error(`Score trop élevé (max: ${exercise.maxScore})`);
+        toast.error(t('scoreTooHigh', { max: exercise.maxScore }));
         return;
       }
 
@@ -121,16 +123,16 @@ export default function GradingInterface({
         feedback || undefined,
         {
           onSuccess: () => {
-            toast.success('Notation enregistrée');
+            toast.success(t('gradeSaved'));
             onGradeComplete();
           },
           onError: (error) => {
-            toast.error(`Erreur: ${error.message}`);
+            toast.error(`${t('gradeError')}: ${error.message}`);
           }
         }
       );
     } catch (error: any) {
-      toast.error(error.message || 'Erreur');
+      toast.error(error.message || t('gradeError'));
     }
   };
 
@@ -152,9 +154,9 @@ export default function GradingInterface({
 
   const formatQuestionType = (type?: string) => {
     switch (type) {
-      case 'CODE': return 'Code';
-      case 'MULTIPLE_CHOICE': return 'QCM';
-      default: return 'Texte';
+      case 'CODE': return t('code');
+      case 'MULTIPLE_CHOICE': return t('qcm');
+      default: return t('text');
     }
   };
 
@@ -195,7 +197,7 @@ export default function GradingInterface({
             </div>
             <div>
               <h2 className="font-bold text-gray-800 dark:text-gray-100">
-                Notation
+                {t('title')}
               </h2>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <User className="w-3 h-3" />
@@ -228,7 +230,7 @@ export default function GradingInterface({
             </button>
 
             <div className="text-center min-w-[80px]">
-              <div className="text-xs text-gray-500 dark:text-gray-400">Question</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{t('question')}</div>
               <div className="text-base font-bold text-gray-800 dark:text-gray-200">
                 {currentQuestionIndex + 1} / {questions.length}
               </div>
@@ -244,7 +246,7 @@ export default function GradingInterface({
           </div>
 
           <div className="text-right">
-            <div className="text-xs text-gray-500 dark:text-gray-400">Score global</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t('globalScore')}</div>
             <div className={`text-lg font-bold ${getScoreColor(currentTotalScore, exercise.maxScore)}`}>
               {currentTotalScore.toFixed(1)}/{exercise.maxScore}
             </div>
@@ -263,13 +265,13 @@ export default function GradingInterface({
                   key={question.id}
                   onClick={() => setCurrentQuestionIndex(index)}
                   className={`flex flex-col items-center p-2 rounded min-w-[60px] transition-colors ${isCurrent
-                      ? 'bg-blue-100 dark:bg-blue-900/30'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-blue-100 dark:bg-blue-900/30'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                 >
                   <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium ${isCurrent
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                     }`}>
                     {index + 1}
                   </div>
@@ -313,7 +315,7 @@ export default function GradingInterface({
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Réponse de l'étudiant
+                      {t('studentAnswer')}
                     </span>
                   </div>
 
@@ -330,7 +332,7 @@ export default function GradingInterface({
                       )
                     ) : (
                       <p className="text-gray-500 dark:text-gray-400 italic">
-                        Aucune réponse
+                        {t('noAnswer')}
                       </p>
                     )}
                   </div>
@@ -341,13 +343,13 @@ export default function GradingInterface({
             {/* NOTATION - SECTION CLAIRE */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                Attribuer un score
+                {t('assignScore')}
               </h4>
 
               {/* Score actuel */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Score actuel</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('currentScore')}</span>
                   <span className={`text-xl font-bold ${getScoreColor(scores[currentQuestion.id] || 0, currentQuestion.points || 1)}`}>
                     {scores[currentQuestion.id]?.toFixed(1) || 0} / {currentQuestion.points || 1}
                   </span>
@@ -388,7 +390,7 @@ export default function GradingInterface({
               {/* Points rapides */}
               <div className="mb-6">
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Sélection rapide:
+                  {t('quickSelect')}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {getQuickPoints().map((points) => (
@@ -396,11 +398,11 @@ export default function GradingInterface({
                       key={points}
                       onClick={() => handleQuestionScoreChange(currentQuestion.id, points)}
                       className={`px-3 py-2 text-sm rounded-lg transition-colors ${scores[currentQuestion.id] === points
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                     >
-                      {points} point{points !== 1 ? 's' : ''}
+                      {points} {points !== 1 ? t('points') : t('point')}
                     </button>
                   ))}
                 </div>
@@ -409,14 +411,14 @@ export default function GradingInterface({
               {/* Feedback */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Commentaire
+                  {t('comment')}
                 </label>
                 <textarea
                   value={questionFeedback[currentQuestion.id] || ''}
                   onChange={(e) => handleQuestionFeedbackChange(currentQuestion.id, e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
                   rows={2}
-                  placeholder="Commentaire pour cette question..."
+                  placeholder={t('commentPlaceholder')}
                 />
               </div>
             </div>
@@ -430,21 +432,21 @@ export default function GradingInterface({
           {/* Feedback général */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Commentaire général
+              {t('generalComment')}
             </label>
             <textarea
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
               rows={1}
-              placeholder="Commentaire sur l'ensemble..."
+              placeholder={t('generalCommentPlaceholder')}
             />
           </div>
 
           {/* Actions */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Score final</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{t('finalScore')}</div>
               <div className={`text-lg font-bold ${getScoreColor(currentTotalScore, exercise.maxScore)}`}>
                 {currentTotalScore.toFixed(1)} pts
               </div>
@@ -455,7 +457,7 @@ export default function GradingInterface({
                 onClick={onClose}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-sm"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button
                 onClick={handleGrade}
@@ -463,7 +465,7 @@ export default function GradingInterface({
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm"
               >
                 <Save className="w-4 h-4" />
-                {isPending ? '...' : 'Enregistrer'}
+                {isPending ? t('saving') : t('save')}
               </button>
             </div>
           </div>

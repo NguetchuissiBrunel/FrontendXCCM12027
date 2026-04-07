@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { PublicServicesService } from '@/lib/services/PublicServicesService';
 import type { ContactRequest } from '@/lib/models/ContactRequest';
 import { useLoading } from '@/contexts/LoadingContext';
-import { Send, User, Mail, MessageSquare, Phone, Building } from 'lucide-react';
+import { Send, User, Mail, MessageSquare, Phone } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface ContactFormProps {
   className?: string;
@@ -22,6 +23,7 @@ export default function ContactForm({
   description = "Nous sommes là pour vous aider. Remplissez le formulaire ci-dessous et nous vous répondrons dans les plus brefs délais.",
   showPrivacyNote = true
 }: ContactFormProps) {
+  const t = useTranslations('contact');
   const [formData, setFormData] = useState<ContactRequest>({
     name: '',
     email: '',
@@ -65,23 +67,23 @@ export default function ContactForm({
 
   const validateForm = (): string | null => {
     if (!formData.name.trim()) {
-      return 'Le nom est requis';
+      return t('validation.nameRequired');
     }
     
     if (!formData.email.trim()) {
-      return 'L\'adresse email est requise';
+      return t('validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      return 'Veuillez entrer une adresse email valide';
+      return t('validation.emailInvalid');
     }
     
     if (!formData.subject.trim()) {
-      return 'Le sujet est requis';
+      return t('validation.subjectRequired');
     }
     
     if (!formData.message.trim()) {
-      return 'Le message est requis';
+      return t('validation.messageRequired');
     } else if (formData.message.length < 10) {
-      return 'Le message doit contenir au moins 10 caractères';
+      return t('validation.messageTooShort');
     }
     
     return null;
@@ -104,7 +106,7 @@ export default function ContactForm({
 
       setMessage({
         type: 'success',
-        text: '🎉 Message envoyé avec succès ! Notre équipe vous répondra dans les 24-48 heures.'
+        text: t('messages.success')
       });
 
       // Réinitialiser le formulaire
@@ -115,21 +117,25 @@ export default function ContactForm({
         message: ''
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as {
+        status?: number;
+        message?: string;
+      };
       console.error('Erreur lors de l\'envoi du message:', error);
 
-      let errorMessage = 'Une erreur inattendue est survenue. Veuillez réessayer.';
+      let errorMessage = t('messages.unexpectedError');
 
-      if (error.status === 400) {
-        errorMessage = 'Données invalides. Vérifiez les informations saisies.';
-      } else if (error.status === 422) {
-        errorMessage = 'Certains champs contiennent des erreurs de validation.';
-      } else if (error.status === 429) {
-        errorMessage = 'Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer.';
-      } else if (error.status === 500) {
-        errorMessage = 'Service temporairement indisponible. Notre équipe technique a été notifiée.';
-      } else if (error.message?.includes('Network Error') || !navigator.onLine) {
-        errorMessage = 'Vous semblez être hors ligne. Vérifiez votre connexion internet.';
+      if (apiError.status === 400) {
+        errorMessage = t('messages.invalidData');
+      } else if (apiError.status === 422) {
+        errorMessage = t('messages.validationError');
+      } else if (apiError.status === 429) {
+        errorMessage = t('messages.tooManyAttempts');
+      } else if (apiError.status === 500) {
+        errorMessage = t('messages.serviceUnavailable');
+      } else if (apiError.message?.includes('Network Error') || !navigator.onLine) {
+        errorMessage = t('messages.offline');
       }
 
       setMessage({ type: 'error', text: errorMessage });
@@ -148,7 +154,7 @@ export default function ContactForm({
             <input
               type="text"
               name="name"
-              placeholder="Votre nom"
+              placeholder={t('placeholders.name')}
               value={formData.name}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none text-sm"
@@ -158,7 +164,7 @@ export default function ContactForm({
             <input
               type="email"
               name="email"
-              placeholder="Votre email"
+              placeholder={t('placeholders.email')}
               value={formData.email}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none text-sm"
@@ -168,7 +174,7 @@ export default function ContactForm({
           </div>
           <textarea
             name="message"
-            placeholder="Votre message"
+            placeholder={t('placeholders.messageShort')}
             rows={3}
             value={formData.message}
             onChange={handleChange}
@@ -181,7 +187,7 @@ export default function ContactForm({
             disabled={loading}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Envoi...' : 'Envoyer'}
+            {loading ? t('actions.sendingShort') : t('actions.sendShort')}
           </button>
         </form>
         {message && (
@@ -229,7 +235,7 @@ export default function ContactForm({
                 </p>
                 {message.type === 'success' && (
                   <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                    Nous vous répondrons à l&apos;adresse <span className="font-semibold">{formData.email}</span>
+                    {t('messages.replyHint')} <span className="font-semibold">{formData.email}</span>
                   </p>
                 )}
               </div>
@@ -243,12 +249,12 @@ export default function ContactForm({
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <User className="h-4 w-4" />
-                Nom complet *
+                {t('fields.fullName')}
               </label>
               <input
                 type="text"
                 name="name"
-                placeholder="Votre nom"
+                placeholder={t('placeholders.name')}
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none transition-colors disabled:opacity-50"
@@ -261,12 +267,12 @@ export default function ContactForm({
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <Mail className="h-4 w-4" />
-                Adresse email *
+                {t('fields.email')}
               </label>
               <input
                 type="email"
                 name="email"
-                placeholder="exemple@email.com"
+                placeholder={t('placeholders.emailExample')}
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none transition-colors disabled:opacity-50"
@@ -280,12 +286,12 @@ export default function ContactForm({
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <MessageSquare className="h-4 w-4" />
-              Sujet *
+              {t('fields.subject')}
             </label>
             <input
               type="text"
               name="subject"
-              placeholder="Sujet de votre message"
+              placeholder={t('placeholders.subject')}
               value={formData.subject}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none transition-colors disabled:opacity-50"
@@ -298,11 +304,11 @@ export default function ContactForm({
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <MessageSquare className="h-4 w-4" />
-              Message *
+              {t('fields.message')}
             </label>
             <textarea
               name="message"
-              placeholder="Décrivez votre demande en détail..."
+              placeholder={t('placeholders.message')}
               rows={5}
               value={formData.message}
               onChange={handleChange}
@@ -323,12 +329,12 @@ export default function ContactForm({
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Envoi en cours...
+                {t('actions.sending')}
               </>
             ) : (
               <>
                 <Send className="h-5 w-5" />
-                Envoyer le message
+                {t('actions.send')}
               </>
             )}
           </button>
@@ -337,7 +343,7 @@ export default function ContactForm({
         {/* Informations de contact alternatives */}
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Autres moyens de nous contacter
+            {t('alternativeTitle')}
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -355,16 +361,16 @@ export default function ContactForm({
         {showPrivacyNote && (
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              En soumettant ce formulaire, vous acceptez notre{' '}
+              {t('privacy.prefix')}{' '}
               <a 
                 href="/privacy" 
                 className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                politique de confidentialité
+                {t('privacy.link')}
               </a>
-              . Vos données sont sécurisées et ne seront jamais partagées avec des tiers.
+              . {t('privacy.suffix')}
             </p>
           </div>
         )}

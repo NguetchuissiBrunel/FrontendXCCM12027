@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Submission, Exercise } from '@/types/exercise';
 import {
   CheckCircle,
@@ -37,6 +38,8 @@ export default function SubmissionsTable({
   onGradeSubmission,
   filter
 }: SubmissionsTableProps) {
+  const locale = useLocale();
+  const t = useTranslations('exercises.table');
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [submissionToDownload, setSubmissionToDownload] = useState<Submission | null>(null);
@@ -119,7 +122,7 @@ export default function SubmissionsTable({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -169,19 +172,19 @@ export default function SubmissionsTable({
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredAndSortedSubmissions.length} soumission{filteredAndSortedSubmissions.length !== 1 ? 's' : ''} trouvée{filteredAndSortedSubmissions.length !== 1 ? 's' : ''}
+                {filteredAndSortedSubmissions.length} {filteredAndSortedSubmissions.length !== 1 ? t('submissions') : t('submission')} {filteredAndSortedSubmissions.length !== 1 ? t('founds') : t('found')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredAndSortedSubmissions.filter(s => s.graded).length} notée{filteredAndSortedSubmissions.filter(s => s.graded).length !== 1 ? 's' : ''}
+                {filteredAndSortedSubmissions.filter(s => s.graded).length} {filteredAndSortedSubmissions.filter(s => s.graded).length !== 1 ? t('noteds') : t('noted')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-yellow-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredAndSortedSubmissions.filter(s => !s.graded).length} à corriger
+                {filteredAndSortedSubmissions.filter(s => !s.graded).length} {t('toCorrect')}
               </span>
             </div>
           </div>
@@ -189,7 +192,7 @@ export default function SubmissionsTable({
           {selectedRows.length > 0 && (
             <div className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full">
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                {selectedRows.length} sélectionné{selectedRows.length !== 1 ? 's' : ''}
+                {selectedRows.length} {selectedRows.length !== 1 ? t('selecteds') : t('selected')}
               </span>
             </div>
           )}
@@ -211,20 +214,20 @@ export default function SubmissionsTable({
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <div className="flex items-center gap-1">
                 <User className="w-4 h-4" />
-                Étudiant
+                {t('student')}
               </div>
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Statut
+              {t('status')}
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Score
+              {t('score')}
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Soumis le
+              {t('submittedOn')}
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Actions
+              {t('actions')}
             </th>
           </tr>
         </thead>
@@ -263,24 +266,24 @@ export default function SubmissionsTable({
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${submission.graded
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                   }`}>
                   {submission.graded ? (
                     <>
                       <CheckCircle className="w-3 h-3 mr-1" />
-                      Noté
+                      {t('graded')}
                     </>
                   ) : (
                     <>
                       <Clock className="w-3 h-3 mr-1" />
-                      À corriger
+                      {t('toGrade')}
                     </>
                   )}
                 </span>
                 {submission.gradedAt && (
                   <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Corrigé le {formatDate(submission.gradedAt)}
+                    {t('gradedOn')} {formatDate(submission.gradedAt)}
                   </div>
                 )}
               </td>
@@ -307,7 +310,7 @@ export default function SubmissionsTable({
                 <div>{formatDate(submission.submittedAt)}</div>
                 {submission.timeSpent && (
                   <div className="text-xs mt-1">
-                    Temps: {Math.round(submission.timeSpent / 60)} min
+                    {t('time')}: {Math.round(submission.timeSpent / 60)} {t('min')}
                   </div>
                 )}
               </td>
@@ -316,19 +319,19 @@ export default function SubmissionsTable({
                   <button
                     onClick={() => onGradeSubmission(submission)}
                     className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${submission.graded
-                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
                       }`}
                   >
                     <Eye className="w-4 h-4" />
-                    {submission.graded ? 'Re-corriger' : 'Corriger'}
+                    {submission.graded ? t('regrade') : t('grade')}
                   </button>
                   <button
                     onClick={() => downloadSubmission(submission)}
                     className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
                   >
                     <Download className="w-4 h-4" />
-                    Télécharger
+                    {t('download')}
                   </button>
                 </div>
               </td>
@@ -344,10 +347,10 @@ export default function SubmissionsTable({
             <Eye className="w-8 h-8 text-gray-400 dark:text-gray-500" />
           </div>
           <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Aucune soumission ne correspond aux filtres
+            {t('noResults')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Essayez de modifier vos critères de recherche
+            {t('modifySearch')}
           </p>
         </div>
       )}
@@ -358,7 +361,7 @@ export default function SubmissionsTable({
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-4">
               <span className="font-medium text-gray-800 dark:text-gray-200">
-                {selectedRows.length} soumission{selectedRows.length !== 1 ? 's' : ''} sélectionnée{selectedRows.length !== 1 ? 's' : ''}
+                {selectedRows.length} {selectedRows.length !== 1 ? t('submissions') : t('submission')} {selectedRows.length !== 1 ? t('selecteds') : t('selected')}
               </span>
               <div className="flex gap-2">
                 <button
@@ -368,7 +371,7 @@ export default function SubmissionsTable({
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Noter en masse
+                  {t('bulkGrade')}
                 </button>
                 <button
                   onClick={() => {
@@ -377,13 +380,13 @@ export default function SubmissionsTable({
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  Exporter
+                  {t('export')}
                 </button>
                 <button
                   onClick={() => setSelectedRows([])}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Annuler
+                  {t('cancel')}
                 </button>
               </div>
             </div>

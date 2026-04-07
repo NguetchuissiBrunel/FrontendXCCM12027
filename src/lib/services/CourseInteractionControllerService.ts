@@ -138,4 +138,21 @@ export class CourseInteractionControllerService {
             mediaType: 'application/json',
         });
     }
+    /**
+     * Get all comments for a course (teacher view)
+     * @param courseId
+     * @returns ApiResponseListCourseCommentDTO OK
+     * @throws ApiError
+     */
+    public static getCourseCommentsForTeacher(
+        courseId: number,
+    ): CancelablePromise<ApiResponseListCourseCommentDTO> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/courses/{courseId}/interactions/teacher/comments',
+            path: {
+                'courseId': courseId,
+            },
+        });
+    }
 }

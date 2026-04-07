@@ -76,8 +76,8 @@ export class CourseStatisticsService {
         courseId: number
     ): CourseStatistics {
         // Récupérer les infos du cours pour compléter si nécessaire
-        let courseTitle = apiData.courseTitle || `Cours ${courseId}`;
-        let courseCategory = apiData.courseCategory || 'Général';
+        const courseTitle = apiData.courseTitle || `Cours ${courseId}`;
+        const courseCategory = apiData.courseCategory || 'Général';
 
         // Transformer les statistiques des exercices depuis l'API
         const exerciseStats = (apiData.exerciseStats || []).map((ex: any) => ({

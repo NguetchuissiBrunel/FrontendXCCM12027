@@ -59,6 +59,7 @@ import type { Exercise as ExerciseType, Submission } from '@/types/exercise';
 import EditorEntranceModal from './EditorEntranceModal';
 import CreateCourseModal from '@/components/create-course/page';
 import ImageUploader from '../upload/ImageUploader';
+import CollabInviteButton from './CollabInviteButton';
 
 
 interface EditorLayoutProps {
@@ -217,17 +218,17 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const loadSpecificCourse = async (id: number, userId: string) => {
     try {
       setIsLoadingCourse(true);
-      
+
       // Since getEnrichedCourse doesn't return content, we use getAuthorCourses
       // which returns the full CourseResponse objects including content.
       const response = await CourseControllerService.getAuthorCourses(userId);
       const courses = (response as any).data || response;
-      
+
       const course = Array.isArray(courses) ? courses.find((c: any) => c.id === id) : null;
 
       if (course) {
         let content = course.content;
-        
+
         // Handle cases where content might be a string (JSON) instead of an object
         if (typeof content === 'string' && content.trim().startsWith('{')) {
           try {
@@ -243,7 +244,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         setCourseCategory(course.category || "Informatique");
         setCourseDescription(course.description || "");
         setCourseImage(course.photoUrl || course.coverImage);
-        
+
         toast.success(`Cours "${course.title || 'Sans titre'}" chargé`);
         setIsEntranceModalOpen(false);
         setActivePanel('structure');
@@ -427,7 +428,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     if (element) {
       // Focus the editor to ensure proper interaction
       editorInstance.view.focus();
-      
+
       // Scroll element to the beginning of viewport (top alignment)
       // Using 'start' instead of 'center' for accurate positioning at content start
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -689,6 +690,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       {/* Navbar at the top */}
       <nav id="navbar" className="h-16 flex-none z-10">
         <Navbar />
+        <CollabInviteButton courseId={currentCourseId} courseTitle={courseTitle} />
       </nav>
 
       {/* Main content area */}

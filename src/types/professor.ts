@@ -19,6 +19,7 @@ export interface DashboardCourseClass {
   status?: 'OPEN' | 'CLOSED' | 'ARCHIVED';
   maxStudents?: number;
   studentCount?: number;
+  participantCount?: number;
   courses?: DashboardCourse[];
 }
 

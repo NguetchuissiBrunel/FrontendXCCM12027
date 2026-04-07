@@ -1,5 +1,5 @@
 'use client';
-import { Trash2, Layout, CheckCircle, Clock, BookOpen, Archive, LockKeyhole, UnlockKeyhole, Pencil, School } from 'lucide-react';
+import { Trash2, Layout, CheckCircle, Clock, BookOpen, Archive, LockKeyhole, UnlockKeyhole, Pencil, School, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
 
@@ -30,6 +30,7 @@ interface CompositionsCardProps {
   onAssignToClass?: (courseId: string) => void;
   onChangeStatus?: (classId: string, status: ClassStatus) => Promise<void>;
   onEdit?: (id: string) => void;
+  onViewComments?: (courseId: string) => void;
   title?: string;
 }
 
@@ -72,6 +73,7 @@ export default function CompositionsCard({
   onAssignToClass,
   onChangeStatus,
   onEdit,
+  onViewComments,
   title,
 }: CompositionsCardProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({
@@ -204,6 +206,15 @@ export default function CompositionsCard({
                     title="Affecter à une classe"
                   >
                     <School size={20} />
+                  </button>
+                )}
+                {onViewComments && (
+                  <button
+                    onClick={() => onViewComments(composition.id)}
+                    className="p-2 text-teal-600 hover:bg-teal-100 dark:hover:bg-teal-900/30 rounded-lg transition-colors border border-transparent hover:border-teal-200 dark:hover:border-teal-800"
+                    title="Voir les commentaires des participants"
+                  >
+                    <MessageCircle size={20} />
                   </button>
                 )}
                 {onEdit && (

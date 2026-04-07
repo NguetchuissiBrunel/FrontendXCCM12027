@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
-import { FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
+import { FaSignOutAlt, FaEdit, FaGraduationCap, FaChalkboardTeacher, FaBookOpen } from 'react-icons/fa';
 import { MdHelpOutline, MdDashboard } from 'react-icons/md';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
@@ -117,6 +117,11 @@ const Navbar = () => {
       href: '/bibliotheque',
       label: t('library'),
       icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+    },
+    {
+      href: '/notebook',
+      label: t('notebook'),
+      icon: <FaBookOpen className="w-5 h-5" />
     },
   ];
 

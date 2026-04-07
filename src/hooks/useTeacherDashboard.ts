@@ -10,11 +10,11 @@ import { EnrollmentService } from '@/utils/enrollmentService';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
 import toast from 'react-hot-toast';
-import { 
-  DashboardCourseClass, 
-  DashboardExercisesStats, 
-  Composition, 
-  CourseStat 
+import {
+  DashboardCourseClass,
+  DashboardExercisesStats,
+  Composition,
+  CourseStat
 } from '@/types/professor';
 
 // Helper function to parse ID
@@ -129,7 +129,7 @@ export function useTeacherDashboard() {
 
       // 1. Fetch Classes et Courses en parallèle
       const { CourseControllerService } = await import('@/lib/services/CourseControllerService');
-      
+
       const [classesResponse, coursesResponse, statsData, pendingData] = await Promise.all([
         CourseClassService.getMyClasses(),
         CourseControllerService.getAuthorCourses(user.id),
@@ -163,11 +163,11 @@ export function useTeacherDashboard() {
             id: cls.id?.toString() || Math.random().toString(),
             title: cls.name || 'Classe Sans titre',
             class: cls.theme || 'Général',
-            participants: cls.studentCount || 0,
+            participants: cls.participantCount ?? cls.studentCount ?? 0,
             likes: totalLikes,
             downloads: 0,
             status: cls.status || 'OPEN',
-            courseStats: { totalExercises: totalExercisesClass, totalEnrolled: cls.studentCount || 0 }
+            courseStats: { totalExercises: totalExercisesClass, totalEnrolled: cls.participantCount ?? cls.studentCount ?? 0 }
           };
         });
         setAllClasses(mappedClasses);
@@ -179,7 +179,7 @@ export function useTeacherDashboard() {
         const mappedCourses: Composition[] = courses.map((course: any) => {
           const courseId = parseId(course.id);
           const stat = statsData.find(s => s.courseId === courseId);
-          
+
           return {
             id: course.id?.toString() || Math.random().toString(),
             title: course.title || 'Cours sans titre',
@@ -282,8 +282,7 @@ export function useTeacherDashboard() {
         const resp = await CourseClassService.createClass({
           name: data.title,
           theme: data.category,
-          description: data.description,
-          maxStudents: 50
+          description: data.description
         });
         if (resp?.data?.id) {
           toast.success('Classe créée');

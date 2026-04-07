@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 
 interface EnrollmentButtonProps {
   courseId: number;
+  courseAuthorId?: string | number;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'secondary' | 'outline';
   fullWidth?: boolean;
@@ -20,6 +21,7 @@ interface EnrollmentButtonProps {
 
 export default function EnrollmentButton({
   courseId,
+  courseAuthorId,
   size = 'md',
   variant = 'primary',
   fullWidth = false,
@@ -33,8 +35,11 @@ export default function EnrollmentButton({
   const { startLoading, stopLoading, isLoading: globalLoading } = useLoading();
   const { isEnrolled, progress, loading, enroll, unenroll, enrollment } = useEnrollment(courseId);
 
+  // Vérifier si c'est le propre cours de l'enseignant
+  const isOwnCourse = !!(courseAuthorId && user && user.role?.includes('teacher') && String(user.id) === String(courseAuthorId));
+
   // Vérifier si l'utilisateur peut s'inscrire
-  const canEnroll = !!(isAuthenticated && user && ['student', 'teacher'].some(role => user.role?.includes(role)));
+  const canEnroll = !!(isAuthenticated && user && ['student', 'teacher'].some(role => user.role?.includes(role))) && !isOwnCourse;
 
   const handleClick = async () => {
     if (loading || globalLoading) return;
@@ -127,7 +132,7 @@ export default function EnrollmentButton({
           disabled:opacity-50 disabled:cursor-not-allowed
           ${canEnroll ? 'hover:scale-105 active:scale-95' : ''}
         `}
-        title={!canEnroll ? (user?.role === 'teacher' ? t('teacherRestricted') : t('loginRequired')) : undefined}
+        title={!canEnroll ? (isOwnCourse ? "Vous ne pouvez pas vous inscrire à votre propre cours" : (user?.role === 'teacher' ? t('teacherRestricted') : t('loginRequired'))) : undefined}
       >
         {globalLoading ? (
           <Loader2 className={`${iconSizes[size]} animate-spin`} />

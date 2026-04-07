@@ -78,14 +78,14 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
   const steps = useMemo(() => {
     if (!courseData?.sections?.length) return [];
     const s: Step[] = [];
-    courseData.sections.forEach((sec, sIdx) => {
+    courseData.sections.forEach((sec: Section, sIdx: number) => {
       s.push({ type: 'section_intro', s: sIdx, c: 0, p: 0, exIdx: 0, exL: null, comp: false });
       const chapters = sec.chapters || [];
       if (chapters.length > 0) {
-        chapters.forEach((chap, cIdx) => {
+        chapters.forEach((chap: Chapter, cIdx: number) => {
           s.push({ type: 'chapter_intro', s: sIdx, c: cIdx, p: 0, exIdx: 0, exL: null, comp: false });
           const paragraphs = chap.paragraphs || [];
-          paragraphs.forEach((para, pIdx) => {
+          paragraphs.forEach((para: Paragraph, pIdx: number) => {
             s.push({ type: 'paragraph', s: sIdx, c: cIdx, p: pIdx, exIdx: 0, exL: null, comp: false });
           });
           if (chap.exercises?.length || chap.exercise || chap.exerciseContent) {
@@ -93,7 +93,7 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
           }
         });
       } else if (sec.paragraphs?.length) {
-        sec.paragraphs.forEach((para, pIdx) => {
+        sec.paragraphs.forEach((para: Paragraph, pIdx: number) => {
           s.push({ type: 'paragraph', s: sIdx, c: 0, p: pIdx, exIdx: 0, exL: null, comp: false });
         });
       }
@@ -178,10 +178,10 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
   };
 
   const navigateToParagraph = (sIdx: number, cIdx: number, pIdx: number) => {
-    const idx = steps.findIndex(st => st.s === sIdx && st.c === cIdx && st.p === pIdx && st.type === 'paragraph');
+    const idx = steps.findIndex((st: Step) => st.s === sIdx && st.c === cIdx && st.p === pIdx && st.type === 'paragraph');
     if (idx !== -1) setCurrentStepIndex(idx);
     else {
-      const idxAlt = steps.findIndex(st => st.s === sIdx && st.p === pIdx && st.type === 'paragraph');
+      const idxAlt = steps.findIndex((st: Step) => st.s === sIdx && st.p === pIdx && st.type === 'paragraph');
       if (idxAlt !== -1) setCurrentStepIndex(idxAlt);
     }
   };
@@ -193,7 +193,7 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
     // Optimistic local update — instant UI feedback, no page reload
     const willLike = !localIsLiked;
     setLocalIsLiked(willLike);
-    setLocalLikeCount(prev => willLike ? prev + 1 : Math.max(0, prev - 1));
+    setLocalLikeCount((prev: number) => willLike ? prev + 1 : Math.max(0, prev - 1));
     try {
       await toggleLike(courseData.id);
       if (willLike) {
@@ -202,7 +202,7 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
     } catch (e) {
       // Rollback on error
       setLocalIsLiked(!willLike);
-      setLocalLikeCount(prev => willLike ? Math.max(0, prev - 1) : prev + 1);
+      setLocalLikeCount((prev: number) => willLike ? Math.max(0, prev - 1) : prev + 1);
     } finally { setIsLiking(false); }
   };
 
@@ -246,7 +246,7 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
     finally { setIsCertifying(false); }
   };
 
-  const handleAnswerChange = (idx: number, val: string) => setCurrentExerciseAnswers(p => ({ ...p, [idx]: val }));
+  const handleAnswerChange = (idx: number, val: string) => setCurrentExerciseAnswers((p: any) => ({ ...p, [idx]: val }));
 
   const submitExercise = () => {
     const active = getExercisesAtCurrentLevel()[currentExerciseIndex];
@@ -307,8 +307,8 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
               onClick={handleCertificationClick}
               disabled={isCertifying || !canDownload}
               className={`w-full py-4 rounded-xl font-bold transition-all mb-8 ${!canDownload
-                  ? 'bg-gray-400 text-white cursor-not-allowed opacity-70'
-                  : 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
+                ? 'bg-gray-400 text-white cursor-not-allowed opacity-70'
+                : 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
                 }`}
               title={!canDownload ? (t('enrollToCertify') || 'Enroll to get this certificate') : t('getCert')}
             >

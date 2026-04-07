@@ -41,3 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 /OLD
+all_errors.txt
+lint_output*.txt

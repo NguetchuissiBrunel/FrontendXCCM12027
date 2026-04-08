@@ -117,13 +117,15 @@ const Navbar = () => {
       href: '/bibliotheque',
       label: t('library'),
       icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-    },
-    {
-      href: '/notebook',
-      label: t('notebook'),
-      icon: <FaBookOpen className="w-5 h-5" />
-    },
+    }
   ];
+  
+  const notebookNavLink = {
+  href: '/notebook',
+  label: t('notebook'),
+  icon: <FaBookOpen className="w-5 h-5" />
+};
+
 
   // Lien "Éditer" seulement pour les enseignants
   const teacherNavLink = {
@@ -141,32 +143,37 @@ const Navbar = () => {
 
   // Construire les liens de navigation selon le rôle
   const getNavLinks = () => {
-    const links = [...baseNavLinks];
+	  const links = [...baseNavLinks];
 
-    // Ne montrer la bibliothèque que si l'utilisateur est connecté
-    if (!currentUser) {
-      const biblioIndex = links.findIndex(link => link.href === '/bibliotheque');
-      if (biblioIndex !== -1) {
-        links.splice(biblioIndex, 1);
-      }
-    } else {
-      // Masquer "Accueil" si l'utilisateur est connecté
-      const homeIndex = links.findIndex(link => link.href === '/');
-      if (homeIndex !== -1) {
-        links.splice(homeIndex, 1);
-      }
-    }
+	  if (!currentUser) {
+	    // Cas : Utilisateur NON connecté
+	    const biblioIndex = links.findIndex(link => link.href === '/bibliotheque');
+	    if (biblioIndex !== -1) {
+	      links.splice(biblioIndex, 1);
+	    }
+	  } else {
+	    // Cas : Utilisateur CONNECTÉ
+	    
+	    // 1. Ajouter le Notebook ici
+	    links.push(notebookNavLink);
 
-    // Ajouter "Éditer" seulement pour les enseignants
-    if (userRole === 'teacher') {
-      links.push(teacherNavLink);
-    }
+	    // 2. Masquer "Accueil" si vous le souhaitez toujours
+	    const homeIndex = links.findIndex(link => link.href === '/');
+	    if (homeIndex !== -1) {
+	      links.splice(homeIndex, 1);
+	    }
+	  }
 
-    // Toujours ajouter "Aide"
-    links.push(helpNavLink);
+	  // Ajouter "Éditer" seulement pour les enseignants
+	  if (userRole === 'teacher') {
+	    links.push(teacherNavLink);
+	  }
 
-    return links;
-  };
+	  // Toujours ajouter "Aide"
+	  links.push(helpNavLink);
+
+	  return links;
+	};
 
   const navLinks = getNavLinks();
 

@@ -140,4 +140,21 @@ export class EnseignantService {
             url: '/api/v1/teacher/courses/stats',
         });
     }
+    /**
+     * Supprimer une soumission
+     * @param submissionId
+     * @returns ApiResponseVoid OK
+     * @throws ApiError
+     */
+    public static deleteSubmission(
+        submissionId: number,
+    ): CancelablePromise<ApiResponseVoid> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/teacher/submissions/{submissionId}',
+            path: {
+                'submissionId': submissionId,
+            },
+        });
+    }
 }

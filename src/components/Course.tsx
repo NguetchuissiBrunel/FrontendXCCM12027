@@ -1,12 +1,13 @@
 // src/components/Course.tsx
 "use client";
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, FileText, Check } from "lucide-react";
+import { Eye, ThumbsUp, Download, Award, ArrowRight, CheckCircle, ArrowLeft, BookOpen, Layout, FileText, Check, Heart } from "lucide-react";
 import { downloadCourseAsPDF } from "@/utils/DownloadPdf";
 import { downloadCourseAsDocx } from "@/utils/DownloadDocx";
 import { downloadCertificationPDF } from "@/utils/DownloadCertification";
 import CourseSidebar from "@/components/CourseSidebar";
 import SmartNotes from "@/components/SmartNotes";
+import CourseComments from "@/components/CourseComments";
 import DownloadOptions from './DownloadOptions';
 import { CourseData, Section, Chapter, Paragraph, QuestionData } from "@/types/course";
 import { toast } from "react-hot-toast";
@@ -22,7 +23,9 @@ import { useTranslations } from 'next-intl';
 
 interface CourseProps {
   courseData: CourseData;
-  incrementLike: (id: number) => Promise<void>;
+  isLiked: boolean;
+  likeCount?: number;
+  toggleLike: (id: number) => Promise<void>;
   incrementDownload: (id: number) => Promise<void>;
 }
 
@@ -36,7 +39,7 @@ interface Step {
   comp: boolean;
 }
 
-const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDownload }) => {
+const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleLike, incrementDownload }) => {
   const t = useTranslations('pages.course');
   const { user } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -52,6 +55,19 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const [isCertifying, setIsCertifying] = useState<boolean>(false);
   const [evaluation, setEvaluation] = useState({ rating: 0, feedback: "", submitted: false });
 
+  // Local like state for instant reactive UI (no page reload needed)
+  const [localIsLiked, setLocalIsLiked] = useState<boolean>(isLiked);
+  const [localLikeCount, setLocalLikeCount] = useState<number>(likeCount ?? courseData.likeCount ?? 0);
+
+  // Sync with prop changes (e.g. initial load)
+  useEffect(() => {
+    setLocalIsLiked(isLiked);
+  }, [isLiked]);
+
+  useEffect(() => {
+    setLocalLikeCount(likeCount ?? courseData.likeCount ?? 0);
+  }, [likeCount, courseData.likeCount]);
+
   const { startLoading, stopLoading } = useLoading();
   const { isEnrolled, loading: enrollmentLoading, updateProgress: updateCourseProgress, progress: savedProgress, enrollment } = useEnrollment(courseData.id);
 
@@ -62,14 +78,14 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   const steps = useMemo(() => {
     if (!courseData?.sections?.length) return [];
     const s: Step[] = [];
-    courseData.sections.forEach((sec, sIdx) => {
+    courseData.sections.forEach((sec: Section, sIdx: number) => {
       s.push({ type: 'section_intro', s: sIdx, c: 0, p: 0, exIdx: 0, exL: null, comp: false });
       const chapters = sec.chapters || [];
       if (chapters.length > 0) {
-        chapters.forEach((chap, cIdx) => {
+        chapters.forEach((chap: Chapter, cIdx: number) => {
           s.push({ type: 'chapter_intro', s: sIdx, c: cIdx, p: 0, exIdx: 0, exL: null, comp: false });
           const paragraphs = chap.paragraphs || [];
-          paragraphs.forEach((para, pIdx) => {
+          paragraphs.forEach((para: Paragraph, pIdx: number) => {
             s.push({ type: 'paragraph', s: sIdx, c: cIdx, p: pIdx, exIdx: 0, exL: null, comp: false });
           });
           if (chap.exercises?.length || chap.exercise || chap.exerciseContent) {
@@ -77,7 +93,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
           }
         });
       } else if (sec.paragraphs?.length) {
-        sec.paragraphs.forEach((para, pIdx) => {
+        sec.paragraphs.forEach((para: Paragraph, pIdx: number) => {
           s.push({ type: 'paragraph', s: sIdx, c: 0, p: pIdx, exIdx: 0, exL: null, comp: false });
         });
       }
@@ -142,7 +158,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     const activeExercises = getExercisesAtCurrentLevel();
     const activeExercise = activeExercises[currentExerciseIndex];
     if (!activeExercise?.questions?.length) return true;
-    let id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
+    const id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
     return (exerciseScore[id] || 0) >= 70;
   };
 
@@ -162,22 +178,32 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   };
 
   const navigateToParagraph = (sIdx: number, cIdx: number, pIdx: number) => {
-    const idx = steps.findIndex(st => st.s === sIdx && st.c === cIdx && st.p === pIdx && st.type === 'paragraph');
+    const idx = steps.findIndex((st: Step) => st.s === sIdx && st.c === cIdx && st.p === pIdx && st.type === 'paragraph');
     if (idx !== -1) setCurrentStepIndex(idx);
     else {
-      const idxAlt = steps.findIndex(st => st.s === sIdx && st.p === pIdx && st.type === 'paragraph');
+      const idxAlt = steps.findIndex((st: Step) => st.s === sIdx && st.p === pIdx && st.type === 'paragraph');
       if (idxAlt !== -1) setCurrentStepIndex(idxAlt);
     }
   };
 
-  const handleLike = async () => {
+  const handleLike = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (isLiking) return;
     setIsLiking(true);
+    // Optimistic local update — instant UI feedback, no page reload
+    const willLike = !localIsLiked;
+    setLocalIsLiked(willLike);
+    setLocalLikeCount((prev: number) => willLike ? prev + 1 : Math.max(0, prev - 1));
     try {
-      await incrementLike(courseData.id);
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-    } catch (e) {}
-    finally { setIsLiking(false); }
+      await toggleLike(courseData.id);
+      if (willLike) {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      }
+    } catch (e) {
+      // Rollback on error
+      setLocalIsLiked(!willLike);
+      setLocalLikeCount((prev: number) => willLike ? Math.max(0, prev - 1) : prev + 1);
+    } finally { setIsLiking(false); }
   };
 
   const handleOrientationSelect = async (orientation: 'p' | 'l') => {
@@ -186,7 +212,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
       await incrementDownload(courseData.id);
       await downloadCourseAsPDF(courseData, orientation);
       setShowDownloadModal(false);
-    } catch (e) {}
+    } catch (e) { }
     finally { setPdfGenerating(false); }
   };
 
@@ -196,7 +222,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
       await incrementDownload(courseData.id);
       await downloadCourseAsDocx(courseData);
       setShowDownloadModal(false);
-    } catch (e) {}
+    } catch (e) { }
     finally { setDocxGenerating(false); }
   };
 
@@ -216,11 +242,11 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
       const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || t('studentStr');
       await downloadCertificationPDF(courseData, name);
       confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
-    } catch (e) {}
+    } catch (e) { }
     finally { setIsCertifying(false); }
   };
 
-  const handleAnswerChange = (idx: number, val: string) => setCurrentExerciseAnswers(p => ({ ...p, [idx]: val }));
+  const handleAnswerChange = (idx: number, val: string) => setCurrentExerciseAnswers((p: any) => ({ ...p, [idx]: val }));
 
   const submitExercise = () => {
     const active = getExercisesAtCurrentLevel()[currentExerciseIndex];
@@ -228,7 +254,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
     let score = 0;
     active.questions.forEach((q: any, i: number) => { if (currentExerciseAnswers[i] === q.réponse) score++; });
     const pct = (score / active.questions.length) * 100;
-    let id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
+    const id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
     setExerciseScore(p => ({ ...p, [id]: pct }));
     if (pct >= 70) toast.success(t('congratulations'));
     else toast.error(t('tryAgain'));
@@ -236,7 +262,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
   const StarRating = ({ rating, setRating }: { rating: number, setRating: (r: number) => void }) => (
     <div className="flex gap-1">
-      {[1,2,3,4,5].map(s => (
+      {[1, 2, 3, 4, 5].map(s => (
         <button key={s} type="button" onClick={() => setRating(s)} className={`text-2xl ${s <= rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</button>
       ))}
     </div>
@@ -246,26 +272,26 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
   if (courseCompleted) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex">
-        <CourseSidebar 
-          courseData={courseData} 
-          currentSectionIndex={currentSectionIndex} 
-          currentChapterIndex={currentChapterIndex} 
-          currentParagraphIndex={currentParagraphIndex} 
-          setCurrentSectionIndex={(idx) => navigateToParagraph(idx, 0, 0)} 
-          setCurrentChapterIndex={(idx) => navigateToParagraph(currentSectionIndex, idx, 0)} 
-          setCurrentParagraphIndex={(idx) => navigateToParagraph(currentSectionIndex, currentChapterIndex, idx)} 
-          setShowExercise={() => {}} 
-          setCourseCompleted={() => {}} 
+        <CourseSidebar
+          courseData={courseData}
+          currentSectionIndex={currentSectionIndex}
+          currentChapterIndex={currentChapterIndex}
+          currentParagraphIndex={currentParagraphIndex}
+          setCurrentSectionIndex={(idx) => navigateToParagraph(idx, 0, 0)}
+          setCurrentChapterIndex={(idx) => navigateToParagraph(currentSectionIndex, idx, 0)}
+          setCurrentParagraphIndex={(idx) => navigateToParagraph(currentSectionIndex, currentChapterIndex, idx)}
+          setShowExercise={() => { }}
+          setCourseCompleted={() => { }}
           onDownloadRequest={() => {
             if (!canDownload) {
-              const msg = isStudent && enrollment?.status === 'PENDING' 
+              const msg = isStudent && enrollment?.status === 'PENDING'
                 ? (t('pendingEnrollment') || 'Your enrollment is pending validation.')
                 : (t('enrollToDownload') || 'You must be enrolled to download this course.');
               toast.error(msg);
               return;
             }
             setShowDownloadModal(true);
-          }} 
+          }}
           isEnrolled={canDownload}
         />
         <div className="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center">
@@ -277,14 +303,13 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
               {t('courseCompletedMessage', { title: courseData.title }) || `Course completed: ${courseData.title}`}
             </p>
-            <button 
-              onClick={handleCertificationClick} 
-              disabled={isCertifying || !canDownload} 
-              className={`w-full py-4 rounded-xl font-bold transition-all mb-8 ${
-                !canDownload 
-                  ? 'bg-gray-400 text-white cursor-not-allowed opacity-70' 
-                  : 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
-              }`}
+            <button
+              onClick={handleCertificationClick}
+              disabled={isCertifying || !canDownload}
+              className={`w-full py-4 rounded-xl font-bold transition-all mb-8 ${!canDownload
+                ? 'bg-gray-400 text-white cursor-not-allowed opacity-70'
+                : 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
+                }`}
               title={!canDownload ? (t('enrollToCertify') || 'Enroll to get this certificate') : t('getCert')}
             >
               {isCertifying ? t('generating') : t('getCert')}
@@ -294,12 +319,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               {!evaluation.submitted ? (
                 <div className="space-y-4">
                   <StarRating rating={evaluation.rating} setRating={r => setEvaluation(p => ({ ...p, rating: r }))} />
-                  <textarea 
-                    value={evaluation.feedback} 
-                    onChange={e => setEvaluation(p => ({ ...p, feedback: e.target.value }))} 
-                    className="w-full p-3 rounded-lg border dark:bg-gray-800" 
-                    rows={3} 
-                    placeholder={t('feedbackPlaceholder')} 
+                  <textarea
+                    value={evaluation.feedback}
+                    onChange={e => setEvaluation(p => ({ ...p, feedback: e.target.value }))}
+                    className="w-full p-3 rounded-lg border dark:bg-gray-800"
+                    rows={3}
+                    placeholder={t('feedbackPlaceholder')}
                   />
                   <button onClick={() => setEvaluation(p => ({ ...p, submitted: true }))} className="w-full py-2 bg-gray-800 text-white rounded-lg">
                     {t('submitRating')}
@@ -322,29 +347,29 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex transition-colors duration-300">
-      <CourseSidebar 
-        courseData={courseData} 
-        currentSectionIndex={currentSectionIndex} 
-        currentChapterIndex={currentChapterIndex} 
-        currentParagraphIndex={currentParagraphIndex} 
-        setCurrentSectionIndex={(idx) => navigateToParagraph(idx, 0, 0)} 
-        setCurrentChapterIndex={(idx) => navigateToParagraph(currentSectionIndex, idx, 0)} 
-        setCurrentParagraphIndex={(idx) => navigateToParagraph(currentSectionIndex, currentChapterIndex, idx)} 
-        setShowExercise={() => {}} 
-        setCourseCompleted={() => {}} 
+      <CourseSidebar
+        courseData={courseData}
+        currentSectionIndex={currentSectionIndex}
+        currentChapterIndex={currentChapterIndex}
+        currentParagraphIndex={currentParagraphIndex}
+        setCurrentSectionIndex={(idx) => navigateToParagraph(idx, 0, 0)}
+        setCurrentChapterIndex={(idx) => navigateToParagraph(currentSectionIndex, idx, 0)}
+        setCurrentParagraphIndex={(idx) => navigateToParagraph(currentSectionIndex, currentChapterIndex, idx)}
+        setShowExercise={() => { }}
+        setCourseCompleted={() => { }}
         onDownloadRequest={() => {
           if (!canDownload) {
-            const msg = isStudent && enrollment?.status === 'PENDING' 
+            const msg = isStudent && enrollment?.status === 'PENDING'
               ? (t('pendingEnrollment') || 'Your enrollment is pending validation.')
               : (t('enrollToDownload') || 'You must be enrolled to download this course.');
             toast.error(msg);
             return;
           }
           setShowDownloadModal(true);
-        }} 
+        }}
         isEnrolled={canDownload}
       />
-      
+
       <div ref={scrollContainerRef} className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto pt-16">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 mb-8 border border-gray-100 dark:border-gray-800">
@@ -426,7 +451,7 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
                   {t('validateAnswers')}
                 </button>
                 {(() => {
-                  let id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
+                  const id = currentExerciseLevel === 'chapter' ? `c-${currentSectionIndex}-${currentChapterIndex}-${currentExerciseIndex}` : `s-${currentSectionIndex}-${currentExerciseIndex}`;
                   if (exerciseScore[id] === undefined) return null;
                   return (
                     <div className={`mt-4 p-4 rounded-xl border-2 ${isCurrentStepCompleted() ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
@@ -447,9 +472,12 @@ const Course: React.FC<CourseProps> = ({ courseData, incrementLike, incrementDow
               {getProgressPercentage() === 100 ? (t('finish') || 'Finish') : t('next')} <ArrowRight />
             </button>
           </div>
+
+          {/* Section Commentaires */}
+          <CourseComments courseId={courseData.id} />
         </div>
       </div>
-      
+
       <SmartNotes courseId={courseData.id} courseTitle={courseData.title} />
       <DownloadOptions isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} onSelectPdf={handleOrientationSelect} onSelectWord={handleDownloadDocx} isPdfLoading={pdfGenerating} isWordLoading={docxGenerating} />
     </div>

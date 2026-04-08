@@ -1,0 +1,5 @@
+
+> xccm-frontend@0.1.0 build
+> next build --webpack
+
+sh: 1: next: not found

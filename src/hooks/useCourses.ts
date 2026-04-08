@@ -1,7 +1,7 @@
 // hooks/useCourses.ts
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { CourseControllerService } from '@/lib';
+import { CourseControllerService, CourseInteractionControllerService } from '@/lib';
 
 export interface Course {
     image: any;
@@ -150,7 +150,7 @@ export function useCourses(): UseCoursesReturn {
                     : course
             ));
 
-            await CourseControllerService.incrementLikeCount(courseId);
+            await CourseInteractionControllerService.toggleLike(courseId);
         } catch (err) {
             console.error(`❌ Erreur lors de l'incrémentation des likes pour le cours ${courseId}:`, err);
 
@@ -202,7 +202,7 @@ export function useCourses(): UseCoursesReturn {
                     : course
             ));
 
-            await CourseControllerService.decrementLikeCount(courseId);
+            await CourseInteractionControllerService.toggleLike(courseId);
         } catch (err) {
             console.error(`❌ Erreur lors de la décrémentation des likes pour le cours ${courseId}:`, err);
 
@@ -267,7 +267,7 @@ export function useCourses(): UseCoursesReturn {
                     : course
             ));
 
-            await CourseControllerService.incrementViewCount(courseId);
+            await CourseInteractionControllerService.recordView(courseId);
             sessionStorage.setItem(viewedKey, 'true');
         } catch (err) {
             console.error(`❌ Erreur lors de l'incrémentation des vues pour le cours ${courseId}:`, err);
@@ -335,10 +335,9 @@ export function useCourse(courseId: number) {
 
     const { isAuthenticated, loading: authLoading } = useAuth();
     const {
-        incrementLike: globalIncrementLike,
-        decrementLike: globalDecrementLike,
+        toggleLike: globalToggleLike,
         incrementDownload: globalIncrementDownload,
-        isLiked: globalIsLiked // Ajoute cette ligne
+        isLiked: globalIsLiked
     } = useCourses();
 
     useEffect(() => {
@@ -382,7 +381,7 @@ export function useCourse(courseId: number) {
             if (sessionStorage.getItem(viewedKey)) return;
 
             try {
-                await CourseControllerService.incrementViewCount(courseId);
+                await CourseInteractionControllerService.recordView(courseId);
                 sessionStorage.setItem(viewedKey, 'true');
                 // Mise à jour locale
                 setCourse(prev => prev ? { ...prev, viewCount: (prev.viewCount || 0) + 1 } : prev);
@@ -397,37 +396,30 @@ export function useCourse(courseId: number) {
         }
     }, [courseId, authLoading, isAuthenticated, globalIsLiked]); // Ajoute globalIsLiked ici
 
-    const incrementLike = async (id: number) => {
+    const toggleLike = async (id: number) => {
+        const currentlyLiked = course?.isLiked;
         try {
             // Optimistic update locally
             setCourse(prev => prev && String(prev.id) === String(id)
                 ? {
                     ...prev,
-                    likeCount: (prev.likeCount || 0) + 1,
-                    isLiked: true // Ajoute cette ligne
+                    likeCount: currentlyLiked ? Math.max(0, (prev.likeCount || 0) - 1) : (prev.likeCount || 0) + 1,
+                    isLiked: !currentlyLiked
                 }
                 : prev
             );
-            await globalIncrementLike(id);
+            await globalToggleLike(id);
         } catch (err) {
-            console.error("Error incrementing like:", err);
-        }
-    };
-
-    const decrementLike = async (id: number) => {
-        try {
-            // Optimistic update locally
+            console.error("Error toggling like:", err);
+            // Rollback
             setCourse(prev => prev && String(prev.id) === String(id)
                 ? {
                     ...prev,
-                    likeCount: Math.max(0, (prev.likeCount || 0) - 1),
-                    isLiked: false // Ajoute cette ligne
+                    likeCount: currentlyLiked ? (prev.likeCount || 0) + 1 : Math.max(0, (prev.likeCount || 0) - 1),
+                    isLiked: currentlyLiked
                 }
                 : prev
             );
-            await globalDecrementLike(id);
-        } catch (err) {
-            console.error("Error decrementing like:", err);
         }
     };
 
@@ -448,8 +440,7 @@ export function useCourse(courseId: number) {
         course,
         loading: loading || authLoading,
         error,
-        incrementLike,
-        decrementLike,
+        toggleLike,
         incrementDownload,
     };
 }

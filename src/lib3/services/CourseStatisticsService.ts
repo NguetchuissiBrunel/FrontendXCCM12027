@@ -76,8 +76,8 @@ export class CourseStatisticsService {
         courseId: number
     ): CourseStatistics {
         // Récupérer les infos du cours pour compléter si nécessaire
-        let courseTitle = apiData.courseTitle || `Cours ${courseId}`;
-        let courseCategory = apiData.courseCategory || 'Général';
+        const courseTitle = apiData.courseTitle || `Cours ${courseId}`;
+        const courseCategory = apiData.courseCategory || 'Général';
 
         // Transformer les statistiques des exercices depuis l'API
         const exerciseStats = (apiData.exerciseStats || []).map((ex: any) => ({
@@ -289,8 +289,8 @@ export class CourseStatisticsService {
                             submissions = submissionsResponse;
                         } else if (submissionsResponse && typeof submissionsResponse === 'object') {
                             // Cas 2: Retour d'un objet ApiResponse avec propriété data
-                            if (submissionsResponse?.data && Array.isArray(submissionsResponse.data)) {
-                                submissions = submissionsResponse.data;
+                            if ((submissionsResponse as any)?.data && Array.isArray((submissionsResponse as any).data)) {
+                                submissions = (submissionsResponse as any).data;
                             }
                         }
 

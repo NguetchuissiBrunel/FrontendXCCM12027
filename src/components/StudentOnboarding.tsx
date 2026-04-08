@@ -1,10 +1,11 @@
 // components/StudentOnboarding.tsx
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, Sparkles, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface Step {
     target: string;
@@ -17,247 +18,206 @@ interface Step {
 
 const StudentOnboarding = () => {
     const pathname = usePathname() || '';
+    const t = useTranslations('onboarding.etu');
+    const tb = useTranslations('onboarding.buttons');
 
     // Complete tour steps for student dashboard home page
-    const HOME_PAGE_STEPS: Step[] = [
+    const HOME_PAGE_STEPS: Step[] = useMemo(() => [
         { 
             target: '#welcome-section', 
-            title: 'Bienvenue sur votre espace étudiant !', 
-            description: 'Cette visite guidée vous aidera à découvrir toutes les fonctionnalités de votre tableau de bord.', 
+            title: t('welcomeTitle'), 
+            description: t('welcomeDesc'), 
             position: 'bottom',
             highlight: true 
         },
         { 
             target: '#stats-overview', 
-            title: 'Vos statistiques en un coup d\'œil', 
-            description: 'Suivez votre progression : moyenne générale, nombre de soumissions, exercices en attente et terminés.', 
+            title: t('statsTitle'), 
+            description: t('statsDesc'), 
             position: 'left',
             highlight: true 
         },
         { 
             target: '#my-courses', 
-            title: 'Mes cours', 
-            description: 'Retrouvez ici tous vos cours actifs. Cliquez sur "Continuer" pour accéder au contenu du cours.', 
+            title: t('coursesTitle'), 
+            description: t('coursesDesc'), 
             position: 'top',
             highlight: true 
         },
         { 
             target: '#pending-exercises', 
-            title: 'Exercices à rendre', 
-            description: 'Les exercices en attente de votre part. Ne manquez pas les délais !', 
+            title: t('pendingTitle'), 
+            description: t('pendingDesc'), 
             position: 'left',
             highlight: true 
         },
         { 
             target: '#my-submissions', 
-            title: 'Mes soumissions', 
-            description: 'Consultez l\'historique de vos soumissions et les feedbacks des correcteurs.', 
+            title: t('submissionsTitle'), 
+            description: t('submissionsDesc'), 
             position: 'left',
             highlight: true 
         },
         { 
             target: '#quick-actions', 
-            title: 'Actions rapides', 
-            description: 'Accédez rapidement aux fonctionnalités essentielles.', 
+            title: t('quickActionsTitle'), 
+            description: t('quickActionsDesc'), 
             position: 'top',
             highlight: true 
         },
         { 
             target: '#sidebar-nav', 
-            title: 'Navigation principale', 
-            description: 'Accédez à toutes les sections de votre espace étudiant : cours, exercices, soumissions, etc.', 
+            title: t('navTitle'), 
+            description: t('navDesc'), 
             position: 'right',
             highlight: true 
         },
         { 
             target: '#user-profile', 
-            title: 'Votre profil', 
-            description: 'Personnalisez votre profil, modifiez vos informations et suivez vos certifications.', 
+            title: t('profilePageTitle'), 
+            description: t('profilePageDesc'), 
             position: 'bottom',
             highlight: true 
         },
         { 
             target: 'body', 
-            title: 'C\'est parti !', 
-            description: 'Vous êtes prêt à commencer votre apprentissage. Explorez votre espace et n\'hésitez pas à cliquer sur le point d\'interrogation si vous avez besoin d\'aide.', 
+            title: tb('finish'), 
+            description: t('welcomeDesc'), // Or a generic final message
             position: 'center',
             highlight: false 
         }
-    ];
+    ], [t, tb]);
 
     // Steps for courses page
-    const COURSES_PAGE_STEPS: Step[] = [
+    const COURSES_PAGE_STEPS: Step[] = useMemo(() => [
         { 
             target: '#courses-list', 
-            title: 'Mes cours', 
-            description: 'Retrouvez tous vos cours ici. Cliquez sur "Voir le cours" pour accéder au contenu pédagogique.', 
+            title: t('coursesPageTitle'), 
+            description: t('coursesPageDesc'), 
             position: 'top',
             highlight: true 
         },
         { 
             target: '#explore-library-btn', 
-            title: 'Explorer la bibliothèque', 
-            description: 'Découvrez de nouveaux cours et enrichissez vos connaissances.', 
+            title: t('exploreLibraryTitle'), 
+            description: t('exploreLibraryDesc'), 
             position: 'bottom',
             highlight: true 
-        },
-        { 
-            target: 'body', 
-            title: 'Fin de la visite', 
-            description: 'Vous pouvez maintenant explorer vos cours et vous inscrire à de nouveaux !', 
-            position: 'center',
-            highlight: false 
         }
-    ];
+    ], [t]);
 
     // Steps for exercises page
-    const EXERCISES_PAGE_STEPS: Step[] = [
+    const EXERCISES_PAGE_STEPS: Step[] = useMemo(() => [
         { 
             target: '#exercises-stats', 
-            title: 'Vos statistiques', 
-            description: 'Suivez votre progression sur l\'ensemble des exercices. Nombre total, à commencer, en cours, soumis et notés.', 
+            title: t('exercisesStatsTitle'), 
+            description: t('exercisesStatsDesc'), 
             position: 'bottom',
             highlight: true 
         },
         { 
             target: '#exercises-filters', 
-            title: 'Filtres et recherche', 
-            description: 'Filtrez les exercices par statut, par cours ou recherchez par titre pour trouver rapidement ce que vous cherchez.', 
+            title: t('exercisesFiltersTitle'), 
+            description: t('exercisesFiltersDesc'), 
             position: 'bottom',
             highlight: true 
         },
         { 
             target: '#exercises-list', 
-            title: 'Liste des exercices', 
-            description: 'Tous vos exercices avec leur statut, échéance et votre score si disponible. Cliquez sur "Commencer" pour démarrer un exercice.', 
+            title: t('exercisesListTitle'), 
+            description: t('exercisesListDesc'), 
             position: 'top',
             highlight: true 
-        },
-        { 
-            target: 'body', 
-            title: 'Bonne chance !', 
-            description: 'Vous êtes prêt à relever ces défis. N\'oubliez pas de respecter les délais !', 
-            position: 'center',
-            highlight: false 
         }
-    ];
+    ], [t]);
 
     // Steps for submissions page
-    const SUBMISSIONS_PAGE_STEPS: Step[] = [
+    const SUBMISSIONS_PAGE_STEPS: Step[] = useMemo(() => [
         { 
             target: '#submissions-list', 
-            title: 'Mes soumissions', 
-            description: 'Historique complet de toutes vos soumissions avec les feedbacks des correcteurs. Cliquez sur "Détails" pour voir les réponses et les commentaires.', 
+            title: t('submissionsPageTitle'), 
+            description: t('submissionsPageDesc'), 
             position: 'top',
             highlight: true 
-        },
-        { 
-            target: 'body', 
-            title: 'Suivi des soumissions', 
-            description: 'Vous pouvez voir ici toutes vos soumissions et consulter les retours de vos professeurs.', 
-            position: 'center',
-            highlight: false 
         }
-    ];
+    ], [t]);
 
     // Steps for deadlines page
-    const DEADLINES_PAGE_STEPS: Step[] = [
+    const DEADLINES_PAGE_STEPS: Step[] = useMemo(() => [
         { 
             target: '#calendar-view', 
-            title: 'Calendrier des échéances', 
-            description: 'Visualisez toutes vos deadlines dans un calendrier interactif. Les couleurs vous aident à identifier les différents types d\'événements.', 
+            title: t('calendarViewTitle'), 
+            description: t('calendarViewDesc'), 
             position: 'bottom',
             highlight: true 
-        },
-        { 
-            target: 'body', 
-            title: 'Organisez votre temps', 
-            description: 'Utilisez ce calendrier pour gérer votre emploi du temps et ne plus jamais manquer une échéance !', 
-            position: 'center',
-            highlight: false 
         }
-    ];
+    ], [t]);
 
     // Steps for profile page
-    const PROFILE_PAGE_STEPS: Step[] = [
+    const PROFILE_PAGE_STEPS: Step[] = useMemo(() => [
         { 
             target: '#profile-info', 
-            title: 'Mon profil', 
-            description: 'Personnalisez vos informations personnelles et académiques. Cliquez sur "Modifier" pour mettre à jour vos données.', 
+            title: t('profileInfoTitle'), 
+            description: t('profileInfoDesc'), 
             position: 'right',
             highlight: true 
         },
         { 
             target: '#profile-stats', 
-            title: 'Mes statistiques', 
-            description: 'Suivez vos certifications, votre assiduité et vos performances globales.', 
+            title: t('profileStatsTitle'), 
+            description: t('profileStatsDesc'), 
             position: 'left',
             highlight: true 
-        },
-        { 
-            target: 'body', 
-            title: 'Profil personnalisé', 
-            description: 'Votre profil est votre carte d\'identité sur la plateforme. Prenez le temps de le compléter !', 
-            position: 'center',
-            highlight: false 
         }
-    ];
+    ], [t]);
 
     const [isActive, setIsActive] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [steps, setSteps] = useState<Step[]>([]);
     const [isWaitingForElement, setIsWaitingForElement] = useState(false);
-    const waitTimeoutRef = useRef<NodeJS.Timeout>(null);
+    const waitTimeoutRef = useRef<NodeJS.Timeout| null>(null);
     const retryCountRef = useRef(0);
 
-    // Check if current route is a student dashboard page where onboarding should be available
+    // Get clean path without locale
+    const getCleanPath = useCallback(() => {
+        return pathname.replace(/^\/(fr|en)/, '') || '/';
+    }, [pathname]);
+
+    // Check if current route is a student dashboard page
     const isStudentDashboardPage = useCallback(() => {
+        const cleanPath = getCleanPath();
         const studentRoutes = [
-            'fr/etudashboard',
-            'fr/etudashboard/',
-            'fr/etudashboard/cours',
-            'fr/etudashboard/exercises',
-            'fr/etudashboard/submissions',
-            'fr/etudashboard/echeances',
-            'fr/etudashboard/profil',
-            'en/etudashboard',
-            'en/etudashboard/',
-            'en/etudashboard/cours',
-            'en/etudashboard/exercises',
-            'en/etudashboard/submissions',
-            'en/etudashboard/echeances',
-            'en/etudashboard/profil'
+            '/etudashboard',
+            '/etudashboard/',
+            '/etudashboard/cours',
+            '/etudashboard/exercises',
+            '/etudashboard/submissions',
+            '/etudashboard/echeances',
+            '/etudashboard/profil'
         ];
         
-        return studentRoutes.some(route => {
-            if (route === 'fr/etudashboard') {
-                return pathname === 'fr/etudashboard' || pathname === 'fr/etudashboard/';
-            }
-            else if (route === 'en/etudashboard') {
-                return pathname === 'en/etudashboard' || pathname === 'en/etudashboard/';
-            }
-            return pathname === route || pathname.startsWith(route + '/');
-        });
-    }, [pathname]);
+        return studentRoutes.some(route => cleanPath === route);
+    }, [getCleanPath]);
 
     // Get steps for current page
     const getStepsForCurrentPage = useCallback(() => {
-        if (pathname === 'fr/etudashboard' || pathname === 'fr/etudashboard/' || pathname === 'en/etudashboard' || pathname === 'en/etudashboard/') {
+        const cleanPath = getCleanPath();
+        if (cleanPath === '/etudashboard' || cleanPath === '/etudashboard/') {
             return HOME_PAGE_STEPS;
-        } else if (pathname === 'fr/etudashboard/cours' || pathname === 'en/etudashboard/cours') {
+        } else if (cleanPath === '/etudashboard/cours') {
             return COURSES_PAGE_STEPS;
-        } else if (pathname === 'fr/etudashboard/exercises' || pathname === 'en/etudashboard/exercises') {
+        } else if (cleanPath === '/etudashboard/exercises') {
             return EXERCISES_PAGE_STEPS;
-        } else if (pathname === 'fr/etudashboard/submissions' || pathname === 'en/etudashboard/submissions') {
+        } else if (cleanPath === '/etudashboard/submissions') {
             return SUBMISSIONS_PAGE_STEPS;
-        } else if (pathname === 'fr/etudashboard/echeances' || pathname === 'en/etudashboard/echeances') {
+        } else if (cleanPath === '/etudashboard/echeances') {
             return DEADLINES_PAGE_STEPS;
-        } else if (pathname === 'fr/etudashboard/profil' || pathname === 'en/etudashboard/profil') {
+        } else if (cleanPath === '/etudashboard/profil') {
             return PROFILE_PAGE_STEPS;
         }
         return [];
-    }, [pathname]);
+    }, [getCleanPath, HOME_PAGE_STEPS, COURSES_PAGE_STEPS, EXERCISES_PAGE_STEPS, SUBMISSIONS_PAGE_STEPS, DEADLINES_PAGE_STEPS, PROFILE_PAGE_STEPS]);
 
     const updateTargetRect = useCallback(() => {
         if (!isActive || !steps[currentStep]) return;
@@ -274,12 +234,10 @@ const StudentOnboarding = () => {
             const rect = element.getBoundingClientRect();
             setTargetRect(rect);
             
-            // Scroll to element if not visible
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setIsWaitingForElement(false);
             retryCountRef.current = 0;
         } else {
-            // Element not found, wait for it to appear
             setIsWaitingForElement(true);
             setTargetRect(null);
             
@@ -289,16 +247,14 @@ const StudentOnboarding = () => {
                     updateTargetRect();
                 }, 500);
             } else {
-                // Too many retries, skip this step
                 console.warn(`Element ${selector} not found after multiple retries`);
                 setIsWaitingForElement(false);
             }
         }
     }, [isActive, currentStep, steps]);
 
-    // Initialize onboarding when route changes
+    // Initialize onboarding
     useEffect(() => {
-        // Reset state when route changes
         setIsActive(false);
         setCurrentStep(0);
         setTargetRect(null);
@@ -309,12 +265,10 @@ const StudentOnboarding = () => {
             if (pageSteps.length > 0) {
                 setSteps(pageSteps);
                 
-                // Check if tour has been seen for this specific page
-                const storageKey = `student_tour_${pathname}`;
+                const storageKey = `student_tour_${getCleanPath()}`;
                 const hasSeen = localStorage.getItem(storageKey);
                 
                 if (!hasSeen) {
-                    // Small delay to ensure DOM is ready
                     const timer = setTimeout(() => {
                         setIsActive(true);
                     }, 1200);
@@ -324,9 +278,9 @@ const StudentOnboarding = () => {
         } else {
             setSteps([]);
         }
-    }, [pathname, isStudentDashboardPage, getStepsForCurrentPage]);
+    }, [pathname, isStudentDashboardPage, getStepsForCurrentPage, getCleanPath]);
 
-    // Update target rect when step changes or window resizes
+    // Update listeners
     useEffect(() => {
         if (isActive && steps.length > 0) {
             updateTargetRect();
@@ -367,7 +321,7 @@ const StudentOnboarding = () => {
     const handleEnd = () => {
         setIsActive(false);
         setCurrentStep(0);
-        const storageKey = `student_tour_${pathname}`;
+        const storageKey = `student_tour_${getCleanPath()}`;
         localStorage.setItem(storageKey, 'true');
     };
 
@@ -377,17 +331,16 @@ const StudentOnboarding = () => {
         retryCountRef.current = 0;
     };
 
-    // Show help button on all student dashboard pages when tour is not active
     if (!isActive && isStudentDashboardPage() && steps.length > 0) {
         return (
             <button
                 onClick={handleRestart}
                 className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full shadow-2xl hover:scale-110 hover:shadow-purple-500/50 transition-all z-50 group"
-                aria-label="Aide et visite guidée"
+                aria-label={tb('helpTitle')}
             >
                 <HelpCircle className="w-6 h-6" />
                 <span className="absolute right-full mr-4 bg-gray-800 text-white text-xs py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none">
-                    Revoir la visite guidée
+                    {tb('helpTitle')}
                 </span>
             </button>
         );
@@ -399,7 +352,6 @@ const StudentOnboarding = () => {
 
     return (
         <div className="fixed inset-0 z-[9999] pointer-events-none">
-            {/* SVG Overlay for Spotlight */}
             <svg className="absolute inset-0 w-full h-full pointer-events-auto">
                 <defs>
                     <mask id="student-spotlight-mask">
@@ -419,13 +371,7 @@ const StudentOnboarding = () => {
                             />
                         )}
                         {(!targetRect || currentStepData.highlight === false) && (
-                            <rect
-                                x="0"
-                                y="0"
-                                width="100%"
-                                height="100%"
-                                fill="black"
-                            />
+                            <rect x="0" y="0" width="100%" height="100%" fill="black" />
                         )}
                     </mask>
                 </defs>
@@ -438,7 +384,6 @@ const StudentOnboarding = () => {
                 />
             </svg>
 
-            {/* Focused Frame */}
             <AnimatePresence>
                 {targetRect && currentStepData.highlight !== false && (
                     <motion.div
@@ -455,7 +400,6 @@ const StudentOnboarding = () => {
                 )}
             </AnimatePresence>
 
-            {/* Tooltip Content */}
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -470,7 +414,6 @@ const StudentOnboarding = () => {
                         <button
                             onClick={handleEnd}
                             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
-                            aria-label="Fermer"
                         >
                             <X size={20} />
                         </button>
@@ -498,7 +441,7 @@ const StudentOnboarding = () => {
                                             width: i === currentStep ? 24 : 6,
                                             backgroundColor: i === currentStep ? '#8b5cf6' : '#e5e7eb'
                                         }}
-                                        className="h-1.5 rounded-full transition-all duration-300"
+                                        className="h-1.5 rounded-full"
                                     />
                                 ))}
                             </div>
@@ -508,52 +451,30 @@ const StudentOnboarding = () => {
                                     <button
                                         onClick={handlePrev}
                                         className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                        aria-label="Précédent"
                                     >
                                         <ChevronLeft size={20} />
                                     </button>
                                 )}
                                 <button
                                     onClick={handleNext}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg group"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md group"
                                 >
-                                    {currentStep === steps.length - 1 ? (
-                                        <>
-                                            Terminer <Check size={18} />
-                                        </>
-                                    ) : (
-                                        <>
-                                            Suivant <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-                                        </>
-                                    )}
+                                    {currentStep === steps.length - 1 ? tb('finish') : tb('next')}
+                                    {currentStep !== steps.length - 1 && <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Progress Badge */}
                         <div className="absolute -top-3 -left-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-full border-2 border-white dark:border-gray-800 shadow-md">
                             {currentStep + 1} / {steps.length}
-                        </div>
-
-                        {/* Skip hint */}
-                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            Cliquez sur l'arrière-plan pour fermer
                         </div>
                     </motion.div>
                 </AnimatePresence>
             </div>
-
-            {/* Loading indicator when waiting for element */}
-            {isWaitingForElement && (
-                <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm z-20 pointer-events-none">
-                    Recherche de l'élément...
-                </div>
-            )}
         </div>
     );
 };
 
-// Helper to position tooltip based on target rect and preferred position
 function getTooltipStyles(targetRect: DOMRect | null, position?: string, highlight?: boolean): React.CSSProperties {
     if (!targetRect || highlight === false) {
         return {
@@ -562,62 +483,64 @@ function getTooltipStyles(targetRect: DOMRect | null, position?: string, highlig
             left: '50%',
             transform: 'translate(-50%, -50%)',
             zIndex: 10000,
-            maxWidth: '90vw'
+            maxWidth: 'min(420px, calc(100vw - 40px))',
+            width: 'auto',
+            minWidth: '280px'
         };
     }
 
     const spacing = 20;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const tooltipWidth = 384; // max-w-md = 24rem = 384px
-    const tooltipHeight = 300; // approximate height
-
-    let top: number, left: number;
+    const tooltipWidth = Math.min(400, viewportWidth - 40);
+    const tooltipHeight = 280;
     
-    switch (position) {
-        case 'top':
-            top = targetRect.top - spacing - tooltipHeight;
-            left = targetRect.left + targetRect.width / 2;
-            break;
-        case 'bottom':
-            top = targetRect.bottom + spacing;
-            left = targetRect.left + targetRect.width / 2;
-            break;
-        case 'left':
-            top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
-            left = targetRect.left - spacing - tooltipWidth;
-            break;
-        case 'right':
-            top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
-            left = targetRect.right + spacing;
-            break;
-        default:
-            top = targetRect.bottom + spacing;
-            left = targetRect.left + targetRect.width / 2;
-    }
-
-    // Adjust to keep tooltip in viewport
-    if (left + tooltipWidth / 2 > viewportWidth - spacing) {
-        left = viewportWidth - tooltipWidth / 2 - spacing;
-    }
-    if (left - tooltipWidth / 2 < spacing) {
-        left = tooltipWidth / 2 + spacing;
+    const spaceAbove = targetRect.top;
+    const spaceBelow = viewportHeight - targetRect.bottom;
+    const spaceLeft = targetRect.left;
+    const spaceRight = viewportWidth - targetRect.right;
+    
+    let top: number;
+    
+    if (position === 'top') {
+        top = spaceAbove >= tooltipHeight + spacing ? targetRect.top - tooltipHeight - spacing : targetRect.bottom + spacing;
+    } else if (position === 'bottom') {
+        top = spaceBelow >= tooltipHeight + spacing ? targetRect.bottom + spacing : targetRect.top - tooltipHeight - spacing;
+    } else if (position === 'left' && spaceLeft >= tooltipWidth + spacing) {
+        return {
+            position: 'fixed',
+            top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
+            left: targetRect.left - tooltipWidth - spacing,
+            zIndex: 10000,
+            maxWidth: `${tooltipWidth}px`,
+            width: 'auto',
+            minWidth: '280px'
+        };
+    } else if (position === 'right' && spaceRight >= tooltipWidth + spacing) {
+        return {
+            position: 'fixed',
+            top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
+            left: targetRect.right + spacing,
+            zIndex: 10000,
+            maxWidth: `${tooltipWidth}px`,
+            width: 'auto',
+            minWidth: '280px'
+        };
+    } else {
+        top = spaceBelow >= tooltipHeight + spacing ? targetRect.bottom + spacing : (spaceAbove >= tooltipHeight + spacing ? targetRect.top - tooltipHeight - spacing : (viewportHeight - tooltipHeight) / 2);
     }
     
-    if (top + tooltipHeight > viewportHeight - spacing) {
-        top = targetRect.top - tooltipHeight - spacing;
-    }
-    if (top < spacing) {
-        top = spacing;
-    }
-
+    const left = Math.min(viewportWidth - tooltipWidth / 2 - spacing, Math.max(tooltipWidth / 2 + spacing, targetRect.left + targetRect.width / 2));
+    
     return {
         position: 'fixed',
-        top: top,
+        top: Math.min(viewportHeight - tooltipHeight - spacing, Math.max(spacing, top)),
         left: left,
-        transform: 'translateX(-50%) translateY(0)',
+        transform: 'translateX(-50%)',
         zIndex: 10000,
-        maxWidth: '90vw'
+        maxWidth: `${tooltipWidth}px`,
+        width: 'auto',
+        minWidth: '280px'
     };
 }
 

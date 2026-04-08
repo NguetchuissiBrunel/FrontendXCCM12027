@@ -46,29 +46,6 @@ export default function ExerciseSubmissionsPage() {
   const paramId = params?.courseId ? parseInt(params.courseId as string) : 0;
   const exerciseId = params?.exerciseId ? parseInt(params.exerciseId as string) : 0;
 
-  // Vérification des IDs
-  if (!paramId || !exerciseId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
-        <div className="text-center">
-          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-            Paramètres invalides
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            L'URL de la page est incorrecte.
-          </p>
-          <button
-            onClick={() => router.push('/profdashboard/exercises')}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Retour aux exercices
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // Récupération des données
   const {
     data: exerciseApiResponse,
@@ -110,8 +87,33 @@ export default function ExerciseSubmissionsPage() {
       return;
     }
 
+    if (!paramId || !exerciseId) return;
+
     loadClassInfo();
-  }, [user, router, paramId]);
+  }, [user, router, paramId, exerciseId]);
+
+  // Vérification des IDs après TOUS les hooks
+  if (!paramId || !exerciseId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+            Paramètres invalides
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            L'URL de la page est incorrecte.
+          </p>
+          <button
+            onClick={() => router.push('/profdashboard/exercises')}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Retour aux exercices
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const loadClassInfo = async () => {
     try {
@@ -323,10 +325,10 @@ export default function ExerciseSubmissionsPage() {
                   </h1>
                   <div className="flex items-center gap-3 mt-2">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${exercise.status === 'PUBLISHED'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                        : exercise.status === 'DRAFT'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : exercise.status === 'DRAFT'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                       }`}>
                       {exercise.status === 'PUBLISHED' ? 'Publié' :
                         exercise.status === 'DRAFT' ? 'Brouillon' : 'Fermé'}

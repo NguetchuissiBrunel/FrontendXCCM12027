@@ -8,8 +8,10 @@ import { AuthControllerService, RegisterRequest } from '@/lib';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLoading } from '@/contexts/LoadingContext';
+import { useTranslations } from 'next-intl';
 
 function StudentsList() {
+    const t = useTranslations('adminDashboard.students');
     const [students, setStudents] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,9 +39,9 @@ function StudentsList() {
 
     useEffect(() => {
         fetchStudents();
-        if (searchParams.get('add') === 'true') {
+        if (searchParams?.get('add') === 'true') {
             setIsModalOpen(true);
-            const newParams = new URLSearchParams(searchParams.toString());
+            const newParams = new URLSearchParams(searchParams?.toString());
             newParams.delete('add');
             router.replace(`/admindashboard/students?${newParams.toString()}`);
         }
@@ -49,10 +51,10 @@ function StudentsList() {
         startLoading();
         try {
             const res = await AdminService.getAllStudents();
-            setStudents((res.data || []) as any);
+            setStudents((res.data || []) as User[]);
         } catch (error) {
             console.error("Error fetching students:", error);
-            toast.error("Impossible de charger la liste des étudiants");
+            toast.error(t('toast.loadError'));
             setStudents([]);
         } finally {
             stopLoading();
@@ -60,30 +62,30 @@ function StudentsList() {
     };
 
     const handleDelete = async (userId: string) => {
-        toast((t) => (
+        toast((toastObj) => (
             <div className="flex flex-col gap-3">
-                <p className="font-bold">Êtes-vous sûr de vouloir supprimer cet étudiant ?</p>
+                <p className="font-bold">{t('delete.confirm')}</p>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => toast.dismiss(t.id)}
+                        onClick={() => toast.dismiss(toastObj.id)}
                         className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold"
                     >
-                        Annuler
+                        {t('actions.cancel')}
                     </button>
                     <button
                         onClick={async () => {
-                            toast.dismiss(t.id);
+                            toast.dismiss(toastObj.id);
                             try {
                                 await AdminService.deleteUser(userId);
-                                toast.success("Étudiant supprimé avec succès");
+                                toast.success(t('toast.deleteSuccess'));
                                 fetchStudents();
                             } catch (error) {
-                                toast.error("Erreur lors de la suppression");
+                                toast.error(t('toast.deleteError'));
                             }
                         }}
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold"
                     >
-                        Supprimer
+                        {t('actions.delete')}
                     </button>
                 </div>
             </div>
@@ -94,7 +96,7 @@ function StudentsList() {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
-            toast.error("Les mots de passe ne correspondent pas");
+            toast.error(t('toast.passwordMismatch'));
             return;
         }
 
@@ -114,13 +116,13 @@ function StudentsList() {
                 // On ne met pas "role: 'STUDENT'" ici
             });
 
-            toast.success("Étudiant ajouté avec succès");
+            toast.success(t('toast.createSuccess'));
             setIsModalOpen(false);
             setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', university: '', specialization: '' });
 
             setTimeout(() => fetchStudents(), 500);
-        } catch (error: any) {
-            toast.error(error?.message || "Erreur lors de la création");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : t('toast.createError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -138,8 +140,8 @@ function StudentsList() {
                         <FaUserGraduate size={20} />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold dark:text-white">Étudiants</h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{students.length} inscrits</p>
+                        <h1 className="text-xl font-bold dark:text-white">{t('title')}</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{t('registered', { count: students.length })}</p>
                     </div>
                 </div>
                 <button
@@ -147,7 +149,7 @@ function StudentsList() {
                     className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-500/20"
                 >
                     <FaPlus size={14} />
-                    <span>Ajouter</span>
+                    <span>{t('actions.add')}</span>
                 </button>
             </div>
 
@@ -155,7 +157,7 @@ function StudentsList() {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
                 <input
                     type="text"
-                    placeholder="Rechercher un étudiant..."
+                    placeholder={t('searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
@@ -166,10 +168,10 @@ function StudentsList() {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-slate-50 dark:bg-slate-800/50">
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nom</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Université</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('table.name')}</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('table.email')}</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('table.university')}</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">{t('table.actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -177,7 +179,7 @@ function StudentsList() {
                             null
                         ) : filteredStudents.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-6 py-8 text-center text-slate-500">Aucun étudiant trouvé</td>
+                                <td colSpan={4} className="px-6 py-8 text-center text-slate-500">{t('table.empty')}</td>
                             </tr>
                         ) : (
                             filteredStudents.map((student) => (
@@ -196,7 +198,7 @@ function StudentsList() {
                                         {student.email}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                                        {student.university || 'N/A'}
+                                        {student.university || t('notAvailable')}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <button
@@ -238,7 +240,7 @@ function StudentsList() {
                                         <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
                                             <FaUserGraduate />
                                         </div>
-                                        <span>Nouvel Étudiant</span>
+                                        <span>{t('modal.title')}</span>
                                     </h2>
                                     <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                                         <FaTimes size={20} />
@@ -248,7 +250,7 @@ function StudentsList() {
                                 <form onSubmit={handleCreate} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Prénom</label>
+                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('fields.firstName')}</label>
                                             <div className="relative">
                                                 <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
@@ -257,12 +259,12 @@ function StudentsList() {
                                                     value={formData.firstName}
                                                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                    placeholder="Jean"
+                                                    placeholder={t('placeholders.firstName')}
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Nom</label>
+                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('fields.lastName')}</label>
                                             <div className="relative">
                                                 <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
@@ -271,14 +273,14 @@ function StudentsList() {
                                                     value={formData.lastName}
                                                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                    placeholder="Dupont"
+                                                    placeholder={t('placeholders.lastName')}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email</label>
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('fields.email')}</label>
                                         <div className="relative">
                                             <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
@@ -287,13 +289,13 @@ function StudentsList() {
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                placeholder="jean.dupont@etu.tn"
+                                                    placeholder={t('placeholders.email')}
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Mot de passe</label>
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('fields.password')}</label>
                                         <div className="relative">
                                             <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
@@ -315,7 +317,7 @@ function StudentsList() {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Confirmer mot de passe</label>
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('fields.confirmPassword')}</label>
                                         <div className="relative">
                                             <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
@@ -338,7 +340,7 @@ function StudentsList() {
 
                                     <div className="grid grid-cols-2 gap-4 pb-2">
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Université</label>
+                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('fields.university')}</label>
                                             <div className="relative">
                                                 <FaUniversity className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
@@ -346,12 +348,12 @@ function StudentsList() {
                                                     value={formData.university}
                                                     onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                    placeholder="Faculté des Sciences"
+                                                    placeholder={t('placeholders.university')}
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Spécialisation</label>
+                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('fields.specialization')}</label>
                                             <div className="relative">
                                                 <FaUniversity className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
@@ -359,7 +361,7 @@ function StudentsList() {
                                                     value={formData.specialization}
                                                     onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
-                                                    placeholder="Informatique"
+                                                    placeholder={t('placeholders.specialization')}
                                                 />
                                             </div>
                                         </div>
@@ -370,7 +372,7 @@ function StudentsList() {
                                         disabled={isSubmitting}
                                         className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-purple-500/30 disabled:opacity-50 mt-4"
                                     >
-                                        {isSubmitting ? 'Création...' : 'Ajouter l\'étudiant'}
+                                        {isSubmitting ? t('actions.creating') : t('actions.addStudent')}
                                     </button>
                                 </form>
                             </div>
@@ -410,7 +412,7 @@ function StudentsList() {
                                             <h2 className="text-2xl font-bold dark:text-white">
                                                 {selectedUser.firstName} {selectedUser.lastName}
                                             </h2>
-                                            <p className="text-purple-600 dark:text-purple-400 font-medium">Étudiant</p>
+                                            <p className="text-purple-600 dark:text-purple-400 font-medium">{t('details.role')}</p>
                                         </div>
                                     </div>
                                     <button onClick={() => setIsDetailsOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
@@ -421,19 +423,19 @@ function StudentsList() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prénom</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('fields.firstName')}</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.firstName}
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nom</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('fields.lastName')}</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
                                                 {selectedUser.lastName}
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('fields.email')}</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
                                                 <FaEnvelope className="mr-2 text-slate-400" />
                                                 {selectedUser.email}
@@ -443,22 +445,22 @@ function StudentsList() {
 
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Université</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('fields.university')}</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium flex items-center mt-1">
                                                 <FaUniversity className="mr-2 text-slate-400" />
-                                                {selectedUser.university || 'Non spécifiée'}
+                                                {selectedUser.university || t('notSpecifiedF')}
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Spécialisation</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('fields.specialization')}</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
-                                                {selectedUser.specialization || 'Non spécifiée'}
+                                                {selectedUser.specialization || t('notSpecifiedF')}
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ville</label>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('fields.city')}</label>
                                             <p className="text-slate-700 dark:text-slate-200 font-medium mt-1">
-                                                {selectedUser.city || 'Non spécifiée'}
+                                                {selectedUser.city || t('notSpecifiedF')}
                                             </p>
                                         </div>
                                     </div>
@@ -475,7 +477,7 @@ function StudentsList() {
 
 export default function AdminStudentsPage() {
     return (
-        <Suspense fallback={<div>Chargement...</div>}>
+        <Suspense fallback={<div>Loading...</div>}>
             <StudentsList />
         </Suspense>
     );

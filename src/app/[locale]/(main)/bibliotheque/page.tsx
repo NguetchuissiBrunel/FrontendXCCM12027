@@ -108,73 +108,73 @@ const Bibliotheque = () => {
   const content = useMemo(() => (
     locale === 'fr'
       ? {
-          authRequired: "Veuillez vous connecter pour acceder a la bibliotheque",
-          removedFromFavorites: "Cours retire de vos favoris",
-          addedToFavorites: "Cours ajoute a vos favoris !",
-          likeError: "Impossible de mettre a jour le like",
-          generating: "Generation de votre ressource...",
-          missingData: "Donnees introuvables",
-          ready: "Document pret !",
-          downloadError: "Echec du telechargement",
-          loadingTitle: "Chargement de votre contenu",
-          loadingDescription: "Veuillez patienter un instant...",
-          heroTitle: "Bibliotheque",
-          heroDescription: "Accedez a l'integralite de nos cours et supports pedagogiques",
-          searchPlaceholder: "Rechercher un cours, un auteur, une categorie...",
-          allCourses: "Tous les cours",
-          favorites: "Mes favoris",
-          showingFavorites: "Affichage de vos cours favoris",
-          clearFilter: "Effacer le filtre",
-          noFavorites: "Aucun favori",
-          emptyTitle: "Oups ! Rien n'a ete trouve",
-          noFavoritesDescription: "Vous n'avez pas encore ajoute de cours a vos favoris. Cliquez sur les coeurs pour en ajouter !",
-          emptyDescription: "Nous n'avons trouve aucun cours correspondant a vos criteres actuels. Essayez de reinitialiser les filtres ou de modifier votre recherche.",
-          resetSearch: "Reinitialiser la recherche",
-          categoryFallback: "Formation",
-          favoriteBadge: "Favori",
-          unknownAuthor: "Auteur inconnu",
-          orientation: {
-            title: "Orientation du PDF",
-            description: "Comment souhaitez-vous mettre en page votre document pour l'exportation ?",
-            portrait: "Portrait",
-            landscape: "Paysage",
-            cancel: "Annuler"
-          }
+        authRequired: "Veuillez vous connecter pour acceder a la bibliotheque",
+        removedFromFavorites: "Cours retire de vos favoris",
+        addedToFavorites: "Cours ajoute a vos favoris !",
+        likeError: "Impossible de mettre a jour le like",
+        generating: "Generation de votre ressource...",
+        missingData: "Donnees introuvables",
+        ready: "Document pret !",
+        downloadError: "Echec du telechargement",
+        loadingTitle: "Chargement de votre contenu",
+        loadingDescription: "Veuillez patienter un instant...",
+        heroTitle: "Bibliotheque",
+        heroDescription: "Accedez a l'integralite de nos cours et supports pedagogiques",
+        searchPlaceholder: "Rechercher un cours, un auteur, une categorie...",
+        allCourses: "Tous les cours",
+        favorites: "Mes favoris",
+        showingFavorites: "Affichage de vos cours favoris",
+        clearFilter: "Effacer le filtre",
+        noFavorites: "Aucun favori",
+        emptyTitle: "Oups ! Rien n'a ete trouve",
+        noFavoritesDescription: "Vous n'avez pas encore ajoute de cours a vos favoris. Cliquez sur les coeurs pour en ajouter !",
+        emptyDescription: "Nous n'avons trouve aucun cours correspondant a vos criteres actuels. Essayez de reinitialiser les filtres ou de modifier votre recherche.",
+        resetSearch: "Reinitialiser la recherche",
+        categoryFallback: "Formation",
+        favoriteBadge: "Favori",
+        unknownAuthor: "Auteur inconnu",
+        orientation: {
+          title: "Orientation du PDF",
+          description: "Comment souhaitez-vous mettre en page votre document pour l'exportation ?",
+          portrait: "Portrait",
+          landscape: "Paysage",
+          cancel: "Annuler"
         }
+      }
       : {
-          authRequired: "Please sign in to access the library",
-          removedFromFavorites: "Course removed from your favorites",
-          addedToFavorites: "Course added to your favorites!",
-          likeError: "Unable to update favorite status",
-          generating: "Generating your resource...",
-          missingData: "Data not found",
-          ready: "Document is ready!",
-          downloadError: "Download failed",
-          loadingTitle: "Loading your content",
-          loadingDescription: "Please wait a moment...",
-          heroTitle: "Library",
-          heroDescription: "Access our full catalog of courses and teaching materials",
-          searchPlaceholder: "Search by course, author, or category...",
-          allCourses: "All courses",
-          favorites: "My favorites",
-          showingFavorites: "Showing your favorite courses",
-          clearFilter: "Clear filter",
-          noFavorites: "No favorites yet",
-          emptyTitle: "Oops! Nothing was found",
-          noFavoritesDescription: "You have not added any courses to your favorites yet. Click the hearts to save some.",
-          emptyDescription: "We could not find any courses matching your current filters. Try resetting the filters or changing your search.",
-          resetSearch: "Reset search",
-          categoryFallback: "Course",
-          favoriteBadge: "Favorite",
-          unknownAuthor: "Unknown author",
-          orientation: {
-            title: "PDF orientation",
-            description: "How would you like your document to be laid out for export?",
-            portrait: "Portrait",
-            landscape: "Landscape",
-            cancel: "Cancel"
-          }
+        authRequired: "Please sign in to access the library",
+        removedFromFavorites: "Course removed from your favorites",
+        addedToFavorites: "Course added to your favorites!",
+        likeError: "Unable to update favorite status",
+        generating: "Generating your resource...",
+        missingData: "Data not found",
+        ready: "Document is ready!",
+        downloadError: "Download failed",
+        loadingTitle: "Loading your content",
+        loadingDescription: "Please wait a moment...",
+        heroTitle: "Library",
+        heroDescription: "Access our full catalog of courses and teaching materials",
+        searchPlaceholder: "Search by course, author, or category...",
+        allCourses: "All courses",
+        favorites: "My favorites",
+        showingFavorites: "Showing your favorite courses",
+        clearFilter: "Clear filter",
+        noFavorites: "No favorites yet",
+        emptyTitle: "Oops! Nothing was found",
+        noFavoritesDescription: "You have not added any courses to your favorites yet. Click the hearts to save some.",
+        emptyDescription: "We could not find any courses matching your current filters. Try resetting the filters or changing your search.",
+        resetSearch: "Reset search",
+        categoryFallback: "Course",
+        favoriteBadge: "Favorite",
+        unknownAuthor: "Unknown author",
+        orientation: {
+          title: "PDF orientation",
+          description: "How would you like your document to be laid out for export?",
+          portrait: "Portrait",
+          landscape: "Landscape",
+          cancel: "Cancel"
         }
+      }
   ), [locale]);
 
   // Redirection si non authentifié
@@ -489,6 +489,7 @@ const Bibliotheque = () => {
                 <div className="mt-auto">
                   <EnrollmentButton
                     courseId={course.id}
+                    courseAuthorId={course.author?.id}
                     size="md"
                     variant="primary"
                     fullWidth

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { Enrollment } from '@/types/enrollment';
 import { Check, X, Loader2, User, BookOpen } from 'lucide-react';
@@ -10,6 +11,7 @@ import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisat
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 
 export default function PendingEnrollmentsList() {
+    const t = useTranslations('teacherDashboard');
     const { user } = useAuth();
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [loading, setLoading] = useState(true);
@@ -75,10 +77,12 @@ export default function PendingEnrollmentsList() {
             setEnrollments(prev => prev.filter(e => e.id !== id));
 
             // Feedback utilisateur
-            toast.success(`Enrôlement ${status === 'APPROVED' ? 'accepté' : 'rejeté'} avec succès`);
+            toast.success(status === 'APPROVED'
+                ? t('pendingEnrollments.acceptedSuccess')
+                : t('pendingEnrollments.rejectedSuccess'));
         } catch (error) {
             console.error(`Erreur lors de la ${status === 'APPROVED' ? 'validation' : 'rejet'}:`, error);
-            toast.error(`Erreur lors de l'opération. Veuillez réessayer.`);
+            toast.error(t('pendingEnrollments.operationError'));
         } finally {
             setProcessingId(null);
         }
@@ -91,7 +95,7 @@ export default function PendingEnrollmentsList() {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-10 w-10 text-purple-600 animate-spin mb-4" />
-                <p className="text-gray-500">Chargement des demandes...</p>
+                <p className="text-gray-500">{t('pendingEnrollments.loading')}</p>
             </div>
         );
     }
@@ -102,9 +106,9 @@ export default function PendingEnrollmentsList() {
                 <div className="w-20 h-20 bg-purple-50 dark:bg-purple-900/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <BookOpen className="h-10 w-10 text-purple-300 dark:text-purple-700" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tout est à jour !</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('pendingEnrollments.emptyTitle')}</h3>
                 <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-                    Il n'y a aucune demande d'inscription en attente pour le moment.
+                    {t('pendingEnrollments.emptyDescription')}
                 </p>
             </div>
         );
@@ -115,10 +119,10 @@ export default function PendingEnrollmentsList() {
             <div className="flex items-center justify-between px-2">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <span className="w-2 h-8 bg-purple-600 rounded-full"></span>
-                    Demandes ({enrollments.length})
+                    {t('pendingEnrollments.requestsTitle', { count: enrollments.length })}
                 </h2>
                 <span className="text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-3 py-1 rounded-full">
-                    Action requise
+                    {t('pendingEnrollments.actionRequired')}
                 </span>
             </div>
 
@@ -143,7 +147,7 @@ export default function PendingEnrollmentsList() {
                                     </span>
                                     <span className="text-gray-300 dark:text-gray-600">•</span>
                                     <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                                        Demandé le {new Date(enrollment.enrolledAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                                        {t('pendingEnrollments.requestedOn', { date: new Date(enrollment.enrolledAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) })}
                                     </span>
                                 </div>
                             </div>
@@ -160,7 +164,7 @@ export default function PendingEnrollmentsList() {
                                 ) : (
                                     <Check className="h-5 w-5" />
                                 )}
-                                <span>Accepter</span>
+                                <span>{t('pendingEnrollments.accept')}</span>
                             </button>
 
                             <button
@@ -169,7 +173,7 @@ export default function PendingEnrollmentsList() {
                                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-50"
                             >
                                 <X className="h-5 w-5" />
-                                <span>Rejeter</span>
+                                <span>{t('pendingEnrollments.reject')}</span>
                             </button>
                         </div>
                     </div>

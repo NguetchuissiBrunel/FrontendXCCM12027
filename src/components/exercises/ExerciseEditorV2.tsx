@@ -278,7 +278,7 @@ export default function ExerciseEditorV2({
 
       const errorResult: ApiResponse<Exercise> = {
         success: false,
-        message: error instanceof Error ? error.message : 'Erreur lors de la sauvegarde',
+        message: error instanceof Error ? error.message : t('saveError'),
         timestamp: new Date().toISOString()
       };
 
@@ -503,16 +503,16 @@ export default function ExerciseEditorV2({
               <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl">
                 <FileText className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                 <h4 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Aucune question
+                  {t('noQuestion')}
                 </h4>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Commencez par ajouter votre première question
+                  {t('noQuestionSub')}
                 </p>
                 <button
                   onClick={() => addQuestion('TEXT')}
                   className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
                 >
-                  Ajouter une question
+                  {t('addQuestion')}
                 </button>
               </div>
             ) : (
@@ -615,7 +615,7 @@ export default function ExerciseEditorV2({
                                 value={option}
                                 onChange={(e) => updateOption(index, optIndex, e.target.value)}
                                 className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
-                                placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                                placeholder={`${t('optionLabel')} ${String.fromCharCode(65 + optIndex)}`}
                               />
                               <button
                                 onClick={() => removeOption(index, optIndex)}

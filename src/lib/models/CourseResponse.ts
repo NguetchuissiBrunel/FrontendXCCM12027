@@ -21,6 +21,8 @@ export type CourseResponse = {
     viewCount?: number;
     likeCount?: number;
     downloadCount?: number;
+    classId?: number;
+    className?: string;
 };
 export namespace CourseResponse {
     export enum status {

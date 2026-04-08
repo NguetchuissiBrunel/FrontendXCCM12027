@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -42,35 +43,14 @@ import ExerciseStats from '@/components/exercises/ExerciseStats';
 import { Exercise } from '@/types/exercise';
 
 export default function ViewExercisePage() {
+  const t = useTranslations('teacherDashboard.exerciseView');
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
 
   const paramId = params?.courseId ? parseInt(params.courseId as string) : 0; // Represents classId within this flow
   const exerciseId = params?.exerciseId ? parseInt(params.exerciseId as string) : 0;
-
-  // Vérification des IDs
-  if (!paramId || !exerciseId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
-        <div className="text-center">
-          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-            Paramètres invalides
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            L'URL de la page est incorrecte.
-          </p>
-          <button
-            onClick={() => router.push('/profdashboard/exercises')}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Retour aux exercices
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Utilisation des nouveaux hooks
   const {
@@ -98,14 +78,39 @@ export default function ViewExercisePage() {
 
   useEffect(() => {
     if (!user) {
-      toast.error('Veuillez vous connecter');
+      toast.error(t('authRequired'));
       router.push('/login');
       return;
     }
 
+    if (!paramId || !exerciseId) return;
+
     // Charger les infos de la classe
     loadClassInfo();
-  }, [user, router, paramId]);
+  }, [user, router, paramId, exerciseId, t]);
+
+  // Vérification des IDs après TOUS les hooks
+  if (!paramId || !exerciseId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+            {t('invalidParamsTitle')}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {t('invalidParamsDescription')}
+          </p>
+          <button
+            onClick={() => router.push('/profdashboard/exercises')}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            {t('backToExercises')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const loadClassInfo = async () => {
     try {
@@ -127,19 +132,19 @@ export default function ViewExercisePage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet exercice ? Cette action est irréversible.')) {
+    if (!confirm(t('confirmDelete'))) {
       return;
     }
 
     deleteMutation.mutate({
       onSuccess: (result: any) => {
         if (result.success) {
-          toast.success('✅ Exercice supprimé avec succès');
+          toast.success(t('deleteSuccess'));
           router.push(`/profdashboard/exercises/${paramId}`);
         }
       },
       onError: (error: Error) => {
-        toast.error(error.message || 'Erreur lors de la suppression');
+        toast.error(error.message || t('deleteError'));
       }
     });
   };
@@ -149,15 +154,15 @@ export default function ViewExercisePage() {
   };
 
   const handleDuplicate = async () => {
-    duplicateMutation.mutate(`${exerciseApiResponse?.data?.title} (Copie)`, {
+    duplicateMutation.mutate(`${exerciseApiResponse?.data?.title} (${t('copySuffix')})`, {
       onSuccess: (result: any) => {
         if (result.success && result.data) {
-          toast.success('✅ Exercice dupliqué avec succès');
+          toast.success(t('duplicateSuccess'));
           router.push(`/profdashboard/exercises/${paramId}/view/${result.data.id}`);
         }
       },
       onError: (error: Error) => {
-        toast.error(error.message || 'Erreur lors de la duplication');
+        toast.error(error.message || t('duplicateError'));
       }
     });
   };
@@ -166,12 +171,12 @@ export default function ViewExercisePage() {
     publishMutation.mutate({
       onSuccess: (result: any) => {
         if (result.success) {
-          toast.success('✅ L\'exercice est déjà publié (tous les exercices sont publiés par défaut)');
+          toast.success(t('publishInfo'));
           refetch();
         }
       },
       onError: (error: Error) => {
-        toast.error(error.message || 'Erreur lors de la publication');
+        toast.error(error.message || t('publishError'));
       }
     });
   };
@@ -180,32 +185,32 @@ export default function ViewExercisePage() {
     closeMutation.mutate({
       onSuccess: (result: any) => {
         if (result.success) {
-          toast.success('Message d\'information: ' + result.message);
+          toast.success(`${t('infoMessagePrefix')} ${result.message}`);
           refetch();
         } else {
-          toast.error('❌ ' + result.message);
+          toast.error(`${t('errorPrefix')} ${result.message}`);
         }
       },
       onError: (error: Error) => {
-        toast.error(error.message || 'Erreur lors de la fermeture');
+        toast.error(error.message || t('closeError'));
       }
     });
   };
 
   const handleDownloadSubmissions = () => {
-    toast.loading('Préparation du téléchargement...');
+    toast.loading(t('downloadPreparing'));
     setTimeout(() => {
       toast.dismiss();
-      toast.success('Fichier prêt au téléchargement');
+      toast.success(t('downloadReady'));
     }, 2000);
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Non définie';
+    if (!dateString) return t('notSet');
 
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('fr-FR', {
+      return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -213,18 +218,18 @@ export default function ViewExercisePage() {
         minute: '2-digit'
       });
     } catch {
-      return 'Date invalide';
+      return t('invalidDate');
     }
   };
 
   const getStatusDisplay = (status?: string) => {
-    if (!status) return 'Inconnu';
+    if (!status) return t('statusUnknown');
 
     switch (status) {
-      case 'DRAFT': return 'Brouillon';
-      case 'PUBLISHED': return 'Publié';
-      case 'CLOSED': return 'Fermé';
-      case 'ARCHIVED': return 'Archivé';
+      case 'DRAFT': return t('statusDraft');
+      case 'PUBLISHED': return t('statusPublished');
+      case 'CLOSED': return t('statusClosed');
+      case 'ARCHIVED': return t('statusArchived');
       default: return status;
     }
   };
@@ -250,7 +255,7 @@ export default function ViewExercisePage() {
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement de l'exercice...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">{t('loadingExercise')}</p>
         </div>
       </div>
     );
@@ -258,7 +263,7 @@ export default function ViewExercisePage() {
 
   // Gestion des erreurs
   if (error || !exerciseApiResponse?.success || !exerciseApiResponse.data) {
-    const errorMessage = error?.message || exerciseApiResponse?.message || 'Exercice non trouvé';
+    const errorMessage = error?.message || exerciseApiResponse?.message || t('notFoundTitle');
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
@@ -268,7 +273,7 @@ export default function ViewExercisePage() {
             {errorMessage}
           </h1>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            L'exercice demandé n'existe pas ou vous n'y avez pas accès.
+            {t('notFoundDescription')}
           </p>
           <div className="flex gap-3 justify-center">
             <button
@@ -276,13 +281,13 @@ export default function ViewExercisePage() {
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <RefreshCw size={18} />
-              Réessayer
+              {t('retry')}
             </button>
             <button
               onClick={() => router.push(`/profdashboard/exercises/${paramId}`)}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Retour à la classe
+              {t('backToClass')}
             </button>
           </div>
         </div>
@@ -303,14 +308,14 @@ export default function ViewExercisePage() {
               href="/profdashboard"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
-              Dashboard
+              {t('breadcrumbs.dashboard')}
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <Link
               href="/profdashboard/exercises"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
-              Exercices
+              {t('breadcrumbs.exercises')}
             </Link>
             <ChevronRight size={16} className="mx-2" />
             <Link
@@ -331,7 +336,7 @@ export default function ViewExercisePage() {
               className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
             >
               <ArrowLeft size={20} />
-              Retour aux exercices de la classe
+              {t('backToClassExercises')}
             </button>
 
             <div className="flex gap-3">
@@ -341,7 +346,7 @@ export default function ViewExercisePage() {
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
               >
                 <Edit size={18} />
-                Modifier
+                {t('edit')}
               </button>
 
               <button
@@ -349,7 +354,7 @@ export default function ViewExercisePage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Eye size={18} />
-                Soumissions
+                {t('submissions')}
               </button>
             </div>
           </div>
@@ -377,7 +382,7 @@ export default function ViewExercisePage() {
                       </span>
                     )}
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                      {exercise?.questions?.length || 0} question{(exercise?.questions?.length || 0) > 1 ? 's' : ''}
+                      {t('questionCount', { count: exercise?.questions?.length || 0 })}
                     </span>
                   </div>
                 </div>
@@ -385,10 +390,10 @@ export default function ViewExercisePage() {
 
               <div className="prose dark:prose-invert max-w-none mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Description
+                  {t('description')}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {exercise?.description || 'Aucune description fournie.'}
+                  {exercise?.description || t('noDescription')}
                 </p>
               </div>
 
@@ -402,7 +407,7 @@ export default function ViewExercisePage() {
                         {exercise?.maxScore}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Points maximum
+                        {t('maxPoints')}
                       </div>
                     </div>
                   </div>
@@ -416,7 +421,7 @@ export default function ViewExercisePage() {
                         {formatDate(exercise?.dueDate)}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Date limite
+                        {t('dueDate')}
                       </div>
                     </div>
                   </div>
@@ -430,7 +435,7 @@ export default function ViewExercisePage() {
                         {formatDate(exercise?.createdAt)}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Créé le
+                        {t('createdOn')}
                       </div>
                     </div>
                   </div>
@@ -444,7 +449,7 @@ export default function ViewExercisePage() {
                         {exercise?.submissionCount || 0}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Soumissions
+                        {t('submissions')}
                       </div>
                     </div>
                   </div>
@@ -465,13 +470,13 @@ export default function ViewExercisePage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              Questions ({(exercise?.questions?.length || 0)})
+              {t('questionsTitle', { count: exercise?.questions?.length || 0 })}
             </h2>
 
             {(exercise?.questions?.length || 0) === 0 && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
                 <AlertTriangle size={16} />
-                <span className="text-sm">Aucune question</span>
+                <span className="text-sm">{t('noQuestion')}</span>
               </div>
             )}
           </div>
@@ -499,8 +504,8 @@ export default function ViewExercisePage() {
                           </h3>
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                              {questionType === 'TEXT' ? 'Texte libre' :
-                                questionType === 'MULTIPLE_CHOICE' ? 'Choix multiple' : 'Code'}
+                              {questionType === 'TEXT' ? t('typeText') :
+                                questionType === 'MULTIPLE_CHOICE' ? t('typeMultipleChoice') : t('typeCode')}
                             </span>
                           </div>
                         </div>
@@ -514,7 +519,7 @@ export default function ViewExercisePage() {
                       {/* Options pour les questions à choix multiple */}
                       {questionType === 'MULTIPLE_CHOICE' && questionOptions.length > 0 && (
                         <div className="mt-3">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Options:</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('optionsLabel')}</span>
                           <ul className="mt-2 space-y-2">
                             {questionOptions.filter(opt => opt && opt.trim()).map((option, optIndex) => (
                               <li
@@ -542,7 +547,7 @@ export default function ViewExercisePage() {
                         <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
                           <span className="text-sm font-medium text-green-700 dark:text-green-400 flex items-center gap-2">
                             <CheckCircle size={16} />
-                            Réponse correcte:
+                            {t('correctAnswer')}
                           </span>
                           <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">
                             {correctAnswer}
@@ -553,10 +558,10 @@ export default function ViewExercisePage() {
                       {!correctAnswer && questionType !== 'MULTIPLE_CHOICE' && (
                         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded border border-gray-200 dark:border-gray-700">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Correction manuelle
+                            {t('manualCorrection')}
                           </span>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">
-                            L'enseignant corrigera manuellement cette réponse.
+                            {t('manualCorrectionHelp')}
                           </p>
                         </div>
                       )}
@@ -565,7 +570,7 @@ export default function ViewExercisePage() {
                       {question.explanation && (
                         <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
                           <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                            Explication:
+                            {t('explanation')}
                           </span>
                           <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">
                             {question.explanation}
@@ -583,17 +588,17 @@ export default function ViewExercisePage() {
                 <FileText className="w-10 h-10 text-gray-400 dark:text-gray-500" />
               </div>
               <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Aucune question trouvée
+                {t('noQuestionFound')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
-                Cet exercice ne contient pas encore de questions.
+                {t('noQuestionDescription')}
               </p>
               <button
                 onClick={handleEdit}
                 className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
               >
                 <Edit size={18} className="inline mr-2" />
-                Ajouter des questions
+                {t('addQuestions')}
               </button>
             </div>
           )}
@@ -602,7 +607,7 @@ export default function ViewExercisePage() {
         {/* Actions */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-            Actions
+            {t('actionsTitle')}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -611,9 +616,9 @@ export default function ViewExercisePage() {
               className="flex flex-col items-center justify-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors group"
             >
               <Edit className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
-              <span className="font-medium text-gray-800 dark:text-gray-200">Modifier</span>
+              <span className="font-medium text-gray-800 dark:text-gray-200">{t('edit')}</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Modifier les détails et questions
+                {t('editHelp')}
               </span>
             </button>
 
@@ -622,9 +627,9 @@ export default function ViewExercisePage() {
               className="flex flex-col items-center justify-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group"
             >
               <Eye className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
-              <span className="font-medium text-gray-800 dark:text-gray-200">Soumissions</span>
+              <span className="font-medium text-gray-800 dark:text-gray-200">{t('submissions')}</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Voir et noter les soumissions
+                {t('submissionsHelp')}
               </span>
             </button>
 
@@ -634,9 +639,9 @@ export default function ViewExercisePage() {
               className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors group disabled:opacity-50"
             >
               <Copy className="w-8 h-8 text-gray-600 dark:text-gray-400 mb-2 group-hover:scale-110 transition-transform" />
-              <span className="font-medium text-gray-800 dark:text-gray-200">Dupliquer</span>
+              <span className="font-medium text-gray-800 dark:text-gray-200">{t('duplicate')}</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                {duplicateMutation.isPending ? 'Duplication...' : 'Créer une copie'}
+                {duplicateMutation.isPending ? t('duplicating') : t('createCopy')}
               </span>
             </button>
 
@@ -650,17 +655,17 @@ export default function ViewExercisePage() {
                 className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
               >
                 <Printer size={18} />
-                Imprimer
+                {t('print')}
               </button>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
-                  toast.success('Lien copié dans le presse-papier');
+                  toast.success(t('linkCopied'));
                 }}
                 className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
               >
                 <Share2 size={18} />
-                Partager
+                {t('share')}
               </button>
             </div>
 
@@ -670,7 +675,7 @@ export default function ViewExercisePage() {
               className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               <Trash2 size={18} />
-              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer l\'exercice'}
+              {deleteMutation.isPending ? t('deleting') : t('deleteExercise')}
             </button>
           </div>
         </div>

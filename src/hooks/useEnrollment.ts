@@ -15,8 +15,8 @@ export function useEnrollment(courseId?: number) {
 
   useEffect(() => {
     const checkEnrollment = async () => {
-      // Si pas authentifié OU utilisateur n'est pas un étudiant
-      if (!isAuthenticated || (user && !user.role?.includes('student'))) {
+      // Si pas authentifié OU utilisateur n'est ni étudiant ni enseignant
+      if (!isAuthenticated || (user && !['student', 'teacher'].some(role => user.role?.includes(role)))) {
         setIsEnrolled(false);
         setEnrollment(null);
         setProgress(0);
@@ -55,7 +55,7 @@ export function useEnrollment(courseId?: number) {
 
   const enroll = async (): Promise<Enrollment | null> => {
     // Vérifier les permissions
-    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student')) {
+    if (!isAuthenticated || !user || !courseId || !['student', 'teacher'].some(role => user.role?.includes(role))) {
       return null;
     }
 
@@ -75,11 +75,11 @@ export function useEnrollment(courseId?: number) {
   };
 
   const unenroll = async (): Promise<void> => {
-    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student')) return;
+    if (!isAuthenticated || !user || !courseId || !['student', 'teacher'].some(role => user.role?.includes(role)) || !enrollment?.id) return;
 
     setLoading(true);
     try {
-      await EnrollmentService.unenroll(enrollment?.id!);
+      await EnrollmentService.unenroll(enrollment.id);
       setEnrollment(null);
       setIsEnrolled(false);
       setProgress(0);
@@ -91,7 +91,7 @@ export function useEnrollment(courseId?: number) {
   };
 
   const updateProgress = async (newProgress: number): Promise<void> => {
-    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student') || !enrollment?.id) return;
+    if (!isAuthenticated || !user || !courseId || !['student', 'teacher'].some(role => user.role?.includes(role)) || !enrollment?.id) return;
 
     try {
       await EnrollmentService.updateProgress(enrollment.id, newProgress);
@@ -109,7 +109,7 @@ export function useEnrollment(courseId?: number) {
   };
 
   const markChapterCompleted = async (chapterIndex: number, totalChapters: number): Promise<void> => {
-    if (!isAuthenticated || !user || !courseId || !user.role?.includes('student') || !enrollment?.id) return;
+    if (!isAuthenticated || !user || !courseId || !['student', 'teacher'].some(role => user.role?.includes(role)) || !enrollment?.id) return;
 
     const progressPerChapter = 100 / totalChapters;
     const newProgress = Math.min(100, progress + progressPerChapter);

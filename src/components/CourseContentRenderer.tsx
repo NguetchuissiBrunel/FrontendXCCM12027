@@ -41,6 +41,16 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({ content, 
             return;
         }
 
+        // Try parsing if content is sent as a raw JSON string from the backend
+        if (typeof processedContent === 'string') {
+            try {
+                processedContent = JSON.parse(processedContent);
+            } catch (e) {
+                // Wrap plain string as a text paragraph
+                processedContent = [{ type: 'paragraph', content: [{ type: 'text', text: processedContent }] }];
+            }
+        }
+
         // If content is an array (list of nodes)
         if (Array.isArray(processedContent)) {
             // Filter by nodeIndex if provided

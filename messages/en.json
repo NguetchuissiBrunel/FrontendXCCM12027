@@ -1196,6 +1196,13 @@
       "enroll": "Enroll"
     },
     "course": {
+      "sidebar": {
+        "summary": "SUMMARY",
+        "search": "Search...",
+        "noContent": "No content available",
+        "noSection": "No active section",
+        "download": "Download the course"
+      },
       "by": "By",
       "views": "views",
       "likes": "likes",

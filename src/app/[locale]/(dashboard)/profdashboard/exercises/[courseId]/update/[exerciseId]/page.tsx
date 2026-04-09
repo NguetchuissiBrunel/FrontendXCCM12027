@@ -80,12 +80,12 @@ export default function UpdateExercisePage() {
 
   const loadClassInfo = async () => {
     try {
-      const { CourseClassService } = await import('@/lib/services/CourseClassService');
-      const response = await CourseClassService.getClassById(paramId);
+      const { ClassesDeCoursService } = await import('@/lib/services/ClassesDeCoursService');
+      const response = await ClassesDeCoursService.getClassById(paramId);
       if (response && response.data) {
         setClassInfo({
-          name: response.data.name,
-          theme: response.data.theme,
+          name: response.data.name || '',
+          theme: response.data.theme || '',
         });
       }
     } catch (error) {

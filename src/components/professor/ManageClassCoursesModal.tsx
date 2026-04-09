@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Plus, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -54,7 +54,7 @@ export default function ManageClassCoursesModal({ isOpen, onClose, classId, onCo
             setAllCourses(allCoursesData);
 
             // Fetch specific class data
-            const classRes = await CourseClassService.getClassById(classId);
+            const classRes = await ClassesDeCoursService.getClassById(classId);
             const classDetails = classRes.data;
             setClassData({
                 id: classDetails.id,
@@ -73,7 +73,7 @@ export default function ManageClassCoursesModal({ isOpen, onClose, classId, onCo
         if (!classId) return;
         try {
             setActionLoading(courseId);
-            await CourseClassService.addCourseToClass(classId, courseId);
+            await ClassesDeCoursService.addCourse(classId, courseId);
             toast.success('Cours ajouté à la classe');
             await loadData(); // reload data to refresh lists
             if (onCourseUpdated) onCourseUpdated();
@@ -89,7 +89,7 @@ export default function ManageClassCoursesModal({ isOpen, onClose, classId, onCo
         if (!classId) return;
         try {
             setActionLoading(courseId);
-            await CourseClassService.removeCourseFromClass(classId, courseId);
+            await ClassesDeCoursService.removeCourse(classId, courseId);
             toast.success('Cours retiré de la classe');
             await loadData(); // reload data to refresh lists
             if (onCourseUpdated) onCourseUpdated();

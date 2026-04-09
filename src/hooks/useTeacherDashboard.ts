@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLoading } from '@/contexts/LoadingContext';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import { EnrollmentService } from '@/utils/enrollmentService';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
@@ -131,7 +131,7 @@ export function useTeacherDashboard() {
       const { CourseControllerService } = await import('@/lib/services/CourseControllerService');
 
       const [classesResponse, coursesResponse, statsData, pendingData] = await Promise.all([
-        CourseClassService.getMyClasses(),
+        ClassesDeCoursService.getMyClasses(),
         CourseControllerService.getAuthorCourses(user.id),
         loadManualStats(),
         EnrollmentService.getPendingEnrollments().catch(() => [])
@@ -222,7 +222,7 @@ export function useTeacherDashboard() {
     if (classIdNum === 0) return toast.error('ID invalide');
     try {
       startLoading();
-      await CourseClassService.deleteClass(classIdNum);
+      await ClassesDeCoursService.deleteClass(classIdNum);
       toast.success('Classe supprimée');
       await loadDashboardData();
     } catch (error: any) {
@@ -252,7 +252,7 @@ export function useTeacherDashboard() {
     const classIdNum = parseId(classId);
     if (classIdNum === 0) return;
     try {
-      await CourseClassService.changeClassStatus(classIdNum, status);
+      await ClassesDeCoursService.changeStatus(classIdNum, status);
       toast.success('Statut mis à jour');
       await loadDashboardData();
     } catch (error: any) {
@@ -279,14 +279,14 @@ export function useTeacherDashboard() {
     try {
       startLoading();
       if (mode === 'classes') {
-        const resp = await CourseClassService.createClass({
+        const resp = await ClassesDeCoursService.createClass({
           name: data.title,
           theme: data.category,
           description: data.description
         });
         if (resp?.data?.id) {
           toast.success('Classe créée');
-          if (data.file) await CourseClassService.uploadCoverImage(resp.data.id, data.file);
+          if (data.file) await ClassesDeCoursService.uploadCoverImage(resp.data.id, data.file);
           await loadDashboardData();
         }
       } else {

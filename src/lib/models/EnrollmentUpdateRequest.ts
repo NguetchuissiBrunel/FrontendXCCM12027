@@ -12,6 +12,7 @@ export namespace EnrollmentUpdateRequest {
         PENDING = 'PENDING',
         APPROVED = 'APPROVED',
         REJECTED = 'REJECTED',
+        INVITED = 'INVITED',
     }
 }
 

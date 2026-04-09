@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, School, Plus, Trash2, CheckCircle, Loader2 } from 'lucide-react';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import toast from 'react-hot-toast';
 
 interface ClassItem {
@@ -45,7 +45,7 @@ export default function AssignCourseToClassModal({
         if (!courseId) return;
         try {
             setLoading(true);
-            const classesRes = await CourseClassService.getMyClasses();
+            const classesRes = await ClassesDeCoursService.getMyClasses();
             const allClasses = (classesRes.data || []) as any[];
 
             // For each class, check if the course is already assigned
@@ -73,10 +73,10 @@ export default function AssignCourseToClassModal({
         setActionLoading(cls.id);
         try {
             if (cls.hasCourse) {
-                await CourseClassService.removeCourseFromClass(cls.id, courseId);
+                await ClassesDeCoursService.removeCourse(cls.id, courseId);
                 toast.success(`Cours retiré de « ${cls.name} »`);
             } else {
-                await CourseClassService.addCourseToClass(cls.id, courseId);
+                await ClassesDeCoursService.addCourse(cls.id, courseId);
                 toast.success(`Cours affecté à « ${cls.name} »`);
             }
             // Optimistic update

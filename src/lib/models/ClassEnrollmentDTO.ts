@@ -20,6 +20,7 @@ export namespace ClassEnrollmentDTO {
         PENDING = 'PENDING',
         APPROVED = 'APPROVED',
         REJECTED = 'REJECTED',
+        INVITED = 'INVITED',
     }
 }
 

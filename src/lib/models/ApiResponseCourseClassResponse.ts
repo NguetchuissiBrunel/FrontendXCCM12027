@@ -19,6 +19,9 @@ export type ApiResponseCourseClassResponse = {
      * Message décrivant le résultat de l'opération
      */
     message?: string;
+    /**
+     * Données de la réponse
+     */
     data?: CourseClassResponse;
     /**
      * Erreurs de validation (si applicable)

@@ -1,6 +1,6 @@
 // src/app/page.tsx
 'use client';
-import { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCourses } from '@/hooks/useCourses';

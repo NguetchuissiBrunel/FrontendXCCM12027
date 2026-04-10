@@ -25,7 +25,7 @@ const NotebookDashboard = () => {
       setLoading(true);
       const response = await NotebookControllerService.getUserNotebooks(user.id);
       
-      // Map backend Notebooks to local Notebook type
+      // Step 1: Map basic notebook data
       const mapped: Notebook[] = response.map(nb => {
         let metadata = { chatHistory: [], studioActivities: [] };
         try {
@@ -37,14 +37,35 @@ const NotebookDashboard = () => {
         return {
           id: nb.id || '',
           title: nb.title || 'Untitled',
-          sources: [], // Sources need to be fetched separately or metadata should contain count
+          sources: [], // Will be filled in Step 2
           chatHistory: metadata.chatHistory || [],
           studioActivities: metadata.studioActivities || [],
           updatedAt: nb.updatedAt || nb.createdAt || new Date().toISOString()
         };
       });
-      
+
       setRecentNotebooks(mapped);
+
+      // Step 2: Fetch sources for each notebook in parallel to get accurate counts
+      const notebooksWithSources = await Promise.all(
+        mapped.map(async (nb) => {
+          try {
+            const apiSources = await NotebookControllerService.getNotebookSources(nb.id);
+            const mappedSources: Source[] = apiSources.map(as => ({
+              id: as.id || crypto.randomUUID(),
+              name: as.name || 'Unknown',
+              type: as.type || 'pdf',
+              selected: true
+            }));
+            return { ...nb, sources: mappedSources };
+          } catch (error) {
+            console.error(`Failed to fetch sources for notebook ${nb.id}:`, error);
+            return nb;
+          }
+        })
+      );
+      
+      setRecentNotebooks(notebooksWithSources);
     } catch (error) {
       console.error("Failed to fetch notebooks:", error);
       toast.error("Erreur lors du chargement des notebooks");

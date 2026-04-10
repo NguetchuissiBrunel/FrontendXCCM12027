@@ -8,7 +8,7 @@ import { MdOutlineSettings } from 'react-icons/md';
 import Image from 'next/image';
 import { NotebookControllerService } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
-import { Notebook } from '@/types/notebook';
+import { Notebook, Source } from '@/types/notebook';
 import toast from 'react-hot-toast';
 
 const NotebookDashboard = () => {

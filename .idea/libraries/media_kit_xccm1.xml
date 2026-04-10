@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="media-kit-xccm1">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/public/files/media-kit-xccm1.zip!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

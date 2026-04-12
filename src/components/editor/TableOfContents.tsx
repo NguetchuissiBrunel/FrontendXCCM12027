@@ -13,6 +13,8 @@ import {
 } from './TableOfContentsUtils';
 import ActionMenu from './ActionMenu';
 import { useLocale } from 'next-intl';
+import { useCollaboration } from '@/contexts/CollaborationContext';
+import throttle from 'lodash.throttle';
 
 interface TableOfContentsProps {
   className?: string;
@@ -44,6 +46,19 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   selectedText = ''
 }) => {
   const locale = useLocale();
+  const { stompClient, isConnected, courseId } = useCollaboration();
+
+  const sendMoveAction = useCallback(
+    throttle((itemId: string, targetId: string, position: string) => {
+      if (isConnected && stompClient && courseId) {
+        stompClient.publish({
+          destination: `/app/projet/${courseId}/move`,
+          body: JSON.stringify({ type: 'MOVE', itemId, targetId, position })
+        });
+      }
+    }, 50),
+    [isConnected, stompClient, courseId]
+  );
 
   // Traductions
   const t = useMemo(() => {
@@ -484,6 +499,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       if (onItemMove) {
         onItemMove?.(draggedItem.id, targetItem.id, position);
       }
+      sendMoveAction(draggedItem.id, targetItem.id, position);
     }
 
     setDraggedItem(null);

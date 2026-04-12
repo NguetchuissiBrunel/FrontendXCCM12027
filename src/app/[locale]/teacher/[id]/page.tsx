@@ -8,7 +8,7 @@ import { BookOpen, Users, GraduationCap, MapPin, Building2, Award, Heart, Eye, D
 import { useLoading } from '@/contexts/LoadingContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/layout/Navbar';
@@ -110,7 +110,7 @@ export default function TeacherProfilePage() {
       setTeacher(teacherData);
 
       // 2. Charger et filtrer les classes (comparaison robuste)
-      const classesResponse = await CourseClassService.getAllOpenClasses();
+      const classesResponse = await ClassesDeCoursService.getAllOpenClasses();
       let filteredClasses: CourseClass[] = [];
       let totalStudents = 0;
 
@@ -308,9 +308,9 @@ export default function TeacherProfilePage() {
                     <div className="text-3xl font-black text-gray-900 dark:text-white">
                       {stats.totalClasses}
                     </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase tracking-wider">
-                          {t('stats.classes')}
-                        </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                      {t('stats.classes')}
+                    </div>
                   </div>
 
                   <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-4 border border-purple-100 dark:border-purple-900/30 text-center flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300">
@@ -425,6 +425,7 @@ export default function TeacherProfilePage() {
                           {/* Bouton d'inscription à l'entièreté de la classe */}
                           <EnrollmentButton
                             courseId={cls.id} // TODO: Change prop if EnrollmentButton changes to support classes distinctively
+                            courseAuthorId={teacherId}
                             size="sm"
                             variant="primary"
                             fullWidth={false}

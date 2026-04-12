@@ -52,29 +52,6 @@ export default function ViewExercisePage() {
   const paramId = params?.courseId ? parseInt(params.courseId as string) : 0; // Represents classId within this flow
   const exerciseId = params?.exerciseId ? parseInt(params.exerciseId as string) : 0;
 
-  // Vérification des IDs
-  if (!paramId || !exerciseId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
-        <div className="text-center">
-          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-            {t('invalidParamsTitle')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {t('invalidParamsDescription')}
-          </p>
-          <button
-            onClick={() => router.push('/profdashboard/exercises')}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            {t('backToExercises')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // Utilisation des nouveaux hooks
   const {
     data: exerciseApiResponse,
@@ -106,14 +83,39 @@ export default function ViewExercisePage() {
       return;
     }
 
+    if (!paramId || !exerciseId) return;
+
     // Charger les infos de la classe
     loadClassInfo();
-  }, [user, router, paramId]);
+  }, [user, router, paramId, exerciseId, t]);
+
+  // Vérification des IDs après TOUS les hooks
+  if (!paramId || !exerciseId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+            {t('invalidParamsTitle')}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {t('invalidParamsDescription')}
+          </p>
+          <button
+            onClick={() => router.push('/profdashboard/exercises')}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            {t('backToExercises')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const loadClassInfo = async () => {
     try {
-      const { CourseClassService } = await import('@/lib/services/CourseClassService');
-      const response = await CourseClassService.getClassById(paramId);
+      const { ClassesDeCoursService } = await import('@/lib/services/ClassesDeCoursService');
+      const response = await ClassesDeCoursService.getClassById(paramId);
       if (response && response.data) {
         setClassInfo({
           name: response.data.name,
@@ -517,7 +519,7 @@ export default function ViewExercisePage() {
                       {/* Options pour les questions à choix multiple */}
                       {questionType === 'MULTIPLE_CHOICE' && questionOptions.length > 0 && (
                         <div className="mt-3">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('optionsLabel')}</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('optionsLabel')}</span>
                           <ul className="mt-2 space-y-2">
                             {questionOptions.filter(opt => opt && opt.trim()).map((option, optIndex) => (
                               <li

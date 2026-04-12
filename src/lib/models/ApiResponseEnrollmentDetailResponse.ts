@@ -19,6 +19,9 @@ export type ApiResponseEnrollmentDetailResponse = {
      * Message décrivant le résultat de l'opération
      */
     message?: string;
+    /**
+     * Données de la réponse
+     */
     data?: EnrollmentDetailResponse;
     /**
      * Erreurs de validation (si applicable)

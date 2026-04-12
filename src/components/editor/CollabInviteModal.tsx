@@ -58,7 +58,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
     const [isInviting, setIsInviting] = useState(false);
 
     const linkInputRef = useRef<HTMLInputElement>(null);
-    const { isConnected, collaborators: stompCollaborators } = useCollaboration();
+    const { isConnected, collaborators: stompCollaborators, stompClient } = useCollaboration();
 
     const handleInviteEmail = async () => {
         const query = inviteEmail.trim().toLowerCase();
@@ -81,9 +81,25 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                 return;
             }
 
-            // Simulation d'un appel réseau (Envoi d'email plateforme XCCM)
-            await new Promise(resolve => setTimeout(resolve, 600));
-            toast.success(`Invitation envoyée avec succès à ${foundTeacher.firstName} ${foundTeacher.lastName} (${foundTeacher.email})`);
+            // Envoi de l'invitation réelle via STOMP
+            if (isConnected && stompClient && courseId) {
+                stompClient.publish({
+                    destination: `/app/projet/${courseId}/invite`,
+                    body: JSON.stringify({
+                        targetUserId: foundTeacher.id,
+                        targetEmail: foundTeacher.email,
+                        senderName: "L'auteur du cours", // On pourrait tirer ça du AuthContext si besoin
+                        courseId: courseId,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                toast.success(`Invitation envoyée à ${foundTeacher.firstName} ${foundTeacher.lastName}`);
+            } else {
+                // Fallback simulation si non connecté
+                await new Promise(resolve => setTimeout(resolve, 600));
+                toast.success(`Simulation : Invitation envoyée à ${foundTeacher.firstName} ${foundTeacher.lastName}`);
+            }
+
             setInviteEmail('');
         } catch (error) {
             console.error(error);

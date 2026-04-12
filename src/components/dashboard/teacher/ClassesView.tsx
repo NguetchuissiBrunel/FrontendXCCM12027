@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CompositionsCard from '@/components/professor/CompositionsCard';
 import CreateCourseModal from '@/components/create-course/page';
@@ -7,6 +8,8 @@ import { BookOpen, X, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
 import ManageClassCoursesModal from '@/components/professor/ManageClassCoursesModal';
+import AssignCourseToClassModal from '@/components/professor/AssignCourseToClassModal';
+import TeacherCourseCommentsModal from '@/components/professor/TeacherCourseCommentsModal';
 import { useTeacherDashboard, parseId } from '@/hooks/useTeacherDashboard';
 import { CourseStat } from '@/types/professor';
 
@@ -39,6 +42,15 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
     handleCreateCourseSubmit
   } = useTeacherDashboard();
 
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
+  const [selectedCourseIdForAssignment, setSelectedCourseIdForAssignment] = useState<number | null>(null);
+  const [selectedCourseTitleForAssignment, setSelectedCourseTitleForAssignment] = useState<string | undefined>(undefined);
+
+  // Comments modal state
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState<boolean>(false);
+  const [selectedCourseIdForComments, setSelectedCourseIdForComments] = useState<number | null>(null);
+  const [selectedCourseTitleForComments, setSelectedCourseTitleForComments] = useState<string | undefined>(undefined);
+
   const currentCompositions = mode === 'classes' ? allClasses : allCourses;
 
   const router = useRouter();
@@ -59,6 +71,34 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
       toast.error(t('classes.invalidClassId'));
     }
   };
+
+  const handleOpenAssignModal = (courseIdString: string) => {
+    const courseIdNum = parseId(courseIdString);
+    if (courseIdNum > 0) {
+      const course = allCourses.find(c => parseId(c.id) === courseIdNum);
+      setSelectedCourseIdForAssignment(courseIdNum);
+      setSelectedCourseTitleForAssignment(course?.title);
+      setIsAssignModalOpen(true);
+    } else {
+      toast.error("ID de cours invalide");
+    }
+  };
+
+  const handleOpenCommentsModal = (courseIdString: string) => {
+    const courseIdNum = parseId(courseIdString);
+    if (courseIdNum > 0) {
+      const course = allCourses.find(c => parseId(c.id) === courseIdNum);
+      setSelectedCourseIdForComments(courseIdNum);
+      setSelectedCourseTitleForComments(course?.title);
+      setIsCommentsModalOpen(true);
+    } else {
+      toast.error("ID de cours invalide");
+    }
+  };
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   if (!user) return null;
 
@@ -85,6 +125,31 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
         onCourseUpdated={() => {
           loadDashboardData();
         }}
+      />
+
+      {/* Modale d'affectation d'un cours à une classe */}
+      <AssignCourseToClassModal
+        isOpen={isAssignModalOpen}
+        onClose={() => {
+          setIsAssignModalOpen(false);
+          setSelectedCourseIdForAssignment(null);
+          setSelectedCourseTitleForAssignment(undefined);
+        }}
+        courseId={selectedCourseIdForAssignment}
+        courseTitle={selectedCourseTitleForAssignment}
+        onUpdated={() => loadDashboardData()}
+      />
+
+      {/* Modale commentaires participants (vue enseignant) */}
+      <TeacherCourseCommentsModal
+        isOpen={isCommentsModalOpen}
+        onClose={() => {
+          setIsCommentsModalOpen(false);
+          setSelectedCourseIdForComments(null);
+          setSelectedCourseTitleForComments(undefined);
+        }}
+        courseId={selectedCourseIdForComments}
+        courseTitle={selectedCourseTitleForComments}
       />
 
       {/* Modale de sélection de cours */}
@@ -177,50 +242,52 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
           {currentCompositions.length > 0 ? (
             <CompositionsCard
               title={mode === 'classes' ? t('classes.myClassesTitle') : t('classes.myCompositionsTitle')}
-            compositions={currentCompositions}
-            onDelete={mode === 'classes' ? handleDeleteClass : handleDeleteCourse}
-            onCreateClick={() => setIsModalOpen(true)}
-            onManageExercises={(classId) => router.push(`/profdashboard/exercises/${classId}`)}
-            onManageClassCourses={mode === 'classes' ? handleOpenManageCoursesForClass : undefined}
-            onChangeStatus={mode === 'classes' 
-              ? (id, status) => handleChangeClassStatus(id, status as any)
-              : (id, status) => handleChangeCourseStatus(id, status === 'OPEN' ? 'PUBLISHED' : status === 'CLOSED' ? 'DRAFT' : 'ARCHIVED')
-            }
-            onEdit={(id) => {
-              if (mode === 'compositions') {
-                router.push(`/editor?courseId=${id}`);
-              } else {
-                toast.error(t('classes.editNotAvailable'));
+              compositions={currentCompositions}
+              onDelete={mode === 'classes' ? handleDeleteClass : handleDeleteCourse}
+              onCreateClick={() => setIsModalOpen(true)}
+              onManageExercises={(classId) => router.push(`/profdashboard/exercises/${classId}`)}
+              onManageClassCourses={mode === 'classes' ? handleOpenManageCoursesForClass : undefined}
+              onAssignToClass={mode === 'compositions' ? handleOpenAssignModal : undefined}
+              onViewComments={mode === 'compositions' ? handleOpenCommentsModal : undefined}
+              onChangeStatus={mode === 'classes'
+                ? (id, status) => handleChangeClassStatus(id, status as any)
+                : (id, status) => handleChangeCourseStatus(id, status === 'OPEN' ? 'PUBLISHED' : status === 'CLOSED' ? 'DRAFT' : 'ARCHIVED')
               }
-            }}
-            getCourseStats={(id) => {
-              const classId = parseId(id);
-              const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === classId);
-              return stats ? {
-                totalExercises: stats.totalExercises || 0,
-                totalEnrolled: stats.totalEnrolled || 0
-              } : undefined;
-            }}
-          />
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
-            <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
-              {mode === 'classes' ? t('classes.myClassesTitle') : t('classes.myCompositionsTitle')}
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {mode === 'classes'
-                ? t('classes.noClasses')
-                : t('classes.noCompositions')}
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
-            >
-              <Plus size={20} />
-              {mode === 'classes' ? t('classes.createClass') : t('classes.createCourse')}
-            </button>
-          </div>
-        )}
+              onEdit={(id) => {
+                if (mode === 'compositions') {
+                  router.push(`/editor?courseId=${id}`);
+                } else {
+                  toast.error(t('classes.editNotAvailable'));
+                }
+              }}
+              getCourseStats={(id) => {
+                const classId = parseId(id);
+                const stats = coursesStatsForProfile.find((s: CourseStat) => s.courseId === classId);
+                return stats ? {
+                  totalExercises: stats.totalExercises || 0,
+                  totalEnrolled: stats.totalEnrolled || 0
+                } : undefined;
+              }}
+            />
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg dark:shadow-gray-900/50 border border-purple-200 dark:border-gray-700 text-center">
+              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-4">
+                {mode === 'classes' ? t('classes.myClassesTitle') : t('classes.myCompositionsTitle')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {mode === 'classes'
+                  ? t('classes.noClasses')
+                  : t('classes.noCompositions')}
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all duration-200 mx-auto"
+              >
+                <Plus size={20} />
+                {mode === 'classes' ? t('classes.createClass') : t('classes.createCourse')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

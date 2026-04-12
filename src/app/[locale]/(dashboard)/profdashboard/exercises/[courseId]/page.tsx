@@ -29,7 +29,7 @@ import {
 
 // Import des services
 import { ExerciseService } from '@/lib3/services/ExerciseService';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import { Exercise as BaseExercise } from '@/types/exercise';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -57,29 +57,6 @@ export default function ClassExercisesPage() {
   // On garde param.courseId car c'est le nom du dossier dans Next.js, mais contextuellement c'est le classId
   const classId = params?.courseId ? parseInt(params.courseId as string) : 0;
 
-  // Vérification du classId
-  if (!classId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
-        <div className="text-center">
-          <FileText className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-            Classe non trouvée
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            L'URL de la page est incorrecte.
-          </p>
-          <button
-            onClick={() => router.push('/profdashboard')}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Retour au tableau de bord
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const [classInfo, setClassInfo] = useState<CourseClass>({
     id: classId,
     name: `Classe #${classId}`,
@@ -103,13 +80,38 @@ export default function ClassExercisesPage() {
       return;
     }
 
+    if (!classId) return;
+
     loadClassInfo();
   }, [classId, user, router]);
+
+  // Vérification du classId après TOUS les hooks
+  if (!classId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <FileText className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+            Classe non trouvée
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            L'URL de la page est incorrecte.
+          </p>
+          <button
+            onClick={() => router.push('/profdashboard')}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Retour au tableau de bord
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const loadClassInfo = async () => {
     try {
       setLoadingClass(true);
-      const response = await CourseClassService.getClassById(classId);
+      const response = await ClassesDeCoursService.getClassById(classId);
 
       if (response && response.data) {
         const classData = response.data as CourseClass;

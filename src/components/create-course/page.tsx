@@ -91,7 +91,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSubmit, mode = 'c
 
     try {
       // Import dynamically
-      const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+      const { CloudinaryService } = await import('@/lib2/services/CloudinaryService');
 
       // Validate file
       const validation = CloudinaryService.validateFile(file);

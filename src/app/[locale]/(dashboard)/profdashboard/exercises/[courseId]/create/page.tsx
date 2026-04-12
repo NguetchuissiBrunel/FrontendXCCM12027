@@ -16,7 +16,7 @@ import {
   Plus
 } from 'lucide-react';
 
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import ExerciseEditorV2 from '@/components/exercises/ExerciseEditorV2';
 import { Exercise, ApiResponse } from '@/types/exercise';
 
@@ -59,12 +59,17 @@ export default function CreateExercisePage() {
   const loadClassInfo = async () => {
     try {
       setLoading(true);
-      const response = await CourseClassService.getClassById(paramId);
+      const response = await ClassesDeCoursService.getClassById(paramId);
       if (response && response.data) {
         const data = response.data;
-        setClassInfo(data);
+        setClassInfo({
+          id: data.id || 0,
+          name: data.name || '',
+          theme: data.theme || '',
+          courses: data.courses?.map(c => ({ id: c.id || 0 })) || []
+        });
         if (data.courses && data.courses.length > 0) {
-          setTargetCourseId(data.courses[0].id);
+          setTargetCourseId(data.courses[0].id || 0);
         } else {
           toast.error(t('classWithoutCourse'));
         }

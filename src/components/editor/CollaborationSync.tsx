@@ -78,12 +78,28 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             } catch (e) { }
         });
 
+        const subContent = stompClient.subscribe(`/topic/projet/${courseId}/content`, (message) => {
+            try {
+                const contentData = JSON.parse(message.body);
+                if (contentData.userId === user?.id) return; // Ignore our own updates
+
+                if (editorInstance && contentData.json) {
+                    // We dispatch the update but tell the editor it's a remote update
+                    editorInstance.commands.setContent(contentData.json, false);
+                    editorInstance.view.dispatch(editorInstance.state.tr.setMeta('isRemote', true));
+                }
+            } catch (e) {
+                console.error("Erreur parsing content update:", e);
+            }
+        });
+
         return () => {
             subUpdates.unsubscribe();
             subLocks.unsubscribe();
             subCursors.unsubscribe();
+            subContent.unsubscribe();
         };
-    }, [stompClient, isConnected, courseId, editorRef, user?.id]);
+    }, [stompClient, isConnected, courseId, editorRef, user?.id, editorInstance]);
 
     // Track local mouse movements and broadcast
     useEffect(() => {
@@ -112,6 +128,34 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         return () => {
             handleMouseMove.cancel();
             window.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, [stompClient, isConnected, courseId, user]);
+
+    // Track local editor changes and broadcast (throttled)
+    useEffect(() => {
+        if (!isConnected || !stompClient || !courseId || !user) return;
+
+        const handleLocalContentUpdate = throttle((e: any) => {
+            const { json } = e.detail;
+            try {
+                stompClient.publish({
+                    destination: `/api/v1/projet/${courseId}/content`, // Utilisation du mapping correct
+                    body: JSON.stringify({
+                        userId: user.id,
+                        json: json,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (err) {
+                console.error("Erreur lors de l'envoi du contenu:", err);
+            }
+        }, 800); // 800ms throttle
+
+        window.addEventListener('xccm:editor-content-update' as any, handleLocalContentUpdate);
+
+        return () => {
+            handleLocalContentUpdate.cancel();
+            window.removeEventListener('xccm:editor-content-update' as any, handleLocalContentUpdate);
         };
     }, [stompClient, isConnected, courseId, user]);
 

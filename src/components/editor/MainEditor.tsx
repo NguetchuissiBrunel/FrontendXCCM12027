@@ -284,8 +284,8 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       StarterKit.configure({
         document: false,
         heading: false, // Disable default heading to use our custom one
-        dropCursor: false,
-        gapCursor: false,
+        dropcursor: false,
+        gapcursor: false,
       }),
       Heading.configure({
         levels: [1, 2, 3, 4, 5, 6],
@@ -321,6 +321,19 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       MathNode,
     ],
     content: initialContent,
+    onUpdate: ({ editor, transaction }) => {
+      onContentChange?.(editor.getHTML());
+
+      // Don't broadcast if the transaction was triggered by a remote collaboration update
+      if (transaction.getMeta('isRemote')) return;
+
+      const json = editor.getJSON();
+
+      // Dispatch custom event for CollaborationSync to pick up
+      window.dispatchEvent(new CustomEvent('xccm:editor-content-update', {
+        detail: { json }
+      }));
+    },
     editorProps: {
       attributes: {
         class: 'prose dark:prose-invert max-w-none focus:outline-none editor-focusable',
@@ -360,7 +373,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             const node = view.state.schema.nodeFromJSON(contentToInsertJson);
             const finalNode = regenerateIds(node);
 
-            let $pos = view.state.doc.resolve(posResult.pos);
+            const $pos = view.state.doc.resolve(posResult.pos);
             let insertPos = posResult.pos;
 
             let targetDepth = -1;
@@ -399,7 +412,6 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     onCreate: ({ editor }) => {
       onEditorReady?.(editor);
     },
-    onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });
 
   const copiedNodeJsonRef = useRef<any>(null);
@@ -445,7 +457,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           const config = hierarchyInfo[itemTypeCode];
 
           if (config) {
-            let counters = [0, 0, 0, 0, 0, 0];
+            const counters = [0, 0, 0, 0, 0, 0];
             editor.view.state.doc.descendants((node: PMNode, pos: number) => {
               if (deleted) return false;
 
@@ -538,7 +550,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             }
             const finalNode = regenerateIds(interimNode);
 
-            let $pos = editor.view.state.doc.resolve(pos + node.nodeSize - 1);
+            const $pos = editor.view.state.doc.resolve(pos + node.nodeSize - 1);
             let insertPos = pos + node.nodeSize - 1;
 
             let targetDepth = -1;

@@ -2,9 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-/**
- * Données de la réponse
- */
 export type StudentExerciseResponse = {
     id?: number;
     exerciseId?: number;
@@ -14,7 +11,7 @@ export type StudentExerciseResponse = {
     score?: number;
     maxScore?: number;
     feedback?: string;
-    content?: Record<string, Record<string, any>>;
+    content?: Record<string, any>;
     submittedAt?: string;
 };
 

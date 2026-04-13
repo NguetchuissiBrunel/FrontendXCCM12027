@@ -5,6 +5,7 @@ import { MessageCircle, X, Send, Bot, Loader2, Maximize2, Minimize2, Square } fr
 import { ChatService } from '@/lib2/services/ChatService';
 import { CancelError } from '@/lib2/core/CancelablePromise';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 
 
 interface Message {
@@ -394,7 +395,9 @@ export default function AIChatWidget() {
                     </div>
                   ) : (
                     <>
-                      <div>{msg.content}</div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100 prose-p:my-0 prose-headings:my-2">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
 
                       {/* Métadonnées de la réponse */}
                       {msg.metadata && (

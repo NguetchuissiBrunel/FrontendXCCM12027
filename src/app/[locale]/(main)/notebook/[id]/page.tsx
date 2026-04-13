@@ -232,6 +232,21 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
           contentText: "Contenu extrait..." // Normalement géré côté serveur ou par un parser client
         });
         
+        // Envoi au service d'indexation (Python) pour le RAG
+        try {
+          const formData = new FormData();
+          formData.append('notebook_id', notebookId);
+          formData.append('source_id', apiSource.id || '');
+          formData.append('file', file);
+
+          await fetch(`http://localhost:8000/api/v1/notebooks/index`, {
+            method: 'POST',
+            body: formData
+          });
+        } catch (indexErr) {
+          console.error("Indexation failed for", file.name, indexErr);
+        }
+
         newSources.push({
           id: apiSource.id || crypto.randomUUID(),
           name: apiSource.name || file.name,

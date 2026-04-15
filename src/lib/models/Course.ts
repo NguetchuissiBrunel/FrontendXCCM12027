@@ -20,6 +20,7 @@ export type Course = {
     viewCount?: number;
     likeCount?: number;
     downloadCount?: number;
+    editors?: Array<User>;
 };
 export namespace Course {
     export enum status {

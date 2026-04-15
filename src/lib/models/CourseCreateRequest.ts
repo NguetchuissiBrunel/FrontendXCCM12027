@@ -6,7 +6,7 @@ export type CourseCreateRequest = {
     title?: string;
     category?: string;
     description?: string;
-    content?: Record<string, Record<string, any>>;
+    content?: Record<string, any>;
     photoUrl?: string;
 };
 

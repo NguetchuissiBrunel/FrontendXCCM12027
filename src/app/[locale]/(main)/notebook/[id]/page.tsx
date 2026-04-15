@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { FaPlus, FaSearch, FaChevronLeft, FaChevronRight, FaMicrophone, FaPaperPlane, FaEdit, FaShareAlt, FaEllipsisH, FaSpinner, FaTrashAlt } from 'react-icons/fa';
 import { MdOutlineSettings, MdHistory, MdAudioFile, MdAutoGraph, MdPieChart, MdTableChart, MdQuiz, MdInfo } from 'react-icons/md';
 import { BsLightbulb, BsFilePdf } from 'react-icons/bs';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { use } from 'react';
-import { getNotebook, saveNotebook } from '@/lib/notebook-storage';
+import { NotebookControllerService } from '@/lib';
+import { useAuth } from '@/contexts/AuthContext';
 import { Notebook, Source, ChatMessage, StudioActivity } from '@/types/notebook';
 import toast from 'react-hot-toast';
 
@@ -25,6 +27,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
   const { id } = use(params);
   const t_nb = useTranslations('notebook');
   const router = useRouter();
+  const { user } = useAuth();
   const [sources, setSources] = useState<Source[]>([]);
   const [activeTab, setActiveTab] = useState('discussion');
   const [isLeftOpen, setIsLeftOpen] = useState(true);
@@ -38,6 +41,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
   const [currentId, setCurrentId] = useState(id);
   const [isCreating, setIsCreating] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  const [selectedActivity, setSelectedActivity] = useState<StudioActivity | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,93 +53,93 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
 
   // Initial Loading
   useEffect(() => {
-    if (id !== 'new') {
-      const saved = getNotebook(id);
-      if (saved) {
-        setSources(saved.sources);
-        setTitle(saved.title);
-        setChatHistory(saved.chatHistory);
-        setStudioActivities(saved.studioActivities || []);
+    const loadNotebook = async () => {
+      if (!user?.id) return;
+      
+      if (id !== 'new') {
+        try {
+          // Since there's no getNotebookById in the generated service, we fetch all and find
+          // (This is a fallback; in a real prod app, you'd add the endpoint to the service)
+          const allNotebooks = await NotebookControllerService.getUserNotebooks(user.id);
+          const saved = allNotebooks.find(nb => nb.id === id);
+          
+          if (saved) {
+            setTitle(saved.title || t_nb('untitled'));
+            
+            // Parse metadata
+            if (saved.metadata) {
+              try {
+                const metadata = JSON.parse(saved.metadata);
+                setChatHistory(metadata.chatHistory || []);
+                setStudioActivities(metadata.studioActivities || []);
+              } catch (e) {
+                console.error("Error parsing notebook metadata", e);
+              }
+            }
+            
+            // Load sources from API
+            const apiSources = await NotebookControllerService.getNotebookSources(id);
+            const mappedSources: Source[] = apiSources.map(as => ({
+              id: as.id || crypto.randomUUID(),
+              name: as.name || 'Unknown',
+              type: as.type || 'pdf',
+              selected: true
+            }));
+            setSources(mappedSources);
+          }
+        } catch (error) {
+          console.error("Failed to load notebook from API:", error);
+          toast.error("Erreur lors du chargement du notebook");
+        }
       }
-    }
-    setIsLoaded(true);
-  }, [id]);
+      setIsLoaded(true);
+    };
 
-  // Auto-save logic
+    loadNotebook();
+  }, [id, user?.id]);
+
+  // Auto-save logic (only title and metadata for now)
   const isFirstRender = useRef(true);
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !user?.id) return;
 
-    // Avoid saving on first mount if we just loaded data
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
 
-    const timer = setTimeout(() => {
-      let notebookId = currentId;
-
-      // If it's a new notebook, generate an ID on first save
-      if (notebookId === 'new') {
-        notebookId = crypto.randomUUID();
-        setCurrentId(notebookId);
-        // Redirect to the new URL without refreshing
-        router.replace(`/notebook/${notebookId}`);
+    const timer = setTimeout(async () => {
+      if (currentId === 'new') {
+        try {
+          const response = await NotebookControllerService.createNotebook(user.id, {
+            title,
+            metadata: JSON.stringify({ chatHistory, studioActivities })
+          });
+          
+          if (response && response.id) {
+            setCurrentId(response.id);
+            router.replace(`/notebook/${response.id}`);
+            console.log('Notebook created and saved:', response.id);
+          }
+        } catch (error) {
+          console.error("Failed to create notebook on backend:", error);
+        }
+      } else {
+        // Handle update if endpoint exists, otherwise we're just syncing sources and metadata locally for now
+        // Based on the generated service, only createNotebook is available at /api/v1/notebooks/user/{userId}
+        console.log('Auto-save for existing notebook local-only (update endpoint missing)');
       }
-
-      const notebookToSave: Notebook = {
-        id: notebookId,
-        title,
-        sources,
-        chatHistory,
-        studioActivities,
-        updatedAt: new Date().toISOString()
-      };
-
-      saveNotebook(notebookToSave);
-      console.log('Notebook auto-saved:', notebookId);
-    }, 1000); // 1s debounce
+    }, 2000); // 2s debounce for API calls
 
     return () => clearTimeout(timer);
-  }, [title, sources, chatHistory, studioActivities, isLoaded, currentId, router]);
+  }, [title, chatHistory, studioActivities, isLoaded, currentId, router, user?.id]);
 
   const handleCreateNew = async () => {
-    setIsCreating(true);
-    const loadingToast = toast.loading(t_nb('saving'));
-
-    try {
-      // Force immediate save of current work
-      let notebookId = currentId;
-      if (notebookId === 'new') {
-        notebookId = crypto.randomUUID();
-      }
-
-      const notebookToSave: Notebook = {
-        id: notebookId,
-        title,
-        sources,
-        chatHistory,
-        studioActivities,
-        updatedAt: new Date().toISOString()
-      };
-
-      saveNotebook(notebookToSave);
-
-      // Update toast
-      toast.success(t_nb('newNotebookCreated'), { id: loadingToast });
-
-      // Artificial delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Navigate to a fresh new notebook
-      router.push('/notebook/new');
-    } catch (error) {
-      toast.error('Erreur lors de la création', { id: loadingToast });
-      setIsCreating(false);
-    }
+    // Navigate to a fresh new notebook
+    router.push('/notebook/new');
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
     const newUserMessage: ChatMessage = {
@@ -147,45 +151,101 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
 
     setChatHistory(prev => [...prev, newUserMessage]);
     setInputMessage('');
+    setSelectedActivity(null); 
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: `I've analyzed your sources. Regarding "${inputMessage}", here is what I found...`,
-        timestamp: new Date().toISOString()
-      };
-      setChatHistory(prev => [...prev, aiResponse]);
+    if (currentId === 'new') {
+        toast.error("Veuillez d'abord télécharger une source.");
+        return;
+    }
 
-      // Add to activities
-      const newActivity: StudioActivity = {
-        id: crypto.randomUUID(),
-        type: 'chat',
-        title: 'Discussion avec l\'IA',
-        timestamp: new Date().toISOString()
-      };
-      setStudioActivities(prev => [newActivity, ...prev]);
-    }, 1000);
+    try {
+        const res = await fetch(`http://localhost:8000/api/v1/notebooks/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notebook_id: currentId, message: inputMessage })
+        });
+        
+        if (!res.ok) throw new Error("API Issue");
+        const data = await res.json();
+        
+        const aiResponse: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: data.answer || "Impossible de générer une réponse.",
+            timestamp: new Date().toISOString()
+        };
+        setChatHistory(prev => [...prev, aiResponse]);
+        
+        const newActivity: StudioActivity = {
+            id: crypto.randomUUID(),
+            type: 'chat',
+            title: 'Discussion avec l\'IA',
+            timestamp: new Date().toISOString()
+        };
+        setStudioActivities(prev => [newActivity, ...prev]);
+    } catch(err) {
+        console.error(err);
+        toast.error("Erreur de connexion à l'IA.");
+    }
   };
 
   const handleAddSource = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !user?.id) return;
 
-    const newSources: Source[] = Array.from(files).map((file) => ({
-      id: crypto.randomUUID(),
-      name: file.name,
-      type: file.name.split('.').pop() || 'pdf',
-      selected: true
-    }));
+    // If it's a new notebook, we need to create it first before adding sources
+    let notebookId = currentId;
+    if (notebookId === 'new') {
+      const loadingToast = toast.loading("Création du notebook...");
+      try {
+        const response = await NotebookControllerService.createNotebook(user.id, {
+          title,
+          metadata: JSON.stringify({ chatHistory, studioActivities })
+        });
+        if (response && response.id) {
+          notebookId = response.id;
+          setCurrentId(notebookId);
+          router.replace(`/notebook/${notebookId}`);
+          toast.success("Notebook créé", { id: loadingToast });
+        } else {
+          throw new Error("Failed to create notebook");
+        }
+      } catch (error) {
+        toast.error("Erreur lors de la création du notebook", { id: loadingToast });
+        return;
+      }
+    }
 
-    setSources(prev => [...prev, ...newSources]);
-    toast.success(`${newSources.length} source(s) ajoutée(s)`);
+    const uploadToast = toast.loading(`Envoi de ${files.length} source(s)...`);
+    try {
+      const newSources: Source[] = [];
+      
+      for (const file of Array.from(files)) {
+        // Envoi à l'API
+        const apiSource = await NotebookControllerService.addSource(notebookId, {
+          name: file.name,
+          type: file.name.split('.').pop() || 'pdf',
+          contentText: "Contenu extrait..." // Normalement géré côté serveur ou par un parser client
+        });
+        
+        newSources.push({
+          id: apiSource.id || crypto.randomUUID(),
+          name: apiSource.name || file.name,
+          type: apiSource.type || 'pdf',
+          selected: true
+        });
+      }
+
+      setSources(prev => [...prev, ...newSources]);
+      toast.success(`${newSources.length} source(s) ajoutée(s)`, { id: uploadToast });
+    } catch (error) {
+      console.error("Failed to upload sources:", error);
+      toast.error("Erreur lors de l'envoi des sources", { id: uploadToast });
+    }
 
     // Clear input
     e.target.value = '';
@@ -207,23 +267,57 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
     setSources(prev => prev.map(s => ({ ...s, selected: checked })));
   };
 
-  const handleGenerateTool = (toolId: string, label: string) => {
-    toast.promise(
-      new Promise(resolve => setTimeout(resolve, 1500)),
-      {
-        loading: `Génération de : ${label}...`,
-        success: `${label} généré avec succès !`,
-        error: 'Erreur lors de la génération',
+  const handleGenerateTool = async (toolId: string, label: string) => {
+    if (currentId === 'new') {
+      toast.error("Veuillez d'abord télécharger une source.");
+      return;
+    }
+
+    const toastId = toast.loading(`Génération de : ${label}... (Ceci peut prendre une minute)`);
+    try {
+      // Connect to LLM-SERVICE
+      const res = await fetch(`http://localhost:8000/api/v1/notebooks/studio/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          notebook_id: currentId,
+          activity_type: toolId,
+          topic: "Synthèse générale"
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("HTTP error " + res.status);
       }
-    ).then(() => {
+
+      const data = await res.json();
+      
+      let finalContent = "";
+      if (data.payload) {
+        finalContent = data.payload.markdown || data.payload.raw_text || JSON.stringify(data.payload, null, 2);
+      } else {
+        finalContent = data.content || JSON.stringify(data, null, 2);
+      }
+      
       const newActivity: StudioActivity = {
         id: crypto.randomUUID(),
         type: toolId as any,
         title: label,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        payload: finalContent
       };
+      
       setStudioActivities(prev => [newActivity, ...prev]);
-    });
+      toast.success(`${label} généré avec succès !`, { id: toastId });
+      
+      // Auto-open the generated activity
+      setSelectedActivity(newActivity);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erreur lors de la génération. Le service IA est-il lancé ?', { id: toastId });
+    }
   };
 
   return (
@@ -358,7 +452,24 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
           <div className="max-w-3xl mx-auto space-y-8">
-            {chatHistory.length === 0 ? (
+            {selectedActivity ? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-purple-100 dark:border-purple-800/50 relative">
+                <button 
+                  onClick={() => setSelectedActivity(null)}
+                  className="absolute right-4 top-4 text-purple-400 hover:text-purple-600 transition-colors p-2 bg-purple-50 dark:bg-purple-900/20 rounded-full"
+                >
+                  <FaChevronLeft size={12} className="inline mr-1"/> Fermer {selectedActivity.title}
+                </button>
+                <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100 mb-6">{selectedActivity.title}</h2>
+                <div className="prose prose-purple dark:prose-invert max-w-none">
+                  {selectedActivity.payload ? (
+                    <ReactMarkdown>{selectedActivity.payload}</ReactMarkdown>
+                  ) : (
+                    <p className="text-gray-500 italic">Contenu non disponible.</p>
+                  )}
+                </div>
+              </div>
+            ) : chatHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
                 <div className="w-20 h-20 bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center text-purple-600 shadow-inner">
                   <FaPlus size={32} />
@@ -495,7 +606,11 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
             ) : (
               <div className="space-y-3 pb-4">
                 {studioActivities.map((activity) => (
-                  <div key={activity.id} className="p-3 bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/50 rounded-xl flex items-center space-x-3 group hover:bg-white dark:hover:bg-gray-800 transition-all hover:shadow-sm animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div 
+                    key={activity.id} 
+                    onClick={() => setSelectedActivity(activity)}
+                    className="p-3 bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/50 rounded-xl flex items-center space-x-3 group hover:bg-white dark:hover:bg-gray-800 transition-all hover:shadow-sm animate-in fade-in slide-in-from-right-4 duration-300 cursor-pointer"
+                  >
                     <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all">
                       {activity.type === 'chat' && <MdHistory size={16} />}
                       {activity.type === 'mindmap' && <MdTableChart size={16} />}

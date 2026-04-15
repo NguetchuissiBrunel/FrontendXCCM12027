@@ -3,9 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AuthorDTO } from './AuthorDTO';
-/**
- * Données de la réponse
- */
 export type CourseResponse = {
     id?: number;
     title?: string;
@@ -15,7 +12,7 @@ export type CourseResponse = {
     author?: AuthorDTO;
     createdAt?: string;
     publishedAt?: string;
-    content?: Record<string, Record<string, any>>;
+    content?: Record<string, any>;
     coverImage?: string;
     photoUrl?: string;
     viewCount?: number;

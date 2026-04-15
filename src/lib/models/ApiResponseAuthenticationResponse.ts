@@ -19,6 +19,9 @@ export type ApiResponseAuthenticationResponse = {
      * Message décrivant le résultat de l'opération
      */
     message?: string;
+    /**
+     * Données de la réponse
+     */
     data?: AuthenticationResponse;
     /**
      * Erreurs de validation (si applicable)

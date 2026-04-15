@@ -3,6 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type StudentExerciseSubmissionRequest = {
-    content?: Record<string, Record<string, any>>;
+    content?: Record<string, any>;
 };
 

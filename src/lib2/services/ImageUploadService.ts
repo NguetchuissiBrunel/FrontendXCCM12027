@@ -13,7 +13,7 @@ export class ImageUploadService {
      * @returns any OK
      * @throws ApiError
      */
-    public static uploadImage1(
+    public static uploadImage(
         formData?: {
             file: Blob;
         },

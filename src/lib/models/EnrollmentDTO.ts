@@ -2,9 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-/**
- * Données de la réponse
- */
 export type EnrollmentDTO = {
     id?: number;
     courseId?: number;
@@ -20,6 +17,7 @@ export namespace EnrollmentDTO {
         PENDING = 'PENDING',
         APPROVED = 'APPROVED',
         REJECTED = 'REJECTED',
+        INVITED = 'INVITED',
     }
 }
 

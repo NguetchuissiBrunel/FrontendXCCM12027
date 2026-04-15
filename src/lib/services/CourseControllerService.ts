@@ -228,7 +228,7 @@ export class CourseControllerService {
      * @throws ApiError
      */
     public static getCoureByStatusForAuthor(
-        authorId: number,
+        authorId: string,
         status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
     ): CancelablePromise<ApiResponseListCourseResponse> {
         return __request(OpenAPI, {

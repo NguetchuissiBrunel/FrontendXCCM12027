@@ -240,7 +240,7 @@ export default function CreateCoursePage() {
 
         setIsUploadingImage(true);
         try {
-            const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+            const { CloudinaryService } = await import('@/lib2/services/CloudinaryService');
             const validation = CloudinaryService.validateFile(file);
             if (!validation.valid) {
                 toast.error(validation.error || 'Fichier invalide');

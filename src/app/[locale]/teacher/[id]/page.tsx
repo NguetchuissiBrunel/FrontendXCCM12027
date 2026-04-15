@@ -8,7 +8,7 @@ import { BookOpen, Users, GraduationCap, MapPin, Building2, Award, Heart, Eye, D
 import { useLoading } from '@/contexts/LoadingContext';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/layout/Navbar';
@@ -110,7 +110,7 @@ export default function TeacherProfilePage() {
       setTeacher(teacherData);
 
       // 2. Charger et filtrer les classes (comparaison robuste)
-      const classesResponse = await CourseClassService.getAllOpenClasses();
+      const classesResponse = await ClassesDeCoursService.getAllOpenClasses();
       let filteredClasses: CourseClass[] = [];
       let totalStudents = 0;
 

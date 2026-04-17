@@ -328,7 +328,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       handleDrop: (view, event, slice, moved) => {
         event.preventDefault();
 
-        const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
+        const jsonData = event.dataTransfer?.getData('application/x-xccm-knowledge');
         if (!jsonData) return false;
 
         try {
@@ -1209,12 +1209,15 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             }}
             onClick={() => editor?.chain().focus().run()}
           >
-            <div style={{
-              transform: `scale(${zoom / 100})`,
-              transformOrigin: 'top left',
-              width: '21cm',
-              height: 'auto'
-            }}>
+            <div
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: 'top left',
+                width: '21cm',
+                height: 'auto'
+              }}
+              onDragOver={(e) => e.preventDefault()}
+            >
               <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
             </div>
           </div>

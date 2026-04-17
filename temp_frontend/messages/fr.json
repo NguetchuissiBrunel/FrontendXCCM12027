@@ -1,0 +1,1258 @@
+{
+  "languageSwitcher": {
+    "label": "Choisir la langue",
+    "languages": {
+      "fr": "Francais",
+      "en": "English"
+    }
+  },
+  "sidebar": {
+    "online": "En ligne",
+    "mainMenu": "Menu principal",
+    "loading": "Chargement...",
+    "roles": {
+      "student": "Etudiant",
+      "teacher": "Enseignant"
+    },
+    "student": {
+      "home": "Accueil",
+      "profile": "Mon profil",
+      "courses": "Mes cours",
+      "deadlines": "Echeances"
+    },
+    "teacher": {
+      "home": "Accueil",
+      "enrollments": "Inscriptions",
+      "classes": "Mes classes",
+      "exercises": "Mes exercices",
+      "compositions": "Mes compositions"
+    }
+  },
+  "adminSidebar": {
+    "administrator": "Administrateur",
+    "overview": "Vue d'ensemble",
+    "students": "Etudiants",
+    "teachers": "Enseignants",
+    "courses": "Cours",
+    "enrollments": "Inscriptions",
+    "administrators": "Administrateurs",
+    "logout": "Deconnexion"
+  },
+  "navbar": {
+    "home": "Accueil",
+    "library": "Bibliotheque",
+    "edit": "Editer",
+    "help": "Aide",
+    "enableLightMode": "Activer le mode clair",
+    "enableDarkMode": "Activer le mode sombre",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "student": "Etudiant",
+    "teacher": "Enseignant",
+    "myAccount": "Mon compte",
+    "logout": "Deconnexion",
+    "login": "Connexion",
+    "register": "Inscription"
+  },
+  "footer": {
+    "platform": "Plateforme pedagogique",
+    "description": "Plateforme de creation et de partage de contenu pedagogique. Innovez dans l'education avec nos outils modernes.",
+    "services": "Services",
+    "courseCreation": "Creation de cours",
+    "collaborativeSpaces": "Espaces collaboratifs",
+    "contentLibrary": "Bibliotheque de contenu",
+    "pricing": "Tarification",
+    "company": "Entreprise",
+    "about": "A propos",
+    "resources": "Ressources",
+    "helpCenter": "Centre d'aide",
+    "blogAndGuides": "Blog et guides",
+    "technicalSupport": "Support technique",
+    "newsletterTitle": "Restez informe",
+    "newsletterDescription": "Inscrivez-vous pour recevoir nos dernieres actualites, conseils pedagogiques et ressources exclusives.",
+    "allRightsReserved": "Tous droits reserves.",
+    "legalNotices": "Mentions legales",
+    "privacyPolicy": "Politique de confidentialite",
+    "termsOfUse": "Conditions d'utilisation",
+    "cookies": "Cookies"
+  },
+  "newsletter": {
+    "defaultTitle": "Abonnez-vous a notre newsletter",
+    "defaultDescription": "Recevez les dernieres nouvelles, mises a jour et offres speciales directement dans votre boite de reception.",
+    "aria": {
+      "email": "Adresse email pour la newsletter"
+    },
+    "placeholders": {
+      "email": "Votre email",
+      "emailAddress": "Votre adresse email"
+    },
+    "actions": {
+      "subscribeShort": "S'abonner",
+      "subscribe": "S'abonner a la newsletter",
+      "subscribing": "Inscription en cours..."
+    },
+    "messages": {
+      "invalidEmail": "Veuillez entrer une adresse email valide.",
+      "success": "Vous etes maintenant inscrit a notre newsletter.",
+      "unexpectedError": "Une erreur inattendue est survenue. Veuillez reessayer.",
+      "alreadySubscribed": "Cette adresse email est deja inscrite a notre newsletter.",
+      "invalidFormat": "Adresse email invalide ou format incorrect.",
+      "tooManyAttempts": "Trop de tentatives. Veuillez patienter quelques minutes avant de reessayer.",
+      "serviceUnavailable": "Service temporairement indisponible. Veuillez reessayer plus tard.",
+      "offline": "Vous semblez etre hors ligne. Verifiez votre connexion internet.",
+      "confirmationHint": "Consultez votre boite de reception pour confirmer votre inscription."
+    },
+    "privacyNote": {
+      "text1": "🔒 En vous abonnant, vous acceptez de recevoir nos newsletters contenant des actualités, des conseils pédagogiques et des offres spéciales.",
+      "text2": "Vous pourrez vous désabonner à tout moment en cliquant sur le lien de désinscription présent dans chaque email. Vos données sont traitées conformément à notre ",
+      "policy": "politique de confidentialité",
+      "security": "Sécurité et confidentialité garanties"
+    }
+  },
+  "common": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
+  },
+  "contact": {
+    "validation": {
+      "nameRequired": "Le nom est requis",
+      "emailRequired": "L'adresse email est requise",
+      "emailInvalid": "Veuillez entrer une adresse email valide",
+      "subjectRequired": "Le sujet est requis",
+      "messageRequired": "Le message est requis",
+      "messageTooShort": "Le message doit contenir au moins 10 caracteres"
+    },
+    "messages": {
+      "success": "Message envoye avec succes. Notre equipe vous repondra dans les 24 a 48 heures.",
+      "unexpectedError": "Une erreur inattendue est survenue. Veuillez reessayer.",
+      "invalidData": "Donnees invalides. Verifiez les informations saisies.",
+      "validationError": "Certains champs contiennent des erreurs de validation.",
+      "tooManyAttempts": "Trop de tentatives. Veuillez patienter quelques minutes avant de reessayer.",
+      "serviceUnavailable": "Service temporairement indisponible. Notre equipe technique a ete notifiee.",
+      "offline": "Vous semblez etre hors ligne. Verifiez votre connexion internet.",
+      "replyHint": "Nous vous repondrons a l'adresse"
+    },
+    "fields": {
+      "fullName": "Nom complet *",
+      "email": "Adresse email *",
+      "subject": "Sujet *",
+      "message": "Message *"
+    },
+    "placeholders": {
+      "name": "Votre nom",
+      "email": "Votre email",
+      "emailExample": "exemple@email.com",
+      "subject": "Sujet de votre message",
+      "message": "Decrivez votre demande en detail...",
+      "messageShort": "Votre message"
+    },
+    "actions": {
+      "sendShort": "Envoyer",
+      "sendingShort": "Envoi...",
+      "send": "Envoyer le message",
+      "sending": "Envoi en cours..."
+    },
+    "alternativeTitle": "Autres moyens de nous contacter",
+    "privacy": {
+      "prefix": "En soumettant ce formulaire, vous acceptez notre",
+      "link": "politique de confidentialite",
+      "suffix": "Vos donnees sont securisees et ne seront jamais partagees avec des tiers."
+    }
+  },
+  "home": {
+    "teacherFallback": "Enseignant",
+    "hero": {
+      "titleStart": "Creez vos cours",
+      "titleAccent": "facilement et partagez",
+      "titleEnd": "vos connaissances",
+      "description": "Notre plateforme vous permet de creer, organiser et partager vos contenus pedagogiques de maniere intuitive.",
+      "demo": "Voir demo",
+      "register": "S'inscrire"
+    },
+    "features": {
+      "title": "Une nouvelle facon de creer du contenu pedagogique",
+      "subtitle": "Decouvrez les fonctionnalites qui revolutionnent la creation de cours en ligne",
+      "items": {
+        "editor": {
+          "title": "Editeur intuitif",
+          "description": "Creez du contenu avec notre editeur WYSIWYG moderne. Mise en forme avancee, insertion d'images et de tableaux en quelques clics."
+        },
+        "modular": {
+          "title": "Contenu modulaire",
+          "description": "Structurez vos cours en granules reutilisables. Assemblez et reorganisez votre contenu comme des blocs de construction."
+        },
+        "collaboration": {
+          "title": "Collaboration",
+          "description": "Travaillez en equipe sur vos cours. Partagez vos granules et collaborez avec d'autres enseignants."
+        }
+      }
+    },
+    "specialOffers": {
+      "title": "Offres speciales",
+      "defaultDescription": "Cours de qualite",
+      "views": "{count} vues",
+      "viewMore": "Voir plus"
+    },
+    "testimonials": {
+      "title": "Temoignages et avis",
+      "comment": "Commenter",
+      "shareTitle": "Partagez votre experience",
+      "placeholder": "Ecrivez votre commentaire ici...",
+      "publish": "Publier"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "emailPlaceholder": "Votre adresse email",
+      "passwordPlaceholder": "Votre mot de passe",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "forgotPassword": "Mot de passe oublie ?",
+      "submit": "Se connecter",
+      "submitting": "Connexion en cours...",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "register": "Inscrivez-vous",
+      "validation": {
+        "emailRequired": "L'email est requis",
+        "emailInvalid": "L'email n'est pas valide",
+        "passwordRequired": "Le mot de passe est requis"
+      },
+      "messages": {
+        "success": "Connexion reussie !",
+        "unexpected": "Une erreur est survenue. Veuillez reessayer.",
+        "invalidCredentials": "Email ou mot de passe incorrect",
+        "forbidden": "Acces refuse",
+        "serverError": "Erreur serveur. Veuillez reessayer plus tard."
+      }
+    },
+    "register": {
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "alreadyHaveAccount": "Vous avez deja un compte ?",
+      "login": "Connectez-vous",
+      "roles": {
+        "student": "Etudiant",
+        "teacher": "Enseignant"
+      },
+      "step1": {
+        "title": "Creez votre compte",
+        "next": "Suivant"
+      },
+      "step2": {
+        "title": "Completez votre profil",
+        "back": "Retour",
+        "submit": "S'inscrire",
+        "submitting": "Inscription en cours..."
+      },
+      "placeholders": {
+        "email": "Votre adresse email",
+        "password": "Votre mot de passe",
+        "confirmPassword": "Confirmez votre mot de passe",
+        "grade": "Selectionnez votre grade",
+        "firstName": "Prenom",
+        "lastName": "Nom",
+        "photo": "Cliquez ou glissez votre photo ici",
+        "city": "Ville",
+        "university": "Universite",
+        "specialization": "Specialisation",
+        "subjects": "Selectionnez vos matieres"
+      },
+      "validation": {
+        "emailRequired": "L'email est requis",
+        "emailInvalid": "L'email n'est pas valide",
+        "passwordRequired": "Le mot de passe est requis",
+        "passwordTooShort": "Le mot de passe doit contenir au moins 8 caracteres",
+        "confirmPasswordRequired": "Veuillez confirmer votre mot de passe",
+        "passwordMismatch": "Les mots de passe ne correspondent pas",
+        "gradeRequired": "Veuillez selectionner votre grade"
+      },
+      "messages": {
+        "photoSuccess": "Photo telechargee avec succes",
+        "success": "Inscription reussie !",
+        "unexpected": "Une erreur est survenue lors de l'inscription.",
+        "invalidData": "Donnees invalides. Veuillez verifier vos informations.",
+        "emailInUse": "Cet email est deja utilise.",
+        "serverError": "Erreur serveur. Veuillez reessayer plus tard."
+      }
+    }
+  },
+  "editor": {
+    "panels": {
+      "structure": "Structure",
+      "info": "Infos",
+      "pdfPreview": "Aperçu PDF",
+      "feedback": "Appréciations",
+      "myCourses": "Mes Cours",
+      "exercises": "Exercices",
+      "grading": "Correction",
+      "workshops": "Travaux Dirigés",
+      "properties": "Propriétés"
+    },
+    "toolbar": {
+      "save": "Sauvegarder",
+      "publish": "Publier",
+      "hideToc": "Masquer la table des matières",
+      "showToc": "Afficher la table des matières",
+      "createFirstBeforeLabel": "Créer un cours d'abord pour"
+    },
+    "confirm": {
+      "publishTitle": "Publier le cours",
+      "saveTitle": "Sauvegarder le cours",
+      "publishMessage": "Êtes-vous sûr de vouloir publier ce cours ? Il sera visible par tous les étudiants.",
+      "saveMessage": "Voulez-vous enregistrer les modifications actuelles ?",
+      "publishConfirm": "Publier maintenant",
+      "saveConfirm": "Enregistrer"
+    },
+    "info": {
+      "panelTitle": "Infos du cours",
+      "courseTitle": "Titre du cours",
+      "category": "Catégorie",
+      "categoryName": "Nom de la catégorie",
+      "categoryPlaceholder": "Saisissez une catégorie...",
+      "description": "Description",
+      "descriptionPlaceholder": "Résumé du cours...",
+      "coverImage": "Image de couverture",
+      "coverImagePlaceholder": "Changer l'image de couverture",
+      "courseId": "ID du cours",
+      "saveInfos": "Sauvegarder les infos",
+      "categories": {
+        "computer": "Informatique",
+        "mathematics": "Mathématiques",
+        "physics": "Physique",
+        "languages": "Langues",
+        "other": "Autre"
+      }
+    },
+    "feedback": {
+      "panelTitle": "Appréciations",
+      "comingSoon": "Section en développement",
+      "comingSoonDetail": "Les commentaires et questions arrivent bientôt"
+    },
+    "workshops": {
+      "panelTitle": "Travaux Dirigés",
+      "description": "Gestion des exercices",
+      "hint": "Utilisez le panneau \"Exercices\" pour créer et gérer les travaux pratiques"
+    },
+    "properties": {
+      "panelTitle": "Propriétés",
+      "description": "Paramètres avancés",
+      "hint": "Configuration du cours"
+    },
+    "exercises": {
+      "panelTitle": "Gestion des exercices",
+      "noCourse": "Chargez ou créez un cours pour gérer les exercices",
+      "editTitle": "Modifier l'exercice",
+      "newTitle": "Nouvel exercice",
+      "titleLabel": "Titre",
+      "titlePlaceholder": "Titre de l'exercice",
+      "descLabel": "Description",
+      "descPlaceholder": "Instructions...",
+      "maxScore": "Score max",
+      "status": "Statut",
+      "draft": "Brouillon",
+      "published": "Publié",
+      "cancel": "Annuler",
+      "update": "Mettre à jour",
+      "create": "Créer",
+      "newExercise": "Nouvel exercice",
+      "statsTotal": "Exercices",
+      "statsPublished": "Publiés",
+      "statsPending": "À corriger",
+      "noExercise": "Aucun exercice pour ce cours",
+      "createFirst": "Créez votre premier exercice",
+      "noDescription": "Pas de description",
+      "deadline": "Échéance",
+      "deadlineNone": "Non définie",
+      "edit": "Modifier",
+      "delete": "Supprimer"
+    },
+    "gradingPanel": {
+      "panelTitle": "Correction des exercices",
+      "noCourse": "Chargez ou créez un cours pour corriger les exercices",
+      "selectExercise": "Sélectionnez un exercice pour voir les soumissions",
+      "back": "← Retour",
+      "noSubmissions": "Aucune soumission pour cet exercice",
+      "noExercise": "Aucun exercice à corriger",
+      "submittedOn": "Soumis le",
+      "toGrade": "À noter",
+      "grade": "Noter",
+      "submissions": "soumissions",
+      "average": "Moyenne",
+      "notGraded": "Pas encore noté"
+    },
+    "toast": {
+      "editorNotLoaded": "L'éditeur n'est pas encore chargé.",
+      "notLoggedIn": "Vous devez être connecté pour sauvegarder votre cours.",
+      "publishSuccess": "Cours publié avec succès !",
+      "updateSuccess": "Cours mis à jour !",
+      "createSuccess": "Cours créé et sauvegardé !",
+      "saveError": "Échec de la sauvegarde",
+      "exerciseLoadError": "Erreur de chargement des exercices",
+      "submissionLoadError": "Erreur de chargement des soumissions",
+      "exerciseUpdated": "Exercice mis à jour",
+      "exerciseCreated": "Exercice créé",
+      "exerciseSaveError": "Erreur lors de l'enregistrement de l'exercice",
+      "exerciseDeleted": "Exercice supprimé",
+      "exerciseDeleteError": "Impossible de supprimer l'exercice",
+      "exerciseDeleteConfirm": "Voulez-vous vraiment supprimer cet exercice ?",
+      "gradeSuccess": "Soumission notée",
+      "gradeError": "Échec de la notation",
+      "courseInit": "Nouveau cours initialisé !",
+      "createBeforeExercise": "Créez ou chargez un cours avant de créer un exercice."
+    }
+  },
+  "pdfPreview": {
+    "title": "Aperçu PDF",
+    "noTitle": "Sans Titre",
+    "download": "Télécharger",
+    "pdfSuccess": "PDF généré avec succès",
+    "pdfError": "Erreur lors de la génération du PDF",
+    "docxSuccess": "Document Word généré avec succès",
+    "docxError": "Erreur lors de la génération du document Word",
+    "structureCourse": "Structurez votre cours pour voir l'aperçu...",
+    "platform": "Plateforme Pédagogique",
+    "exercice": "Exercice",
+    "chapterExercise": "Exercice du chapitre",
+    "sectionExercise": "Exercice de la section",
+    "page": "page",
+    "pages": "pages"
+  },
+  "exercises": {
+    "editor": {
+      "editTitle": "Éditeur d'exercice",
+      "newTitle": "Nouvel exercice",
+      "editSubtitle": "Modifiez le contenu de votre exercice",
+      "newSubtitle": "Créez un nouvel exercice",
+      "generalInfo": "Informations générales",
+      "exerciseTitle": "Titre de l'exercice *",
+      "exerciseTitlePlaceholder": "Ex: Introduction à la programmation",
+      "maxScore": "Score maximum *",
+      "description": "Description",
+      "descPlaceholder": "Décrivez l'objectif de l'exercice...",
+      "dueDate": "Date d'échéance",
+      "questionsTitle": "Questions",
+      "questionsSubtitle": "Organisez et configurez les questions de l'exercice",
+      "addQuestion": "Ajouter une question",
+      "freeText": "Texte libre",
+      "freeTextSub": "Réponse courte ou longue",
+      "multipleChoice": "Choix multiple",
+      "multipleChoiceSub": "QCM avec options",
+      "code": "Code",
+      "codeSub": "Exercice de programmation",
+      "noQuestion": "Aucune question",
+      "noQuestionSub": "Commencez par ajouter votre première question",
+      "questionStatement": "Énoncé de la question *",
+      "questionPlaceholder": "Posez votre question ici...",
+      "answerOptions": "Options de réponse *",
+      "addOption": "+ Ajouter une option",
+      "correctAnswer": "Réponse correcte",
+      "selectCorrectAnswer": "Sélectionnez la réponse correcte",
+      "explanation": "Explication (optionnelle)",
+      "explanationPlaceholder": "Expliquez la réponse ou donnez des indices...",
+      "summaryTitle": "Résumé de l'exercice",
+      "summaryTitleLabel": "Titre",
+      "summaryUndefined": "Non défini",
+      "summaryQuestions": "Questions",
+      "summaryTotalScore": "Score total",
+      "summaryOverflow": "Dépassement",
+      "summaryDueDate": "Date d'échéance",
+      "summaryDueDateNone": "Non définie",
+      "summaryQuestionTypes": "Types de questions",
+      "summaryStatus": "Statut",
+      "statusPublished": "Publié",
+      "statusDraft": "Brouillon",
+      "cancel": "Annuler",
+      "preview": "Aperçu",
+      "previewGenerated": "Aperçu généré (voir console)",
+      "save": "Enregistrer les modifications",
+      "saving": "Enregistrement...",
+      "validationErrors": "Erreurs de validation",
+      "saveErrorToast": "Veuillez corriger les erreurs avant de sauvegarder",
+      "saveError": "Erreur lors de la sauvegarde",
+      "minOneQuestion": "Un exercice doit avoir au moins une question",
+      "minTwoOptions": "Une question à choix multiple doit avoir au moins 2 options",
+      "titleRequired": "Le titre est requis",
+      "addAtLeastOne": "Ajoutez au moins une question",
+      "questionEmpty": "La question {n} est vide",
+      "questionPositivePoints": "La question {n} doit avoir des points positifs",
+      "questionMinOptions": "La question {n} doit avoir au moins 2 options",
+      "optionEmpty": "L'option {o} de la question {n} est vide",
+      "totalExceedsMax": "Total des points ({total}) dépasse le score maximum ({max})",
+      "points": "Points:"
+    },
+    "stats": {
+      "title": "Statistiques de l'exercice",
+      "loading": "Chargement...",
+      "loadError": "Impossible de charger les statistiques",
+      "retry": "Réessayer",
+      "lastUpdate": "Dernière mise à jour: Maintenant",
+      "submissions": "Soumissions",
+      "participationRate": "Taux de participation",
+      "averageScore": "Score moyen",
+      "performance": "Performance",
+      "averageTime": "Temps moyen",
+      "timePerStudent": "Temps par étudiant",
+      "completionRate": "Taux de complétion",
+      "progression": "Progression",
+      "good": "Bon",
+      "toImprove": "À améliorer",
+      "gradeDistribution": "Distribution des notes",
+      "student": "étudiant",
+      "students": "étudiants",
+      "questionPerformance": "Performance par question",
+      "freeAnswer": "Réponse libre",
+      "multipleChoice": "Choix multiple",
+      "successRate": "Taux de réussite",
+      "commonDifficulties": "Difficultés courantes:"
+    },
+    "viewer": {
+      "unansweredError": "Veuillez répondre à toutes les questions ({count} non répondues)",
+      "submitSuccess": "Exercice soumis avec succès !",
+      "submitError": "Erreur lors de la soumission",
+      "progress": "Progression",
+      "answered": "répondues",
+      "noQuestions": "Cet exercice ne contient aucune question.",
+      "freeText": "Réponse texte",
+      "multipleChoice": "Choix multiple",
+      "code": "Code",
+      "yourAnswer": "Votre réponse : {points}/{max} points",
+      "expectedAnswer": "Réponse attendue",
+      "correct": "Votre réponse est correcte !",
+      "checkAnswer": "Vérifiez votre réponse.",
+      "submit": "Soumettre mes réponses",
+      "submitting": "Soumission en cours...",
+      "afterSubmit": "Après soumission, vous ne pourrez plus modifier vos réponses",
+      "successTitle": "Exercice soumis avec succès !",
+      "successText": "Votre travail a été enregistré. Vous recevrez une notification une fois qu'il sera corrigé.",
+      "yourScore": "Votre score",
+      "codeEditorHint": "Utilisez l'éditeur de code ou écrivez directement ci-dessous",
+      "codeLanguages": "Support des langages : JavaScript, Python, Java, C++, etc.",
+      "codePlaceholder": "// Écrivez votre code ici...",
+      "answerPlaceholder": "Votre réponse...",
+      "unsupportedType": "Type de question non supporté"
+    },
+    "grading": {
+      "title": "Notation",
+      "question": "Question",
+      "globalScore": "Score global",
+      "noAnswer": "Aucune réponse",
+      "studentAnswer": "Réponse de l'étudiant",
+      "assignScore": "Attribuer un score",
+      "currentScore": "Score actuel",
+      "quickSelect": "Sélection rapide:",
+      "comment": "Commentaire",
+      "commentPlaceholder": "Commentaire pour cette question...",
+      "generalComment": "Commentaire général",
+      "generalCommentPlaceholder": "Commentaire sur l'ensemble...",
+      "finalScore": "Score final",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "saving": "...",
+      "scoreTooHigh": "Score trop élevé (max: {max})",
+      "gradeSaved": "Notation enregistrée",
+      "gradeError": "Erreur",
+      "point": "point",
+      "points": "points"
+    },
+    "table": {
+      "student": "Étudiant",
+      "status": "Statut",
+      "score": "Score",
+      "submittedOn": "Soumis le",
+      "actions": "Actions",
+      "graded": "Noté",
+      "toGrade": "À corriger",
+      "gradedOn": "Corrigé le",
+      "regrade": "Re-corriger",
+      "grade": "Corriger",
+      "download": "Télécharger",
+      "found": "trouvée",
+      "founds": "trouvées",
+      "submission": "soumission",
+      "submissions": "soumissions",
+      "noted": "notée",
+      "noteds": "notées",
+      "toCorrect": "à corriger",
+      "selected": "sélectionné",
+      "selecteds": "sélectionnés",
+      "noResults": "Aucune soumission ne correspond aux filtres",
+      "modifySearch": "Essayez de modifier vos critères de recherche",
+      "bulkGrade": "Noter en masse",
+      "export": "Exporter",
+      "cancel": "Annuler",
+      "time": "Temps",
+      "min": "min"
+    }
+  },
+  "pages": {
+    "demo": {
+      "titlePrefix": "Decouvrez la puissance de",
+      "description": "Voyez comment notre solution peut transformer votre experience d'enseignement et d'apprentissage en quelques minutes.",
+      "teacherDemo": "Demo enseignant",
+      "studentDemo": "Demo etudiant",
+      "teacherVideoTitle": "Demonstration XCCM - Enseignant",
+      "studentVideoTitle": "Demonstration XCCM - Etudiant",
+      "perspective": "Decouvrez XCCM du point de vue de l'enseignant et de l'etudiant",
+      "features": {
+        "interface": {
+          "title": "Interface intuitive",
+          "description": "Prise en main immediate sans formation technique requise."
+        },
+        "analytics": {
+          "title": "Analyses detaillees",
+          "description": "Suivez la progression de vos etudiants en temps reel."
+        },
+        "customization": {
+          "title": "Personnalisation",
+          "description": "Adaptez la plateforme a votre image et vos besoins."
+        }
+      }
+    },
+    "about": {
+      "sections": {
+        "intro": "Introduction",
+        "problematique": "Problématique",
+        "solution": "Solution",
+        "tech": "Équipe",
+        "avenir": "Avenir"
+      },
+      "badge": "Projet académique ENSPY",
+      "title": "À propos de XCCM1",
+      "description": "Une plateforme modulaire pour créer, structurer et partager des contenus pédagogiques.",
+      "discover": "Découvrir le projet",
+      "github": "Voir sur GitHub",
+      "highlightsTitle": "À retenir",
+      "highlights": {
+        "prototype": {
+          "title": "Prototype open-source",
+          "desc": "Développé par les étudiants ENSPY pour le cours GIF4087-1."
+        },
+        "granules": {
+          "title": "Granules pédagogiques",
+          "desc": "Unités modulaires pour structurer et réutiliser les contenus."
+        },
+        "collaboration": {
+          "title": "Collaboration",
+          "desc": "Travail d'équipe, versionnage et export multi-format."
+        }
+      },
+      "summary": "Sommaire",
+      "introTitle": "Introduction",
+      "introParagraph1": "XCCM (eXtensible Content Composition Module) est un projet innovant développé dans le cadre du cours Interface Homme-Machine (GIF4087-1) à l'École Nationale Supérieure Polytechnique de Yaoundé (ENSPY).",
+      "introParagraph2": "Sous la supervision du Pr. Bernabe BATCHAKUI, cette plateforme vise à transformer la création de contenu pédagogique à travers une approche modulaire basée sur des granules de connaissance.",
+      "problemTitle": "Problématique",
+      "problems": {
+        "formats": {
+          "title": "Formats rigides",
+          "desc": "PDF/Word difficiles à modifier."
+        },
+        "modularity": {
+          "title": "Peu de modularité",
+          "desc": "Réutiliser un chapitre est complexe."
+        },
+        "collaboration": {
+          "title": "Collaboration limitée",
+          "desc": "Peu d'outils de co-édition."
+        },
+        "quality": {
+          "title": "Qualité inégale",
+          "desc": "Absence de standardisation."
+        }
+      },
+      "solutionTitle": "Notre solution",
+      "granulesTitle": "Le concept de granules",
+      "granulesDescription": "Un granule est une unité atomique (définition, exemple, exercice, ressource) enrichie par des métadonnées, versionnage et droits d'auteur.",
+      "solutionFeatures": {
+        "modular": "Modulaire",
+        "collaborative": "Collaboratif",
+        "exportable": "Exportable"
+      },
+      "teamTitle": "Équipe de développement",
+      "teamDescription": "12 étudiants de 4e année Génie Informatique (2025-2026) sous la supervision du Pr. Bernabe BATCHAKUI",
+      "futureTitle": "Perspectives d'avenir",
+      "futureItems": {
+        "ai": "Intégration d'IA pour la génération de granules",
+        "multilingual": "Support multilingue (FR, EN, ES)",
+        "mobile": "Application mobile (React Native)",
+        "gamification": "Gamification et badges",
+        "moodle": "Intégration Moodle / Google Classroom"
+      }
+    },
+    "aide": {
+      "validationRequired": "Veuillez remplir tous les champs obligatoires",
+      "helpItems": {
+        "login": {
+          "title": "Probleme de connexion",
+          "solution": "Verifiez vos identifiants, effacez le cache du navigateur, ou utilisez la fonction 'mot de passe oublie'. Si le probleme persiste, contactez le support."
+        },
+        "password": {
+          "title": "Mot de passe oublie",
+          "solution": "Cliquez sur 'Mot de passe oublie' sur la page de connexion. Suivez les instructions envoyees a votre email pour reinitialiser votre mot de passe."
+        },
+        "customer": {
+          "title": "Service client",
+          "solution": "Notre equipe est disponible 24/7. Contactez-nous par chat en direct ou envoyez un email a support@xccm.com pour une assistance rapide."
+        },
+        "account": {
+          "title": "Changer de compte",
+          "solution": "Accedez aux parametres du compte, selectionnez 'Changer de compte' et suivez les etapes pour basculer vers un autre profil."
+        },
+        "firstDoc": {
+          "title": "Creer mon premier document",
+          "solution": "Cliquez sur le bouton '+' dans votre tableau de bord, choisissez un modele ou commencez avec une page blanche."
+        },
+        "share": {
+          "title": "Partager ma composition",
+          "solution": "Ouvrez votre composition, cliquez sur 'Partager' en haut a droite, et choisissez votre methode de partage preferee."
+        },
+        "renew": {
+          "title": "Renouveler mon abonnement",
+          "solution": "Allez dans 'Parametres → Abonnement', selectionnez votre plan et suivez les instructions de paiement."
+        },
+        "tutorial": {
+          "title": "Tuto global",
+          "solution": "Explorez notre guide complet etape par etape. Accedez a 'Aide → Tutoriels' pour des videos et guides detailles."
+        }
+      },
+      "faqItems": {
+        "pwd": {
+          "question": "Comment reinitialiser mon mot de passe ?",
+          "answer": "Cliquez sur 'Mot de passe oublie' sur la page de connexion. Vous recevrez un email avec des instructions."
+        },
+        "support": {
+          "question": "Comment contacter le support client ?",
+          "answer": "Notre equipe est disponible 24/7. Vous pouvez nous contacter par chat en direct ou par email."
+        },
+        "email": {
+          "question": "Puis-je changer mon adresse email ?",
+          "answer": "Oui, vous pouvez changer votre adresse email dans les parametres de votre compte."
+        },
+        "docs": {
+          "question": "Comment acceder a mes documents ?",
+          "answer": "Connectez-vous a votre compte et accedez a votre tableau de bord pour voir vos documents."
+        },
+        "fees": {
+          "question": "Y a-t-il des frais de retard pour les abonnements ?",
+          "answer": "Oui, des frais peuvent s'appliquer si vous ne renouvelez pas votre abonnement a temps."
+        }
+      },
+      "stats": {
+        "satisfaction": {
+          "value": "98%",
+          "label": "Satisfaction"
+        },
+        "support": {
+          "value": "24/7",
+          "label": "Support"
+        },
+        "reviews": {
+          "value": "50k+",
+          "label": "Avis"
+        },
+        "features": {
+          "value": "200+",
+          "label": "Fonctionnalites"
+        }
+      },
+      "headerTitle": "Centre d'aide de XCCM",
+      "headerDescription": "Votre satisfaction est notre engagement : des solutions simples et rapides a portee de main... Contactez-nous !",
+      "searchPlaceholder": "Rechercher une solution...",
+      "startTyping": "Commencez a taper pour rechercher un sujet...",
+      "resultsFor": "Resultats pour",
+      "noResults": "Aucun resultat trouve pour",
+      "moreQuestions": "Plus de questions",
+      "faqTitle": "Foire aux questions (FAQ)",
+      "contactTitle": "Contactez notre support",
+      "contactDescription": "Notre equipe est la pour vous aider. Envoyez-nous votre message et nous vous repondrons rapidement.",
+      "imageAlt": "Support client",
+      "feedbackThanksTitle": "Merci pour votre feedback !",
+      "feedbackThanksDescription": "Votre avis nous est precieux pour ameliorer nos services.",
+      "feedbackAgain": "Soumettre un autre feedback",
+      "contactSuccess": "Votre message a ete envoye avec succes ! Nous vous repondrons dans les plus brefs delais.",
+      "contactError": "Une erreur est survenue lors de l'envoi du message. Veuillez reessayer.",
+      "invalidFields": "Veuillez verifier les informations saisies. Certains champs sont invalides.",
+      "tooManyAttempts": "Trop de tentatives. Veuillez patienter quelques minutes avant de reessayer.",
+      "unavailable": "Service temporairement indisponible. Veuillez reessayer plus tard."
+    },
+    "faq": {
+      "categories": {
+        "general": "General",
+        "comptes": "Comptes",
+        "contenus": "Contenus",
+        "export": "Export",
+        "securite": "Securite"
+      },
+      "sections": {
+        "general": {
+          "title": "Questions generales",
+          "items": {
+            "0": {
+              "q": "A quoi sert XCCM1 ?",
+              "a": "XCCM1 est une plateforme academique pour creer, structurer et partager des contenus pedagogiques sous forme de granules."
+            },
+            "1": {
+              "q": "Qui peut utiliser la plateforme ?",
+              "a": "Les enseignants et etudiants de l'ENSPY. L'acces est reserve au cadre academique."
+            },
+            "2": {
+              "q": "La plateforme est-elle gratuite ?",
+              "a": "Oui. XCCM1 est un prototype developpe pour un usage pedagogique."
+            }
+          }
+        },
+        "comptes": {
+          "title": "Comptes & acces",
+          "items": {
+            "0": {
+              "q": "Comment creer un compte ?",
+              "a": "Contactez l'equipe XCCM1 ou votre responsable pedagogique pour activer votre compte."
+            },
+            "1": {
+              "q": "J ai oublie mon mot de passe, que faire ?",
+              "a": "Utilisez le formulaire de recuperation ou contactez l'equipe support."
+            },
+            "2": {
+              "q": "Puis-je changer mon role ?",
+              "a": "Oui, sur demande aupres de l'administration XCCM1."
+            }
+          }
+        },
+        "contenus": {
+          "title": "Contenus & granules",
+          "items": {
+            "0": {
+              "q": "Qu est-ce qu un granule ?",
+              "a": "Un granule est un module de connaissance (definition, exemple, exercice, ressource)."
+            },
+            "1": {
+              "q": "Puis-je dupliquer un granule ?",
+              "a": "Oui, pour gagner du temps et adapter vos cours."
+            },
+            "2": {
+              "q": "Les etudiants peuvent-ils modifier un cours ?",
+              "a": "Non. Les etudiants ont un acces en lecture."
+            }
+          }
+        },
+        "export": {
+          "title": "Export & formats",
+          "items": {
+            "0": {
+              "q": "Quels formats sont disponibles ?",
+              "a": "PDF, Word et version web selon le cours."
+            },
+            "1": {
+              "q": "Pourquoi mon export est incomplet ?",
+              "a": "Verifiez que tous les granules sont publies et associes au bon module."
+            },
+            "2": {
+              "q": "Puis-je personnaliser le format ?",
+              "a": "Oui, via les options d export dans la page du cours."
+            }
+          }
+        },
+        "securite": {
+          "title": "Securite & confidentialite",
+          "items": {
+            "0": {
+              "q": "Mes donnees sont-elles protegees ?",
+              "a": "Oui, les mots de passe sont hashes et les acces controles."
+            },
+            "1": {
+              "q": "Mes contenus sont-ils publics ?",
+              "a": "Non, ils sont accessibles uniquement aux utilisateurs autorises."
+            },
+            "2": {
+              "q": "Comment signaler un probleme ?",
+              "a": "Utilisez la page support ou contactez l'equipe XCCM1."
+            }
+          }
+        }
+      },
+      "title": "Questions frequentes",
+      "subtitle": "Trouvez rapidement les reponses sur l usage de XCCM1.",
+      "searchPlaceholder": "Rechercher une question...",
+      "results": "Resultats",
+      "highlightsTitle": "A retenir",
+      "highlights": {
+        "support": {
+          "title": "Support academique",
+          "desc": "Equipe XCCM1 disponible pour les enseignants et etudiants."
+        },
+        "guides": {
+          "title": "Guides de prise en main",
+          "desc": "Des ressources pour creer vos premiers granules."
+        },
+        "securite": {
+          "title": "Securite",
+          "desc": "Donnees protegees et acces controles."
+        }
+      },
+      "noResults": "Aucun resultat. Essayez un autre mot-cle ou consultez les categories.",
+      "helpTitle": "Besoin d aide ?",
+      "helpDescription": "Contactez l equipe XCCM1 pour un accompagnement personnalise.",
+      "contactSupport": "Contacter le support",
+      "categoriesTitle": "Categories",
+      "guidesTitle": "Guides utiles",
+      "guides": {
+        "0": "Bien demarrer avec XCCM1",
+        "1": "Modeles de granules",
+        "2": "Checklist de publication"
+      }
+    },
+    "enrollment": {
+      "loading": "Chargement...",
+      "teacherRestricted": "Enseignants ne peuvent pas s'inscrire",
+      "loginRequired": "Connectez-vous en tant qu'etudiant",
+      "teacher": "Enseignant",
+      "login": "Se connecter",
+      "pending": "En attente de validation",
+      "completed": "{progress}% complete",
+      "unenroll": "Se desinscrire",
+      "enroll": "S'inscrire"
+    },
+    "course": {
+      "by": "Par",
+      "views": "vues",
+      "likes": "likes",
+      "downloads": "telechargements",
+      "addedToFavorites": "Cours ajoute a vos favoris !",
+      "cannotLike": "Impossible d'aimer ce cours",
+      "congratulations": "Felicitations ! Exercice reussi.",
+      "tryAgain": "Veuillez reessayer pour atteindre au moins 70%.",
+      "loginForCert": "Veuillez vous connecter pour obtenir un certificat.",
+      "certGeneration": "Generation de votre certificat...",
+      "studentStr": "Etudiant XCCM",
+      "certSuccess": "Certificat genere avec succes !",
+      "certFail": "Echec de la generation du certificat.",
+      "errorOccurred": "Une erreur est survenue.",
+      "preparationTitle": "Ce cours est en cours de preparation",
+      "preparationDesc": "Le contenu de ce cours n'est pas encore disponible. Notre equipe pedagogique travaille activement a sa creation pour vous offrir la meilleure experience d'apprentissage possible.",
+      "whatToDo": "Que faire en attendant ?",
+      "waitItem1": "Explorez d'autres cours disponibles dans la bibliotheque",
+      "waitItem2": "Revenez plus tard pour decouvrir le nouveau contenu",
+      "waitItem3": "Inscrivez-vous pour etre notifie de sa publication",
+      "sidebar": {
+        "summary": "SOMMAIRE",
+        "search": "Rechercher...",
+        "noContent": "Pas de contenu disponible",
+        "noSection": "Aucune section disponible",
+        "download": "Télécharger le cours"
+      },
+      "backToLibrary": "Retour a la bibliotheque",
+      "unavailableTitle": "Titre non disponible",
+      "unavailableContent": "Contenu non disponible",
+      "notions": "Notions",
+      "exerciseLabel": "Exercice : {title}",
+      "applicationTitle": "Application",
+      "yourAnswer": "Votre reponse...",
+      "validateAnswers": "Valider mes reponses",
+      "resultLabel": "Resultat : {score}%",
+      "excellent": "Excellent ! Vous maitrisez cette notion. Vous pouvez passer a la suite.",
+      "fearNot": "N'ayez crainte ! Relisez le cours et essayez a nouveau pour atteindre les 70% requis.",
+      "previous": "Precedent",
+      "continue": "Continuer",
+      "toExercise": "Passer a l'exercice",
+      "next": "Suivant",
+      "conclusionTitle": "Conclusion du cours",
+      "defaultConclusion": "Merci d'avoir suivi ce cours!",
+      "courseOverview": "Apercu du cours",
+      "descriptionTitle": "Description",
+      "coursePlan": "Plan du cours",
+      "noObjectives": "Aucun objectif d'apprentissage n'a ete defini pour ce cours.",
+      "rateCourse": "Evaluez ce cours",
+      "rateLabel": "Notez ce cours (sur 5) :",
+      "feedbackLabel": "Votre feedback :",
+      "feedbackPlaceholder": "Qu'avez-vous pense de ce cours ?",
+      "submitRating": "Soumettre l'evaluation",
+      "thanksFeedback": "Merci pour votre evaluation !",
+      "generating": "Generation...",
+      "getCert": "Obtenir votre certification",
+      "downloadCourse": "Telecharger le cours",
+      "progressLabel": "Progrès",
+      "finish": "Finir",
+      "reviewTitle": "Avis",
+      "courseCompletionTitle": "Félicitations !",
+      "courseCompletedMessage": "Cours terminé : {title}",
+      "enrollToCertify": "Vous devez être inscrit pour obtenir un certificat.",
+      "enrollToDownload": "Vous devez être inscrit pour télécharger ce cours.",
+      "pendingEnrollment": "Votre inscription est en attente de validation.",
+      "requiredPercent": "70% requis."
+    },
+    "pricing": {
+      "title": "Tarifs adaptés",
+      "subtitle": "à vos besoins",
+      "description": "Choisissez le plan qui correspond le mieux à vos besoins pédagogiques. Commencez gratuitement, évoluez quand vous le souhaitez.",
+      "currencyEUR": "EUR (€)",
+      "currencyFCFA": "FCFA",
+      "rateText": "Taux: 1€ = 655 FCFA",
+      "monthlyBilling": "Facturation mensuelle",
+      "annualBilling": "Facturation annuelle",
+      "saveText": "Économisez 16%",
+      "mostPopular": "Le plus populaire",
+      "perYear": "an",
+      "perMonth": "mois",
+      "orMonthEur": "Soit {price}€/mois",
+      "orMonthFcfa": "Soit {price} FCFA/mois",
+      "whatsIncluded": "Ce qui est inclus :",
+      "enterpriseContactTitle": "Besoins personnalisés pour votre établissement ?",
+      "enterpriseContactDesc": "Nous proposons des solutions sur mesure pour les écoles, universités et organisations éducatives. Contactez-nous pour discuter de vos besoins spécifiques.",
+      "contactSales": "Contacter l'équipe commerciale",
+      "seeDemo": "Voir une démo",
+      "faqTitle": "Questions fréquentes",
+      "faqDesc": "Tout ce que vous devez savoir sur nos tarifs et notre offre.",
+      "moreQuestions": "Vous avez d'autres questions ?",
+      "contactOurTeam": "Contactez notre équipe",
+      "ctaTitle": "Prêt à révolutionner votre enseignement ?",
+      "ctaDesc": "Rejoignez des milliers d'enseignants qui utilisent déjà notre plateforme pour créer des cours engageants.",
+      "startFree": "Commencer gratuitement",
+      "requestDemo": "Demander une démo",
+      "plans": {
+        "free": {
+          "name": "Gratuit",
+          "description": "Parfait pour découvrir la plateforme",
+          "buttonText": "Commencer gratuitement",
+          "features": {
+            "0": "Jusqu'à 3 cours créés",
+            "1": "Éditeur de contenu basique",
+            "2": "1 Go de stockage",
+            "3": "Support par email",
+            "4": "Export PDF",
+            "5": "Collaboration en équipe",
+            "6": "Assistant IA avancé",
+            "7": "Statistiques avancées",
+            "8": "Intégrations API"
+          }
+        },
+        "pro": {
+          "name": "Professionnel",
+          "description": "Pour les enseignants et formateurs actifs",
+          "buttonText": "Essayer gratuitement 14 jours",
+          "features": {
+            "0": "Cours illimités",
+            "1": "Éditeur de contenu avancé",
+            "2": "10 Go de stockage",
+            "3": "Support prioritaire",
+            "4": "Export PDF/DOCX",
+            "5": "Collaboration (jusqu'à 5 personnes)",
+            "6": "Assistant IA basique",
+            "7": "Statistiques de base",
+            "8": "Intégrations API limitées"
+          }
+        },
+        "enterprise": {
+          "name": "Établissement",
+          "description": "Pour les écoles et universités",
+          "buttonText": "Contactez-nous",
+          "features": {
+            "0": "Cours illimités",
+            "1": "Éditeur de contenu premium",
+            "2": "Stockage illimité",
+            "3": "Support 24/7",
+            "4": "Export tous formats",
+            "5": "Collaboration illimitée",
+            "6": "Assistant IA avancé",
+            "7": "Analytics complets",
+            "8": "Intégrations API complètes"
+          }
+        }
+      },
+      "faqs": {
+        "0": {
+          "question": "Puis-je changer de plan à tout moment ?",
+          "answer": "Oui, vous pouvez mettre à niveau ou rétrograder votre plan à tout moment. Les changements sont appliqués immédiatement et les ajustements de prix sont calculés au prorata."
+        },
+        "1": {
+          "question": "Y a-t-il des frais cachés ?",
+          "answer": "Non, tous nos prix sont transparents. Le prix indiqué est le prix que vous payez. Aucun frais caché, aucune surprise."
+        },
+        "2": {
+          "question": "Quels moyens de paiement acceptez-vous ?",
+          "answer": "Nous acceptons les cartes de crédit/débit (Visa, MasterCard, American Express), PayPal, Orange Money, MTN Mobile Money, et les virements bancaires pour les plans Établissement."
+        },
+        "3": {
+          "question": "Puis-je annuler mon abonnement ?",
+          "answer": "Oui, vous pouvez annuler votre abonnement à tout moment. Vous conservez l'accès à vos fonctionnalités jusqu'à la fin de la période payée."
+        },
+        "4": {
+          "question": "Offrez-vous des réductions pour les établissements éducatifs ?",
+          "answer": "Oui, nous proposons des réductions spéciales pour les écoles, universités et organisations éducatives à but non lucratif. Contactez notre équipe commerciale pour en savoir plus."
+        },
+        "5": {
+          "question": "Mes données sont-elles sécurisées ?",
+          "answer": "Absolument. Nous utilisons un chiffrement de bout en bout et suivons les meilleures pratiques de sécurité. Vos données pédagogiques sont stockées de manière sécurisée."
+        }
+      }
+    },
+    "support": {
+      "title": "Support Technique",
+      "subtitle": "Centre d'aide",
+      "description": "Trouvez rapidement des réponses à vos questions ou contactez notre équipe d'assistance",
+      "quickLinks": {
+        "faq": "FAQ",
+        "faqDesc": "Questions fréquentes",
+        "contact": "Contact",
+        "contactDesc": "Formulaire de contact",
+        "tickets": "Mes tickets",
+        "ticketsDesc": "Suivi des demandes",
+        "livechat": "Chat en direct",
+        "livechatDesc": "Disponible 9h-18h",
+        "startChat": "Démarrer le chat"
+      },
+      "searchPlaceholder": "Rechercher dans l'aide...",
+      "faqTitle": "Foire Aux Questions",
+      "faqFound": "{count} questions trouvées",
+      "usefulness": "{pop}% d'utilité",
+      "category": "Catégorie : {cat}",
+      "useful": "Utile",
+      "notUseful": "Pas utile",
+      "formTitle": "Formulaire de Contact",
+      "nameLabel": "Nom complet *",
+      "namePlaceholder": "Votre nom",
+      "emailLabel": "Email *",
+      "emailPlaceholder": "votre@email.com",
+      "subjectLabel": "Sujet *",
+      "subjectPlaceholder": "Sujet de votre demande",
+      "categoryLabel": "Catégorie *",
+      "categoryOptions": {
+        "general": "Général",
+        "technique": "Problème technique",
+        "compte": "Problème de compte",
+        "paiement": "Facturation/Paiement",
+        "feature": "Demande de fonctionnalité"
+      },
+      "urgencyLabel": "Urgence *",
+      "messageLabel": "Message *",
+      "messagePlaceholder": "Décrivez votre problème ou votre demande en détail...",
+      "requiredFields": "* Champs obligatoires",
+      "sending": "Envoi...",
+      "sendMessage": "Envoyer le message",
+      "myTickets": "Mes tickets",
+      "seeAll": "Voir tout",
+      "lastUpdate": "Dernière mise à jour : {time}",
+      "newRequest": "Nouvelle demande",
+      "contactInfoTitle": "Informations de contact",
+      "phoneTitle": "Téléphone",
+      "phoneVal": "+33 1 23 45 67 89",
+      "phoneHours": "Lun-Ven 9h-18h",
+      "emailTitle": "Email",
+      "emailVal": "support@xccm-platform.com",
+      "emailHours": "Réponse sous 24h",
+      "addressTitle": "Adresse",
+      "addressVal": "123 Rue de l'Éducation",
+      "addressCity": "75000 Paris, France",
+      "openingHoursTitle": "Heures d'ouverture",
+      "mondayFriday": "Lundi - Vendredi",
+      "monFriHours": "9h00 - 18h00",
+      "saturday": "Samedi",
+      "satHours": "10h00 - 14h00",
+      "sunday": "Dimanche",
+      "sunHours": "Fermé",
+      "usefulDocs": "Ressources utiles",
+      "docFull": "Documentation complète",
+      "videoTutorials": "Tutoriels vidéo",
+      "blogNews": "Blog & Actualités",
+      "community": "Communauté",
+      "supportAvail": "Support disponible",
+      "respTime": "Temps de réponse moyen",
+      "satisfaction": "Satisfaction client",
+      "resolvedQs": "Questions résolues",
+      "successToast": "Votre message a été envoyé ! Notre équipe vous répondra dans les 24 heures.",
+      "startTyping": "Commencez à taper...",
+      "noResults": "Aucun résultat pour",
+      "resultsFor": "Résultats pour"
+    },
+    "presse": {
+      "title": "Presse",
+      "headline": "Actualités & ressources média",
+      "description": "Retrouvez les informations officielles, communiques et contacts presse autour de XCCM1.",
+      "contactPress": "Contacter la presse",
+      "seePartners": "Voir les partenaires",
+      "toRememberTitle": "A retenir",
+      "toRemember": {
+        "official": {
+          "title": "Message officiel",
+          "desc": "Des contenus valides par l equipe de projet."
+        },
+        "media": {
+          "title": "Materiel media",
+          "desc": "Ressources pour faciliter la communication."
+        },
+        "directContacts": {
+          "title": "Contacts directs",
+          "desc": "Interlocuteurs pour interviews et communiques."
+        }
+      },
+      "recentReleasesTitle": "Communiques recents",
+      "highlights": [
+        {
+          "title": "Communique de lancement",
+          "date": "13 novembre 2025",
+          "desc": "Presentation officielle de XCCM1 a l'ENSPY Yaounde."
+        },
+        {
+          "title": "Partenariats academiques",
+          "date": "10 novembre 2025",
+          "desc": "Cooperation avec les equipes pedagogiques et laboratoires."
+        },
+        {
+          "title": "Impact pedagogique",
+          "date": "5 novembre 2025",
+          "desc": "Amelioration de la modularite des contenus pour les etudiants."
+        }
+      ],
+      "mediaResourcesTitle": "Ressources media",
+      "resources": [
+        {
+          "title": "Dossier de presse",
+          "desc": "Elements de langage, chiffres cles, calendrier du projet."
+        },
+        {
+          "title": "Kit media",
+          "desc": "Logos, captures d ecran, charte graphique."
+        },
+        {
+          "title": "Presentation projet",
+          "desc": "Slides officielles et feuille de route."
+        }
+      ],
+      "download": "Telecharger",
+      "keyFiguresTitle": "Chiffres cles",
+      "keyFigures": {
+        "courses": "Cours pilotes",
+        "granules": "Granules publies",
+        "contributors": "Contributeurs"
+      },
+      "mediaBriefTitle": "Brief media",
+      "mediaBriefDesc": "Recuperer les logos, elements de langage et visuels officiels.",
+      "downloadKit": "Telecharger le kit",
+      "pressContactsTitle": "Contacts presse",
+      "contacts": [
+        {
+          "title": "Presse & communication",
+          "name": "Equipe XCCM1",
+          "email": "presse@xccm.enspy.cm"
+        },
+        {
+          "title": "Direction academique",
+          "name": "Pr. Bernabe BATCHAKUI",
+          "email": "bernabe.batchakui@enspy.ucac-icam.cm"
+        }
+      ],
+      "officialRequestsTitle": "Demandes officielles",
+      "officialRequestsDesc": "Pour une interview ou un dossier special, contactez l equipe communication.",
+      "contactTeam": "Contacter l equipe"
+    },
+    "coursePage": {
+      "loginRequiredTitle": "Connexion Requise",
+      "loginRequiredMessage": "Vous devez être connecté pour accéder au contenu des cours. Souhaitez-vous vous connecter maintenant ?",
+      "loginConfirm": "Se connecter",
+      "returnHome": "Retour à l'accueil",
+      "oops": "Oups !",
+      "courseNotFound": "Cours non trouvé",
+      "retry": "Réessayer",
+      "invalidCourseData": "Données du cours invalides"
+    }
+  }
+}

@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { FaPlus, FaSearch, FaChevronLeft, FaChevronRight, FaMicrophone, FaPaperPlane, FaEdit, FaShareAlt, FaEllipsisH, FaSpinner, FaTrashAlt } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaChevronLeft, FaChevronRight, FaMicrophone, FaPaperPlane, FaEdit, FaShareAlt, FaEllipsisH, FaSpinner, FaTrashAlt, FaBookOpen, FaTimes } from 'react-icons/fa';
 import { MdOutlineSettings, MdHistory, MdAudioFile, MdAutoGraph, MdPieChart, MdTableChart, MdQuiz, MdInfo } from 'react-icons/md';
 import { BsLightbulb, BsFilePdf } from 'react-icons/bs';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { use } from 'react';
-import { NotebookControllerService } from '@/lib';
+import { NotebookControllerService, CourseControllerService, EnrollmentControllerService } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import { Notebook, Source, ChatMessage, StudioActivity } from '@/types/notebook';
 import toast from 'react-hot-toast';
@@ -44,6 +44,10 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
   const [selectedActivity, setSelectedActivity] = useState<StudioActivity | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [userCourses, setUserCourses] = useState<any[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -320,6 +324,87 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
     }
   };
 
+  const handleOpenCourseModal = async () => {
+    setIsCourseModalOpen(true);
+    setIsLoadingCourses(true);
+    try {
+      // On utilise getAllCourses au lieu de getEnrichedCourses car ce dernier renvoie une erreur 500
+      const res = await CourseControllerService.getAllCourses();
+      const allCourses = res.data || [];
+      
+      // On récupère d'abord les cours créés par l'utilisateur
+      let courses = allCourses.filter((c: any) => c.author?.id === user?.id);
+      
+      try {
+        // Obtenir la liste des inscriptions de l'utilisateur
+        const enrollmentsRes = await EnrollmentControllerService.getMyEnrollments();
+        const enrolledIds = (enrollmentsRes.data || []).map((e: any) => e.courseId);
+        
+        // Ajouter les cours où l'utilisateur est inscrit
+        const enrolledCourses = allCourses.filter((c: any) => enrolledIds.includes(c.id) && c.author?.id !== user?.id);
+        courses = [...courses, ...enrolledCourses];
+      } catch (enrollErr) {
+        console.warn("Impossible de récupérer les inscriptions", enrollErr);
+        // On continue même si la récupération des inscriptions échoue
+      }
+
+      setUserCourses(courses);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erreur lors du chargement des cours');
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+
+  const handleAddCourseSource = async (course: any) => {
+    if (!user?.id) return;
+    
+    let notebookId = currentId;
+    if (notebookId === 'new') {
+      const loadingToast = toast.loading("Création du notebook...");
+      try {
+        const response = await NotebookControllerService.createNotebook(user.id, {
+          title,
+          metadata: JSON.stringify({ chatHistory, studioActivities })
+        });
+        if (response && response.id) {
+          notebookId = response.id;
+          setCurrentId(notebookId);
+          router.replace(`/notebook/${notebookId}`);
+          toast.success("Notebook créé", { id: loadingToast });
+        } else {
+          throw new Error("Failed to create notebook");
+        }
+      } catch (error) {
+        toast.error("Erreur lors de la création du notebook", { id: loadingToast });
+        return;
+      }
+    }
+
+    const uploadToast = toast.loading(`Ajout du cours...`);
+    try {
+      const apiSource = await NotebookControllerService.addSource(notebookId, {
+        name: course.title,
+        type: 'course',
+        contentText: `Contenu du cours (${course.id}) intégré...` // Simulation du contenu extrait
+      });
+      
+      const newSource: Source = {
+        id: apiSource.id || crypto.randomUUID(),
+        name: apiSource.name || course.title,
+        type: 'course',
+        selected: true
+      };
+      
+      setSources(prev => [...prev, newSource]);
+      toast.success(`Cours ajouté avec succès`, { id: uploadToast });
+      setIsCourseModalOpen(false);
+    } catch (error) {
+       toast.error("Erreur lors de l'ajout du cours", { id: uploadToast });
+    }
+  };
+
   return (
     <div className="fixed inset-0 top-16 bg-gray-50 dark:bg-gray-950 flex overflow-hidden z-40">
       {/* LEFT COLUMN: SOURCES */}
@@ -335,13 +420,24 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
         </div>
 
         <div className="p-4 space-y-4">
-          <button
-            onClick={handleAddSource}
-            className="w-full flex items-center justify-center space-x-2 py-3 bg-purple-600 text-white rounded-xl font-bold shadow-md hover:bg-purple-700 transition-all active:scale-95"
-          >
-            <FaPlus className="w-3.5 h-3.5" />
-            <span className="text-sm">{t_nb('addSource')}</span>
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleAddSource}
+              className="flex-1 flex flex-col items-center justify-center space-y-1 py-1.5 bg-purple-600 text-white rounded-xl font-bold shadow-md hover:bg-purple-700 transition-all active:scale-95"
+              title="Ajouter un fichier externe"
+            >
+              <FaPlus className="w-4 h-4" />
+              <span className="text-[10px] uppercase">Externe</span>
+            </button>
+            <button
+              onClick={handleOpenCourseModal}
+              className="flex-1 flex flex-col items-center justify-center space-y-1 py-1.5 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 text-purple-600 dark:text-purple-400 rounded-xl font-bold shadow-sm hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all active:scale-95"
+              title="Ajouter un cours de la plateforme"
+            >
+              <FaBookOpen className="w-4 h-4" />
+              <span className="text-[10px] uppercase">Mes cours</span>
+            </button>
+          </div>
 
           <div className="relative">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3 h-3" />
@@ -637,6 +733,53 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
         className="hidden"
         multiple
       />
+
+      {/* Course Selection Modal */}
+      {isCourseModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[80vh] border border-purple-100 dark:border-purple-800/50 relative overflow-hidden">
+            <div className="p-4 border-b border-purple-100 dark:border-purple-800/50 flex items-center justify-between bg-purple-50/50 dark:bg-purple-900/10">
+              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                <FaBookOpen />
+                Sélectionner un cours
+              </h2>
+              <button onClick={() => setIsCourseModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-100 transition-colors bg-white dark:bg-gray-800 rounded-full p-2">
+                <FaTimes size={16} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {isLoadingCourses ? (
+                <div className="flex justify-center items-center h-40 text-purple-600">
+                  <FaSpinner className="animate-spin" size={32} />
+                </div>
+              ) : userCourses.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <p>Aucun cours trouvé. Vous n'êtes inscrit à aucun cours.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {userCourses.map(course => (
+                    <div 
+                      key={course.id} 
+                      onClick={() => handleAddCourseSource(course)}
+                      className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm hover:shadow-md hover:border-purple-300 dark:hover:border-purple-600 cursor-pointer transition-all flex items-center space-x-3 group"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                        <FaBookOpen size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm text-gray-800 dark:text-gray-100 truncate">{course.title}</h3>
+                        <p className="text-xs text-gray-500 truncate">{course.author?.username || "Auteur inconnu"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

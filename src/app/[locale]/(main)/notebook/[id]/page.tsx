@@ -11,6 +11,7 @@ import { use } from 'react';
 import { NotebookControllerService } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
 import { Notebook, Source, ChatMessage, StudioActivity } from '@/types/notebook';
+import { MindMapGraph } from '@/components/studio/MindMapGraph';
 import toast from 'react-hot-toast';
 
 // Interfaces are now imported from @/types/notebook
@@ -478,7 +479,11 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
                 <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100 mb-6">{selectedActivity.title}</h2>
                 <div className="prose prose-purple dark:prose-invert max-w-none">
                   {selectedActivity.payload ? (
-                    <ReactMarkdown>{selectedActivity.payload}</ReactMarkdown>
+                    selectedActivity.type === 'mindmap' ? (
+                      <MindMapGraph data={selectedActivity.payload} />
+                    ) : (
+                      <ReactMarkdown>{selectedActivity.payload}</ReactMarkdown>
+                    )
                   ) : (
                     <p className="text-gray-500 italic">Contenu non disponible.</p>
                   )}

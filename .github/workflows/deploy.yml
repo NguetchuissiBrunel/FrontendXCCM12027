@@ -83,11 +83,11 @@ jobs:
             OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
             IMAGE_FULL="ghcr.io/$OWNER_LOWER/xccm-frontend:latest"
             
-            cd ${{ secrets.DEPLOY_PATH || '~/xccm' }}
+            cd ${{ secrets.DEPLOY_PATH || '~/xccm' }}/FrontendXCCM12027
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull and restart the specific service
-            DOCKER_IMAGE=$IMAGE_FULL docker compose -f docker-compose.prod.yml pull frontend
-            DOCKER_IMAGE=$IMAGE_FULL docker compose -f docker-compose.prod.yml up -d frontend
+            DOCKER_IMAGE=$IMAGE_FULL docker compose -f docker-compose.prod.yml pull
+            DOCKER_IMAGE=$IMAGE_FULL docker compose -f docker-compose.prod.yml up -d
             
             docker image prune -f

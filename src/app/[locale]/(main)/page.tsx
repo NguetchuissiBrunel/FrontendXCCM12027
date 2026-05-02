@@ -162,6 +162,7 @@ export default function HomePage() {
                   width={1000}
                   height={1000}
                   className="w-full rounded-xl"
+                  priority
                 />
               </div>
 
@@ -173,6 +174,7 @@ export default function HomePage() {
                   width={1000}
                   height={1000}
                   className="w-full  rounded-xl"
+                  priority
                 />
               </div>
             </div>

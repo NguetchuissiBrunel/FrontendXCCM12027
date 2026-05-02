@@ -15,6 +15,7 @@ import ActionMenu from './ActionMenu';
 import { useLocale } from 'next-intl';
 import { useCollaboration } from '@/contexts/CollaborationContext';
 import throttle from 'lodash.throttle';
+import { XCCM_KNOWLEDGE_MIME } from '@/types/editor.types';
 
 interface TableOfContentsProps {
   className?: string;
@@ -197,7 +198,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     setIsDraggingOver(false);
 
     try {
-      const data = e.dataTransfer.getData('application/xccm-knowledge');
+      const data = e.dataTransfer.getData(XCCM_KNOWLEDGE_MIME);
       if (data) {
         const item = JSON.parse(data);
         const rootAllowed = ['course', 'section'].includes(item.type);
@@ -422,7 +423,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     }
 
     setDraggedItem(item);
-    e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(item));
+    e.dataTransfer.setData(XCCM_KNOWLEDGE_MIME, JSON.stringify(item));
     e.dataTransfer.setData('internal-xccm-id', item.id);
     e.dataTransfer.effectAllowed = 'move';
 

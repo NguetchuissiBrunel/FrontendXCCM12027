@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaBook, FaChevronRight, FaChevronDown, FaSpinner } from 'react-icons/fa';
 import { Sparkles } from 'lucide-react';
 import { mockCourseData } from '@/data/mockEditorData';
-import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS } from '@/types/editor.types';
+import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS, XCCM_KNOWLEDGE_MIME, KnowledgeDragPayload } from '@/types/editor.types';
 import { useTranslations } from 'next-intl';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { toast } from 'react-hot-toast';
@@ -200,20 +200,121 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     return hierarchy[activeFilter].includes(type);
   };
 
-  const getItemWithHierarchy = (itemId: string): Course | Section | Chapter | Paragraph | null => {
-    const parts = itemId.split('-');
-    if (parts[0] !== 'course') return null;
-    
-    const courseId = parts[1];
-    const course = courses.find(c => c.id.toString() === courseId);
-    if (!course) return null;
+  /**
+   * Builds a proper KnowledgeDragPayload for any item in the hierarchy,
+   * so the editor's handleDrop can correctly reconstruct the node.
+   */
+  const buildDragPayload = (
+    item: Course | Section | Chapter | Paragraph | string,
+    type: ItemType
+  ): KnowledgeDragPayload | null => {
+    if (type === 'course') {
+      const course = item as Course;
+      const sections = (course.sections && course.sections.length > 0)
+        ? course.sections
+        : decomposedCache[course.id.toString()] || [];
+      return {
+        id: `course-${course.id}`,
+        type: 'course',
+        title: course.title,
+        children: sections.map((sec, i) =>
+          buildDragPayload(sec, 'section') ?? {
+            id: `section-${i}`, type: 'section' as ItemType, title: sec.title, children: []
+          }
+        ),
+      };
+    }
+    if (type === 'section') {
+      const section = item as Section;
+      const children: KnowledgeDragPayload[] = (section.chapters || []).map((chap, i) =>
+        buildDragPayload(chap, 'chapter') ?? {
+          id: `chapter-${i}`, type: 'chapter' as ItemType, title: chap.title, children: []
+        }
+      );
+      
+      if (section.exercise) {
+        children.push({
+          id: `exercise-${section.title}`,
+          type: 'exercise',
+          title: section.exercise.title || "Exercice d'application",
+          data: section.exercise,
+          children: []
+        });
+      }
 
-    const sections = (course.sections && course.sections.length > 0) ? course.sections : decomposedCache[course.id.toString()] || [];
-    
-    if (parts.length === 2) return { ...course, sections };
+      return {
+        id: `section-${section.title}`,
+        type: 'section',
+        title: section.title,
+        data: { introduction: section.introduction },
+        children
+      };
+    }
+    if (type === 'chapter') {
+      const chapter = item as Chapter;
+      const children: KnowledgeDragPayload[] = (chapter.paragraphs || []).map((para, i) =>
+        buildDragPayload(para, 'paragraph') ?? {
+          id: `paragraph-${i}`, type: 'paragraph' as ItemType, title: para.title, children: []
+        }
+      );
 
-    // For simplicity, we return the course with its sections for D&D at course level
-    return { ...course, id: parseInt(courseId), sections };
+      if (chapter.exercise) {
+        children.push({
+          id: `exercise-${chapter.title}`,
+          type: 'exercise',
+          title: chapter.exercise.title || "Exercice d'application",
+          data: chapter.exercise,
+          children: []
+        });
+      }
+
+      return {
+        id: `chapter-${chapter.title}`,
+        type: 'chapter',
+        title: chapter.title,
+        data: { introduction: chapter.introduction },
+        children
+      };
+    }
+    if (type === 'paragraph') {
+      const paragraph = item as Paragraph;
+      const children: KnowledgeDragPayload[] = (paragraph.notions || []).map((notion, i) => ({
+        id: `notion-${i}`,
+        type: 'notion' as ItemType,
+        title: typeof notion === 'string' ? notion : String(notion),
+        content: typeof notion === 'string' ? notion : String(notion),
+        children: [],
+      }));
+
+      if (paragraph.exercise) {
+        children.push({
+          id: `exercise-${paragraph.title}`,
+          type: 'exercise',
+          title: paragraph.exercise.title || "Exercice d'application",
+          data: paragraph.exercise,
+          children: []
+        });
+      }
+
+      return {
+        id: `paragraph-${paragraph.title}`,
+        type: 'paragraph',
+        title: paragraph.title,
+        data: { introduction: paragraph.introduction },
+        children
+      };
+    }
+    if (type === 'notion') {
+      const notionText = typeof item === 'string' ? item : String(item);
+      return {
+        id: `notion-${notionText}`,
+        type: 'notion',
+        title: notionText,
+        content: notionText,
+        children: [],
+      };
+    }
+    return null;
   };
 
   const renderNotion = (notion: string, parentId: string, index: number) => {
@@ -226,8 +327,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         className={`ml-8 flex cursor-pointer items-center gap-2 rounded-md border p-2 transition-all hover:shadow-sm ${getItemBgClass('notion')}`}
         draggable
         onDragStart={(e) => {
-          const fullItem = getItemWithHierarchy(itemId);
-          if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+          const payload = buildDragPayload(notion, 'notion');
+          if (payload) e.dataTransfer.setData(XCCM_KNOWLEDGE_MIME, JSON.stringify(payload));
         }}
       >
         <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: ITEM_COLORS.notion }} />
@@ -249,8 +350,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           onClick={() => hasNotions ? toggleExpansion(itemId) : null}
           draggable
           onDragStart={(e) => {
-            const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            const payload = buildDragPayload(paragraph, 'paragraph');
+            if (payload) e.dataTransfer.setData(XCCM_KNOWLEDGE_MIME, JSON.stringify(payload));
           }}
         >
           <div className="flex items-center gap-2.5">
@@ -285,8 +386,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           onClick={() => hasParagraphs ? toggleExpansion(itemId) : null}
           draggable
           onDragStart={(e) => {
-            const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            const payload = buildDragPayload(chapter, 'chapter');
+            if (payload) e.dataTransfer.setData(XCCM_KNOWLEDGE_MIME, JSON.stringify(payload));
           }}
         >
           <div className="flex items-center gap-2.5">
@@ -321,8 +422,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           onClick={() => hasChapters ? toggleExpansion(itemId) : null}
           draggable
           onDragStart={(e) => {
-            const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            const payload = buildDragPayload(section, 'section');
+            if (payload) e.dataTransfer.setData(XCCM_KNOWLEDGE_MIME, JSON.stringify(payload));
           }}
         >
           <div className="flex items-center gap-2.5">
@@ -361,8 +462,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
           onClick={() => onCourseClick(course, itemId)}
           draggable
           onDragStart={(e) => {
-            const fullItem = getItemWithHierarchy(itemId);
-            if (fullItem) e.dataTransfer.setData('application/xccm-knowledge', JSON.stringify(fullItem));
+            const payload = buildDragPayload(course, 'course');
+            if (payload) e.dataTransfer.setData(XCCM_KNOWLEDGE_MIME, JSON.stringify(payload));
           }}
         >
           <div className="flex items-center gap-2.5">

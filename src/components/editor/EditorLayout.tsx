@@ -23,6 +23,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Editor } from '@tiptap/react';
 import { useSearchParams } from 'next/navigation';
+import { Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
@@ -47,6 +48,7 @@ import StructureDeCours from './StructureDeCours';
 import PdfPreview from './PdfPreview';
 import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
+import { RecommendationsPanel } from './RecommendationsPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -74,7 +76,7 @@ interface EditorLayoutProps {
 /**
  * Right panel types matching original implementation
  */
-type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | 'preview' | null;
+type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | 'preview' | 'recommendations' | null;
 
 /**
  * EditorLayout Component

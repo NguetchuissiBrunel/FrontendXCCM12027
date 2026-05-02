@@ -7,6 +7,6 @@ export type ExerciseUpdateRequest = {
     description?: string;
     maxScore?: number;
     dueDate?: string;
-    content?: Record<string, Record<string, any>>;
+    content?: Record<string, any>;
 };
 

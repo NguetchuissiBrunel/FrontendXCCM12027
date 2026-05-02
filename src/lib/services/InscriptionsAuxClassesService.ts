@@ -19,7 +19,7 @@ export class InscriptionsAuxClassesService {
      */
     public static validateEnrollment1(
         enrollmentId: number,
-        status: 'PENDING' | 'APPROVED' | 'REJECTED',
+        status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'INVITED',
     ): CancelablePromise<ApiResponseClassEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'PUT',

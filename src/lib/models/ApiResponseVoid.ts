@@ -21,7 +21,7 @@ export type ApiResponseVoid = {
     /**
      * Données de la réponse
      */
-    data?: Record<string, any>;
+    data?: any;
     /**
      * Erreurs de validation (si applicable)
      */

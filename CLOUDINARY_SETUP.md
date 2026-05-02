@@ -94,7 +94,7 @@ function MyComponent() {
 ### Option 2: Use CloudinaryService Directly
 
 ```tsx
-import { CloudinaryService } from '@/lib/services/CloudinaryService';
+import { CloudinaryService } from '@/lib2/services/CloudinaryService';
 
 async function handleUpload(file: File) {
   const url = await CloudinaryService.uploadImage(file, {

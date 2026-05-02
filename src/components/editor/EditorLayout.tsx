@@ -23,6 +23,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Editor } from '@tiptap/react';
 import { useSearchParams } from 'next/navigation';
+import { Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
@@ -47,6 +48,7 @@ import StructureDeCours from './StructureDeCours';
 import PdfPreview from './PdfPreview';
 import { useTOC } from '@/hooks/useTOC';
 import MyCoursesPanel from './MyCoursesPanel';
+import { RecommendationsPanel } from './RecommendationsPanel';
 import Navbar from '../layout/Navbar';
 import { ChevronLeft, ChevronRight, BookOpen, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,7 +70,7 @@ interface EditorLayoutProps {
 /**
  * Right panel types matching original implementation
  */
-type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | 'preview' | null;
+type RightPanelType = 'structure' | 'info' | 'feedback' | 'author' | 'worksheet' | 'properties' | 'exercises' | 'grading' | 'preview' | 'recommendations' | null;
 
 /**
  * EditorLayout Component
@@ -788,6 +790,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               colorClass="text-green-600 dark:text-green-400"
             />
 
+            <IconButton
+              icon={<Sparkles id="icon-recommendations" className="animate-pulse" />}
+              label="Recommandations IA"
+              panelType="recommendations"
+              colorClass="text-purple-600 dark:text-purple-400"
+            />
+
             <div className="flex-grow" />
 
             <IconButton
@@ -1420,6 +1429,15 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                   )}
                 </div>
               </div>
+            )}
+            {activePanel === 'recommendations' && (
+              <RecommendationsPanel 
+                courseTitle={courseTitle}
+                courseDescription={courseDescription}
+                onImportCourse={(id) => {
+                  toast.success("Importation du contenu du cours " + id);
+                }}
+              />
             )}
           </div>
 

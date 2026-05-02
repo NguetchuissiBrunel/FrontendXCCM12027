@@ -2,9 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-/**
- * Données de la réponse
- */
 export type CourseViewResponse = {
     courseId?: number;
     recorded?: boolean;

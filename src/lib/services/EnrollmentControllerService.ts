@@ -5,6 +5,7 @@
 import type { ApiResponseEnrollmentDTO } from '../models/ApiResponseEnrollmentDTO';
 import type { ApiResponseListEnrollmentDTO } from '../models/ApiResponseListEnrollmentDTO';
 import type { ApiResponseVoid } from '../models/ApiResponseVoid';
+import type { InvitationRequest } from '../models/InvitationRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -17,7 +18,7 @@ export class EnrollmentControllerService {
      */
     public static validateEnrollment(
         enrollmentId: number,
-        status: 'PENDING' | 'APPROVED' | 'REJECTED',
+        status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'INVITED',
     ): CancelablePromise<ApiResponseEnrollmentDTO> {
         return __request(OpenAPI, {
             method: 'PUT',
@@ -65,6 +66,21 @@ export class EnrollmentControllerService {
             path: {
                 'enrollmentId': enrollmentId,
             },
+        });
+    }
+    /**
+     * @param requestBody
+     * @returns ApiResponseEnrollmentDTO OK
+     * @throws ApiError
+     */
+    public static inviteUser(
+        requestBody: InvitationRequest,
+    ): CancelablePromise<ApiResponseEnrollmentDTO> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/enrollments/invite',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

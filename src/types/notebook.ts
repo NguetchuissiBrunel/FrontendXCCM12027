@@ -21,6 +21,7 @@ export interface StudioActivity {
   type: 'audio' | 'presentation' | 'video' | 'mindmap' | 'reports' | 'flashcards' | 'chat';
   title: string;
   timestamp: string;
+  payload?: string;
 }
 
 export interface Notebook {

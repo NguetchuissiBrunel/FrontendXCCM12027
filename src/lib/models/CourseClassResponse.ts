@@ -5,9 +5,6 @@
 import type { AuthorDTO } from './AuthorDTO';
 import type { ClassEnrollmentDTO } from './ClassEnrollmentDTO';
 import type { CourseResponse } from './CourseResponse';
-/**
- * Données de la réponse
- */
 export type CourseClassResponse = {
     id?: number;
     name?: string;
@@ -17,7 +14,7 @@ export type CourseClassResponse = {
     status?: CourseClassResponse.status;
     teacher?: AuthorDTO;
     courses?: Array<CourseResponse>;
-    studentCount?: number;
+    participantCount?: number;
     pendingCount?: number;
     maxStudents?: number;
     createdAt?: string;

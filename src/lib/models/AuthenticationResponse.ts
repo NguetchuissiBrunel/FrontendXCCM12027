@@ -2,9 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-/**
- * Données de la réponse
- */
 export type AuthenticationResponse = {
     id?: string;
     email?: string;

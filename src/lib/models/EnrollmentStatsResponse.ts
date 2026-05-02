@@ -3,9 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { CourseEnrollmentStat } from './CourseEnrollmentStat';
-/**
- * Données de la réponse
- */
 export type EnrollmentStatsResponse = {
     totalEnrollments?: number;
     byStatus?: Record<string, number>;

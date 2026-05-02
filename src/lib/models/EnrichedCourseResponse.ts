@@ -4,9 +4,6 @@
 /* eslint-disable */
 import type { AuthorDTO } from './AuthorDTO';
 import type { EnrollmentDTO } from './EnrollmentDTO';
-/**
- * Données de la réponse
- */
 export type EnrichedCourseResponse = {
     id?: number;
     title?: string;

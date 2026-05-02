@@ -2,9 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-/**
- * Données de la réponse
- */
 export type EnrollmentDetailResponse = {
     id?: number;
     userId?: string;
@@ -24,6 +21,7 @@ export namespace EnrollmentDetailResponse {
         PENDING = 'PENDING',
         APPROVED = 'APPROVED',
         REJECTED = 'REJECTED',
+        INVITED = 'INVITED',
     }
 }
 

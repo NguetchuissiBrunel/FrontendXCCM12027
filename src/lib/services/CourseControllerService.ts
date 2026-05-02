@@ -228,7 +228,7 @@ export class CourseControllerService {
      * @throws ApiError
      */
     public static getCoureByStatusForAuthor(
-        authorId: number,
+        authorId: string,
         status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
     ): CancelablePromise<ApiResponseListCourseResponse> {
         return __request(OpenAPI, {
@@ -263,6 +263,25 @@ export class CourseControllerService {
             url: '/courses/enriched/{courseId}',
             path: {
                 'courseId': courseId,
+            },
+        });
+    }
+    /**
+     * @param title
+     * @param description
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getRecommendations(
+        title: string,
+        description?: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/courses/recommend',
+            query: {
+                'title': title,
+                'description': description,
             },
         });
     }

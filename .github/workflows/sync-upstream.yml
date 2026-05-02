@@ -1,0 +1,59 @@
+name: 🔄 Sync Fork with Upstream
+
+on:
+  schedule:
+    # Synchronisation automatique tous les jours à 6h00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Permet de lancer manuellement depuis l'onglet Actions
+
+jobs:
+  sync:
+    name: Sync upstream → main
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout du fork
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurer Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Ajouter le remote upstream
+        run: |
+          git remote add upstream https://github.com/${{ secrets.UPSTREAM_REPO }}.git
+          git remote -v
+
+      - name: Fetch upstream
+        run: git fetch upstream
+
+      - name: Vérifier s'il y a des changements
+        id: check
+        run: |
+          BEHIND=$(git rev-list --count HEAD..upstream/main)
+          echo "behind=$BEHIND" >> $GITHUB_OUTPUT
+          echo "📊 Commits en retard sur upstream : $BEHIND"
+
+      - name: Merger les changements upstream
+        if: steps.check.outputs.behind != '0'
+        run: |
+          git merge upstream/main --no-edit --allow-unrelated-histories
+          echo "✅ Merge effectué avec succès"
+
+      - name: Pousser les changements
+        if: steps.check.outputs.behind != '0'
+        run: |
+          git push origin main
+          echo "🚀 Fork mis à jour et poussé"
+
+      - name: Aucun changement détecté
+        if: steps.check.outputs.behind == '0'
+        run: echo "✅ Fork déjà à jour avec upstream"

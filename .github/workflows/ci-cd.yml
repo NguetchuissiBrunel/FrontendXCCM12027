@@ -1,0 +1,89 @@
+name: 🚀 CI/CD — Build & Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+  NEXT_PUBLIC_XCSM_API_URL: ${{ secrets.NEXT_PUBLIC_XCSM_API_URL }}
+  NEXT_PUBLIC_CHATBOT_API_URL: ${{ secrets.NEXT_PUBLIC_CHATBOT_API_URL }}
+
+jobs:
+  # ─────────────────────────────────────────────
+  # ÉTAPE 1 : Vérification du build Next.js
+  # ─────────────────────────────────────────────
+  build:
+    name: 🔨 Vérification du build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier le linting (si configuré)
+        run: npm run lint --if-present
+
+      - name: Vérifier les types TypeScript (si configuré)
+        run: npm run type-check --if-present
+
+      - name: Build Next.js
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_XCSM_API_URL: ${{ secrets.NEXT_PUBLIC_XCSM_API_URL }}
+          NEXT_PUBLIC_CHATBOT_API_URL: ${{ secrets.NEXT_PUBLIC_CHATBOT_API_URL }}
+
+      - name: ✅ Build réussi
+        run: echo "Le build s'est terminé avec succès !"
+
+  # ─────────────────────────────────────────────
+  # ÉTAPE 2 : Déploiement sur Vercel (seulement si build OK)
+  # ─────────────────────────────────────────────
+  deploy:
+    name: 🌐 Déploiement Vercel
+    runs-on: ubuntu-latest
+    needs: build  # Ne se lance QUE si le job "build" réussit
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installer Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Puller la configuration Vercel
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build via Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Déployer en production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: 🎉 Déploiement réussi
+        run: echo "Application déployée en production sur Vercel !"

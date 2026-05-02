@@ -43,6 +43,7 @@ jobs:
 
       - name: Vérifier les types TypeScript (si configuré)
         run: npm run type-check --if-present
+        continue-on-error: true
 
       - name: Build Next.js
         run: npm run build

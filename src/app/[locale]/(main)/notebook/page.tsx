@@ -6,18 +6,77 @@ import { Link } from '@/i18n/navigation';
 import { FaPlus, FaEllipsisV, FaGlobe, FaSearch, FaThLarge, FaList, FaBook, FaTrashAlt, FaRegTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
 import { MdOutlineSettings } from 'react-icons/md';
 import Image from 'next/image';
-import { getAllNotebooks, deleteNotebook } from '@/lib/notebook-storage';
-import { Notebook } from '@/types/notebook';
+import { NotebookControllerService } from '@/lib';
+import { useAuth } from '@/contexts/AuthContext';
+import { Notebook, Source } from '@/types/notebook';
+import toast from 'react-hot-toast';
 
 const NotebookDashboard = () => {
   const t = useTranslations('notebook');
+  const { user } = useAuth();
   const [recentNotebooks, setRecentNotebooks] = useState<Notebook[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [notebookIdToDelete, setNotebookIdToDelete] = useState<string | null>(null);
 
+  const fetchNotebooks = async () => {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      const response = await NotebookControllerService.getUserNotebooks(user.id);
+      
+      // Step 1: Map basic notebook data
+      const mapped: Notebook[] = response.map(nb => {
+        let metadata = { chatHistory: [], studioActivities: [] };
+        try {
+          if (nb.metadata) metadata = JSON.parse(nb.metadata);
+        } catch (e) {
+          console.error("Error parsing metadata for notebook", nb.id);
+        }
+        
+        return {
+          id: nb.id || '',
+          title: nb.title || 'Untitled',
+          sources: [], // Will be filled in Step 2
+          chatHistory: metadata.chatHistory || [],
+          studioActivities: metadata.studioActivities || [],
+          updatedAt: nb.updatedAt || nb.createdAt || new Date().toISOString()
+        };
+      });
+
+      setRecentNotebooks(mapped);
+
+      // Step 2: Fetch sources for each notebook in parallel to get accurate counts
+      const notebooksWithSources = await Promise.all(
+        mapped.map(async (nb) => {
+          try {
+            const apiSources = await NotebookControllerService.getNotebookSources(nb.id);
+            const mappedSources: Source[] = apiSources.map(as => ({
+              id: as.id || crypto.randomUUID(),
+              name: as.name || 'Unknown',
+              type: as.type || 'pdf',
+              selected: true
+            }));
+            return { ...nb, sources: mappedSources };
+          } catch (error) {
+            console.error(`Failed to fetch sources for notebook ${nb.id}:`, error);
+            return nb;
+          }
+        })
+      );
+      
+      setRecentNotebooks(notebooksWithSources);
+    } catch (error) {
+      console.error("Failed to fetch notebooks:", error);
+      toast.error("Erreur lors du chargement des notebooks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setRecentNotebooks(getAllNotebooks());
-  }, []);
+    fetchNotebooks();
+  }, [user?.id]);
 
   const confirmDelete = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -26,12 +85,18 @@ const NotebookDashboard = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleExecuteDelete = () => {
+  const handleExecuteDelete = async () => {
     if (notebookIdToDelete) {
-      deleteNotebook(notebookIdToDelete);
-      setRecentNotebooks(getAllNotebooks());
-      setIsDeleteModalOpen(false);
-      setNotebookIdToDelete(null);
+      try {
+        await NotebookControllerService.deleteNotebook(notebookIdToDelete);
+        toast.success("Notebook supprimé");
+        fetchNotebooks();
+        setIsDeleteModalOpen(false);
+        setNotebookIdToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete notebook:", error);
+        toast.error("Erreur lors de la suppression");
+      }
     }
   };
 

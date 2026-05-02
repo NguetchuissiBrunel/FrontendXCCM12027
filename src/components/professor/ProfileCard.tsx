@@ -178,7 +178,7 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
 
       console.log('[ProfileCard] Photo sélectionnée, preview locale activée');
 
-      const { CloudinaryService } = await import('@/lib/services/CloudinaryService');
+      const { CloudinaryService } = await import('@/lib2/services/CloudinaryService');
 
       const validation = CloudinaryService.validateFile(file);
       if (!validation.valid) {

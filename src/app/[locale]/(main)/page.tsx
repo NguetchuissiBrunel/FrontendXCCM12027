@@ -1,10 +1,13 @@
 // src/app/page.tsx
 'use client';
-import { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCourses } from '@/hooks/useCourses';
 import { useTranslations, useLocale } from 'next-intl';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
 // Composant pour simuler les étoiles de notation
 const StarRating = ({ rating = 5 }: { rating: number }) => (
   <div className="flex text-yellow-400 text-xs">
@@ -31,6 +34,20 @@ export default function HomePage() {
   const { courses, loading } = useCourses();
   const t = useTranslations('home');
   const locale = useLocale();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      if (user.role === 'admin') {
+        router.push('/admindashboard');
+      } else if (user.role === 'teacher') {
+        router.push('/profdashboard');
+      } else {
+        router.push('/etudashboard');
+      }
+    }
+  }, [isAuthenticated, user, authLoading, router]);
 
   const specialOffers = useMemo(() => {
     return courses.slice(0, 3).map((course) => ({
@@ -145,6 +162,7 @@ export default function HomePage() {
                   width={1000}
                   height={1000}
                   className="w-full rounded-xl"
+                  priority
                 />
               </div>
 
@@ -156,6 +174,7 @@ export default function HomePage() {
                   width={1000}
                   height={1000}
                   className="w-full  rounded-xl"
+                  priority
                 />
               </div>
             </div>

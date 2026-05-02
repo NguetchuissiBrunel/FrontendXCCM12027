@@ -7,7 +7,7 @@ export type CourseUpdateRequest = {
     category?: string;
     description?: string;
     status?: CourseUpdateRequest.status;
-    content?: Record<string, Record<string, any>>;
+    content?: Record<string, any>;
     coverImage?: string;
     photoUrl?: string;
 };

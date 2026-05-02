@@ -250,18 +250,6 @@ export const getResponseBody = async (response: Response): Promise<any> => {
 };
 
 export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): void => {
-    if (result.status === 401 || result.status === 403) {
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-            // Clean auth state before redirecting
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('auth_token'); // Custom helper might use this
-            
-            // Redirect to login page
-            window.location.href = '/login?expired=true';
-        }
-    }
-
     const errors: Record<number, string> = {
         400: 'Bad Request',
         401: 'Unauthorized',

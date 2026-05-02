@@ -29,7 +29,7 @@ import {
 
 // Import des services
 import { ExerciseService } from '@/lib3/services/ExerciseService';
-import { CourseClassService } from '@/lib/services/CourseClassService';
+import { ClassesDeCoursService } from '@/lib/services/ClassesDeCoursService';
 import { Exercise as BaseExercise } from '@/types/exercise';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -111,7 +111,7 @@ export default function ClassExercisesPage() {
   const loadClassInfo = async () => {
     try {
       setLoadingClass(true);
-      const response = await CourseClassService.getClassById(classId);
+      const response = await ClassesDeCoursService.getClassById(classId);
 
       if (response && response.data) {
         const classData = response.data as CourseClass;

@@ -139,7 +139,6 @@ export class CourseInteractionControllerService {
         });
     }
     /**
-     * Get all comments for a course (teacher view)
      * @param courseId
      * @returns ApiResponseListCourseCommentDTO OK
      * @throws ApiError

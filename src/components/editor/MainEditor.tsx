@@ -27,6 +27,7 @@ import Paragraphe from '../../extensions/Paragraphe';
 import Notion from '../../extensions/Notion';
 import Exercice from '../../extensions/Exercice';
 import MathNode from '../../extensions/Math';
+import { XCCM_KNOWLEDGE_MIME } from '@/types/editor.types';
 import {
   FaAlignLeft,
   FaAlignCenter,
@@ -161,63 +162,63 @@ const typeMap: Record<string, string> = {
 const transformTOCItemToNodeJson = (item: any): any => {
   const nodeType = typeMap[item.type] || 'paragraph';
 
+  // Extract attributes safely
   const attrs: any = {
-    id: `tmp-${Math.random().toString(36).substr(2, 5)}`,
-    title: item.title || item.data?.title || 'Sans titre',
+    id: item.id || `tmp-${Math.random().toString(36).substr(2, 5)}`,
+    title: item.title || item.data?.title || item.name || 'Sans titre',
   };
 
-  if (item.type === 'course') {
-    // Return a dummy object if called directly on course, 
-    // but handleDrop should handle flattening before calling this.
-    return {
-      type: 'paragraph',
-      content: [{ type: 'text', text: 'Course flattened' }]
-    };
-  }
-
-  let content: any[] = [];
-
-  // Intro text restoration if any
+  // Restore introduction if present
   if (item.data?.introduction || item.introduction) {
     attrs.introduction = item.data?.introduction || item.introduction;
   }
 
-  // Notion content restoration
-  if (item.type === 'notion') {
-    // Initial paragraph with notion content if it was flat text
-    if (typeof item.data === 'string') {
-      content.push({ type: 'paragraph', content: [{ type: 'text', text: item.data }] });
-    }
+  let content: any[] = [];
 
-    if (item.content) {
-      // If we have HTML content, we should ideally parse it, but for now fallback to simple text
-      // to avoid complex browser dep in this helper if possible.
-      // But we already have some logic below. Let's keep it but make it safer.
-      const tempDiv = typeof document !== 'undefined' ? document.createElement('div') : null;
-      if (tempDiv) {
-        tempDiv.innerHTML = item.content.trim ? item.content.trim() : "";
-        const parsed: any[] = [];
-        tempDiv.childNodes.forEach((node) => {
-          if (node.nodeType === 3 && node.textContent?.trim()) { // 3 = TEXT_NODE
-            parsed.push({ type: 'text', text: node.textContent });
-          } else if (node.nodeName === 'P') {
-            const pContent: any[] = [];
-            node.childNodes.forEach((child) => {
-              if (child.nodeType === 3 && child.textContent) {
-                pContent.push({ type: 'text', text: child.textContent });
+  // Notion-specific content handling
+  if (item.type === 'notion') {
+    // If we have plain text data, wrap it in a paragraph
+    if (typeof item.data === 'string' && item.data.trim()) {
+      content.push({ 
+        type: 'paragraph', 
+        content: [{ type: 'text', text: item.data }] 
+      });
+    } else if (typeof item.content === 'string' && item.content.trim()) {
+      // Also check item.content as a fallback (used in buildDragPayload)
+      // Check if it looks like HTML
+      if (item.content.includes('<') && item.content.includes('>')) {
+        const tempDiv = typeof document !== 'undefined' ? document.createElement('div') : null;
+        if (tempDiv) {
+          tempDiv.innerHTML = item.content;
+          const parsed: any[] = [];
+          tempDiv.childNodes.forEach((node) => {
+            if (node.nodeType === 3 && node.textContent?.trim()) {
+              parsed.push({ type: 'paragraph', content: [{ type: 'text', text: node.textContent }] });
+            } else if (node.nodeName === 'P') {
+              const pContent: any[] = [];
+              node.childNodes.forEach((child) => {
+                if (child.nodeType === 3 && child.textContent) {
+                  pContent.push({ type: 'text', text: child.textContent });
+                }
+              });
+              if (pContent.length > 0) {
+                parsed.push({ type: 'paragraph', content: pContent });
               }
-            });
-            if (pContent.length > 0) {
-              parsed.push({ type: 'paragraph', content: pContent });
             }
-          }
+          });
+          if (parsed.length > 0) content = [...content, ...parsed];
+        }
+      } else {
+        // Plain text: wrap in paragraph
+        content.push({ 
+          type: 'paragraph', 
+          content: [{ type: 'text', text: item.content }] 
         });
-        if (parsed.length > 0) content = [...content, ...parsed];
       }
     }
   }
 
-  // Exercise content restoration
+  // Exercise-specific content handling
   if (item.type === 'exercise' && item.data?.questions) {
     const questionsText = (item.data.questions || [])
       .map((q: any, i: number) => `${i + 1}. ${q.text || q.question}`)
@@ -225,7 +226,7 @@ const transformTOCItemToNodeJson = (item: any): any => {
     content = [{ type: 'paragraph', content: [{ type: 'text', text: questionsText }] }];
   }
 
-  // Handle children by flattening them (always return an array of nodes)
+  // Recursively handle children
   const childNodes: any[] = [];
   if (item.children && Array.isArray(item.children)) {
     item.children.forEach((child: any) => {
@@ -328,7 +329,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       handleDrop: (view, event, slice, moved) => {
         event.preventDefault();
 
-        const jsonData = event.dataTransfer?.getData('application/xccm-knowledge');
+        const jsonData = event.dataTransfer?.getData(XCCM_KNOWLEDGE_MIME);
         if (!jsonData) return false;
 
         try {
@@ -1209,12 +1210,15 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             }}
             onClick={() => editor?.chain().focus().run()}
           >
-            <div style={{
-              transform: `scale(${zoom / 100})`,
-              transformOrigin: 'top left',
-              width: '21cm',
-              height: 'auto'
-            }}>
+            <div
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: 'top left',
+                width: '21cm',
+                height: 'auto'
+              }}
+              onDragOver={(e) => e.preventDefault()}
+            >
               <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
             </div>
           </div>
@@ -1227,7 +1231,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             <span>A4 Layout</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6">n
             <div className="flex items-center gap-3">
               <button
                 type="button"

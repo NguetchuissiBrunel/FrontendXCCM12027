@@ -2,9 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-/**
- * Données de la réponse
- */
 export type TeacherResponse = {
     id?: string;
     email?: string;

@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, CheckCircle, XCircle, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useLoading } from '@/contexts/LoadingContext';
-import { CloudinaryService } from '@/lib/services/CloudinaryService';
+import { CloudinaryService } from '@/lib2/services/CloudinaryService';
 import type { UploadState, UploadConfig } from '@/types/upload';
 
 interface ImageUploaderProps {

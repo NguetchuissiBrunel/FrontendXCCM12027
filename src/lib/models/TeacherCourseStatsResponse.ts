@@ -4,9 +4,6 @@
 /* eslint-disable */
 import type { ExerciseStatsDTO } from './ExerciseStatsDTO';
 import type { PerformanceDistributionDTO } from './PerformanceDistributionDTO';
-/**
- * Données de la réponse
- */
 export type TeacherCourseStatsResponse = {
     courseId?: number;
     courseTitle?: string;

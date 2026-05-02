@@ -19,6 +19,9 @@ export type ApiResponseClassEnrollmentDTO = {
      * Message décrivant le résultat de l'opération
      */
     message?: string;
+    /**
+     * Données de la réponse
+     */
     data?: ClassEnrollmentDTO;
     /**
      * Erreurs de validation (si applicable)

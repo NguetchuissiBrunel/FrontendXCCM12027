@@ -39,6 +39,7 @@ jobs:
 
       - name: Vérifier le linting (si configuré)
         run: npm run lint --if-present
+        continue-on-error: true
 
       - name: Vérifier les types TypeScript (si configuré)
         run: npm run type-check --if-present

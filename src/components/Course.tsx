@@ -376,7 +376,17 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
             <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2">{courseData.title}</h1>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>{courseData.viewCount} {t('views')}</span>
-              <button onClick={handleLike} className="hover:text-red-500">{courseData.likeCount} {t('likes')}</button>
+              <button
+                onClick={handleLike}
+                disabled={isLiking}
+                className={`flex items-center gap-1.5 transition-all duration-200 ${localIsLiked ? 'text-red-500' : 'hover:text-red-500'}`}
+              >
+                <Heart
+                  className={`w-4 h-4 transition-all duration-300 ${localIsLiked ? 'fill-current scale-110' : ''} ${isLiking ? 'animate-pulse' : ''}`}
+                  strokeWidth={1.5}
+                />
+                {localLikeCount} {t('likes')}
+              </button>
               <TeacherLink teacherId={String(courseData.author?.id)} teacherName={courseData.author?.name} teacherPhoto={courseData.author?.image} />
             </div>
           </div>

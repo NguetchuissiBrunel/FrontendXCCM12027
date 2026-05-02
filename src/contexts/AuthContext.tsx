@@ -42,6 +42,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isVisitor: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => void;
   logout: () => void;
   registerStudent: (data: StudentRegisterRequest) => Promise<void>;
   registerTeacher: (data: TeacherRegisterRequest) => Promise<void>;
@@ -257,6 +258,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // ==========================================
+  // 🔥 Login avec token OAuth (Google / GitHub)
+  // ==========================================
+  const loginWithToken = (jwtToken: string): void => {
+    try {
+      if (!jwtToken) throw new Error('Token manquant');
+
+      setAuthToken(jwtToken);
+      setToken(jwtToken);
+
+      const decoded = decodeToken(jwtToken);
+      if (!decoded) throw new Error('Token invalide');
+
+      const rawRole = String(decoded.role || '').toLowerCase();
+      const isAdmin = rawRole.includes('admin');
+      const isTeacher = rawRole.includes('teacher') || rawRole.includes('professor');
+
+      const oauthUser: User = {
+        id: decoded.id || decoded.sub || '',
+        email: decoded.email || '',
+        role: isAdmin ? 'admin' : (isTeacher ? 'teacher' : 'student'),
+        firstName: decoded.firstName || decoded.given_name || '',
+        lastName: decoded.lastName || decoded.family_name || '',
+        photoUrl: decoded.photoUrl || decoded.picture || '',
+      };
+
+      setUser(oauthUser);
+      localStorage.setItem('currentUser', JSON.stringify(oauthUser));
+      localStorage.setItem('userRole', oauthUser.role);
+      Cookies.remove('currentUser');
+      console.log('✅ Connexion OAuth réussie:', oauthUser.email);
+    } catch (error) {
+      console.error('❌ Erreur loginWithToken:', error);
+      clearAuthToken();
+      setUser(null);
+      setToken(null);
+      throw error;
+    }
+  };
+
+  // ==========================================
   // 🔥 Register Student
   // ==========================================
   const registerStudent = async (data: StudentRegisterRequest): Promise<void> => {
@@ -420,6 +461,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user && !!token,
     isVisitor: !user || !token,
     login,
+    loginWithToken,
     logout,
     registerStudent,
     registerTeacher,

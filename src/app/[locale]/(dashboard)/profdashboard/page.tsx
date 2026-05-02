@@ -7,6 +7,7 @@ import HomeView from '@/components/dashboard/teacher/HomeView';
 import ClassesView from '@/components/dashboard/teacher/ClassesView';
 import InscriptionsView from '@/components/dashboard/teacher/InscriptionsView';
 import ExercisesView from '@/components/dashboard/teacher/ExercisesView';
+import NotificationsView from '@/components/dashboard/teacher/NotificationsView';
 import DashboardSkeleton from '@/components/professor/DashboardSkeleton';
 
 export default function ProfDashboardSPA() {
@@ -43,7 +44,9 @@ export default function ProfDashboardSPA() {
         case 'exercices':
             return <ExercisesView />;
         case 'compositions':
-            return <ClassesView mode="compositions" />; 
+            return <ClassesView mode="compositions" />;
+        case 'notifications':
+            return <NotificationsView />;
         case 'accueil':
         default:
             return <HomeView />;

@@ -192,7 +192,8 @@
       "enrollments": "Enrollments",
       "classes": "My classes",
       "exercises": "My exercises",
-      "compositions": "My courses"
+      "compositions": "My courses",
+      "notifications": "Notifications"
     }
   },
   "adminSidebar": {
@@ -2154,6 +2155,27 @@
       "operationError": "Operation failed. Please try again.",
       "student": "Student"
     },
+    "notifications": {
+      "title": "My Notifications",
+      "subtitle": "Manage your collaboration invitations and other alerts.",
+      "sectionTitle": "Collaboration Invitations",
+      "pendingCount": "{count} pending",
+      "loading": "Loading notifications...",
+      "emptyTitle": "No new notifications",
+      "emptyDescription": "You have no pending invitations at the moment. When a colleague invites you, it will appear here.",
+      "invitedOnCourse": "You have been invited to collaborate on the course",
+      "invitedBy": "Invitation sent by {name}",
+      "receivedOn": "Received on {date}",
+      "untitled": "Untitled",
+      "accept": "Accept",
+      "reject": "Reject",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "acceptSuccess": "Invitation accepted! You can now access the course.",
+      "acceptError": "Error while accepting the invitation.",
+      "rejectSuccess": "Invitation declined.",
+      "rejectError": "Error while declining the invitation."
+    },
     "manageClassCoursesModal": {
       "title": "Manage courses in the class",
       "classLabel": "Class: {name}",
@@ -2511,5 +2533,3 @@
     "loadErrorToast": "Error while loading profile"
   }
 }
-
-

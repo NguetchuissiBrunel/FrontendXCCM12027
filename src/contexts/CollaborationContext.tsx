@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useMemo, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +13,7 @@ export interface Collaborator {
     lastName: string;
     status?: 'ONLINE' | 'OFFLINE';
     type?: 'JOIN' | 'LEAVE';
+    isSelf?: boolean;
 }
 
 interface CollaborationContextType {
@@ -35,66 +36,103 @@ export const CollaborationProvider = ({
     const { user } = useAuth();
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
 
+    const selfCollaborator = useMemo<Collaborator | null>(() => {
+        if (!user?.id) return null;
+
+        return {
+            id: user.id,
+            email: user.email || '',
+            firstName: user.firstName || user.email?.split('@')[0] || 'Vous',
+            lastName: user.lastName || '',
+            status: 'ONLINE',
+            isSelf: true,
+        };
+    }, [user]);
+
     useEffect(() => {
         if (!isConnected || !stompClient || !courseId) return;
 
-        // Subscription to the presence topic
+        if (selfCollaborator) {
+            setCollaborators((prev) => {
+                const others = prev.filter((collaborator) => collaborator.id !== selfCollaborator.id);
+                return [selfCollaborator, ...others];
+            });
+        }
+
+        try {
+            stompClient.publish({
+                destination: `/app/projet/${courseId}/action`,
+                body: JSON.stringify({
+                    type: 'CURSOR',
+                    payload: {
+                        userId: user?.id,
+                        userName: user?.firstName || user?.email?.split('@')[0] || 'Collaborateur',
+                        email: user?.email || '',
+                        x: null,
+                        y: null,
+                    }
+                })
+            });
+        } catch (error) {
+            // Ignore presence ping failure
+        }
+
+        // Subscribe to the unified project topic to intercept users for the collaborators list
         const subscription = stompClient.subscribe(
-            `/topic/projet/${courseId}/presence`,
+            `/topic/projet/${courseId}`,
             (message) => {
                 try {
                     const body = JSON.parse(message.body);
+                    // Extract user info from typical payloads to maintain the collaborators list
+                    const userData = body.payload || body;
 
-                    if (Array.isArray(body)) {
-                        const others = body.filter(c => c.status === 'ONLINE' && c.id !== user?.id);
-                        setCollaborators(others);
-                    } else if (body.type === 'JOIN' || body.status === 'ONLINE') {
-                        if (body.id !== user?.id) {
-                            toast.success(`${body.firstName || 'Un collaborateur'} a rejoint la session`, { id: `join-${body.id}` });
-                            setCollaborators(prev => {
-                                if (prev.find(c => c.id === body.id)) return prev;
-                                return [...prev, body];
-                            });
-                        }
-                    } else if (body.type === 'LEAVE' || body.status === 'OFFLINE') {
-                        if (body.id !== user?.id) {
-                            setCollaborators(prev => prev.filter(c => c.id !== body.id));
-                        }
+                    if (userData && userData.userId && userData.userId !== user?.id) {
+                        const newCollab: Collaborator = {
+                            id: userData.userId,
+                            email: userData.email || '',
+                            firstName: userData.userName || 'Collaborateur',
+                            lastName: '',
+                            status: 'ONLINE'
+                        };
+
+                        setCollaborators(prev => {
+                            if (prev.find(c => c.id === newCollab.id)) return prev;
+                            toast.success(`${newCollab.firstName} a rejoint la session`, { id: `join-${newCollab.id}` });
+                            return [...prev, newCollab];
+                        });
                     }
                 } catch (e) {
-                    console.error("Erreur de parsing de présence:", e);
+                    // Ignore parsing errors here safely
                 }
             }
         );
 
-        // Announce our presence
-        if (user) {
+        // Subscribe to personal error queue as mentioned in backend guide
+        const errorSub = stompClient.subscribe('/user/queue/errors', (message) => {
             try {
-                stompClient.publish({
-                    destination: `/app/projet/${courseId}/presence/join`,
-                    body: JSON.stringify({
-                        id: user.id,
-                        email: user.email,
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        status: 'ONLINE',
-                        type: 'JOIN'
-                    })
-                });
-            } catch (e) { }
-        }
+                const error = JSON.parse(message.body);
+                toast.error('Erreur de collaboration : ' + (error.content || error.message || 'Action non autorisée'));
+            } catch (e) {
+                toast.error('Erreur non autorisée lors de la collaboration.');
+            }
+        });
 
         return () => {
-            // Announce our departure
-            if (user && isConnected && stompClient.active) {
-                stompClient.publish({
-                    destination: `/app/projet/${courseId}/presence/leave`,
-                    body: JSON.stringify({ id: user.id, type: 'LEAVE', status: 'OFFLINE' })
-                });
-            }
             subscription.unsubscribe();
+            errorSub.unsubscribe();
         };
-    }, [stompClient, isConnected, courseId, user]);
+    }, [stompClient, isConnected, courseId, user, selfCollaborator]);
+
+    useEffect(() => {
+        if (isConnected) return;
+
+        setCollaborators((prev) =>
+            prev.map((collaborator) => ({
+                ...collaborator,
+                status: collaborator.isSelf ? collaborator.status : 'OFFLINE',
+            }))
+        );
+    }, [isConnected]);
 
     return (
         <CollaborationContext.Provider value={{ stompClient, isConnected, courseId, collaborators }}>

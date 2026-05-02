@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText, FolderOpen } from 'lucide-react';
+import { Home, User, BookOpen, Calendar, Users as LucideUsers, FileText, FolderOpen, Bell } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { usePendingCount } from '@/hooks/usePendingCount';
+import { useTeacherInvitations } from '@/hooks/useTeacherInvitations';
 
 interface SidebarProps {
   userRole: 'student' | 'professor';
@@ -19,6 +20,7 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
   const t = useTranslations('sidebar');
   const [photoUrl, setPhotoUrl] = useState<string>('/images/pp.jpeg');
   const { pendingCount } = usePendingCount();
+  const { invitationsCount } = useTeacherInvitations();
 
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
@@ -47,6 +49,7 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
     { id: 'classes', label: t('teacher.classes'), icon: FolderOpen, href: '/profdashboard?tab=classes' },
     { id: 'exercices', label: t('teacher.exercises'), icon: FileText, href: '/profdashboard?tab=exercices' },
     { id: 'compositions', label: t('teacher.compositions'), icon: BookOpen, href: '/profdashboard?tab=compositions' },
+    { id: 'notifications', label: t('teacher.notifications') || 'Notifications', icon: Bell, href: '/profdashboard?tab=notifications' },
   ];
 
   return (
@@ -112,6 +115,11 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
                   {item.id === 'inscriptions' && pendingCount > 0 && (
                     <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center animate-pulse shadow-sm">
                       {pendingCount > 9 ? '9+' : pendingCount}
+                    </span>
+                  )}
+                  {item.id === 'notifications' && invitationsCount > 0 && (
+                    <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center animate-pulse shadow-sm">
+                      {invitationsCount > 9 ? '9+' : invitationsCount}
                     </span>
                   )}
                 </Link>

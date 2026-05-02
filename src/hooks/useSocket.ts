@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,19 +9,33 @@ export const useSocket = (courseId: number | null) => {
     const { token } = useAuth();
     const [stompClient, setStompClient] = useState<Client | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const isCleaningUpRef = useRef(false);
 
     useEffect(() => {
-        if (!courseId || !token) return;
+        if (!courseId || !token) {
+            setIsConnected(false);
+            setStompClient(null);
+            return;
+        }
 
-        // Get API URL, removing trailing slash if exists
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+        isCleaningUpRef.current = false;
+
+        // Get API URL from correct env var, removing trailing slash if exists
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
         const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        const socketBaseUrl = cleanBaseUrl.endsWith('/api') ? cleanBaseUrl.slice(0, -4) : cleanBaseUrl;
+        console.info('🔍 WebSocket debug', {
+            courseId,
+            apiBaseUrl: cleanBaseUrl,
+            socketUrl: `${socketBaseUrl}/ws`,
+            tokenPresent: !!token,
+        });
 
         const client = new Client({
-            // For fallback/compatibility, use SockJS
-            webSocketFactory: () => new SockJS(`${cleanBaseUrl}/ws`),
+            // Uses exactly the configuration specified in the backend team's guide
+            webSocketFactory: () => new SockJS(`${socketBaseUrl}/ws`),
             connectHeaders: {
-                Authorization: `Bearer ${token}`
+                'Authorization': `Bearer ${token}`
             },
             debug: (str) => {
                 console.log('STOMP: ', str);
@@ -45,8 +59,14 @@ export const useSocket = (courseId: number | null) => {
             console.warn('⚠️ Erreur bas niveau WebSocket:', event);
         };
 
-        client.onWebSocketClose = () => {
-            console.warn('🔌 WebSocket déconnecté');
+        client.onWebSocketClose = (event) => {
+            if (!isCleaningUpRef.current) {
+                console.warn('🔌 WebSocket déconnecté', {
+                    courseId,
+                    code: event?.code,
+                    reason: event?.reason,
+                });
+            }
             setIsConnected(false);
         };
 
@@ -54,6 +74,7 @@ export const useSocket = (courseId: number | null) => {
         setStompClient(client);
 
         return () => {
+            isCleaningUpRef.current = true;
             console.log('🧹 Désactivation du WebSocket...');
             client.deactivate();
             setStompClient(null);

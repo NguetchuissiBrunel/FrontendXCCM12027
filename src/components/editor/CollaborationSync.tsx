@@ -26,78 +26,67 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
     useEffect(() => {
         if (!isConnected || !stompClient || !courseId || !editorRef?.current) return;
 
-        const subUpdates = stompClient.subscribe(`/topic/projet/${courseId}/updates`, (message) => {
+        const subMain = stompClient.subscribe(`/topic/projet/${courseId}`, (message) => {
             try {
-                const update = JSON.parse(message.body);
-                if (update.type === 'MOVE') {
-                    if (editorRef.current) {
-                        editorRef.current.handleTOCAction('move', update.itemId, {
-                            targetId: update.targetId,
-                            position: update.position
+                const action = JSON.parse(message.body);
+                // Exclude own actions
+                if (action.payload?.userId === user?.id || action.userId === user?.id) return;
+
+                const type = action.type;
+                const lockInfo = action.payload || {};
+
+                if (type === 'MOVE') {
+                    if (editorRef.current && action.payload) {
+                        editorRef.current.handleTOCAction('move', action.payload.itemId, {
+                            targetId: action.payload.targetId,
+                            position: action.payload.position
                         });
                     }
-                }
-            } catch (e) {
-                console.error("Erreur de parsing des updates:", e);
-            }
-        });
-
-        const subLocks = stompClient.subscribe(`/topic/projet/${courseId}/locks`, (message) => {
-            try {
-                const lockData = JSON.parse(message.body);
-                if (lockData.userId === user?.id) return; // Ignore our own locks
-
-                if (lockData.type === 'LOCK') {
+                } else if (type === 'LOCK') {
                     setLockedNodes(prev => {
                         const newMap = new Map(prev);
-                        newMap.set(lockData.nodeId, lockData);
+                        newMap.set(String(action.granuleId), {
+                            nodeId: String(action.granuleId),
+                            userId: lockInfo.userId || action.userId,
+                            userName: lockInfo.userName || 'Un collaborateur',
+                            color: lockInfo.color || '#A855F7'
+                        });
                         return newMap;
                     });
-                } else if (lockData.type === 'UNLOCK') {
+                } else if (type === 'UNLOCK') {
                     setLockedNodes(prev => {
                         const newMap = new Map(prev);
-                        newMap.delete(lockData.nodeId);
+                        newMap.delete(String(action.granuleId));
+                        return newMap;
+                    });
+
+                    // If backend gives 'content' upon unlock or update
+                    if (action.content && editorInstance) {
+                        let jsonContent = action.content;
+                        if (typeof action.content === 'string') {
+                            try { jsonContent = JSON.parse(action.content); } catch (e) { }
+                        }
+
+                        editorInstance.commands.setContent(jsonContent, false);
+                        editorInstance.view.dispatch(editorInstance.state.tr.setMeta('isRemote', true));
+                    }
+                } else if (type === 'CURSOR') {
+                    const cursorInfo = action.payload || {};
+                    setRemoteCursors(prev => {
+                        const newMap = new Map(prev);
+                        if (cursorInfo.userId) {
+                            newMap.set(cursorInfo.userId, cursorInfo);
+                        }
                         return newMap;
                     });
                 }
             } catch (e) {
-                console.error("Erreur parsing locks:", e);
-            }
-        });
-
-        const subCursors = stompClient.subscribe(`/topic/projet/${courseId}/cursor`, (message) => {
-            try {
-                const cursorData = JSON.parse(message.body);
-                if (cursorData.userId === user?.id) return; // Ignore our own cursor
-
-                setRemoteCursors(prev => {
-                    const newMap = new Map(prev);
-                    newMap.set(cursorData.userId, cursorData);
-                    return newMap;
-                });
-            } catch (e) { }
-        });
-
-        const subContent = stompClient.subscribe(`/topic/projet/${courseId}/content`, (message) => {
-            try {
-                const contentData = JSON.parse(message.body);
-                if (contentData.userId === user?.id) return; // Ignore our own updates
-
-                if (editorInstance && contentData.json) {
-                    // We dispatch the update but tell the editor it's a remote update
-                    editorInstance.commands.setContent(contentData.json, false);
-                    editorInstance.view.dispatch(editorInstance.state.tr.setMeta('isRemote', true));
-                }
-            } catch (e) {
-                console.error("Erreur parsing content update:", e);
+                console.error("Erreur parsing message:", e);
             }
         });
 
         return () => {
-            subUpdates.unsubscribe();
-            subLocks.unsubscribe();
-            subCursors.unsubscribe();
-            subContent.unsubscribe();
+            subMain.unsubscribe();
         };
     }, [stompClient, isConnected, courseId, editorRef, user?.id, editorInstance]);
 
@@ -112,13 +101,16 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         const handleMouseMove = throttle((e: MouseEvent) => {
             try {
                 stompClient.publish({
-                    destination: `/app/projet/${courseId}/cursor`,
+                    destination: `/app/projet/${courseId}/action`,
                     body: JSON.stringify({
-                        userId: user?.id || `anon-${Date.now()}`,
-                        userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
-                        x: e.clientX,
-                        y: e.clientY,
-                        color: myColor
+                        type: 'CURSOR',
+                        payload: {
+                            userId: user?.id || `anon-${Date.now()}`,
+                            userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
+                            x: e.clientX,
+                            y: e.clientY,
+                            color: myColor
+                        }
                     })
                 });
             } catch (err) { }
@@ -139,11 +131,14 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             const { json } = e.detail;
             try {
                 stompClient.publish({
-                    destination: `/api/v1/projet/${courseId}/content`, // Utilisation du mapping correct
+                    destination: `/app/projet/${courseId}/action`,
                     body: JSON.stringify({
-                        userId: user.id,
-                        json: json,
-                        timestamp: new Date().toISOString()
+                        type: 'UNLOCK', // Using UNLOCK as a generic way to broadcast content updates as per backend guide
+                        content: JSON.stringify(json),
+                        payload: {
+                            userId: user.id,
+                            timestamp: new Date().toISOString()
+                        }
                     })
                 });
             } catch (err) {
@@ -184,19 +179,25 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 timer = setTimeout(() => {
                     if (lastLockedNodeId) {
                         stompClient.publish({
-                            destination: `/app/projet/${courseId}/unlock`,
-                            body: JSON.stringify({ type: 'UNLOCK', userId: user?.id, nodeId: lastLockedNodeId })
+                            destination: `/app/projet/${courseId}/action`,
+                            body: JSON.stringify({
+                                type: 'UNLOCK',
+                                granuleId: parseInt(lastLockedNodeId) || 0,
+                                payload: { userId: user?.id }
+                            })
                         });
                     }
                     if (currentNodeId) {
                         stompClient.publish({
-                            destination: `/app/projet/${courseId}/lock`,
+                            destination: `/app/projet/${courseId}/action`,
                             body: JSON.stringify({
                                 type: 'LOCK',
-                                userId: user?.id,
-                                nodeId: currentNodeId,
-                                userName: user?.firstName || user?.email || 'Anonyme',
-                                color: '#A855F7' // Purple color indicator for this user
+                                granuleId: parseInt(currentNodeId) || 0,
+                                payload: {
+                                    userId: user?.id,
+                                    userName: user?.firstName || user?.email || 'Anonyme',
+                                    color: '#A855F7'
+                                }
                             })
                         });
                     }
@@ -213,8 +214,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             if (lastLockedNodeId && stompClient.active) {
                 try {
                     stompClient.publish({
-                        destination: `/app/projet/${courseId}/unlock`,
-                        body: JSON.stringify({ type: 'UNLOCK', userId: user?.id, nodeId: lastLockedNodeId })
+                        destination: `/app/projet/${courseId}/action`,
+                        body: JSON.stringify({ type: 'UNLOCK', granuleId: parseInt(lastLockedNodeId) || 0, payload: { userId: user?.id } })
                     });
                 } catch (e) { }
             }

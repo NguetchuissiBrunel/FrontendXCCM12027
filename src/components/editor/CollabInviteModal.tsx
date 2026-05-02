@@ -27,6 +27,7 @@ import { MdGroup } from 'react-icons/md';
 import { CollabCollaborator } from '@/hooks/useCollabSession';
 import { useCollaboration } from '@/contexts/CollaborationContext';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
+import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
 import toast from 'react-hot-toast';
 
 interface CollabInviteModalProps {
@@ -39,6 +40,7 @@ interface CollabInviteModalProps {
     collaborators: CollabCollaborator[];
     onGenerateSession: () => string;
     onResetSession: () => void;
+    canInvite: boolean;
 }
 
 const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
@@ -51,6 +53,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
     collaborators,
     onGenerateSession,
     onResetSession,
+    canInvite,
 }) => {
     const [copied, setCopied] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -58,9 +61,15 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
     const [isInviting, setIsInviting] = useState(false);
 
     const linkInputRef = useRef<HTMLInputElement>(null);
-    const { isConnected, collaborators: stompCollaborators, stompClient } = useCollaboration();
+    const { isConnected, collaborators: stompCollaborators } = useCollaboration();
+    const onlineCollaborators = stompCollaborators.filter((collab) => collab.status === 'ONLINE');
 
     const handleInviteEmail = async () => {
+        if (!canInvite) {
+            toast.error("Seul l'auteur du cours peut inviter d'autres enseignants pour l'instant.");
+            return;
+        }
+
         const query = inviteEmail.trim().toLowerCase();
         if (!query) return;
         setIsInviting(true);
@@ -81,23 +90,15 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                 return;
             }
 
-            // Envoi de l'invitation réelle via STOMP
-            if (isConnected && stompClient && courseId) {
-                stompClient.publish({
-                    destination: `/app/projet/${courseId}/invite`,
-                    body: JSON.stringify({
-                        targetUserId: foundTeacher.id,
-                        targetEmail: foundTeacher.email,
-                        senderName: "L'auteur du cours", // On pourrait tirer ça du AuthContext si besoin
-                        courseId: courseId,
-                        timestamp: new Date().toISOString()
-                    })
+            // Envoi de l'invitation réelle via REST
+            if (courseId) {
+                await EnrollmentControllerService.inviteUser({
+                    email: foundTeacher.email || '',
+                    courseId: courseId
                 });
                 toast.success(`Invitation envoyée à ${foundTeacher.firstName} ${foundTeacher.lastName}`);
             } else {
-                // Fallback simulation si non connecté
-                await new Promise(resolve => setTimeout(resolve, 600));
-                toast.success(`Simulation : Invitation envoyée à ${foundTeacher.firstName} ${foundTeacher.lastName}`);
+                toast.error("Veuillez sauvegarder le cours avant d'inviter des collaborateurs");
             }
 
             setInviteEmail('');
@@ -130,6 +131,11 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
     if (!isOpen) return null;
 
     const handleCopyLink = async () => {
+        if (!canInvite) {
+            toast.error("Seul l'auteur du cours peut partager un lien d'invitation.");
+            return;
+        }
+
         const urlToCopy = shareUrl || '';
         try {
             await navigator.clipboard.writeText(urlToCopy);
@@ -146,6 +152,11 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
     };
 
     const handleRegenerateLink = () => {
+        if (!canInvite) {
+            toast.error("Seul l'auteur du cours peut regenerer un lien d'invitation.");
+            return;
+        }
+
         setIsGenerating(true);
         setCopied(false);
         setTimeout(() => {
@@ -155,6 +166,11 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
     };
 
     const handleRevokeLink = () => {
+        if (!canInvite) {
+            toast.error("Seul l'auteur du cours peut revoquer un lien d'invitation.");
+            return;
+        }
+
         if (confirm('Révoquer le lien invalidera l\'accès actuel. Continuer ?')) {
             onResetSession();
             setCopied(false);
@@ -221,7 +237,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                                         ref={linkInputRef}
                                         type="text"
                                         readOnly
-                                        value={isGenerating ? 'Génération en cours…' : (shareUrl || 'Aucun lien généré')}
+                                        value={!canInvite ? 'Lien reserve a l auteur du cours' : (isGenerating ? 'Génération en cours…' : (shareUrl || 'Aucun lien généré'))}
                                         className="w-full text-sm py-2.5 px-3 pr-10 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-mono truncate focus:outline-none focus:ring-2 focus:ring-purple-500/50 cursor-default"
                                         onClick={() => linkInputRef.current?.select()}
                                         title={shareUrl || ''}
@@ -236,7 +252,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                                 {/* Copy Button */}
                                 <button
                                     onClick={handleCopyLink}
-                                    disabled={!shareUrl || isGenerating}
+                                    disabled={!canInvite || !shareUrl || isGenerating}
                                     className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${copied
                                         ? 'bg-green-500 text-white'
                                         : 'bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 disabled:cursor-not-allowed'
@@ -259,8 +275,9 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
 
                             {/* Instructions */}
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Partagez ce lien avec les personnes que vous souhaitez inviter à co-éditer ce cours.
-                                Toute personne possédant ce lien pourra rejoindre la session.
+                                {canInvite
+                                    ? 'Partagez ce lien avec les personnes que vous souhaitez inviter à co-éditer ce cours. Toute personne possédant ce lien pourra rejoindre la session.'
+                                    : 'Le lien d invitation est reserve a l auteur du cours.'}
                             </p>
                         </div>
 
@@ -268,7 +285,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                         <div className="flex gap-2 pt-0.5">
                             <button
                                 onClick={handleRegenerateLink}
-                                disabled={isGenerating}
+                                disabled={!canInvite || isGenerating}
                                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-40"
                                 title="Générer un nouveau lien"
                             >
@@ -279,6 +296,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                             {sessionId && (
                                 <button
                                     onClick={handleRevokeLink}
+                                    disabled={!canInvite}
                                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 border-opacity-60 transition-colors"
                                     title="Révoquer le lien actuel"
                                 >
@@ -293,6 +311,11 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
 
                         {/* Invite by Email Section */}
                         <div className="space-y-3">
+                            {!canInvite && (
+                                <p className="text-xs text-amber-600 dark:text-amber-400">
+                                    Seul l&apos;auteur du cours peut inviter d&apos;autres enseignants pour le moment.
+                                </p>
+                            )}
                             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 <FaUserPlus className="inline mr-1.5 text-blue-500" />
                                 Inviter un co-éditeur
@@ -309,13 +332,13 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleInviteEmail();
                                         }}
-                                        disabled={isInviting}
+                                        disabled={!canInvite || isInviting}
                                     />
                                 </div>
                                 <button
                                     onClick={handleInviteEmail}
-                                    disabled={inviteEmail.trim().length < 2 || isInviting}
-                                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${inviteEmail.trim().length < 2 || isInviting
+                                    disabled={!canInvite || inviteEmail.trim().length < 2 || isInviting}
+                                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${!canInvite || inviteEmail.trim().length < 2 || isInviting
                                         ? 'bg-blue-400/50 dark:bg-blue-900/50 text-white cursor-not-allowed'
                                         : 'bg-blue-600 hover:bg-blue-700 text-white'
                                         }`}
@@ -336,15 +359,15 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                                 <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <FaUsers className="inline mr-1.5 text-indigo-500" />
                                     Collaborateurs actifs
-                                    {stompCollaborators.length > 0 && (
+                                    {onlineCollaborators.length > 0 && (
                                         <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs">
-                                            {stompCollaborators.length}
+                                            {onlineCollaborators.length}
                                         </span>
                                     )}
                                 </label>
                             </div>
 
-                            {stompCollaborators.length === 0 ? (
+                            {onlineCollaborators.length === 0 ? (
                                 <div className="text-center py-6 px-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-600">
                                     <FaUserPlus className="text-2xl text-gray-300 dark:text-gray-600 mx-auto mb-2" />
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -356,7 +379,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                                 </div>
                             ) : (
                                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                                    {stompCollaborators.map((collab, idx) => (
+                                    {onlineCollaborators.map((collab, idx) => (
                                         <div
                                             key={collab.id || idx}
                                             className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800"
@@ -368,7 +391,7 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                                                    {collab.firstName || ''} {collab.lastName || ''}
+                                                    {collab.firstName || ''} {collab.lastName || ''}{collab.isSelf ? ' (vous)' : ''}
                                                 </p>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                                     {collab.email}

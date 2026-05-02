@@ -17,17 +17,21 @@ import { createPortal } from 'react-dom';
 import { MdGroup } from 'react-icons/md';
 import { useCollabSession } from '@/hooks/useCollabSession';
 import CollabInviteModal from './CollabInviteModal';
+import { useCollaboration } from '@/contexts/CollaborationContext';
 
 interface CollabInviteButtonProps {
     courseId: number | null;
     courseTitle: string;
+    canInvite: boolean;
 }
 
 const CollabInviteButton: React.FC<CollabInviteButtonProps> = ({
     courseId,
     courseTitle,
+    canInvite,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { collaborators: activeCollaborators } = useCollaboration();
 
     const {
         sessionId,
@@ -44,7 +48,7 @@ const CollabInviteButton: React.FC<CollabInviteButtonProps> = ({
     }, []);
 
     const hasActiveSession = !!sessionId;
-    const activeCount = collaborators.length;
+    const activeCount = activeCollaborators.filter((collaborator) => collaborator.status === 'ONLINE').length;
 
     const buttonContent = (
         <>
@@ -98,6 +102,7 @@ const CollabInviteButton: React.FC<CollabInviteButtonProps> = ({
                 collaborators={collaborators}
                 onGenerateSession={generateSession}
                 onResetSession={resetSession}
+                canInvite={canInvite}
             />
         </>
     );

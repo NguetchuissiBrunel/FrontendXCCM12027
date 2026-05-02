@@ -192,7 +192,8 @@
       "enrollments": "Inscriptions",
       "classes": "Mes classes",
       "exercises": "Mes exercices",
-      "compositions": "Mes compositions"
+      "compositions": "Mes compositions",
+      "notifications": "Notifications"
     }
   },
   "adminSidebar": {
@@ -2153,6 +2154,27 @@
       "rejectedSuccess": "Enrôlement rejeté avec succès",
       "operationError": "Erreur lors de l'opération. Veuillez réessayer.",
       "student": "Étudiant"
+    },
+    "notifications": {
+      "title": "Mes Notifications",
+      "subtitle": "Gérez vos invitations de collaboration et autres alertes.",
+      "sectionTitle": "Invitations de Collaboration",
+      "pendingCount": "{count} en attente",
+      "loading": "Chargement des notifications...",
+      "emptyTitle": "Aucune nouvelle notification",
+      "emptyDescription": "Vous n'avez aucune invitation en attente pour le moment. Lorsqu'un collègue vous invitera, elle apparaîtra ici.",
+      "invitedOnCourse": "Vous avez été invité à collaborer sur le cours",
+      "invitedBy": "Invitation envoyée par {name}",
+      "receivedOn": "Reçue le {date}",
+      "untitled": "Sans titre",
+      "accept": "Accepter",
+      "reject": "Refuser",
+      "accepted": "Acceptée",
+      "rejected": "Refusée",
+      "acceptSuccess": "Invitation acceptée ! Vous pouvez maintenant accéder au cours.",
+      "acceptError": "Erreur lors de l'acceptation de l'invitation.",
+      "rejectSuccess": "Invitation refusée.",
+      "rejectError": "Erreur lors du refus de l'invitation."
     },
     "manageClassCoursesModal": {
       "title": "Gestion des Cours dans la Classe",

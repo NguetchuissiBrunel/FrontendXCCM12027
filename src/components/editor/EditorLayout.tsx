@@ -55,6 +55,7 @@ import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
+import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
 import type { Exercise as ExerciseType, Submission } from '@/types/exercise';
 import EditorEntranceModal from './EditorEntranceModal';
 import CreateCourseModal from '@/components/create-course/page';
@@ -62,6 +63,8 @@ import { CollaborationProvider } from '@/contexts/CollaborationContext';
 import CollaborationSync from './CollaborationSync';
 import ImageUploader from '../upload/ImageUploader';
 import CollabInviteButton from './CollabInviteButton';
+import { getAuthToken } from '@/utils/authHelpers';
+import { ApiError } from '@/lib/core/ApiError';
 
 
 interface EditorLayoutProps {
@@ -96,6 +99,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [courseImage, setCourseImage] = useState<string | undefined>(undefined);
   const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
+  const [currentCourseAuthorId, setCurrentCourseAuthorId] = useState<string | null>(null);
   const [isLoadingCourse, setIsLoadingCourse] = useState(false);
   const [pendingContent, setPendingContent] = useState<any>(null);
 
@@ -217,19 +221,110 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     }
   }, [editorInstance, pendingContent]);
 
+  const getAccessibleCourses = React.useCallback(async (userId: string) => {
+    const [authorResponse, enrollmentsResponse, allCoursesResponse] = await Promise.all([
+      CourseControllerService.getAuthorCourses(userId),
+      EnrollmentControllerService.getMyEnrollments(),
+      CourseControllerService.getAllCourses(),
+    ]);
+
+    const authorCourses = (authorResponse as any)?.data || [];
+    const allCourses = (allCoursesResponse as any)?.data || [];
+    const enrollments = enrollmentsResponse.data || [];
+
+    const accessibleCourseIds = new Set<number>();
+
+    authorCourses.forEach((course: any) => {
+      if (typeof course.id === 'number') {
+        accessibleCourseIds.add(course.id);
+      }
+    });
+
+    enrollments
+      .filter((enrollment: any) =>
+        typeof enrollment.courseId === 'number' &&
+        (enrollment.status === 'APPROVED' || enrollment.status === 'INVITED')
+      )
+      .forEach((enrollment: any) => {
+        accessibleCourseIds.add(enrollment.courseId);
+      });
+
+    const mergedCourses = [
+      ...allCourses.filter((course: any) => typeof course.id === 'number' && accessibleCourseIds.has(course.id)),
+      ...authorCourses.filter((course: any) => typeof course.id === 'number' && accessibleCourseIds.has(course.id)),
+    ];
+
+    return mergedCourses.filter((course: any, index: number, array: any[]) =>
+      course?.id && array.findIndex((item) => item?.id === course.id) === index
+    );
+  }, []);
+
+  const fetchCourseContentById = React.useCallback(async (courseId: number) => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const token = getAuthToken();
+    const url = `${cleanBaseUrl}/courses/${courseId}`;
+
+    console.info('🔍 Course fetch debug:start', {
+      courseId,
+      url,
+      tokenPresent: !!token,
+    });
+
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (!response.ok) {
+      let responseBody: unknown = null;
+      try {
+        responseBody = await response.clone().json();
+      } catch {
+        try {
+          responseBody = await response.text();
+        } catch {
+          responseBody = null;
+        }
+      }
+
+      console.error('❌ Course fetch debug:error', {
+        courseId,
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody,
+      });
+
+      throw new Error(`Impossible de charger le cours ${courseId} (${response.status} ${response.statusText})`);
+    }
+
+    const data = await response.json();
+    console.info('✅ Course fetch debug:success', {
+      courseId,
+      url,
+      hasData: !!data,
+      hasContent: !!(data?.data?.content || data?.content),
+    });
+    return data;
+  }, []);
+
   const loadSpecificCourse = async (id: number, userId: string) => {
     try {
       setIsLoadingCourse(true);
-
-      // Since getEnrichedCourse doesn't return content, we use getAuthorCourses
-      // which returns the full CourseResponse objects including content.
-      const response = await CourseControllerService.getAuthorCourses(userId);
-      const courses = (response as any).data || response;
-
+      const courses = await getAccessibleCourses(userId);
       const course = Array.isArray(courses) ? courses.find((c: any) => c.id === id) : null;
 
       if (course) {
-        let content = course.content;
+        let resolvedCourse = course;
+
+        try {
+          const detailedCourseResponse = await fetchCourseContentById(id);
+          resolvedCourse = detailedCourseResponse?.data || detailedCourseResponse;
+        } catch (error) {
+          console.warn('Chargement detaille du cours indisponible, utilisation des donnees deja chargees.', error);
+        }
+
+        let content = resolvedCourse.content;
 
         // Handle cases where content might be a string (JSON) instead of an object
         if (typeof content === 'string' && content.trim().startsWith('{')) {
@@ -241,17 +336,18 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         }
 
         setPendingContent(content || '');
-        setCurrentCourseId(course.id || id);
-        setCourseTitle(course.title || "Sans titre");
-        setCourseCategory(course.category || "Informatique");
-        setCourseDescription(course.description || "");
-        setCourseImage(course.photoUrl || course.coverImage);
+        setCurrentCourseId(resolvedCourse.id || id);
+        setCurrentCourseAuthorId(resolvedCourse.author?.id || null);
+        setCourseTitle(resolvedCourse.title || "Sans titre");
+        setCourseCategory(resolvedCourse.category || "Informatique");
+        setCourseDescription(resolvedCourse.description || "");
+        setCourseImage(resolvedCourse.photoUrl || resolvedCourse.coverImage);
 
-        toast.success(`Cours "${course.title || 'Sans titre'}" chargé`);
+        toast.success(`Cours "${resolvedCourse.title || 'Sans titre'}" chargé`);
         setIsEntranceModalOpen(false);
         setActivePanel('structure');
       } else {
-        toast.error('Cours non trouvé dans votre bibliothèque');
+        toast.error('Cours non trouve dans votre bibliotheque collaborative');
       }
     } catch (error) {
       console.error('Erreur chargement cours spécifique:', error);
@@ -523,6 +619,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
     try {
       if (currentCourseId) {
+        console.info('🔍 Save debug:update:start', {
+          courseId: currentCourseId,
+          userId: user.id,
+          currentCourseAuthorId,
+          publish,
+        });
+
         // Update existing course
         const updateData: CourseUpdateRequest = {
           title: courseTitle.trim() || "Cours sans titre",
@@ -533,6 +636,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         };
 
         await CourseControllerService.updateCourse(currentCourseId, updateData);
+        console.info('✅ Save debug:update:success', {
+          courseId: currentCourseId,
+          userId: user.id,
+          currentCourseAuthorId,
+        });
 
         // Update status if publish is requested
         if (publish) {
@@ -558,6 +666,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
         if (createdCourseId) {
           setCurrentCourseId(createdCourseId);
+          setCurrentCourseAuthorId(user.id);
 
           // Publish if requested
           if (publish) {
@@ -571,7 +680,21 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       }
     } catch (error: any) {
       console.error("Erreur sauvegarde :", error);
-      const message = error?.response?.data?.message || error?.message || "Erreur de communication avec le serveur.";
+      if (error instanceof ApiError) {
+        console.error('❌ Save debug:update:error', {
+          courseId: currentCourseId,
+          userId: user.id,
+          currentCourseAuthorId,
+          status: error.status,
+          statusText: error.statusText,
+          body: error.body,
+          url: error.url,
+        });
+      }
+      const message =
+        error instanceof ApiError
+          ? (error.body?.message || error.body?.error || error.message)
+          : (error?.response?.data?.message || error?.message || "Erreur de communication avec le serveur.");
       if (!silent) toast.error(`${t('toast.saveError')} : ${message}`);
     }
   };
@@ -595,6 +718,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(data.category) ? "" : data.category);
     setCourseDescription(data.description);
     setCurrentCourseId(null);
+    setCurrentCourseAuthorId(null);
     if (editorInstance) {
       editorInstance.commands.setContent('');
     }
@@ -696,7 +820,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           <Navbar />
         </nav>
         {/* Floating Buttons */}
-        <CollabInviteButton courseId={currentCourseId} courseTitle={courseTitle} />
+        <CollabInviteButton
+          courseId={currentCourseId}
+          courseTitle={courseTitle}
+          canInvite={!!user?.id && !!currentCourseAuthorId && user.id === currentCourseAuthorId}
+        />
 
         {/* Main content area */}
         <div className="flex flex-1 overflow-hidden relative">
@@ -1010,18 +1138,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               {activePanel === 'author' && (
                 <MyCoursesPanel
                   onClose={() => setActivePanel(null)}
-                  onLoadCourse={(content, courseId, title, category, description, photoUrl) => {
-                    if (editorInstance && content) {
-                      editorInstance.commands.setContent(content);
-                      setCurrentCourseId(Number(courseId));
-                      setCourseTitle(title);
-                      setCourseCategory(category);
-                      setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(category) ? "" : category);
-                      setCourseDescription(description);
-                      setCourseImage(photoUrl);
-                      // Force refresh TOC after content change
-                      setTimeout(() => refreshTOC(), 100);
-                    }
+                  onLoadCourse={async (course) => {
+                    if (!user?.id || !course.id) return;
+                    await loadSpecificCourse(course.id, user.id);
+                    setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(course.category || "") ? "" : (course.category || ""));
+                    setTimeout(() => refreshTOC(), 100);
                   }}
                 />
               )}

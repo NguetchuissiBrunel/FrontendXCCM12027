@@ -23,22 +23,16 @@ export const useSocket = (courseId: number | null) => {
         // Get API URL from correct env var, removing trailing slash if exists
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
         const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-        let socketBaseUrl = 'http://localhost:8080';
-        try {
-            socketBaseUrl = new URL(cleanBaseUrl).origin;
-        } catch (e) {
-            console.error('Invalid URL:', cleanBaseUrl);
-        }
         console.info('🔍 WebSocket debug', {
             courseId,
             apiBaseUrl: cleanBaseUrl,
-            socketUrl: `${socketBaseUrl}/ws`,
+            socketUrl: `${cleanBaseUrl}/ws`,
             tokenPresent: !!token,
         });
 
         const client = new Client({
             // Uses exactly the configuration specified in the backend team's guide
-            webSocketFactory: () => new SockJS(`${socketBaseUrl}/ws?token=${token}`),
+            webSocketFactory: () => new SockJS(`${cleanBaseUrl}/ws`),
             connectHeaders: {
                 'Authorization': `Bearer ${token}`
             },

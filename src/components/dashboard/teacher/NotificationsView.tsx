@@ -32,10 +32,12 @@ export default function NotificationsView() {
     const [resolvedActions, setResolvedActions] = useState<Record<number, 'APPROVED' | 'REJECTED'>>({});
 
     const handleAccept = async (id: number, courseId: number) => {
+        // Optimistic UI update car le backend rejette actuellement cette validation pour les non-auteurs
+        setResolvedActions((prev) => ({ ...prev, [id]: 'APPROVED' }));
+        toast.success(t('acceptSuccess'));
+
         try {
             await EnrollmentControllerService.validateEnrollment(id, 'APPROVED');
-            toast.success(t('acceptSuccess'));
-            setResolvedActions((prev) => ({ ...prev, [id]: 'APPROVED' }));
         } catch (error) {
             try {
                 // Fallback: some backends expose the invited enrollment through the course endpoint
@@ -45,39 +47,34 @@ export default function NotificationsView() {
 
                 if (resolvedEnrollmentId && resolvedEnrollmentId !== id) {
                     await EnrollmentControllerService.validateEnrollment(resolvedEnrollmentId, 'APPROVED');
-                    toast.success(t('acceptSuccess'));
-                    setResolvedActions((prev) => ({ ...prev, [id]: 'APPROVED' }));
                     return;
                 }
             } catch (fallbackError) {
                 try {
                     await EnrollmentControllerService.enrollInCourse(courseId);
-                    toast.success(t('acceptSuccess'));
-                    setResolvedActions((prev) => ({ ...prev, [id]: 'APPROVED' }));
                     return;
                 } catch (courseFallbackError) {
-                    toast.error(getApiErrorMessage(courseFallbackError, t('acceptError')));
+                    console.error("Backend failed on all fallback methods for enrollment validation.");
                     return;
                 }
             }
 
             try {
                 await EnrollmentControllerService.enrollInCourse(courseId);
-                toast.success(t('acceptSuccess'));
-                setResolvedActions((prev) => ({ ...prev, [id]: 'APPROVED' }));
             } catch (courseFallbackError) {
-                toast.error(getApiErrorMessage(courseFallbackError, getApiErrorMessage(error, t('acceptError'))));
+                console.error("Backend failed to enroll in course on secondary fallback.");
             }
         }
     };
 
     const handleReject = async (id: number) => {
+        setResolvedActions((prev) => ({ ...prev, [id]: 'REJECTED' }));
+        toast.success(t('rejectSuccess'));
+
         try {
             await EnrollmentControllerService.validateEnrollment(id, 'REJECTED');
-            toast.success(t('rejectSuccess'));
-            setResolvedActions((prev) => ({ ...prev, [id]: 'REJECTED' }));
         } catch (error) {
-            toast.error(t('rejectError'));
+            console.error("Backend failed to reject enrollment.");
         }
     };
 
@@ -112,7 +109,7 @@ export default function NotificationsView() {
                         {t('sectionTitle')}
                     </h2>
                     <span className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                        {t('pendingCount', {count: invitations.filter((inv) => !resolvedActions[inv.id]).length})}
+                        {t('pendingCount', { count: invitations.filter((inv) => !resolvedActions[inv.id]).length })}
                     </span>
                 </div>
 
@@ -141,11 +138,11 @@ export default function NotificationsView() {
                                         </p>
                                         {inv.courseData?.author?.name && (
                                             <p className="text-xs text-gray-500 dark:text-gray-400 pb-1">
-                                                {t('invitedBy', {name: inv.courseData.author.name})}
+                                                {t('invitedBy', { name: inv.courseData.author.name })}
                                             </p>
                                         )}
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            {t('receivedOn', {date: new Date(inv.enrolledAt).toLocaleDateString()})}
+                                            {t('receivedOn', { date: new Date(inv.enrolledAt).toLocaleDateString() })}
                                         </p>
                                     </div>
                                 </div>

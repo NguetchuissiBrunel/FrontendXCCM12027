@@ -38,7 +38,7 @@ export const useSocket = (courseId: number | null) => {
 
         const client = new Client({
             // Uses exactly the configuration specified in the backend team's guide
-            webSocketFactory: () => new SockJS(`${socketBaseUrl}/ws`),
+            webSocketFactory: () => new SockJS(`${socketBaseUrl}/ws?token=${token}`),
             connectHeaders: {
                 'Authorization': `Bearer ${token}`
             },

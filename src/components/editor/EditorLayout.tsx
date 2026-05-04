@@ -619,6 +619,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
     const jsonContent = editorInstance.getJSON();
 
+    // Blocage backend: Seuls les auteurs peuvent appeler l'API de sauvegarde REST HTTP
+    if (currentCourseId && currentCourseAuthorId !== user.id) {
+      if (!silent) toast.error(t('toast.notAuthor') || "Seul l'auteur peut enregistrer manuellement le cours. Vos co-éditions sont sauvegardées automatiquement.");
+      return;
+    }
+
     try {
       if (currentCourseId) {
         console.info('🔍 Save debug:update:start', {

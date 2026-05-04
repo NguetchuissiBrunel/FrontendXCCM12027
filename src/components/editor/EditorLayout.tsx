@@ -265,7 +265,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const token = getAuthToken();
-    const url = `${cleanBaseUrl}/courses/${courseId}`;
+    const url = `${cleanBaseUrl}/courses/enriched/${courseId}`;
 
     console.info('🔍 Course fetch debug:start', {
       courseId,

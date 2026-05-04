@@ -30,7 +30,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             try {
                 const action = JSON.parse(message.body);
                 // Exclude own actions
-                if (action.payload?.userId === user?.id || action.userId === user?.id) return;
+                if (action.payload?.authorId === user?.id || action.authorId === user?.id) return;
 
                 const type = action.type;
                 const lockInfo = action.payload || {};
@@ -47,7 +47,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         const newMap = new Map(prev);
                         newMap.set(String(action.granuleId), {
                             nodeId: String(action.granuleId),
-                            userId: lockInfo.userId || action.userId,
+                            authorId: lockInfo.authorId || action.authorId,
                             userName: lockInfo.userName || 'Un collaborateur',
                             color: lockInfo.color || '#A855F7'
                         });
@@ -74,8 +74,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     const cursorInfo = action.payload || {};
                     setRemoteCursors(prev => {
                         const newMap = new Map(prev);
-                        if (cursorInfo.userId) {
-                            newMap.set(cursorInfo.userId, cursorInfo);
+                        if (cursorInfo.authorId) {
+                            newMap.set(cursorInfo.authorId, cursorInfo);
                         }
                         return newMap;
                     });
@@ -105,7 +105,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     body: JSON.stringify({
                         type: 'CURSOR',
                         payload: {
-                            userId: user?.id || `anon-${Date.now()}`,
+                            authorId: user?.id || `anon-${Date.now()}`,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
                             x: e.clientX,
                             y: e.clientY,
@@ -136,7 +136,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         type: 'UNLOCK', // Using UNLOCK as a generic way to broadcast content updates as per backend guide
                         content: JSON.stringify(json),
                         payload: {
-                            userId: user.id,
+                            authorId: user.id,
                             timestamp: new Date().toISOString()
                         }
                     })
@@ -183,7 +183,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             body: JSON.stringify({
                                 type: 'UNLOCK',
                                 granuleId: parseInt(lastLockedNodeId) || 0,
-                                payload: { userId: user?.id }
+                                payload: { authorId: user?.id }
                             })
                         });
                     }
@@ -194,7 +194,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                                 type: 'LOCK',
                                 granuleId: parseInt(currentNodeId) || 0,
                                 payload: {
-                                    userId: user?.id,
+                                    authorId: user?.id,
                                     userName: user?.firstName || user?.email || 'Anonyme',
                                     color: '#A855F7'
                                 }
@@ -215,7 +215,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 try {
                     stompClient.publish({
                         destination: `/app/projet/${courseId}/action`,
-                        body: JSON.stringify({ type: 'UNLOCK', granuleId: parseInt(lastLockedNodeId) || 0, payload: { userId: user?.id } })
+                        body: JSON.stringify({ type: 'UNLOCK', granuleId: parseInt(lastLockedNodeId) || 0, payload: { authorId: user?.id } })
                     });
                 } catch (e) { }
             }
@@ -251,8 +251,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             <style>{lockStyles}</style>
             {Array.from(remoteCursors.values()).map(cursor => (
                 <RemoteCursor
-                    key={cursor.userId}
-                    userId={cursor.userId}
+                    key={cursor.authorId}
+                    userId={cursor.authorId}
                     userName={cursor.userName}
                     x={cursor.x}
                     y={cursor.y}

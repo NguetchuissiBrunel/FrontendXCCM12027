@@ -65,7 +65,7 @@ export const CollaborationProvider = ({
                 body: JSON.stringify({
                     type: 'CURSOR',
                     payload: {
-                        userId: user?.id,
+                        authorId: user?.id,
                         userName: user?.firstName || user?.email?.split('@')[0] || 'Collaborateur',
                         email: user?.email || '',
                         x: null,
@@ -86,9 +86,9 @@ export const CollaborationProvider = ({
                     // Extract user info from typical payloads to maintain the collaborators list
                     const userData = body.payload || body;
 
-                    if (userData && userData.userId && userData.userId !== user?.id) {
+                    if (userData && userData.authorId && userData.authorId !== user?.id) {
                         const newCollab: Collaborator = {
-                            id: userData.userId,
+                            id: userData.authorId,
                             email: userData.email || '',
                             firstName: userData.userName || 'Collaborateur',
                             lastName: '',

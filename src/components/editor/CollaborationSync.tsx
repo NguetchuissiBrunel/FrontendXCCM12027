@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import { useCollaboration } from '@/contexts/CollaborationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainEditorRef } from './MainEditor';
@@ -37,7 +37,37 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 const type = action.type;
                 const lockInfo = action.payload || {};
 
-                if (type === 'MOVE') {
+                if (type === 'BLOCK_UPDATE') {
+                    if (action.content && lockInfo.nodeId && editorInstance) {
+                        let blockJson;
+                        try { blockJson = JSON.parse(action.content); } catch (e) { return; }
+
+                        // Chercher le nœud correspondant dans le document local
+                        let targetPos = -1;
+                        let targetNodeSize = 0;
+                        
+                        editorInstance.state.doc.descendants((node, pos) => {
+                            if (node.attrs && node.attrs.id === lockInfo.nodeId) {
+                                targetPos = pos;
+                                targetNodeSize = node.nodeSize;
+                                return false; // Arrêter la recherche
+                            }
+                        });
+
+                        // Remplacement chirurgical via l'API Prosemirror
+                        if (targetPos !== -1) {
+                            const { tr, schema } = editorInstance.state;
+                            try {
+                                const newNode = schema.nodeFromJSON(blockJson);
+                                tr.replaceWith(targetPos, targetPos + targetNodeSize, newNode);
+                                tr.setMeta('isRemote', true); // Ne pas déclencher de boucle infinie
+                                editorInstance.view.dispatch(tr);
+                            } catch (e) {
+                                console.error('Erreur remplacement de bloc:', e);
+                            }
+                        }
+                    }
+                } else if (type === 'MOVE') {
                     if (editorRef.current && action.payload) {
                         editorRef.current.handleTOCAction('move', action.payload.itemId, {
                             targetId: action.payload.targetId,
@@ -194,6 +224,50 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     });
                 } catch (e) { }
             }
+        };
+    }, [editorInstance, stompClient, isConnected, courseId, user]);
+
+    // Track local editor changes and broadcast (throttled) for real-time typing
+    useEffect(() => {
+        if (!editorInstance || !stompClient || !isConnected || !courseId) return;
+
+        const handleUpdate = throttle(() => {
+            const { state } = editorInstance;
+            const { selection } = state;
+            
+            // Trouver le bloc actuellement verrouillé dans lequel on écrit
+            let currentBlockNode = null;
+            for (let depth = selection.$anchor.depth; depth > 0; depth--) {
+                const node = selection.$anchor.node(depth);
+                if (node && node.attrs && node.attrs.id) {
+                    currentBlockNode = node;
+                    break;
+                }
+            }
+
+            if (currentBlockNode) {
+                try {
+                    stompClient.publish({
+                        destination: `/app/projet/${courseId}/action`,
+                        body: JSON.stringify({
+                            type: 'BLOCK_UPDATE',
+                            granuleId: parseInt(currentBlockNode.attrs.id) || 0,
+                            content: JSON.stringify(currentBlockNode.toJSON()),
+                            payload: { 
+                                authorId: user?.id || sessionId.current,
+                                nodeId: currentBlockNode.attrs.id
+                            }
+                        })
+                    });
+                } catch (err) { }
+            }
+        }, 300); // 300ms donne une sensation de temps réel fluide sans surcharger le navigateur
+
+        editorInstance.on('update', handleUpdate);
+
+        return () => {
+            handleUpdate.cancel();
+            editorInstance.off('update', handleUpdate);
         };
     }, [editorInstance, stompClient, isConnected, courseId, user]);
 

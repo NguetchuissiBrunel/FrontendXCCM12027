@@ -22,6 +22,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
     // Maps User ID to their latest cursor position
     const [remoteCursors, setRemoteCursors] = useState<Map<string, any>>(new Map());
 
+    const sessionId = useRef(`anon-${Math.random().toString(36).substr(2, 9)}`);
+
     // Subscribe to updates + locks + cursors
     useEffect(() => {
         if (!isConnected || !stompClient || !courseId || !editorRef?.current) return;
@@ -30,7 +32,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             try {
                 const action = JSON.parse(message.body);
                 // Exclude own actions
-                if (action.payload?.authorId === user?.id || action.authorId === user?.id) return;
+                if (action.payload?.authorId === (user?.id || sessionId.current) || action.authorId === (user?.id || sessionId.current)) return;
 
                 const type = action.type;
                 const lockInfo = action.payload || {};
@@ -104,7 +106,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     body: JSON.stringify({
                         type: 'CURSOR',
                         payload: {
-                            authorId: user?.id || `anon-${Date.now()}`,
+                            authorId: user?.id || sessionId.current,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
                             x: e.clientX + window.scrollX, // Coordonnée absolue de la page
                             y: e.clientY + window.scrollY,

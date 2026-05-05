@@ -77,37 +77,38 @@ export const CollaborationProvider = ({
             // Ignore presence ping failure
         }
 
-        // Subscribe to the unified project topic to intercept users for the collaborators list
+        // Subscribe to the presence topic (JOIN/LEAVE) — évite la double souscription au canal principal
         const subscription = stompClient.subscribe(
-            `/topic/projet/${courseId}`,
+            `/topic/projet/${courseId}/presence`,
             (message) => {
                 try {
                     const body = JSON.parse(message.body);
-                    // Extract user info from typical payloads to maintain the collaborators list
-                    const userData = body.payload || body;
+                    const { type, userEmail, userName } = body;
 
-                    if (userData && userData.authorId && userData.authorId !== user?.id) {
+                    if (!userEmail || userEmail === user?.email) return;
+
+                    if (type === 'JOIN') {
                         const newCollab: Collaborator = {
-                            id: userData.authorId,
-                            email: userData.email || '',
-                            firstName: userData.userName || 'Collaborateur',
+                            id: userEmail,
+                            email: userEmail,
+                            firstName: userName || userEmail.split('@')[0],
                             lastName: '',
-                            status: 'ONLINE'
+                            status: 'ONLINE',
                         };
-
                         setCollaborators(prev => {
-                            if (prev.find(c => c.id === newCollab.id)) return prev;
-                            
-                            // Différer l'effet secondaire pour éviter l'avertissement React
+                            if (prev.find(c => c.email === userEmail)) return prev;
                             setTimeout(() => {
-                                toast.success(`${newCollab.firstName} a rejoint la session`, { id: `join-${newCollab.id}` });
+                                toast.success(`${newCollab.firstName} a rejoint la session`, { id: `join-${userEmail}` });
                             }, 0);
-                            
                             return [...prev, newCollab];
                         });
+                    } else if (type === 'LEAVE') {
+                        setCollaborators(prev =>
+                            prev.map(c => c.email === userEmail ? { ...c, status: 'OFFLINE' } : c)
+                        );
                     }
                 } catch (e) {
-                    // Ignore parsing errors here safely
+                    // Ignore parsing errors
                 }
             }
         );

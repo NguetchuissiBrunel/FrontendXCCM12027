@@ -80,10 +80,10 @@ export const MindMapGraph: React.FC<MindMapGraphProps> = ({ data }) => {
       }
     });
 
-    const nodeWidth = 160;
-    const nodeHeight = 40;
-    const horizontalGap = 220;
-    const verticalGap = 70;
+    const nodeWidth = 200;
+    const nodeHeight = 60;
+    const horizontalGap = 280;
+    const verticalGap = 100;
 
     return nodes.map(node => {
       const level = levels.get(node.id) || 0;
@@ -91,9 +91,9 @@ export const MindMapGraph: React.FC<MindMapGraphProps> = ({ data }) => {
       const totalInLevel = levelCounts[level] || 1;
 
       // X: Horizontal position (Left to Right)
-      const x = 50 + level * horizontalGap;
+      const x = 80 + level * horizontalGap;
       // Y: Vertical position (Centered for each level)
-      const y = 300 + (index - (totalInLevel - 1) / 2) * verticalGap;
+      const y = 350 + (index - (totalInLevel - 1) / 2) * verticalGap;
       
       return { ...node, x, y, width: nodeWidth, height: nodeHeight };
     });
@@ -116,20 +116,28 @@ export const MindMapGraph: React.FC<MindMapGraphProps> = ({ data }) => {
     return `M ${startX} ${startY} C ${cp1X} ${startY}, ${cp2X} ${endY}, ${endX} ${endY}`;
   };
 
+  const getNodeColor = (level: number) => {
+    const colors = [
+      '#6366f1', // Indigo (Root)
+      '#8b5cf6', // Violet
+      '#ec4899', // Pink
+      '#f43f5e', // Rose
+      '#f59e0b', // Amber
+    ];
+    return colors[level % colors.length];
+  };
+
   return (
-    <div className="w-full h-[700px] bg-[#f8f9fa] dark:bg-[#1a1c1e] rounded-2xl overflow-auto border border-gray-200 dark:border-gray-800 relative">
-      <svg width={Math.max(1000, layoutNodes.length * 50)} height="1000" viewBox="0 0 1200 1000" className="min-w-full">
+    <div className="w-full h-[700px] bg-white dark:bg-[#0f1115] rounded-3xl overflow-auto border border-gray-100 dark:border-gray-800/50 shadow-2xl relative scrollbar-hide">
+      <svg width={Math.max(1200, layoutNodes.length * 60)} height="1000" viewBox="0 0 1400 1000" className="min-w-full">
         <defs>
-          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-            <feOffset dx="1" dy="1" result="offsetblur" />
-            <feComponentTransfer>
-              <feFuncA type="linear" slope="0.2" />
-            </feComponentTransfer>
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.1)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.02)" />
+          </linearGradient>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
 
@@ -140,52 +148,93 @@ export const MindMapGraph: React.FC<MindMapGraphProps> = ({ data }) => {
           if (!source || !target) return null;
 
           return (
-            <motion.path
-              key={`edge-${i}`}
-              d={getPath(source, target)}
-              fill="none"
-              stroke="#cbd5e1"
-              strokeWidth="1.5"
-              strokeDasharray="4 2"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 0.8, delay: i * 0.05 }}
-            />
+            <g key={`edge-group-${i}`}>
+              <motion.path
+                d={getPath(source, target)}
+                fill="none"
+                stroke={getNodeColor(positionedNodes.get(edge.source)?.level || 0)}
+                strokeWidth="2"
+                strokeOpacity="0.2"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 1, delay: i * 0.05 }}
+              />
+              <motion.circle
+                r="3"
+                fill={getNodeColor(positionedNodes.get(edge.source)?.level || 0)}
+                initial={{ offset: 0 }}
+                animate={{ cx: [source.x + source.width, target.x], cy: [source.y + source.height/2, target.y + target.height/2] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear", delay: i * 0.5 }}
+              />
+            </g>
           );
         })}
 
         {/* Nodes */}
-        {layoutNodes.map((node, i) => (
-          <motion.g
-            key={`node-${node.id}`}
-            initial={{ x: node.x - 20, opacity: 0 }}
-            animate={{ x: node.x, opacity: 1 }}
-            transition={{ type: 'spring', damping: 15, delay: i * 0.03 }}
-            whileHover={{ scale: 1.02 }}
-          >
-            <rect
-              x={node.x}
-              y={node.y}
-              width={node.width}
-              height={node.height}
-              rx="6"
-              ry="6"
-              fill="#2d3748"
-              filter="url(#shadow)"
-              className="transition-colors hover:fill-[#1a202c]"
-            />
-            <foreignObject x={node.x + 5} y={node.y} width={node.width - 10} height={node.height}>
-              <div className="h-full flex items-center justify-center text-center px-1">
-                <span className="text-[10px] font-medium text-white leading-[1.1] line-clamp-2">
-                  {node.label}
-                </span>
-              </div>
-            </foreignObject>
-            
-            {/* Small dot on the left of children nodes */}
-            <circle cx={node.x} cy={node.y + node.height/2} r="3" fill="#cbd5e1" />
-          </motion.g>
-        ))}
+        {layoutNodes.map((node: any, i) => {
+          const color = getNodeColor(node.level || 0);
+          return (
+            <motion.g
+              key={`node-${node.id}`}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', damping: 12, delay: i * 0.05 }}
+              whileHover={{ scale: 1.05 }}
+              className="cursor-pointer"
+            >
+              {/* Glow effect */}
+              <rect
+                x={node.x - 2}
+                y={node.y - 2}
+                width={node.width + 4}
+                height={node.height + 4}
+                rx="14"
+                fill={color}
+                fillOpacity="0.15"
+                filter="url(#glow)"
+              />
+              
+              {/* Main Node Body */}
+              <rect
+                x={node.x}
+                y={node.y}
+                width={node.width}
+                height={node.height}
+                rx="12"
+                fill={color}
+                className="transition-all duration-300"
+              />
+              
+              {/* Glossy Overlay */}
+              <rect
+                x={node.x + 1}
+                y={node.y + 1}
+                width={node.width - 2}
+                height={node.height / 2}
+                rx="11"
+                fill="url(#nodeGradient)"
+              />
+
+              <foreignObject x={node.x + 10} y={node.y} width={node.width - 20} height={node.height}>
+                <div className="h-full flex items-center justify-center text-center">
+                  <span className="text-[13px] font-bold text-white leading-tight drop-shadow-md">
+                    {node.label}
+                  </span>
+                </div>
+              </foreignObject>
+              
+              {/* Decorative side bar */}
+              <rect
+                x={node.x}
+                y={node.y + 10}
+                width="4"
+                height={node.height - 20}
+                rx="2"
+                fill="rgba(255,255,255,0.3)"
+              />
+            </motion.g>
+          );
+        })}
       </svg>
       
       <div className="absolute bottom-6 left-6 flex items-center gap-2">

@@ -94,7 +94,6 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
       <nav id="sidebar-nav">
         <div className="mb-4 flex items-center justify-between gap-3">
           <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold">{t('mainMenu')}</p>
-          <LanguageSwitcher compact />
         </div>
 
         <ul className="space-y-2">

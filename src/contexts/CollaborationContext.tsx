@@ -97,7 +97,12 @@ export const CollaborationProvider = ({
 
                         setCollaborators(prev => {
                             if (prev.find(c => c.id === newCollab.id)) return prev;
-                            toast.success(`${newCollab.firstName} a rejoint la session`, { id: `join-${newCollab.id}` });
+                            
+                            // Différer l'effet secondaire pour éviter l'avertissement React
+                            setTimeout(() => {
+                                toast.success(`${newCollab.firstName} a rejoint la session`, { id: `join-${newCollab.id}` });
+                            }, 0);
+                            
                             return [...prev, newCollab];
                         });
                     }

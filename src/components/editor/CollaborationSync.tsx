@@ -90,16 +90,26 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         };
     }, [stompClient, isConnected, courseId, editorRef, user?.id, editorInstance]);
 
-    // Track local mouse movements and broadcast
+    // Listen to TipTap cursor movements to publish Locks AND Caret coordinates
     useEffect(() => {
-        if (!isConnected || !stompClient || !courseId) return;
+        if (!editorInstance || !stompClient || !isConnected || !courseId) return;
 
-        // Use specific colors per user to differentiate them visually
+        // Générer la couleur unique de l'utilisateur
         const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
 
-        const handleMouseMove = throttle((e: MouseEvent) => {
+        let lastLockedNodeId: string | null = null;
+        let timer: NodeJS.Timeout | null = null;
+
+        const handleSelectionUpdate = throttle(() => {
+            const { selection } = editorInstance.state;
+            const { $anchor, head } = selection;
+
+            // 1. Send Caret coordinates for Overleaf-style cursors
             try {
+                // Obtenir les coordonnées X/Y exactes de la position du curseur dans le texte
+                const coords = editorInstance.view.coordsAtPos(head);
+                
                 stompClient.publish({
                     destination: `/app/projet/${courseId}/action`,
                     body: JSON.stringify({
@@ -107,64 +117,17 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         payload: {
                             authorId: user?.id || `anon-${Date.now()}`,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
-                            x: e.clientX,
-                            y: e.clientY,
+                            x: coords.left,
+                            y: coords.top,
                             color: myColor
                         }
                     })
                 });
-            } catch (err) { }
-        }, 75); // 75ms throttle
-
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => {
-            handleMouseMove.cancel();
-            window.removeEventListener('mousemove', handleMouseMove);
-        };
-    }, [stompClient, isConnected, courseId, user]);
-
-    // Track local editor changes and broadcast (throttled)
-    useEffect(() => {
-        if (!isConnected || !stompClient || !courseId || !user) return;
-
-        const handleLocalContentUpdate = throttle((e: any) => {
-            const { json } = e.detail;
-            try {
-                stompClient.publish({
-                    destination: `/app/projet/${courseId}/action`,
-                    body: JSON.stringify({
-                        type: 'UNLOCK', // Using UNLOCK as a generic way to broadcast content updates as per backend guide
-                        content: JSON.stringify(json),
-                        payload: {
-                            authorId: user.id,
-                            timestamp: new Date().toISOString()
-                        }
-                    })
-                });
             } catch (err) {
-                console.error("Erreur lors de l'envoi du contenu:", err);
+                // Ignore if coordsAtPos fails (e.g. editor not fully rendered)
             }
-        }, 800); // 800ms throttle
 
-        window.addEventListener('xccm:editor-content-update' as any, handleLocalContentUpdate);
-
-        return () => {
-            handleLocalContentUpdate.cancel();
-            window.removeEventListener('xccm:editor-content-update' as any, handleLocalContentUpdate);
-        };
-    }, [stompClient, isConnected, courseId, user]);
-
-    // Listen to TipTap cursor movements to publish Locks
-    useEffect(() => {
-        if (!editorInstance || !stompClient || !isConnected || !courseId) return;
-
-        let lastLockedNodeId: string | null = null;
-        let timer: NodeJS.Timeout | null = null;
-
-        const handleSelectionUpdate = () => {
-            const { selection } = editorInstance.state;
-            const { $anchor } = selection;
-
+            // 2. Lock logic for blocks (granules)
             let currentNodeId = null;
             for (let depth = $anchor.depth; depth > 0; depth--) {
                 const node = $anchor.node(depth);
@@ -196,7 +159,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                                 payload: {
                                     authorId: user?.id,
                                     userName: user?.firstName || user?.email || 'Anonyme',
-                                    color: '#A855F7'
+                                    color: myColor
                                 }
                             })
                         });
@@ -204,12 +167,13 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     lastLockedNodeId = currentNodeId;
                 }, 100);
             }
-        };
+        }, 100); // Throttle selection updates to 100ms for performance
 
         editorInstance.on('selectionUpdate', handleSelectionUpdate);
 
         return () => {
             editorInstance.off('selectionUpdate', handleSelectionUpdate);
+            handleSelectionUpdate.cancel();
             if (timer) clearTimeout(timer);
             if (lastLockedNodeId && stompClient.active) {
                 try {

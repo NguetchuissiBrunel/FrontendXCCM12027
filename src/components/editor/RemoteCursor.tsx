@@ -20,37 +20,32 @@ export default function RemoteCursor({ userName, x, y, color }: RemoteCursorProp
                 transform: `translate(${x}px, ${y}px)`,
                 zIndex: 9999, // Au-dessus de tout
                 pointerEvents: 'none',
-                transition: 'transform 75ms linear',
+                transition: 'transform 100ms ease-out', // Smooth transition for typing/moving
                 willChange: 'transform'
             }}
             className="flex flex-col items-start"
         >
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{
-                    transform: 'rotate(-25deg) scale(1.1)',
-                    transformOrigin: 'top left',
-                    filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.2))'
-                }}
-            >
-                <path
-                    d="M4.5 1.5L20 9L11.5 11.5L9 20L4.5 1.5Z"
-                    fill={color || '#8B5CF6'}
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeLinejoin="round"
-                />
-            </svg>
+            {/* Étiquette du nom (Caret Flag) */}
             <div
-                className="px-2 py-0.5 mt-1 rounded text-[10px] font-bold text-white shadow-sm whitespace-nowrap"
-                style={{ backgroundColor: color || '#8B5CF6', marginLeft: '12px' }}
+                className="px-1.5 py-0.5 rounded-t-sm rounded-br-sm text-[10px] font-bold text-white shadow-sm whitespace-nowrap"
+                style={{ 
+                    backgroundColor: color || '#8B5CF6', 
+                    transform: 'translateY(-100%)', // Place au-dessus de la ligne
+                    opacity: 0.9
+                }}
             >
                 {userName}
             </div>
+            
+            {/* Ligne verticale du curseur (Caret Line) */}
+            <div
+                style={{
+                    width: '2px',
+                    height: '20px', // Hauteur approximative d'une ligne de texte
+                    backgroundColor: color || '#8B5CF6',
+                }}
+                className="animate-pulse" // Clignotement léger optionnel
+            />
         </div>
     );
 }

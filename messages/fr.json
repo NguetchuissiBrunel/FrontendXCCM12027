@@ -672,7 +672,8 @@
       "gradeSuccess": "Soumission notée",
       "gradeError": "Échec de la notation",
       "courseInit": "Nouveau cours initialisé !",
-      "createBeforeExercise": "Créez ou chargez un cours avant de créer un exercice."
+      "createBeforeExercise": "Créez ou chargez un cours avant de créer un exercice.",
+      "notAuthor": "Vous n'êtes pas l'auteur de ce cours, mais vous pouvez le modifier en tant que collaborateur."
     }
   },
   "pdfPreview": {

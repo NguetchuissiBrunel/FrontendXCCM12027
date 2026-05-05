@@ -1,10 +1,10 @@
 // src/components/CourseComments.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { CourseInteractionControllerService } from "@/lib";
-import { CourseCommentDTO } from "@/lib/models/CourseCommentDTO";
-import { MessageCircle, Send, Trash2, Edit2, X, Check } from "lucide-react";
+import { CommentService, CommentDTO } from "@/lib/services/CommentService";
+import { LikeService } from "@/lib/services/LikeService";
+import { MessageCircle, Send, Trash2, Edit2, X, Check, Heart, CornerDownRight } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface CourseCommentsProps {
@@ -13,99 +13,146 @@ interface CourseCommentsProps {
 
 const CourseComments: React.FC<CourseCommentsProps> = ({ courseId }) => {
     const { user, isAuthenticated } = useAuth();
-    const [comments, setComments] = useState<CourseCommentDTO[]>([]);
+    const [comments, setComments] = useState<CommentDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [newComment, setNewComment] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Edit state
     const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
     const [editContent, setEditContent] = useState("");
+    const [replyingToId, setReplyingToId] = useState<number | null>(null);
+    const [replyContent, setReplyContent] = useState("");
+    const [likingIds, setLikingIds] = useState<Set<number>>(new Set());
 
-    const fetchComments = async () => {
+    const fetchComments = useCallback(async () => {
         try {
-            const response = await CourseInteractionControllerService.getComments(courseId);
-            // Handle multiple possible API response shapes
-            let data: CourseCommentDTO[] = [];
-            if (Array.isArray(response)) {
-                data = response;
-            } else if (response && Array.isArray(response.data)) {
-                data = response.data;
-            } else if (response && response.success && Array.isArray(response.data)) {
-                data = response.data;
-            } else if (response && Array.isArray((response as any).content)) {
-                data = (response as any).content;
+            setLoading(true);
+            const response = await CommentService.getComments(courseId);
+            let data: CommentDTO[] = [];
+            const raw = response?.data;
+            if (Array.isArray(raw)) {
+                data = raw;
+            } else if (raw && 'content' in raw && Array.isArray((raw as any).content)) {
+                data = (raw as any).content;
             }
-            setComments(data);
+            setComments(data.filter(c => !c.deleted));
         } catch (error) {
-            console.error("Erreur lors de la récupération des commentaires:", error);
+            console.error("Erreur récupération commentaires:", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [courseId]);
 
     useEffect(() => {
         fetchComments();
-    }, [courseId]);
+    }, [fetchComments]);
 
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newComment.trim()) return;
-
         setIsSubmitting(true);
         try {
-            const response = await CourseInteractionControllerService.addComment(courseId, { content: newComment });
-            if (response.success && response.data) {
-                toast.success("Commentaire ajouté");
+            const response = await CommentService.addComment(courseId, newComment.trim());
+            if (response?.data) {
+                setComments(prev => [response.data!, ...prev]);
                 setNewComment("");
-                // Reload comments or append locally
-                await fetchComments();
+                toast.success("Commentaire ajouté");
             }
         } catch (error) {
             toast.error("Échec de l'ajout du commentaire");
-            console.error(error);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleDelete = async (commentId: number) => {
-        if (!confirm("Voulez-vous vraiment supprimer ce commentaire ?")) return;
-
+    const handleAddReply = async (parentId: number) => {
+        if (!replyContent.trim()) return;
         try {
-            await CourseInteractionControllerService.deleteComment(courseId, commentId);
-            toast.success("Commentaire supprimé");
-            setComments(comments.filter(c => c.id !== commentId));
-        } catch (error) {
-            toast.error("Échec de la suppression");
-            console.error(error);
+            const response = await CommentService.addComment(courseId, replyContent.trim(), parentId);
+            if (response?.data) {
+                setComments(prev => prev.map(c =>
+                    c.id === parentId
+                        ? { ...c, replies: [...(c.replies || []), response.data!] }
+                        : c
+                ));
+                setReplyContent("");
+                setReplyingToId(null);
+                toast.success("Réponse ajoutée");
+            }
+        } catch {
+            toast.error("Échec de l'ajout de la réponse");
         }
     };
 
-    const startEdit = (comment: CourseCommentDTO) => {
-        if (!comment.id) return;
-        setEditingCommentId(comment.id);
-        setEditContent(comment.content || "");
-    };
-
-    const cancelEdit = () => {
-        setEditingCommentId(null);
-        setEditContent("");
+    const handleDelete = async (commentId: number, isReply?: boolean, parentId?: number) => {
+        if (!confirm("Voulez-vous vraiment supprimer ce commentaire ?")) return;
+        try {
+            await CommentService.deleteComment(commentId);
+            if (isReply && parentId) {
+                setComments(prev => prev.map(c =>
+                    c.id === parentId
+                        ? { ...c, replies: (c.replies || []).filter(r => r.id !== commentId) }
+                        : c
+                ));
+            } else {
+                setComments(prev => prev.filter(c => c.id !== commentId));
+            }
+            toast.success("Commentaire supprimé");
+        } catch {
+            toast.error("Échec de la suppression");
+        }
     };
 
     const handleUpdateComment = async (commentId: number) => {
         if (!editContent.trim()) return;
+        try {
+            const response = await CommentService.updateComment(commentId, editContent.trim());
+            if (response?.data) {
+                setComments(prev => prev.map(c =>
+                    c.id === commentId ? { ...c, content: editContent, updatedAt: new Date().toISOString() } : c
+                ));
+                setEditingCommentId(null);
+                toast.success("Commentaire modifié");
+            }
+        } catch {
+            toast.error("Échec de la modification");
+        }
+    };
+
+    const handleLikeComment = async (commentId: number, currentlyLiked: boolean) => {
+        if (likingIds.has(commentId)) return;
+        setLikingIds(prev => new Set(prev).add(commentId));
+
+        // Optimistic update
+        setComments(prev => prev.map(c =>
+            c.id === commentId
+                ? {
+                    ...c,
+                    isLiked: !currentlyLiked,
+                    likeCount: currentlyLiked ? Math.max(0, (c.likeCount || 0) - 1) : (c.likeCount || 0) + 1,
+                }
+                : c
+        ));
 
         try {
-            const response = await CourseInteractionControllerService.updateComment(courseId, commentId, { content: editContent });
-            if (response.success) {
-                toast.success("Commentaire modifié");
-                setEditingCommentId(null);
-                await fetchComments();
+            if (currentlyLiked) {
+                await LikeService.removeLike('COMMENT', commentId);
+            } else {
+                const res = await LikeService.addLike('COMMENT', commentId);
+                if (res?.data) {
+                    setComments(prev => prev.map(c =>
+                        c.id === commentId ? { ...c, likeCount: res.data!.likeCount, isLiked: res.data!.liked } : c
+                    ));
+                }
             }
-        } catch (error) {
-            toast.error("Échec de la modification");
-            console.error(error);
+        } catch {
+            // Rollback
+            setComments(prev => prev.map(c =>
+                c.id === commentId
+                    ? { ...c, isLiked: currentlyLiked, likeCount: currentlyLiked ? (c.likeCount || 0) + 1 : Math.max(0, (c.likeCount || 0) - 1) }
+                    : c
+            ));
+        } finally {
+            setLikingIds(prev => { const s = new Set(prev); s.delete(commentId); return s; });
         }
     };
 
@@ -113,9 +160,113 @@ const CourseComments: React.FC<CourseCommentsProps> = ({ courseId }) => {
         if (!dateString) return "";
         return new Date(dateString).toLocaleDateString('fr-FR', {
             day: 'numeric', month: 'long', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
+            hour: '2-digit', minute: '2-digit',
         });
     };
+
+    const CommentItem: React.FC<{ comment: CommentDTO; isReply?: boolean; parentId?: number }> = ({
+        comment, isReply = false, parentId,
+    }) => (
+        <div className={`flex gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 ${isReply ? 'ml-10 mt-2' : ''}`}>
+            <div className="flex-shrink-0">
+                {comment.userPhotoUrl ? (
+                    <img src={comment.userPhotoUrl} alt={comment.userFullName} className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                    <div className="w-9 h-9 rounded-full bg-purple-200 dark:bg-purple-900/50 flex items-center justify-center text-purple-700 dark:text-purple-300 font-bold text-sm">
+                        {comment.userFullName?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                )}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start mb-1 gap-2">
+                    <div>
+                        <span className="font-bold text-gray-900 dark:text-white mr-2 text-sm">
+                            {comment.userFullName || "Utilisateur inconnu"}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                            {formatDate(comment.createdAt)}
+                            {comment.updatedAt && comment.updatedAt !== comment.createdAt && " (modifié)"}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Like commentaire */}
+                        {isAuthenticated && (
+                            <button
+                                onClick={(e) => { e.preventDefault(); handleLikeComment(comment.id!, comment.isLiked || false); }}
+                                className={`flex items-center gap-1 text-xs transition-all ${comment.isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+                            >
+                                <Heart
+                                    className={`w-3.5 h-3.5 transition-all duration-300 ${comment.isLiked ? 'fill-current scale-110' : ''} ${likingIds.has(comment.id!) ? 'animate-pulse' : ''}`}
+                                    strokeWidth={1.5}
+                                />
+                                {comment.likeCount ? comment.likeCount : ''}
+                            </button>
+                        )}
+                        {/* Répondre */}
+                        {isAuthenticated && !isReply && (
+                            <button
+                                onClick={() => setReplyingToId(replyingToId === comment.id ? null : comment.id!)}
+                                className="text-xs text-gray-400 hover:text-purple-600 transition-colors"
+                            >
+                                <CornerDownRight size={14} />
+                            </button>
+                        )}
+                        {/* Modifier / Supprimer (auteur uniquement) */}
+                        {isAuthenticated && user?.id === comment.userId && editingCommentId !== comment.id && (
+                            <>
+                                <button onClick={() => { setEditingCommentId(comment.id!); setEditContent(comment.content || ""); }} className="text-gray-400 hover:text-purple-600 transition-colors" title="Modifier">
+                                    <Edit2 size={14} />
+                                </button>
+                                <button onClick={() => comment.id && handleDelete(comment.id, isReply, parentId)} className="text-gray-400 hover:text-red-600 transition-colors" title="Supprimer">
+                                    <Trash2 size={14} />
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {editingCommentId === comment.id ? (
+                    <div className="mt-2">
+                        <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="w-full bg-white dark:bg-gray-900 border rounded-lg p-3 text-sm focus:ring-1 focus:ring-purple-500 mb-2 min-h-[70px]"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingCommentId(null)} className="flex items-center gap-1 text-xs px-3 py-1 text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 rounded-md">
+                                <X size={12} /> Annuler
+                            </button>
+                            <button onClick={() => comment.id && handleUpdateComment(comment.id)} className="flex items-center gap-1 text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md">
+                                <Check size={12} /> Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mt-1">{comment.content}</p>
+                )}
+
+                {/* Formulaire réponse */}
+                {replyingToId === comment.id && (
+                    <div className="mt-3 flex gap-2">
+                        <input
+                            type="text"
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            placeholder="Écrire une réponse..."
+                            className="flex-1 bg-white dark:bg-gray-900 border rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-purple-500"
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddReply(comment.id!); } }}
+                        />
+                        <button onClick={() => handleAddReply(comment.id!)} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg">
+                            <Send size={14} />
+                        </button>
+                        <button onClick={() => { setReplyingToId(null); setReplyContent(""); }} className="text-gray-400 hover:text-gray-600 px-2">
+                            <X size={14} />
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 
     return (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 mb-8 border border-gray-100 dark:border-gray-800">
@@ -143,82 +294,25 @@ const CourseComments: React.FC<CourseCommentsProps> = ({ courseId }) => {
                 </form>
             ) : (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 text-center mb-8">
-                    <p className="text-gray-600 dark:text-gray-400">
-                        Connectez-vous pour participer à la discussion.
-                    </p>
+                    <p className="text-gray-600 dark:text-gray-400">Connectez-vous pour participer à la discussion.</p>
                 </div>
             )}
 
             {loading ? (
                 <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
                 </div>
             ) : comments.length === 0 ? (
                 <p className="text-center text-gray-500 dark:text-gray-400 py-4">Soyez le premier à commenter ce cours !</p>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {comments.map((comment) => (
-                        <div key={comment.id} className="flex gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                            {/* Avatar */}
-                            <div className="flex-shrink-0">
-                                {comment.userPhotoUrl ? (
-                                    <img src={comment.userPhotoUrl} alt={comment.userFullName} className="w-10 h-10 rounded-full object-cover" />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-purple-200 dark:bg-purple-900/50 flex items-center justify-center text-purple-700 dark:text-purple-300 font-bold">
-                                        {comment.userFullName?.charAt(0).toUpperCase() || '?'}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Contenu */}
-                            <div className="flex-1">
-                                <div className="flex justify-between items-start mb-1">
-                                    <div>
-                                        <span className="font-bold text-gray-900 dark:text-white mr-2">
-                                            {comment.userFullName || "Utilisateur inconnu"}
-                                        </span>
-                                        <span className="text-sm text-gray-500">
-                                            {formatDate(comment.createdAt)}
-                                            {comment.updatedAt && comment.updatedAt !== comment.createdAt && " (modifié)"}
-                                        </span>
-                                    </div>
-
-                                    {/* Actions (seulement pour l'auteur) */}
-                                    {isAuthenticated && user?.id === comment.userId && editingCommentId !== comment.id && (
-                                        <div className="flex gap-2">
-                                            <button onClick={() => startEdit(comment)} className="text-gray-400 hover:text-purple-600 transition-colors" title="Modifier">
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button onClick={() => comment.id && handleDelete(comment.id)} className="text-gray-400 hover:text-red-600 transition-colors" title="Supprimer">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Edition ou Affichage */}
-                                {editingCommentId === comment.id ? (
-                                    <div className="mt-2">
-                                        <textarea
-                                            value={editContent}
-                                            onChange={(e) => setEditContent(e.target.value)}
-                                            className="w-full bg-white dark:bg-gray-900 border rounded-lg p-3 text-sm focus:ring-1 focus:ring-purple-500 mb-2 min-h-[80px]"
-                                        />
-                                        <div className="flex justify-end gap-2">
-                                            <button onClick={cancelEdit} className="flex items-center gap-1 text-sm px-3 py-1 text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 rounded-md">
-                                                <X size={14} /> Annuler
-                                            </button>
-                                            <button onClick={() => comment.id && handleUpdateComment(comment.id)} className="flex items-center gap-1 text-sm px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md">
-                                                <Check size={14} /> Enregistrer
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mt-1">
-                                        {comment.content}
-                                    </p>
-                                )}
-                            </div>
+                        <div key={comment.id}>
+                            <CommentItem comment={comment} />
+                            {/* Réponses imbriquées */}
+                            {(comment.replies || []).map(reply => (
+                                <CommentItem key={reply.id} comment={reply} isReply parentId={comment.id} />
+                            ))}
                         </div>
                     ))}
                 </div>

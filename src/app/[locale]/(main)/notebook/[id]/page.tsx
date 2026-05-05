@@ -13,6 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Notebook, Source, ChatMessage, StudioActivity } from '@/types/notebook';
 import { MindMapGraph } from '@/components/studio/MindMapGraph';
 import toast from 'react-hot-toast';
+import { getAuthToken } from '@/utils/authHelpers';
+
 
 // Interfaces are now imported from @/types/notebook
 
@@ -164,11 +166,25 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
     }
 
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/notebooks/chat`, {
+      const token = getAuthToken();
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xccm1.duckdns.org';
+      const url = `${baseUrl}/api/v1/notebooks/chat`;
+      console.log('Fetching notebook chat from:', url);
+
+
+
+
+      
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
         body: JSON.stringify({ notebook_id: currentId, message: inputMessage })
       });
+
+
 
       if (!res.ok) throw new Error("API Issue");
       const data = await res.json();
@@ -244,10 +260,23 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
           formData.append('source_id', apiSource.id || '');
           formData.append('file', file);
 
-          await fetch(`http://localhost:8000/api/v1/notebooks/index`, {
+          const token = getAuthToken();
+          const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xccm1.duckdns.org';
+          const url = `${baseUrl}/api/v1/notebooks/index`;
+          console.log('Indexing at:', url);
+          
+          await fetch(url, {
             method: 'POST',
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
             body: formData
           });
+
+
+
+
+
         } catch (indexErr) {
           console.error("Indexation failed for", file.name, indexErr);
         }
@@ -296,10 +325,20 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
     const toastId = toast.loading(`Génération de : ${label}... (Ceci peut prendre une minute)`);
     try {
       // Connect to LLM-SERVICE
-      const res = await fetch(`http://localhost:8000/api/v1/notebooks/studio/generate`, {
+      const token = getAuthToken();
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xccm1.duckdns.org';
+      const url = `${baseUrl}/api/v1/notebooks/studio/generate`;
+      console.log('Fetching generation from:', url);
+
+
+
+
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
         },
         body: JSON.stringify({
           notebook_id: currentId,
@@ -307,6 +346,8 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
           topic: "Synthèse générale"
         })
       });
+
+
 
       if (!res.ok) {
         throw new Error("HTTP error " + res.status);

@@ -72,13 +72,23 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     }
                 } else if (type === 'CURSOR') {
                     const cursorInfo = action.payload || {};
-                    setRemoteCursors(prev => {
-                        const newMap = new Map(prev);
-                        if (cursorInfo.authorId) {
-                            newMap.set(cursorInfo.authorId, cursorInfo);
+                    if (cursorInfo.authorId && cursorInfo.pos !== undefined && editorInstance) {
+                        try {
+                            // Calcul local des coordonnées sur l'écran du récepteur
+                            const coords = editorInstance.view.coordsAtPos(cursorInfo.pos);
+                            // Conversion des coordonnées de la fenêtre (viewport) en coordonnées de la page entière (absolute)
+                            cursorInfo.x = coords.left + window.scrollX;
+                            cursorInfo.y = coords.top + window.scrollY;
+                            
+                            setRemoteCursors(prev => {
+                                const newMap = new Map(prev);
+                                newMap.set(cursorInfo.authorId, cursorInfo);
+                                return newMap;
+                            });
+                        } catch (e) {
+                            // Ignoré si la position n'existe pas encore chez le récepteur
                         }
-                        return newMap;
-                    });
+                    }
                 }
             } catch (e) {
                 console.error("Erreur parsing message:", e);
@@ -107,9 +117,6 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
 
             // 1. Send Caret coordinates for Overleaf-style cursors
             try {
-                // Obtenir les coordonnées X/Y exactes de la position du curseur dans le texte
-                const coords = editorInstance.view.coordsAtPos(head);
-                
                 stompClient.publish({
                     destination: `/app/projet/${courseId}/action`,
                     body: JSON.stringify({
@@ -117,15 +124,12 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         payload: {
                             authorId: user?.id || `anon-${Date.now()}`,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
-                            x: coords.left,
-                            y: coords.top,
+                            pos: head, // Envoyer l'index de position dans le document
                             color: myColor
                         }
                     })
                 });
-            } catch (err) {
-                // Ignore if coordsAtPos fails (e.g. editor not fully rendered)
-            }
+            } catch (err) { }
 
             // 2. Lock logic for blocks (granules)
             let currentNodeId = null;

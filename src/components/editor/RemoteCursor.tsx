@@ -14,11 +14,11 @@ export default function RemoteCursor({ userName, x, y, color }: RemoteCursorProp
     return (
         <div
             style={{
-                position: 'fixed',
+                position: 'absolute', // Absolute permet au curseur de défiler avec la page
                 left: 0,
                 top: 0,
                 transform: `translate(${x}px, ${y}px)`,
-                zIndex: 9999, // Au-dessus de tout
+                zIndex: 50, // Juste au-dessus du texte
                 pointerEvents: 'none',
                 transition: 'transform 100ms ease-out', // Smooth transition for typing/moving
                 willChange: 'transform'

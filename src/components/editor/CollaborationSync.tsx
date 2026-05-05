@@ -72,22 +72,12 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     }
                 } else if (type === 'CURSOR') {
                     const cursorInfo = action.payload || {};
-                    if (cursorInfo.authorId && cursorInfo.pos !== undefined && editorInstance) {
-                        try {
-                            // Calcul local des coordonnées sur l'écran du récepteur
-                            const coords = editorInstance.view.coordsAtPos(cursorInfo.pos);
-                            // Conversion des coordonnées de la fenêtre (viewport) en coordonnées de la page entière (absolute)
-                            cursorInfo.x = coords.left + window.scrollX;
-                            cursorInfo.y = coords.top + window.scrollY;
-                            
-                            setRemoteCursors(prev => {
-                                const newMap = new Map(prev);
-                                newMap.set(cursorInfo.authorId, cursorInfo);
-                                return newMap;
-                            });
-                        } catch (e) {
-                            // Ignoré si la position n'existe pas encore chez le récepteur
-                        }
+                    if (cursorInfo.authorId && cursorInfo.x !== undefined && cursorInfo.y !== undefined) {
+                        setRemoteCursors(prev => {
+                            const newMap = new Map(prev);
+                            newMap.set(cursorInfo.authorId, cursorInfo);
+                            return newMap;
+                        });
                     }
                 }
             } catch (e) {
@@ -100,22 +90,14 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         };
     }, [stompClient, isConnected, courseId, editorRef, user?.id, editorInstance]);
 
-    // Listen to TipTap cursor movements to publish Locks AND Caret coordinates
+    // Track local mouse movements to broadcast fluid cursors
     useEffect(() => {
-        if (!editorInstance || !stompClient || !isConnected || !courseId) return;
+        if (!isConnected || !stompClient || !courseId) return;
 
-        // Générer la couleur unique de l'utilisateur
         const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
 
-        let lastLockedNodeId: string | null = null;
-        let timer: NodeJS.Timeout | null = null;
-
-        const handleSelectionUpdate = throttle(() => {
-            const { selection } = editorInstance.state;
-            const { $anchor, head } = selection;
-
-            // 1. Send Caret coordinates for Overleaf-style cursors
+        const handleMouseMove = throttle((e: MouseEvent) => {
             try {
                 stompClient.publish({
                     destination: `/app/projet/${courseId}/action`,
@@ -124,14 +106,37 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         payload: {
                             authorId: user?.id || `anon-${Date.now()}`,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
-                            pos: head, // Envoyer l'index de position dans le document
+                            x: e.clientX + window.scrollX, // Coordonnée absolue de la page
+                            y: e.clientY + window.scrollY,
                             color: myColor
                         }
                     })
                 });
             } catch (err) { }
+        }, 75);
 
-            // 2. Lock logic for blocks (granules)
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => {
+            handleMouseMove.cancel();
+            window.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, [stompClient, isConnected, courseId, user]);
+
+    // Listen to TipTap cursor movements to publish Locks
+    useEffect(() => {
+        if (!editorInstance || !stompClient || !isConnected || !courseId) return;
+
+        const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
+        const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
+
+        let lastLockedNodeId: string | null = null;
+        let timer: NodeJS.Timeout | null = null;
+
+        const handleSelectionUpdate = throttle(() => {
+            const { selection } = editorInstance.state;
+            const { $anchor } = selection;
+
+            // Lock logic for blocks (granules)
             let currentNodeId = null;
             for (let depth = $anchor.depth; depth > 0; depth--) {
                 const node = $anchor.node(depth);

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
 import { Check, X, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -27,6 +28,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function NotificationsView() {
+    const router = useRouter();
     const t = useTranslations('teacherDashboard.notifications');
     const { invitations, isLoading } = useTeacherInvitations();
     const [resolvedActions, setResolvedActions] = useState<Record<number, 'APPROVED' | 'REJECTED'>>({});
@@ -36,8 +38,11 @@ export default function NotificationsView() {
         setResolvedActions((prev) => ({ ...prev, [id]: 'APPROVED' }));
         toast.success(t('acceptSuccess'));
 
+        let isSuccess = false;
+
         try {
             await EnrollmentControllerService.validateEnrollment(id, 'APPROVED');
+            isSuccess = true;
         } catch (error) {
             try {
                 // Fallback: some backends expose the invited enrollment through the course endpoint
@@ -47,23 +52,22 @@ export default function NotificationsView() {
 
                 if (resolvedEnrollmentId && resolvedEnrollmentId !== id) {
                     await EnrollmentControllerService.validateEnrollment(resolvedEnrollmentId, 'APPROVED');
-                    return;
+                    isSuccess = true;
+                } else {
+                    throw new Error("No valid resolved enrollment id found");
                 }
             } catch (fallbackError) {
                 try {
                     await EnrollmentControllerService.enrollInCourse(courseId);
-                    return;
+                    isSuccess = true;
                 } catch (courseFallbackError) {
                     console.error("Backend failed on all fallback methods for enrollment validation.");
-                    return;
                 }
             }
-
-            try {
-                await EnrollmentControllerService.enrollInCourse(courseId);
-            } catch (courseFallbackError) {
-                console.error("Backend failed to enroll in course on secondary fallback.");
-            }
+        }
+        
+        if (isSuccess) {
+            router.push(`/editor?courseId=${courseId}`);
         }
     };
 

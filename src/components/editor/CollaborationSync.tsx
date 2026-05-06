@@ -52,9 +52,20 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
 
                 if (type === 'BLOCK_UPDATE') {
                     const blockContent = action.content || lockInfo.content;
+                    console.debug('📥 BLOCK_UPDATE reçu', {
+                        nodeId: lockInfo.nodeId,
+                        hasContent: !!blockContent,
+                        hasEditor: !!editor,
+                        actionKeys: Object.keys(action),
+                        payloadKeys: Object.keys(lockInfo),
+                    });
+
                     if (blockContent && lockInfo.nodeId && editor) {
                         let blockJson;
-                        try { blockJson = JSON.parse(blockContent); } catch { return; }
+                        try { blockJson = JSON.parse(blockContent); } catch {
+                            console.error('❌ JSON parse du contenu échoué');
+                            return;
+                        }
 
                         // Chercher le nœud dans le document local
                         let targetPos = -1;
@@ -68,6 +79,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             }
                         });
 
+                        console.debug('🔍 Recherche nœud', { nodeId: lockInfo.nodeId, targetPos, targetNodeSize });
+
                         // Remplacement chirurgical via l'API ProseMirror intégrée à TipTap
                         if (targetPos !== -1) {
                             try {
@@ -79,9 +92,12 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                                     }
                                     return true;
                                 });
+                                console.debug('✅ Bloc remplacé avec succès', { nodeId: lockInfo.nodeId });
                             } catch (e) {
-                                console.error('Erreur remplacement de bloc:', e);
+                                console.error('❌ Erreur remplacement de bloc:', e);
                             }
+                        } else {
+                            console.warn('⚠️ Nœud non trouvé dans le document local:', lockInfo.nodeId);
                         }
                     }
                 } else if (type === 'MOVE') {
@@ -265,7 +281,11 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             // Ne pas rediffuser les changements reçus de collaborateurs distants
             if (transaction?.getMeta('isRemote')) return;
 
-            const { state } = editorInstance;
+            // ✅ FIX: Lire l'état ACTUEL de l'éditeur via la ref, pas la closure périmée
+            const editor = editorInstanceRef.current;
+            if (!editor) return;
+
+            const { state } = editor;
             const { selection } = state;
 
             let currentBlockNode: any = null;
@@ -278,21 +298,25 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             }
 
             if (currentBlockNode) {
+                const nodeJson = JSON.stringify(currentBlockNode.toJSON());
+                console.debug('📤 BLOCK_UPDATE envoyé', { nodeId: currentBlockNode.attrs.id, size: nodeJson.length });
                 try {
                     stompClient.publish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'BLOCK_UPDATE',
                             granuleId: parseInt(currentBlockNode.attrs.id) || 0,
-                            content: JSON.stringify(currentBlockNode.toJSON()),
+                            content: nodeJson,
                             payload: {
                                 authorId: user?.id || sessionId.current,
                                 nodeId: currentBlockNode.attrs.id,
-                                content: JSON.stringify(currentBlockNode.toJSON())
+                                content: nodeJson
                             }
                         })
                     });
-                } catch { }
+                } catch (e) {
+                    console.error('❌ BLOCK_UPDATE publish error:', e);
+                }
             }
         }, 300);
 

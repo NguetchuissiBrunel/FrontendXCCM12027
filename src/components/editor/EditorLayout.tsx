@@ -1,22 +1,3 @@
-/**
- * EDITOR LAYOUT COMPONENT - WITH DARK MODE & REAL-TIME TOC
- * 
- * Main layout container for the XCCM editor.
- * Implements three-column layout: TOC (left) | Main Editor (center) | IconBar + Panels (right)
- * 
- * Now with real-time Table of Contents extraction from TipTap editor!
- * Dark mode support added matching rest of site (Navbar colors)
- * 
- * Features added:
- * - Exercise management panel
- * - Grading interface
- * - Real-time course editing
- * 
- * @author ALD
- * @date November 2025
- * @updated January 2026
- */
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -746,7 +727,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   return (
     <CollaborationProvider courseId={currentCourseId}>
-      <CollaborationSync editorRef={editorRef} editorInstance={editorInstance} />
       <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
         {/* Entrance Modal */}
         <EditorEntranceModal
@@ -885,7 +865,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 setEditorInstance(editor);
               }}
               ref={editorRef}
-            />
+            >
+              <CollaborationSync editorRef={editorRef} editorInstance={editorInstance} />
+            </MainEditor>
           </main>
 
           {/* Resizer Handle */}
@@ -954,6 +936,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 label={t('panels.workshops')}
                 panelType="worksheet"
                 colorClass="text-indigo-600 dark:text-indigo-400"
+                disabled={!currentCourseId}
               />
               <IconButton
                 icon={<FaCog id="icon-settings" />}

@@ -60,6 +60,7 @@ interface MainEditorProps {
   initialContent?: string;
   onContentChange?: (content: string) => void;
   onEditorReady?: (editor: any) => void; // Callback when editor is ready
+  children?: React.ReactNode;
 }
 
 // Define the Indent extension since it's not in starter-kit by default in the way we might want, 
@@ -255,7 +256,8 @@ const CustomDocument = Document.extend({
 export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   initialContent,
   onContentChange,
-  onEditorReady
+  onEditorReady,
+  children
 }, ref) => {
   const [zoom, setZoom] = useState(100);
   const [showQuickExerciseModal, setShowQuickExerciseModal] = useState(false);
@@ -1223,6 +1225,8 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             onClick={() => editor?.chain().focus().run()}
           >
             <div
+              id="xccm-editor-page"
+              className="relative"
               style={{
                 transform: `scale(${zoom / 100})`,
                 transformOrigin: 'top left',
@@ -1232,6 +1236,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               onDragOver={(e) => e.preventDefault()}
             >
               <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
+              {children}
             </div>
           </div>
         </div>

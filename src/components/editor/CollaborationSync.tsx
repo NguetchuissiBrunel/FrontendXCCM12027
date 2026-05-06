@@ -42,7 +42,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
 
                 // Ignorer ses propres actions
                 const myId = user?.id || sessionId.current;
-                if (action.payload?.authorId === myId || action.authorId === myId) return;
+                const authorId = action.payload?.authorId || action.authorId;
+                if (authorId === myId) return;
 
                 const type = action.type;
                 const lockInfo = action.payload || {};
@@ -166,6 +167,22 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
 
         const handleMouseMove = throttle((e: MouseEvent) => {
+            const page = document.getElementById('xccm-editor-page');
+            if (!page) return;
+
+            const rect = page.getBoundingClientRect();
+            
+            // Get current zoom level from the container's transform or width ratio
+            // Since we know the base width is 21cm, we can calculate the scale
+            // 21cm is approximately 793.7px (at 96 DPI)
+            // But it's more reliable to just get the scale from the transform matrix
+            const style = window.getComputedStyle(page);
+            const matrix = new DOMMatrix(style.transform);
+            const scale = matrix.a || 1; // matrix.a is the horizontal scale
+
+            const x = (e.clientX - rect.left) / scale;
+            const y = (e.clientY - rect.top) / scale;
+
             try {
                 stompClient.publish({
                     destination: `/app/projet/${courseId}/action`,
@@ -174,8 +191,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         payload: {
                             authorId: user?.id || sessionId.current,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
-                            x: e.clientX + window.scrollX,
-                            y: e.clientY + window.scrollY,
+                            x,
+                            y,
                             color: myColor
                         }
                     })
@@ -197,8 +214,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
 
-        let lastLockedNodeId: string | null = null;
-        let timer: NodeJS.Timeout | null = null;
+        const lastLockedNodeIdRef = useRef<string | null>(null);
 
         const handleSelectionUpdate = throttle(() => {
             const { selection } = editorInstance.state;
@@ -213,58 +229,60 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 }
             }
 
-            if (currentNodeId !== lastLockedNodeId) {
-                if (timer) clearTimeout(timer);
-                timer = setTimeout(() => {
-                    if (lastLockedNodeId) {
-                        stompClient.publish({
-                            destination: `/app/projet/${courseId}/action`,
-                            body: JSON.stringify({
-                                type: 'UNLOCK',
-                                granuleId: parseInt(lastLockedNodeId) || 0,
-                                payload: { 
-                                    authorId: user?.id,
-                                    nodeId: lastLockedNodeId
-                                }
-                            })
-                        });
-                    }
-                    if (currentNodeId) {
-                        stompClient.publish({
-                            destination: `/app/projet/${courseId}/action`,
-                            body: JSON.stringify({
-                                type: 'LOCK',
-                                granuleId: parseInt(currentNodeId) || 0,
-                                payload: {
-                                    authorId: user?.id,
-                                    userName: user?.firstName || user?.email || 'Anonyme',
-                                    color: myColor,
-                                    nodeId: currentNodeId
-                                }
-                            })
-                        });
-                    }
-                    lastLockedNodeId = currentNodeId;
-                }, 100);
+            if (currentNodeId !== lastLockedNodeIdRef.current) {
+                const oldId = lastLockedNodeIdRef.current;
+                const myId = user?.id || sessionId.current;
+
+                if (oldId) {
+                    stompClient.publish({
+                        destination: `/app/projet/${courseId}/action`,
+                        body: JSON.stringify({
+                            type: 'UNLOCK',
+                            granuleId: 0, // Fallback nodeId used in payload
+                            payload: { 
+                                authorId: myId,
+                                nodeId: oldId
+                            }
+                        })
+                    });
+                }
+
+                if (currentNodeId) {
+                    stompClient.publish({
+                        destination: `/app/projet/${courseId}/action`,
+                        body: JSON.stringify({
+                            type: 'LOCK',
+                            granuleId: 0, // Fallback nodeId used in payload
+                            payload: {
+                                authorId: myId,
+                                userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
+                                color: myColor,
+                                nodeId: currentNodeId
+                            }
+                        })
+                    });
+                }
+                lastLockedNodeIdRef.current = currentNodeId;
             }
-        }, 100);
+        }, 150);
 
         editorInstance.on('selectionUpdate', handleSelectionUpdate);
 
         return () => {
             editorInstance.off('selectionUpdate', handleSelectionUpdate);
             handleSelectionUpdate.cancel();
-            if (timer) clearTimeout(timer);
-            if (lastLockedNodeId && stompClient.active) {
+            
+            if (lastLockedNodeIdRef.current && stompClient.active) {
                 try {
+                    const myId = user?.id || sessionId.current;
                     stompClient.publish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'UNLOCK',
-                            granuleId: parseInt(lastLockedNodeId) || 0,
+                            granuleId: 0,
                             payload: { 
-                                authorId: user?.id,
-                                nodeId: lastLockedNodeId
+                                authorId: myId,
+                                nodeId: lastLockedNodeIdRef.current
                             }
                         })
                     });

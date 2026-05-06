@@ -22,17 +22,12 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
 
     const sessionId = useRef(`anon-${Math.random().toString(36).substr(2, 9)}`);
 
-    // ✅ FIX CRITIQUE : Ref vers l'instance de l'éditeur pour éviter le bug de closure.
-    // La subscription STOMP est créée une seule fois. Si editorInstance était null à ce moment,
-    // il resterait null pour toujours dans la closure. La ref est TOUJOURS à jour.
     const editorInstanceRef = useRef<Editor | null | undefined>(null);
     useEffect(() => {
         editorInstanceRef.current = editorInstance;
     }, [editorInstance]);
 
-    // ─── Subscription principale : reçoit TOUS les messages du projet ───────────
-    // ✅ FIX : Plus de garde sur editorRef?.current ni editorInstance dans les deps.
-    //    On utilise editorInstanceRef pour lire la dernière instance disponible.
+    // ─── Subscription principale ────────────────────────────────────────────────
     useEffect(() => {
         if (!isConnected || !stompClient || !courseId) return;
 
@@ -47,28 +42,14 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
 
                 const type = action.type;
                 const lockInfo = action.payload || {};
-
-                // ✅ On lit toujours la ref qui pointe vers l'éditeur ACTUEL
                 const editor = editorInstanceRef.current;
 
                 if (type === 'BLOCK_UPDATE') {
                     const blockContent = action.content || lockInfo.content;
-                    console.debug('📥 BLOCK_UPDATE reçu', {
-                        nodeId: lockInfo.nodeId,
-                        hasContent: !!blockContent,
-                        hasEditor: !!editor,
-                        actionKeys: Object.keys(action),
-                        payloadKeys: Object.keys(lockInfo),
-                    });
-
                     if (blockContent && lockInfo.nodeId && editor) {
                         let blockJson;
-                        try { blockJson = JSON.parse(blockContent); } catch {
-                            console.error('❌ JSON parse du contenu échoué');
-                            return;
-                        }
+                        try { blockJson = JSON.parse(blockContent); } catch { return; }
 
-                        // Chercher le nœud dans le document local
                         let targetPos = -1;
                         let targetNodeSize = 0;
 
@@ -76,29 +57,21 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             if (node.attrs && node.attrs.id === lockInfo.nodeId) {
                                 targetPos = pos;
                                 targetNodeSize = node.nodeSize;
-                                return false; // Arrêter la recherche
+                                return false;
                             }
                         });
 
-                        console.debug('🔍 Recherche nœud', { nodeId: lockInfo.nodeId, targetPos, targetNodeSize });
-
-                        // Remplacement chirurgical via l'API ProseMirror intégrée à TipTap
                         if (targetPos !== -1) {
                             try {
                                 const newNode = editor.schema.nodeFromJSON(blockJson);
                                 editor.commands.command(({ tr, dispatch }) => {
                                     if (dispatch) {
                                         tr.replaceWith(targetPos, targetPos + targetNodeSize, newNode);
-                                        tr.setMeta('isRemote', true); // Évite la boucle infinie
+                                        tr.setMeta('isRemote', true);
                                     }
                                     return true;
                                 });
-                                console.debug('✅ Bloc remplacé avec succès', { nodeId: lockInfo.nodeId });
-                            } catch (e) {
-                                console.error('❌ Erreur remplacement de bloc:', e);
-                            }
-                        } else {
-                            console.warn('⚠️ Nœud non trouvé dans le document local:', lockInfo.nodeId);
+                            } catch (e) { console.error(e); }
                         }
                     }
                 } else if (type === 'MOVE') {
@@ -106,7 +79,19 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         editorRef.current.handleTOCAction('move', action.payload.itemId, {
                             targetId: action.payload.targetId,
                             position: action.payload.position
-                        });
+                        }, true);
+                    }
+                } else if (type === 'DELETE') {
+                    if (editorRef.current && action.nodeId) {
+                        editorRef.current.handleTOCAction('delete', action.nodeId, null, true);
+                    }
+                } else if (type === 'RENAME') {
+                    if (editorRef.current && action.nodeId && action.newTitle) {
+                        editorRef.current.handleTOCAction('rename', action.nodeId, action.newTitle, true);
+                    }
+                } else if (type === 'DUPLICATE') {
+                    if (editorRef.current && action.nodeId) {
+                        editorRef.current.handleTOCAction('duplicate', action.nodeId, null, true);
                     }
                 } else if (type === 'LOCK') {
                     setLockedNodes(prev => {
@@ -127,8 +112,6 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         newMap.delete(idToUnlock);
                         return newMap;
                     });
-
-                    // Mise à jour du contenu si fourni lors du unlock
                     if (action.content && editor) {
                         let jsonContent = action.content;
                         if (typeof action.content === 'string') {
@@ -147,39 +130,25 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         });
                     }
                 }
-            } catch (e) {
-                console.error('Erreur parsing message:', e);
-            }
+            } catch (e) { console.error(e); }
         });
 
-        return () => {
-            subMain.unsubscribe();
-        };
-    // ✅ editorInstance RETIRÉ des dépendances — on utilise la ref à la place.
-    // Évite de recréer la subscription à chaque changement d'état de l'éditeur.
+        return () => subMain.unsubscribe();
     }, [stompClient, isConnected, courseId, editorRef, user?.id]);
 
-    // ─── Diffuse la position du curseur souris (coordonnées absolues) ────────────
+    // ─── Souris ─────────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!isConnected || !stompClient || !courseId) return;
-
         const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
 
         const handleMouseMove = throttle((e: MouseEvent) => {
             const page = document.getElementById('xccm-editor-page');
             if (!page) return;
-
             const rect = page.getBoundingClientRect();
-            
-            // Get current zoom level from the container's transform or width ratio
-            // Since we know the base width is 21cm, we can calculate the scale
-            // 21cm is approximately 793.7px (at 96 DPI)
-            // But it's more reliable to just get the scale from the transform matrix
             const style = window.getComputedStyle(page);
             const matrix = new DOMMatrix(style.transform);
-            const scale = matrix.a || 1; // matrix.a is the horizontal scale
-
+            const scale = matrix.a || 1;
             const x = (e.clientX - rect.left) / scale;
             const y = (e.clientY - rect.top) / scale;
 
@@ -191,9 +160,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         payload: {
                             authorId: user?.id || sessionId.current,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
-                            x,
-                            y,
-                            color: myColor
+                            x, y, color: myColor
                         }
                     })
                 });
@@ -207,22 +174,18 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         };
     }, [stompClient, isConnected, courseId, user]);
 
-    // ─── Envoie un LOCK/UNLOCK quand le curseur se déplace dans l'éditeur ────────
+    // ─── Verrouillage (Selection) ────────────────────────────────────────────────
     useEffect(() => {
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
-
         const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
-
         const lastLockedNodeIdRef = useRef<string | null>(null);
 
         const handleSelectionUpdate = throttle(() => {
             const { selection } = editorInstance.state;
-            const { $anchor } = selection;
-
             let currentNodeId: string | null = null;
-            for (let depth = $anchor.depth; depth > 0; depth--) {
-                const node = $anchor.node(depth);
+            for (let depth = selection.$anchor.depth; depth > 0; depth--) {
+                const node = selection.$anchor.node(depth);
                 if (node && node.attrs && node.attrs.id) {
                     currentNodeId = node.attrs.id;
                     break;
@@ -232,27 +195,22 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             if (currentNodeId !== lastLockedNodeIdRef.current) {
                 const oldId = lastLockedNodeIdRef.current;
                 const myId = user?.id || sessionId.current;
-
                 if (oldId) {
                     stompClient.publish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'UNLOCK',
-                            granuleId: 0, // Fallback nodeId used in payload
-                            payload: { 
-                                authorId: myId,
-                                nodeId: oldId
-                            }
+                            granuleId: 0,
+                            payload: { authorId: myId, nodeId: oldId }
                         })
                     });
                 }
-
                 if (currentNodeId) {
                     stompClient.publish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'LOCK',
-                            granuleId: 0, // Fallback nodeId used in payload
+                            granuleId: 0,
                             payload: {
                                 authorId: myId,
                                 userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
@@ -267,11 +225,9 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         }, 150);
 
         editorInstance.on('selectionUpdate', handleSelectionUpdate);
-
         return () => {
             editorInstance.off('selectionUpdate', handleSelectionUpdate);
             handleSelectionUpdate.cancel();
-            
             if (lastLockedNodeIdRef.current && stompClient.active) {
                 try {
                     const myId = user?.id || sessionId.current;
@@ -280,10 +236,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         body: JSON.stringify({
                             type: 'UNLOCK',
                             granuleId: 0,
-                            payload: { 
-                                authorId: myId,
-                                nodeId: lastLockedNodeIdRef.current
-                            }
+                            payload: { authorId: myId, nodeId: lastLockedNodeIdRef.current }
                         })
                     });
                 } catch { }
@@ -291,15 +244,13 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         };
     }, [editorInstance, stompClient, isConnected, courseId, user]);
 
-    // ─── Diffuse le bloc en cours d'édition (throttle 300ms) ─────────────────────
+    // ─── Mise à jour du contenu et structure ─────────────────────────────────────
     useEffect(() => {
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
 
-        const handleUpdate = throttle(({ transaction }: { transaction: any }) => {
-            // Ne pas rediffuser les changements reçus de collaborateurs distants
+        const handleUpdate = throttle((props?: any) => {
+            const { transaction } = props || {};
             if (transaction?.getMeta('isRemote')) return;
-
-            // ✅ FIX: Lire l'état ACTUEL de l'éditeur via la ref, pas la closure périmée
             const editor = editorInstanceRef.current;
             if (!editor) return;
 
@@ -307,46 +258,95 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             const { selection } = state;
 
             let currentBlockNode: any = null;
+            let parentBlockNode: any = null;
+            
             for (let depth = selection.$anchor.depth; depth > 0; depth--) {
                 const node = selection.$anchor.node(depth);
                 if (node && node.attrs && node.attrs.id) {
-                    currentBlockNode = node;
-                    break;
+                    if (!currentBlockNode) currentBlockNode = node;
+                    else { parentBlockNode = node; break; }
                 }
             }
 
-            if (currentBlockNode) {
-                const nodeJson = JSON.stringify(currentBlockNode.toJSON());
-                console.debug('📤 BLOCK_UPDATE envoyé', { nodeId: currentBlockNode.attrs.id, size: nodeJson.length });
+            const isStructural = transaction?.docChanged && (transaction.steps.some((step: any) => step.slice?.content?.childCount > 0) || transaction.steps.length > 1);
+            let targetNode = (isStructural && parentBlockNode) ? parentBlockNode : currentBlockNode;
+
+            // ✅ FALLBACK : Si on n'a pas de targetNode via la sélection (ex: focus dans un textarea de NodeView pour l'intro)
+            // on cherche quel nœud a été modifié par la transaction (attributs ou contenu)
+            if (!targetNode && transaction?.docChanged) {
+                transaction.steps.forEach((step: any) => {
+                    // Les steps peuvent avoir 'from' ou 'pos' selon leur type
+                    const pos = step.from !== undefined ? step.from : step.pos;
+                    if (pos !== undefined) {
+                        try {
+                            const $pos = state.doc.resolve(pos);
+                            for (let d = $pos.depth; d >= 0; d--) {
+                                const n = $pos.node(d);
+                                if (n?.attrs?.id) {
+                                    targetNode = n;
+                                    break;
+                                }
+                            }
+                        } catch (e) {}
+                    }
+                });
+            }
+
+            if (targetNode) {
+                const nodeJson = JSON.stringify(targetNode.toJSON());
                 try {
                     stompClient.publish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'BLOCK_UPDATE',
-                            granuleId: parseInt(currentBlockNode.attrs.id) || 0,
+                            granuleId: 0,
                             content: nodeJson,
                             payload: {
                                 authorId: user?.id || sessionId.current,
-                                nodeId: currentBlockNode.attrs.id,
-                                content: nodeJson
+                                nodeId: targetNode.attrs.id,
+                                content: nodeJson,
+                                isStructural
                             }
                         })
                     });
-                } catch (e) {
-                    console.error('❌ BLOCK_UPDATE publish error:', e);
-                }
+                } catch (e) { console.error(e); }
             }
         }, 300);
 
-        editorInstance.on('update', handleUpdate);
+        editorInstance.on('update', ({ transaction }) => handleUpdate({ transaction }));
+
+        // Écouter les actions structurelles venant de MainEditor (TOC) pour les diffuser
+        const handleLocalAction = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const { type, nodeId, newTitle, payload } = customEvent.detail;
+            
+            try {
+                stompClient.publish({
+                    destination: `/app/projet/${courseId}/action`,
+                    body: JSON.stringify({
+                        type,
+                        nodeId,
+                        newTitle,
+                        payload: {
+                            ...payload,
+                            authorId: user?.id || sessionId.current
+                        }
+                    })
+                });
+            } catch (err) {
+                console.error('Erreur diffusion action locale:', err);
+            }
+        };
+
+        window.addEventListener('xccm:editor-action', handleLocalAction);
 
         return () => {
             handleUpdate.cancel();
             editorInstance.off('update', handleUpdate);
+            window.removeEventListener('xccm:editor-action', handleLocalAction);
         };
     }, [editorInstance, stompClient, isConnected, courseId, user]);
 
-    // ─── Styles CSS pour les blocs verrouillés ───────────────────────────────────
     const lockStyles = Array.from(lockedNodes.values()).map(lock => `
       [data-id="${lock.nodeId}"] {
           pointer-events: none !important;
@@ -369,7 +369,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
           z-index: 50;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
-  `).join('\n');
+    `).join('\n');
 
     return (
         <>

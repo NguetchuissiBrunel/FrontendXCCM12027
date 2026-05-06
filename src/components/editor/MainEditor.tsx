@@ -115,7 +115,7 @@ const nodeTypeFrench: Record<string, string> = {
 };
 
 export interface MainEditorRef {
-  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any) => void;
+  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any, isRemote?: boolean) => void;
 }
 
 let globalIdCounter = 0;
@@ -420,7 +420,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   const copiedNodeJsonRef = useRef<any>(null);
 
   React.useImperativeHandle(ref, () => ({
-    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: any) => {
+    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: any, isRemote: boolean = false) => {
       if (!editor) return;
 
       if (action === 'rename' && typeof payload === 'string') {
@@ -429,6 +429,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           if (node.attrs.id === itemId) {
             if (node.attrs.title !== undefined) {
               editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'title', newTitle));
+              
+              // Diffuser l'action
+              if (!isRemote) {
+                window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+                  detail: { type: 'RENAME', nodeId: itemId, newTitle }
+                }));
+              }
               return false;
             }
           }
@@ -440,6 +447,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           if (node.attrs.id === itemId) {
             editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
             deleted = true;
+
+            // Diffuser l'action
+            if (!isRemote) {
+              window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+                detail: { type: 'DELETE', nodeId: itemId }
+              }));
+            }
             return false;
           }
         });
@@ -500,6 +514,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
             const finalNode = newNode.type.create(finalAttrs, finalContent, newNode.marks);
             editor.view.dispatch(editor.state.tr.insert(pos + node.nodeSize, finalNode));
+
+            // Diffuser l'action
+            if (!isRemote) {
+              window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+                detail: { type: 'DUPLICATE', nodeId: itemId }
+              }));
+            }
             return false;
           }
         });
@@ -533,6 +554,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
           tr.insert(insertPos, sourceNode);
           editor.view.dispatch(tr);
+
+          // Diffuser l'action
+          if (!isRemote) {
+            window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+              detail: { type: 'MOVE', payload: { itemId, targetId, position } }
+            }));
+          }
         }
       } else if (action === 'copy') {
         editor.view.state.doc.descendants((node: PMNode, pos: number) => {

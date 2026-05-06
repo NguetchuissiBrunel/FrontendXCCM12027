@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useCollaboration } from '@/contexts/CollaborationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainEditorRef } from './MainEditor';
@@ -17,36 +17,49 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
     const { stompClient, isConnected, courseId } = useCollaboration();
     const { user } = useAuth();
 
-    // Maps Node ID to the Collaborator who locked it
     const [lockedNodes, setLockedNodes] = useState<Map<string, any>>(new Map());
-    // Maps User ID to their latest cursor position
     const [remoteCursors, setRemoteCursors] = useState<Map<string, any>>(new Map());
 
     const sessionId = useRef(`anon-${Math.random().toString(36).substr(2, 9)}`);
 
-    // Subscribe to updates + locks + cursors
+    // ✅ FIX CRITIQUE : Ref vers l'instance de l'éditeur pour éviter le bug de closure.
+    // La subscription STOMP est créée une seule fois. Si editorInstance était null à ce moment,
+    // il resterait null pour toujours dans la closure. La ref est TOUJOURS à jour.
+    const editorInstanceRef = useRef<Editor | null | undefined>(null);
     useEffect(() => {
-        if (!isConnected || !stompClient || !courseId || !editorRef?.current) return;
+        editorInstanceRef.current = editorInstance;
+    }, [editorInstance]);
+
+    // ─── Subscription principale : reçoit TOUS les messages du projet ───────────
+    // ✅ FIX : Plus de garde sur editorRef?.current ni editorInstance dans les deps.
+    //    On utilise editorInstanceRef pour lire la dernière instance disponible.
+    useEffect(() => {
+        if (!isConnected || !stompClient || !courseId) return;
 
         const subMain = stompClient.subscribe(`/topic/projet/${courseId}`, (message) => {
             try {
                 const action = JSON.parse(message.body);
-                // Exclude own actions
-                if (action.payload?.authorId === (user?.id || sessionId.current) || action.authorId === (user?.id || sessionId.current)) return;
+
+                // Ignorer ses propres actions
+                const myId = user?.id || sessionId.current;
+                if (action.payload?.authorId === myId || action.authorId === myId) return;
 
                 const type = action.type;
                 const lockInfo = action.payload || {};
 
-                if (type === 'BLOCK_UPDATE') {
-                    if (action.content && lockInfo.nodeId && editorInstance) {
-                        let blockJson;
-                        try { blockJson = JSON.parse(action.content); } catch (e) { return; }
+                // ✅ On lit toujours la ref qui pointe vers l'éditeur ACTUEL
+                const editor = editorInstanceRef.current;
 
-                        // Chercher le nœud correspondant dans le document local
+                if (type === 'BLOCK_UPDATE') {
+                    if (action.content && lockInfo.nodeId && editor) {
+                        let blockJson;
+                        try { blockJson = JSON.parse(action.content); } catch { return; }
+
+                        // Chercher le nœud dans le document local
                         let targetPos = -1;
                         let targetNodeSize = 0;
-                        
-                        editorInstance.state.doc.descendants((node, pos) => {
+
+                        editor.state.doc.descendants((node, pos) => {
                             if (node.attrs && node.attrs.id === lockInfo.nodeId) {
                                 targetPos = pos;
                                 targetNodeSize = node.nodeSize;
@@ -54,14 +67,14 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             }
                         });
 
-                        // Remplacement chirurgical via l'API Prosemirror
+                        // Remplacement chirurgical via l'API ProseMirror
                         if (targetPos !== -1) {
-                            const { tr, schema } = editorInstance.state;
+                            const { tr, schema } = editor.state;
                             try {
                                 const newNode = schema.nodeFromJSON(blockJson);
                                 tr.replaceWith(targetPos, targetPos + targetNodeSize, newNode);
-                                tr.setMeta('isRemote', true); // Ne pas déclencher de boucle infinie
-                                editorInstance.view.dispatch(tr);
+                                tr.setMeta('isRemote', true); // Évite la boucle infinie
+                                editor.view.dispatch(tr);
                             } catch (e) {
                                 console.error('Erreur remplacement de bloc:', e);
                             }
@@ -92,15 +105,14 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         return newMap;
                     });
 
-                    // If backend gives 'content' upon unlock or update
-                    if (action.content && editorInstance) {
+                    // Mise à jour du contenu si fourni lors du unlock
+                    if (action.content && editor) {
                         let jsonContent = action.content;
                         if (typeof action.content === 'string') {
-                            try { jsonContent = JSON.parse(action.content); } catch (e) { }
+                            try { jsonContent = JSON.parse(action.content); } catch { }
                         }
-
-                        editorInstance.commands.setContent(jsonContent, false);
-                        editorInstance.view.dispatch(editorInstance.state.tr.setMeta('isRemote', true));
+                        editor.commands.setContent(jsonContent, false);
+                        editor.view.dispatch(editor.state.tr.setMeta('isRemote', true));
                     }
                 } else if (type === 'CURSOR') {
                     const cursorInfo = action.payload || {};
@@ -113,16 +125,18 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     }
                 }
             } catch (e) {
-                console.error("Erreur parsing message:", e);
+                console.error('Erreur parsing message:', e);
             }
         });
 
         return () => {
             subMain.unsubscribe();
         };
-    }, [stompClient, isConnected, courseId, editorRef, user?.id, editorInstance]);
+    // ✅ editorInstance RETIRÉ des dépendances — on utilise la ref à la place.
+    // Évite de recréer la subscription à chaque changement d'état de l'éditeur.
+    }, [stompClient, isConnected, courseId, editorRef, user?.id]);
 
-    // Track local mouse movements to broadcast fluid cursors
+    // ─── Diffuse la position du curseur souris (coordonnées absolues) ────────────
     useEffect(() => {
         if (!isConnected || !stompClient || !courseId) return;
 
@@ -138,13 +152,13 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         payload: {
                             authorId: user?.id || sessionId.current,
                             userName: user?.firstName || user?.email?.split('@')[0] || 'Anonyme',
-                            x: e.clientX + window.scrollX, // Coordonnée absolue de la page
+                            x: e.clientX + window.scrollX,
                             y: e.clientY + window.scrollY,
                             color: myColor
                         }
                     })
                 });
-            } catch (err) { }
+            } catch { }
         }, 75);
 
         window.addEventListener('mousemove', handleMouseMove);
@@ -154,7 +168,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         };
     }, [stompClient, isConnected, courseId, user]);
 
-    // Listen to TipTap cursor movements to publish Locks
+    // ─── Envoie un LOCK/UNLOCK quand le curseur se déplace dans l'éditeur ────────
     useEffect(() => {
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
 
@@ -168,8 +182,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             const { selection } = editorInstance.state;
             const { $anchor } = selection;
 
-            // Lock logic for blocks (granules)
-            let currentNodeId = null;
+            let currentNodeId: string | null = null;
             for (let depth = $anchor.depth; depth > 0; depth--) {
                 const node = $anchor.node(depth);
                 if (node && node.attrs && node.attrs.id) {
@@ -208,7 +221,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     lastLockedNodeId = currentNodeId;
                 }, 100);
             }
-        }, 100); // Throttle selection updates to 100ms for performance
+        }, 100);
 
         editorInstance.on('selectionUpdate', handleSelectionUpdate);
 
@@ -220,14 +233,18 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 try {
                     stompClient.publish({
                         destination: `/app/projet/${courseId}/action`,
-                        body: JSON.stringify({ type: 'UNLOCK', granuleId: parseInt(lastLockedNodeId) || 0, payload: { authorId: user?.id } })
+                        body: JSON.stringify({
+                            type: 'UNLOCK',
+                            granuleId: parseInt(lastLockedNodeId) || 0,
+                            payload: { authorId: user?.id }
+                        })
                     });
-                } catch (e) { }
+                } catch { }
             }
         };
     }, [editorInstance, stompClient, isConnected, courseId, user]);
 
-    // Track local editor changes and broadcast (throttled) for real-time typing
+    // ─── Diffuse le bloc en cours d'édition (throttle 300ms) ─────────────────────
     useEffect(() => {
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
 
@@ -238,7 +255,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
             const { state } = editorInstance;
             const { selection } = state;
 
-            let currentBlockNode = null;
+            let currentBlockNode: any = null;
             for (let depth = selection.$anchor.depth; depth > 0; depth--) {
                 const node = selection.$anchor.node(depth);
                 if (node && node.attrs && node.attrs.id) {
@@ -261,7 +278,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             }
                         })
                     });
-                } catch (err) { }
+                } catch { }
             }
         }, 300);
 
@@ -273,6 +290,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         };
     }, [editorInstance, stompClient, isConnected, courseId, user]);
 
+    // ─── Styles CSS pour les blocs verrouillés ───────────────────────────────────
     const lockStyles = Array.from(lockedNodes.values()).map(lock => `
       [data-id="${lock.nodeId}"] {
           pointer-events: none !important;

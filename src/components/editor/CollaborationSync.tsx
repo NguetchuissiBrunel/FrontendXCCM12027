@@ -231,11 +231,13 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
     useEffect(() => {
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
 
-        const handleUpdate = throttle(() => {
+        const handleUpdate = throttle(({ transaction }: { transaction: any }) => {
+            // Ne pas rediffuser les changements reçus de collaborateurs distants
+            if (transaction?.getMeta('isRemote')) return;
+
             const { state } = editorInstance;
             const { selection } = state;
-            
-            // Trouver le bloc actuellement verrouillé dans lequel on écrit
+
             let currentBlockNode = null;
             for (let depth = selection.$anchor.depth; depth > 0; depth--) {
                 const node = selection.$anchor.node(depth);
@@ -253,7 +255,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             type: 'BLOCK_UPDATE',
                             granuleId: parseInt(currentBlockNode.attrs.id) || 0,
                             content: JSON.stringify(currentBlockNode.toJSON()),
-                            payload: { 
+                            payload: {
                                 authorId: user?.id || sessionId.current,
                                 nodeId: currentBlockNode.attrs.id
                             }
@@ -261,7 +263,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                     });
                 } catch (err) { }
             }
-        }, 300); // 300ms donne une sensation de temps réel fluide sans surcharger le navigateur
+        }, 300);
 
         editorInstance.on('update', handleUpdate);
 

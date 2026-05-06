@@ -323,10 +323,10 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     ],
     content: initialContent,
     onUpdate: ({ editor, transaction }) => {
-      onContentChange?.(editor.getHTML());
-
-      // Don't broadcast if the transaction was triggered by a remote collaboration update
+      // Don't trigger autosave or broadcast if the transaction came from a remote collaborator
       if (transaction.getMeta('isRemote')) return;
+
+      onContentChange?.(editor.getHTML());
 
       const json = editor.getJSON();
 

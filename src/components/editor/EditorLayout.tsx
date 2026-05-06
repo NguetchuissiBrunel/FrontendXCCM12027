@@ -243,52 +243,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   }, []);
 
   const fetchCourseContentById = React.useCallback(async (courseId: number) => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    const token = getAuthToken();
-    const url = `${cleanBaseUrl}/courses/enriched/${courseId}`;
-
-    console.info('🔍 Course fetch debug:start', {
-      courseId,
-      url,
-      tokenPresent: !!token,
-    });
-
-    const response = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
-
-    if (!response.ok) {
-      let responseBody: unknown = null;
-      try {
-        responseBody = await response.clone().json();
-      } catch {
-        try {
-          responseBody = await response.text();
-        } catch {
-          responseBody = null;
-        }
-      }
-
-      console.error('❌ Course fetch debug:error', {
-        courseId,
-        url,
-        status: response.status,
-        statusText: response.statusText,
-        body: responseBody,
-      });
-
-      throw new Error(`Impossible de charger le cours ${courseId} (${response.status} ${response.statusText})`);
-    }
-
-    const data = await response.json();
-    console.info('✅ Course fetch debug:success', {
-      courseId,
-      url,
-      hasData: !!data,
-      hasContent: !!(data?.data?.content || data?.content),
-    });
-    return data;
+    console.info('🔍 Fetching course content via service:', courseId);
+    return await CourseControllerService.getEnrichedCourse(courseId);
   }, []);
 
   const loadSpecificCourse = async (id: number, userId: string) => {
@@ -301,8 +257,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         let resolvedCourse = course;
 
         try {
-          const detailedCourseResponse = await fetchCourseContentById(id);
-          resolvedCourse = detailedCourseResponse?.data || detailedCourseResponse;
+          const response = await fetchCourseContentById(id);
+          // Le service renvoie ApiResponseEnrichedCourseResponse, on extrait .data
+          resolvedCourse = response?.data || response;
+        
+          if (!resolvedCourse || (!resolvedCourse.content && !resolvedCourse.data?.content)) {
+            throw new Error("Le contenu du cours est vide ou invalide.");
+          }
         } catch (error) {
           console.warn('Chargement detaille du cours indisponible, utilisation des donnees deja chargees.', error);
         }
@@ -598,6 +559,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       return;
     }
 
+    const finalTitle = courseTitle.trim() || "Cours sans titre";
+    const finalCategory = courseCategory.trim() || "Informatique";
+    const finalDescription = courseDescription.trim() || "Description du cours";
+    
+    if (!editorInstance) return;
     const jsonContent = editorInstance.getJSON();
 
     try {
@@ -611,10 +577,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
         // Update existing course
         const updateData: CourseUpdateRequest = {
-          title: courseTitle.trim() || "Cours sans titre",
+          title: finalTitle,
           content: jsonContent as any,
-          category: courseCategory.trim() || "Informatique",
-          description: courseDescription.trim() || "Description du cours",
+          category: finalCategory,
+          description: finalDescription,
+          coverImage: courseImage,
           photoUrl: courseImage,
         };
 
@@ -634,10 +601,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       } else {
         // Create new course
         const createData: CourseCreateRequest = {
-          title: courseTitle.trim() || "Cours sans titre",
+          title: finalTitle,
           content: jsonContent as any,
-          category: courseCategory.trim() || "Informatique",
-          description: courseDescription.trim() || "Description du cours",
+          category: finalCategory,
+          description: finalDescription,
+          coverImage: courseImage,
           photoUrl: courseImage,
         };
 

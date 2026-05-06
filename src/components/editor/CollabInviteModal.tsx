@@ -26,8 +26,7 @@ import {
 import { MdGroup } from 'react-icons/md';
 import { CollabCollaborator } from '@/hooks/useCollabSession';
 import { useCollaboration } from '@/contexts/CollaborationContext';
-import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
-import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
+import { CourseInvitationControllerService } from '@/lib/services/CourseInvitationControllerService';
 import toast from 'react-hot-toast';
 
 interface CollabInviteModalProps {
@@ -70,41 +69,27 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
             return;
         }
 
-        const query = inviteEmail.trim().toLowerCase();
+        const query = inviteEmail.trim();
         if (!query) return;
         setIsInviting(true);
         try {
-            // Vérification de l'existence de l'enseignant
-            const teachersResp = await GestionDesUtilisateursService.getAllTeachers1();
-            const teachers = teachersResp.data || [];
-
-            const foundTeacher = teachers.find(t =>
-                (t.email && t.email.toLowerCase() === query) ||
-                (t.firstName && t.firstName.toLowerCase() === query) ||
-                (t.lastName && t.lastName.toLowerCase() === query) ||
-                (t.firstName && t.lastName && `${t.firstName} ${t.lastName}`.toLowerCase() === query)
-            );
-
-            if (!foundTeacher) {
-                toast.error("Aucun enseignant trouvé sur la plateforme avec ces informations");
+            if (!courseId) {
+                toast.error("Veuillez sauvegarder le cours avant d'inviter des collaborateurs");
                 return;
             }
 
-            // Envoi de l'invitation réelle via REST
-            if (courseId) {
-                await EnrollmentControllerService.inviteUser({
-                    email: foundTeacher.email || '',
-                    courseId: courseId
-                });
-                toast.success(`Invitation envoyée à ${foundTeacher.firstName} ${foundTeacher.lastName}`);
-            } else {
-                toast.error("Veuillez sauvegarder le cours avant d'inviter des collaborateurs");
-            }
+            // Envoi de l'invitation via le service dédié aux collaborateurs
+            await CourseInvitationControllerService.inviteEditor({
+                courseId: courseId,
+                emailOrName: query
+            });
 
+            toast.success(`Invitation envoyée avec succès à ${query}`);
             setInviteEmail('');
-        } catch (error) {
-            console.error(error);
-            toast.error("Erreur lors de la vérification de l'utilisateur XCCM1");
+        } catch (error: any) {
+            console.error('Erreur invitation:', error);
+            const errorMsg = error.body?.message || error.message || "Erreur lors de l'envoi de l'invitation";
+            toast.error(errorMsg);
         } finally {
             setIsInviting(false);
         }

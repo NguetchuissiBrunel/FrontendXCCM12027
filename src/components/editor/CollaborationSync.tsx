@@ -51,9 +51,10 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 const editor = editorInstanceRef.current;
 
                 if (type === 'BLOCK_UPDATE') {
-                    if (action.content && lockInfo.nodeId && editor) {
+                    const blockContent = action.content || lockInfo.content;
+                    if (blockContent && lockInfo.nodeId && editor) {
                         let blockJson;
-                        try { blockJson = JSON.parse(action.content); } catch { return; }
+                        try { blockJson = JSON.parse(blockContent); } catch { return; }
 
                         // Chercher le nœud dans le document local
                         let targetPos = -1;
@@ -67,14 +68,17 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             }
                         });
 
-                        // Remplacement chirurgical via l'API ProseMirror
+                        // Remplacement chirurgical via l'API ProseMirror intégrée à TipTap
                         if (targetPos !== -1) {
-                            const { tr, schema } = editor.state;
                             try {
-                                const newNode = schema.nodeFromJSON(blockJson);
-                                tr.replaceWith(targetPos, targetPos + targetNodeSize, newNode);
-                                tr.setMeta('isRemote', true); // Évite la boucle infinie
-                                editor.view.dispatch(tr);
+                                const newNode = editor.schema.nodeFromJSON(blockJson);
+                                editor.commands.command(({ tr, dispatch }) => {
+                                    if (dispatch) {
+                                        tr.replaceWith(targetPos, targetPos + targetNodeSize, newNode);
+                                        tr.setMeta('isRemote', true); // Évite la boucle infinie
+                                    }
+                                    return true;
+                                });
                             } catch (e) {
                                 console.error('Erreur remplacement de bloc:', e);
                             }
@@ -90,8 +94,9 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 } else if (type === 'LOCK') {
                     setLockedNodes(prev => {
                         const newMap = new Map(prev);
-                        newMap.set(String(action.granuleId), {
-                            nodeId: String(action.granuleId),
+                        const idToLock = lockInfo.nodeId || String(action.granuleId);
+                        newMap.set(idToLock, {
+                            nodeId: idToLock,
                             authorId: lockInfo.authorId || action.authorId,
                             userName: lockInfo.userName || 'Un collaborateur',
                             color: lockInfo.color || '#A855F7'
@@ -101,7 +106,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                 } else if (type === 'UNLOCK') {
                     setLockedNodes(prev => {
                         const newMap = new Map(prev);
-                        newMap.delete(String(action.granuleId));
+                        const idToUnlock = lockInfo.nodeId || String(action.granuleId);
+                        newMap.delete(idToUnlock);
                         return newMap;
                     });
 
@@ -200,7 +206,10 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             body: JSON.stringify({
                                 type: 'UNLOCK',
                                 granuleId: parseInt(lastLockedNodeId) || 0,
-                                payload: { authorId: user?.id }
+                                payload: { 
+                                    authorId: user?.id,
+                                    nodeId: lastLockedNodeId
+                                }
                             })
                         });
                     }
@@ -213,7 +222,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                                 payload: {
                                     authorId: user?.id,
                                     userName: user?.firstName || user?.email || 'Anonyme',
-                                    color: myColor
+                                    color: myColor,
+                                    nodeId: currentNodeId
                                 }
                             })
                         });
@@ -236,7 +246,10 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                         body: JSON.stringify({
                             type: 'UNLOCK',
                             granuleId: parseInt(lastLockedNodeId) || 0,
-                            payload: { authorId: user?.id }
+                            payload: { 
+                                authorId: user?.id,
+                                nodeId: lastLockedNodeId
+                            }
                         })
                     });
                 } catch { }
@@ -274,7 +287,8 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
                             content: JSON.stringify(currentBlockNode.toJSON()),
                             payload: {
                                 authorId: user?.id || sessionId.current,
-                                nodeId: currentBlockNode.attrs.id
+                                nodeId: currentBlockNode.attrs.id,
+                                content: JSON.stringify(currentBlockNode.toJSON())
                             }
                         })
                     });

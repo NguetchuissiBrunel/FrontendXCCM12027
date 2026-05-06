@@ -21,6 +21,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
     const [remoteCursors, setRemoteCursors] = useState<Map<string, any>>(new Map());
 
     const sessionId = useRef(`anon-${Math.random().toString(36).substr(2, 9)}`);
+    const lastLockedNodeIdRef = useRef<string | null>(null);
 
     const editorInstanceRef = useRef<Editor | null | undefined>(null);
     useEffect(() => {
@@ -179,7 +180,6 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
         const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
-        const lastLockedNodeIdRef = useRef<string | null>(null);
 
         const handleSelectionUpdate = throttle(() => {
             const { selection } = editorInstance.state;

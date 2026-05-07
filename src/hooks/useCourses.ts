@@ -1,8 +1,7 @@
 // hooks/useCourses.ts
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { CourseControllerService, CourseInteractionControllerService } from '@/lib';
-import { LikeService } from '@/lib/services/LikeService';
+import { CourseControllerService } from '@/lib';
 
 export interface Course {
     image: any;
@@ -114,101 +113,51 @@ export function useCourses(): UseCoursesReturn {
         }
     }, []); // Pas de dépendance sur isLiked → stable
 
-    /**
-     * Liker un cours — appelle POST /api/v1/likes
-     * Mise à jour optimiste immédiate, sync depuis réponse API
-     */
     const incrementLike = useCallback(async (courseId: number) => {
         if (localLikesRef.current.has(courseId)) return;
 
         // Optimistic update
-        setLocalLikes(prev => {
-            const newSet = new Set(prev);
-            newSet.add(courseId);
-            saveLikes(newSet);
-            return newSet;
-        });
-        setCourses(prev => prev.map(course =>
-            course.id === courseId
-                ? { ...course, likeCount: (course.likeCount || 0) + 1, isLiked: true }
-                : course
+        setLocalLikes(prev => { const s = new Set(prev); s.add(courseId); saveLikes(s); return s; });
+        setCourses(prev => prev.map(c =>
+            c.id === courseId ? { ...c, likeCount: (c.likeCount || 0) + 1, isLiked: true } : c
         ));
 
         try {
-            const response = await LikeService.addLike('COURSE', courseId);
-            // Sync avec la vraie valeur backend
-            if (response?.data) {
-                setCourses(prev => prev.map(course =>
-                    course.id === courseId
-                        ? { ...course, likeCount: response.data!.likeCount, isLiked: response.data!.liked }
-                        : course
+            const response = await CourseControllerService.incrementLikeCount(courseId);
+            if (response?.data?.likeCount !== undefined) {
+                setCourses(prev => prev.map(c =>
+                    c.id === courseId ? { ...c, likeCount: response.data!.likeCount! } : c
                 ));
-                if (!response.data.liked) {
-                    setLocalLikes(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(courseId);
-                        saveLikes(newSet);
-                        return newSet;
-                    });
-                }
             }
         } catch (err) {
-            console.error(`❌ Erreur like cours ${courseId}:`, err);
             // Rollback
-            setLocalLikes(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(courseId);
-                saveLikes(newSet);
-                return newSet;
-            });
-            setCourses(prev => prev.map(course =>
-                course.id === courseId
-                    ? { ...course, likeCount: Math.max(0, (course.likeCount || 0) - 1), isLiked: false }
-                    : course
+            setLocalLikes(prev => { const s = new Set(prev); s.delete(courseId); saveLikes(s); return s; });
+            setCourses(prev => prev.map(c =>
+                c.id === courseId ? { ...c, likeCount: Math.max(0, (c.likeCount || 0) - 1), isLiked: false } : c
             ));
             throw err;
         }
     }, [saveLikes]);
 
-    /**
-     * Unliker un cours — appelle DELETE /api/v1/likes/COURSE/{id}
-     */
     const decrementLike = useCallback(async (courseId: number) => {
         // Optimistic update
-        setLocalLikes(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(courseId);
-            saveLikes(newSet);
-            return newSet;
-        });
-        setCourses(prev => prev.map(course =>
-            course.id === courseId
-                ? { ...course, likeCount: Math.max(0, (course.likeCount || 0) - 1), isLiked: false }
-                : course
+        setLocalLikes(prev => { const s = new Set(prev); s.delete(courseId); saveLikes(s); return s; });
+        setCourses(prev => prev.map(c =>
+            c.id === courseId ? { ...c, likeCount: Math.max(0, (c.likeCount || 0) - 1), isLiked: false } : c
         ));
 
         try {
-            const response = await LikeService.removeLike('COURSE', courseId);
-            if (response?.data) {
-                setCourses(prev => prev.map(course =>
-                    course.id === courseId
-                        ? { ...course, likeCount: response.data!.likeCount, isLiked: response.data!.liked }
-                        : course
+            const response = await CourseControllerService.decrementLikeCount(courseId);
+            if (response?.data?.likeCount !== undefined) {
+                setCourses(prev => prev.map(c =>
+                    c.id === courseId ? { ...c, likeCount: response.data!.likeCount! } : c
                 ));
             }
         } catch (err) {
-            console.error(`❌ Erreur unlike cours ${courseId}:`, err);
             // Rollback
-            setLocalLikes(prev => {
-                const newSet = new Set(prev);
-                newSet.add(courseId);
-                saveLikes(newSet);
-                return newSet;
-            });
-            setCourses(prev => prev.map(course =>
-                course.id === courseId
-                    ? { ...course, likeCount: (course.likeCount || 0) + 1, isLiked: true }
-                    : course
+            setLocalLikes(prev => { const s = new Set(prev); s.add(courseId); saveLikes(s); return s; });
+            setCourses(prev => prev.map(c =>
+                c.id === courseId ? { ...c, likeCount: (c.likeCount || 0) + 1, isLiked: true } : c
             ));
         }
     }, [saveLikes]);
@@ -251,7 +200,7 @@ export function useCourses(): UseCoursesReturn {
                     ? { ...course, viewCount: (course.viewCount || 0) + 1 }
                     : course
             ));
-            await CourseInteractionControllerService.recordView(courseId);
+            await CourseControllerService.incrementViewCount(courseId);
             sessionStorage.setItem(viewedKey, 'true');
         } catch (err) {
             console.error(`❌ Erreur vue cours ${courseId}:`, err);
@@ -350,7 +299,7 @@ export function useCourse(courseId: number) {
             const viewedKey = `viewed_${courseId}`;
             if (sessionStorage.getItem(viewedKey)) return;
             try {
-                await CourseInteractionControllerService.recordView(courseId);
+                await CourseControllerService.incrementViewCount(courseId);
                 sessionStorage.setItem(viewedKey, 'true');
                 setCourse(prev => prev ? { ...prev, viewCount: (prev.viewCount || 0) + 1 } : prev);
             } catch (err) {

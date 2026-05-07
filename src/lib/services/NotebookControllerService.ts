@@ -82,6 +82,26 @@ export class NotebookControllerService {
     }
     /**
      * @param id
+     * @param requestBody
+     * @returns Notebook OK
+     * @throws ApiError
+     */
+    public static updateNotebook(
+        id: string,
+        requestBody: Record<string, string>,
+    ): CancelablePromise<Notebook> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/notebooks/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * @param id
      * @returns any OK
      * @throws ApiError
      */

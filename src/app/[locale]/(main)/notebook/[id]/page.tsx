@@ -105,7 +105,29 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
     loadNotebook();
   }, [id, user?.id]);
 
-  // Auto-save logic (only title and metadata for now)
+  // Shared helper: create notebook on first save, return resolved ID
+  const ensureNotebookCreated = React.useCallback(async (): Promise<string | null> => {
+    if (currentId !== 'new') return currentId;
+    if (!user?.id) return null;
+    try {
+      const response = await NotebookControllerService.createNotebook(user.id, {
+        title,
+        metadata: JSON.stringify({ chatHistory, studioActivities })
+      });
+      if (response && response.id) {
+        setCurrentId(response.id);
+        router.replace(`/notebook/${response.id}`);
+        return response.id;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to create notebook:", error);
+      return null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId, title, chatHistory, studioActivities, user?.id]);
+
+  // Auto-save: debounced 2s after any change
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (!isLoaded || !user?.id) return;
@@ -117,32 +139,23 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
 
     const timer = setTimeout(async () => {
       if (currentId === 'new') {
+        await ensureNotebookCreated();
+      } else {
         try {
-          const response = await NotebookControllerService.createNotebook(user.id, {
+          await NotebookControllerService.updateNotebook(currentId, {
             title,
             metadata: JSON.stringify({ chatHistory, studioActivities })
           });
-
-          if (response && response.id) {
-            setCurrentId(response.id);
-            router.replace(`/notebook/${response.id}`);
-            console.log('Notebook created and saved:', response.id);
-          }
-        } catch (error) {
-          console.error("Failed to create notebook on backend:", error);
+        } catch {
+          // Backend PUT endpoint may not be available yet — fail silently
         }
-      } else {
-        // Handle update if endpoint exists, otherwise we're just syncing sources and metadata locally for now
-        // Based on the generated service, only createNotebook is available at /api/v1/notebooks/user/{userId}
-        console.log('Auto-save for existing notebook local-only (update endpoint missing)');
       }
-    }, 2000); // 2s debounce for API calls
+    }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, chatHistory, studioActivities, isLoaded, currentId, router, user?.id]);
+  }, [title, chatHistory, studioActivities, isLoaded, currentId, user?.id, ensureNotebookCreated]);
 
   const handleCreateNew = async () => {
-    // Navigate to a fresh new notebook
     router.push('/notebook/new');
   };
 
@@ -218,27 +231,17 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
     const files = e.target.files;
     if (!files || files.length === 0 || !user?.id) return;
 
-    // If it's a new notebook, we need to create it first before adding sources
+    // Create notebook first if needed
     let notebookId = currentId;
     if (notebookId === 'new') {
       const loadingToast = toast.loading("Création du notebook...");
-      try {
-        const response = await NotebookControllerService.createNotebook(user.id, {
-          title,
-          metadata: JSON.stringify({ chatHistory, studioActivities })
-        });
-        if (response && response.id) {
-          notebookId = response.id;
-          setCurrentId(notebookId);
-          router.replace(`/notebook/${notebookId}`);
-          toast.success("Notebook créé", { id: loadingToast });
-        } else {
-          throw new Error("Failed to create notebook");
-        }
-      } catch (error) {
+      const newId = await ensureNotebookCreated();
+      if (!newId) {
         toast.error("Erreur lors de la création du notebook", { id: loadingToast });
         return;
       }
+      notebookId = newId;
+      toast.success("Notebook créé", { id: loadingToast });
     }
 
     const uploadToast = toast.loading(`Envoi de ${files.length} source(s)...`);
@@ -420,23 +423,13 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
     let notebookId = currentId;
     if (notebookId === 'new') {
       const loadingToast = toast.loading("Création du notebook...");
-      try {
-        const response = await NotebookControllerService.createNotebook(user.id, {
-          title,
-          metadata: JSON.stringify({ chatHistory, studioActivities })
-        });
-        if (response && response.id) {
-          notebookId = response.id;
-          setCurrentId(notebookId);
-          router.replace(`/notebook/${notebookId}`);
-          toast.success("Notebook créé", { id: loadingToast });
-        } else {
-          throw new Error("Failed to create notebook");
-        }
-      } catch (error) {
+      const newId = await ensureNotebookCreated();
+      if (!newId) {
         toast.error("Erreur lors de la création du notebook", { id: loadingToast });
         return;
       }
+      notebookId = newId;
+      toast.success("Notebook créé", { id: loadingToast });
     }
 
     const uploadToast = toast.loading(`Ajout du cours...`);
@@ -484,7 +477,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
               title="Ajouter un fichier externe"
             >
               <FaPlus className="w-4 h-4" />
-              <span className="text-[10px] uppercase">Externe</span>
+              <span className="text-[10px] uppercase">{t_nb('external')}</span>
             </button>
             <button
               onClick={handleOpenCourseModal}
@@ -492,7 +485,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
               title="Ajouter un cours de la plateforme"
             >
               <FaBookOpen className="w-4 h-4" />
-              <span className="text-[10px] uppercase">Mes cours</span>
+              <span className="text-[10px] uppercase">{t_nb('myCourses')}</span>
             </button>
           </div>
 
@@ -548,8 +541,8 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
                     <input
                       type="checkbox"
                       checked={source.selected}
-                      readOnly
-                      className="rounded border-purple-300 text-purple-600 focus:ring-purple-500 cursor-pointer pointer-events-none"
+                      onChange={() => handleToggleSource(source.id)}
+                      className="rounded border-purple-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -604,8 +597,9 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
                 <button
                   onClick={() => setSelectedActivity(null)}
                   className="absolute right-4 top-4 text-purple-400 hover:text-purple-600 transition-colors p-2 bg-purple-50 dark:bg-purple-900/20 rounded-full"
+                  title={t_nb('closeActivity')}
                 >
-                  <FaChevronLeft size={12} className="inline mr-1" /> Fermer {selectedActivity.title}
+                  <FaTimes size={14} />
                 </button>
                 <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100 mb-6">{selectedActivity.title}</h2>
                 <div className="prose prose-purple dark:prose-invert max-w-none">
@@ -796,7 +790,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
             <div className="p-4 border-b border-purple-100 dark:border-purple-800/50 flex items-center justify-between bg-purple-50/50 dark:bg-purple-900/10">
               <h2 className="text-lg font-bold text-purple-700 dark:text-purple-300 flex items-center gap-2">
                 <FaBookOpen />
-                Sélectionner un cours
+                {t_nb('selectCourse')}
               </h2>
               <button onClick={() => setIsCourseModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-100 transition-colors bg-white dark:bg-gray-800 rounded-full p-2">
                 <FaTimes size={16} />
@@ -809,7 +803,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
                 </div>
               ) : userCourses.length === 0 ? (
                 <div className="text-center py-10 text-gray-500">
-                  <p>Aucun cours trouvé. Vous n'êtes inscrit à aucun cours.</p>
+                  <p>{t_nb('noCourses')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

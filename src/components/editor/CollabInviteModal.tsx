@@ -27,6 +27,8 @@ import { MdGroup } from 'react-icons/md';
 import { CollabCollaborator } from '@/hooks/useCollabSession';
 import { useCollaboration } from '@/contexts/CollaborationContext';
 import { CourseInvitationControllerService } from '@/lib/services/CourseInvitationControllerService';
+import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
+import type { User } from '@/lib/models/User';
 import toast from 'react-hot-toast';
 
 interface CollabInviteModalProps {
@@ -63,6 +65,26 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
     const { isConnected, collaborators: stompCollaborators } = useCollaboration();
     const onlineCollaborators = stompCollaborators.filter((collab) => collab.status === 'ONLINE');
 
+    const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
+
+    const buildTeacherDisplayName = (teacher?: User) => {
+        const fullName = `${teacher?.firstName || ''} ${teacher?.lastName || ''}`.trim();
+        return fullName || teacher?.email || 'cet enseignant';
+    };
+
+    const findTeacherMatch = (teachers: User[], rawQuery: string) => {
+        const query = normalizeSearchValue(rawQuery);
+        const exactTeacherMatches = teachers.filter((teacher) => {
+            const email = normalizeSearchValue(teacher.email || '');
+            const firstName = normalizeSearchValue(teacher.firstName || '');
+            const lastName = normalizeSearchValue(teacher.lastName || '');
+            const fullName = normalizeSearchValue(`${teacher.firstName || ''} ${teacher.lastName || ''}`);
+            return email === query || firstName === query || lastName === query || fullName === query;
+        });
+
+        return exactTeacherMatches[0] || teachers[0];
+    };
+
     const handleInviteEmail = async () => {
         if (!canInvite) {
             toast.error("Seul l'auteur du cours peut inviter d'autres enseignants pour l'instant.");
@@ -78,13 +100,23 @@ const CollabInviteModal: React.FC<CollabInviteModalProps> = ({
                 return;
             }
 
-            // Envoi de l'invitation via le service dédié aux collaborateurs
-            await CourseInvitationControllerService.inviteEditor({
-                courseId: courseId,
-                emailOrName: query
+            const usersResponse = await CourseInvitationControllerService.searchUsers1(query);
+            const matchedTeachers = (usersResponse.data || []).filter((candidate) =>
+                candidate.email && (candidate.role === 'teacher' || candidate.role === undefined)
+            );
+            const foundTeacher = findTeacherMatch(matchedTeachers, query);
+
+            if (!foundTeacher?.email) {
+                toast.error("Aucun enseignant trouvé sur la plateforme avec ces informations");
+                return;
+            }
+
+            await EnrollmentControllerService.inviteUser({
+                email: foundTeacher.email,
+                courseId,
             });
 
-            toast.success(`Invitation envoyée avec succès à ${query}`);
+            toast.success(`Invitation envoyée avec succès à ${buildTeacherDisplayName(foundTeacher)}`);
             setInviteEmail('');
         } catch (error: any) {
             console.error('Erreur invitation:', error);

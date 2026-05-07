@@ -54,24 +54,24 @@ const Navbar = () => {
   const t = useTranslations('navbar');
 
   useEffect(() => {
-	  // 1. Mark as mounted
-	  setIsMounted(true);
+    // 1. Mark as mounted
+    setIsMounted(true);
 
-	  // 2. Load Dark Mode
-	  const savedTheme = localStorage.getItem('theme');
-	  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-	  const dark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-	  setIsDarkMode(dark);
-	  document.documentElement.classList.toggle('dark', dark);
+    // 2. Load Dark Mode
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    setIsDarkMode(dark);
+    document.documentElement.classList.toggle('dark', dark);
 
-	  // 3. Load User Data
-	  const userData = localStorage.getItem('currentUser');
-	  if (userData) setCurrentUser(JSON.parse(userData));
+    // 3. Load User Data
+    const userData = localStorage.getItem('currentUser');
+    if (userData) setCurrentUser(JSON.parse(userData));
 
-	  // 4. Load Role
-	  const role = localStorage.getItem('userRole');
-	  if (role === 'student' || role === 'teacher') setUserRole(role);
-	}, []);
+    // 4. Load Role
+    const role = localStorage.getItem('userRole');
+    if (role === 'student' || role === 'teacher') setUserRole(role);
+  }, []);
 
   // Vérifier si un lien est actif
   const isActiveLink = (href: string) => {
@@ -181,11 +181,11 @@ const Navbar = () => {
     return null;
   }
 
-   if (!isMounted) {
-	  // Render a simplified version of the navbar or nothing 
-	  // to ensure the first HTML sent to the browser is stable.
-	  return <nav className="h-16 bg-white dark:bg-gray-900 shadow-xl" />; 
-	}
+  if (!isMounted) {
+    // Render a simplified version of the navbar or nothing 
+    // to ensure the first HTML sent to the browser is stable.
+    return <nav className="h-16 bg-white dark:bg-gray-900 shadow-xl" />;
+  }
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 shadow-xl border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
@@ -301,6 +301,9 @@ const Navbar = () => {
                   <MdDashboard className="w-4 h-4" />
                   <span>{t('myAccount')}</span>
                 </button>
+
+                {/* COLLAB SLOT FOR EDITOR PAGE */}
+                <div id="navbar-collab-slot"></div>
 
                 {/* Bouton Déconnexion */}
                 <button

@@ -1,22 +1,3 @@
-/**
- * EDITOR LAYOUT COMPONENT - WITH DARK MODE & REAL-TIME TOC
- * 
- * Main layout container for the XCCM editor.
- * Implements three-column layout: TOC (left) | Main Editor (center) | IconBar + Panels (right)
- * 
- * Now with real-time Table of Contents extraction from TipTap editor!
- * Dark mode support added matching rest of site (Navbar colors)
- * 
- * Features added:
- * - Exercise management panel
- * - Grading interface
- * - Real-time course editing
- * 
- * @author ALD
- * @date November 2025
- * @updated January 2026
- */
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -57,10 +38,16 @@ import ConfirmModal from '../ui/ConfirmModal';
 import { CourseControllerService, CourseCreateRequest, CourseUpdateRequest } from '@/lib';
 import { ExercicesService } from '@/lib/services/ExercicesService';
 import { EnseignantService } from '@/lib/services/EnseignantService';
+import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
 import type { Exercise as ExerciseType, Submission } from '@/types/exercise';
 import EditorEntranceModal from './EditorEntranceModal';
 import CreateCourseModal from '@/components/create-course/page';
+import { CollaborationProvider } from '@/contexts/CollaborationContext';
+import CollaborationSync from './CollaborationSync';
 import ImageUploader from '../upload/ImageUploader';
+import CollabInviteButton from './CollabInviteButton';
+import { getAuthToken } from '@/utils/authHelpers';
+import { ApiError } from '@/lib/core/ApiError';
 
 
 interface EditorLayoutProps {
@@ -95,6 +82,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const [courseDescription, setCourseDescription] = useState<string>("");
   const [courseImage, setCourseImage] = useState<string | undefined>(undefined);
   const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
+  const [currentCourseAuthorId, setCurrentCourseAuthorId] = useState<string | null>(null);
   const [isLoadingCourse, setIsLoadingCourse] = useState(false);
   const [pendingContent, setPendingContent] = useState<any>(null);
 
@@ -216,20 +204,72 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     }
   }, [editorInstance, pendingContent]);
 
+  const getAccessibleCourses = React.useCallback(async (userId: string) => {
+    const [authorResponse, enrollmentsResponse, allCoursesResponse] = await Promise.all([
+      CourseControllerService.getAuthorCourses(userId),
+      EnrollmentControllerService.getMyEnrollments(),
+      CourseControllerService.getAllCourses(),
+    ]);
+
+    const authorCourses = (authorResponse as any)?.data || [];
+    const allCourses = (allCoursesResponse as any)?.data || [];
+    const enrollments = enrollmentsResponse.data || [];
+
+    const accessibleCourseIds = new Set<number>();
+
+    authorCourses.forEach((course: any) => {
+      if (typeof course.id === 'number') {
+        accessibleCourseIds.add(course.id);
+      }
+    });
+
+    enrollments
+      .filter((enrollment: any) =>
+        typeof enrollment.courseId === 'number' &&
+        (enrollment.status === 'APPROVED' || enrollment.status === 'INVITED')
+      )
+      .forEach((enrollment: any) => {
+        accessibleCourseIds.add(enrollment.courseId);
+      });
+
+    const mergedCourses = [
+      ...allCourses.filter((course: any) => typeof course.id === 'number' && accessibleCourseIds.has(course.id)),
+      ...authorCourses.filter((course: any) => typeof course.id === 'number' && accessibleCourseIds.has(course.id)),
+    ];
+
+    return mergedCourses.filter((course: any, index: number, array: any[]) =>
+      course?.id && array.findIndex((item) => item?.id === course.id) === index
+    );
+  }, []);
+
+  const fetchCourseContentById = React.useCallback(async (courseId: number) => {
+    console.info('🔍 Fetching course content via service:', courseId);
+    return await CourseControllerService.getEnrichedCourse(courseId);
+  }, []);
+
   const loadSpecificCourse = async (id: number, userId: string) => {
     try {
       setIsLoadingCourse(true);
-      
-      // Since getEnrichedCourse doesn't return content, we use getAuthorCourses
-      // which returns the full CourseResponse objects including content.
-      const response = await CourseControllerService.getAuthorCourses(userId);
-      const courses = (response as any).data || response;
-      
+      const courses = await getAccessibleCourses(userId);
       const course = Array.isArray(courses) ? courses.find((c: any) => c.id === id) : null;
 
       if (course) {
-        let content = course.content;
+        let resolvedCourse = course;
+
+        try {
+          const response = await fetchCourseContentById(id);
+          // Le service renvoie ApiResponseEnrichedCourseResponse, on extrait .data
+          resolvedCourse = response?.data || response;
         
+          if (!resolvedCourse || (!resolvedCourse.content && !resolvedCourse.data?.content)) {
+            throw new Error("Le contenu du cours est vide ou invalide.");
+          }
+        } catch (error) {
+          console.warn('Chargement detaille du cours indisponible, utilisation des donnees deja chargees.', error);
+        }
+
+        let content = resolvedCourse.content;
+
         // Handle cases where content might be a string (JSON) instead of an object
         if (typeof content === 'string' && content.trim().startsWith('{')) {
           try {
@@ -240,17 +280,18 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         }
 
         setPendingContent(content || '');
-        setCurrentCourseId(course.id || id);
-        setCourseTitle(course.title || "Sans titre");
-        setCourseCategory(course.category || "Informatique");
-        setCourseDescription(course.description || "");
-        setCourseImage(course.photoUrl || course.coverImage);
-        
-        toast.success(`Cours "${course.title || 'Sans titre'}" chargé`);
+        setCurrentCourseId(resolvedCourse.id || id);
+        setCurrentCourseAuthorId(resolvedCourse.author?.id || null);
+        setCourseTitle(resolvedCourse.title || "Sans titre");
+        setCourseCategory(resolvedCourse.category || "Informatique");
+        setCourseDescription(resolvedCourse.description || "");
+        setCourseImage(resolvedCourse.photoUrl || resolvedCourse.coverImage);
+
+        toast.success(`Cours "${resolvedCourse.title || 'Sans titre'}" chargé`);
         setIsEntranceModalOpen(false);
         setActivePanel('structure');
       } else {
-        toast.error('Cours non trouvé dans votre bibliothèque');
+        toast.error('Cours non trouve dans votre bibliotheque collaborative');
       }
     } catch (error) {
       console.error('Erreur chargement cours spécifique:', error);
@@ -429,7 +470,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     if (element) {
       // Focus the editor to ensure proper interaction
       editorInstance.view.focus();
-      
+
       // Scroll element to the beginning of viewport (top alignment)
       // Using 'start' instead of 'center' for accurate positioning at content start
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -518,20 +559,38 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       return;
     }
 
+    const finalTitle = courseTitle.trim() || "Cours sans titre";
+    const finalCategory = courseCategory.trim() || "Informatique";
+    const finalDescription = courseDescription.trim() || "Description du cours";
+    
+    if (!editorInstance) return;
     const jsonContent = editorInstance.getJSON();
 
     try {
       if (currentCourseId) {
+        console.info('🔍 Save debug:update:start', {
+          courseId: currentCourseId,
+          userId: user.id,
+          currentCourseAuthorId,
+          publish,
+        });
+
         // Update existing course
         const updateData: CourseUpdateRequest = {
-          title: courseTitle.trim() || "Cours sans titre",
+          title: finalTitle,
           content: jsonContent as any,
-          category: courseCategory.trim() || "Informatique",
-          description: courseDescription.trim() || "Description du cours",
+          category: finalCategory,
+          description: finalDescription,
+          coverImage: courseImage,
           photoUrl: courseImage,
         };
 
         await CourseControllerService.updateCourse(currentCourseId, updateData);
+        console.info('✅ Save debug:update:success', {
+          courseId: currentCourseId,
+          userId: user.id,
+          currentCourseAuthorId,
+        });
 
         // Update status if publish is requested
         if (publish) {
@@ -542,10 +601,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       } else {
         // Create new course
         const createData: CourseCreateRequest = {
-          title: courseTitle.trim() || "Cours sans titre",
+          title: finalTitle,
           content: jsonContent as any,
-          category: courseCategory.trim() || "Informatique",
-          description: courseDescription.trim() || "Description du cours",
+          category: finalCategory,
+          description: finalDescription,
+          coverImage: courseImage,
           photoUrl: courseImage,
         };
 
@@ -557,6 +617,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
         if (createdCourseId) {
           setCurrentCourseId(createdCourseId);
+          setCurrentCourseAuthorId(user.id);
 
           // Publish if requested
           if (publish) {
@@ -570,7 +631,21 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       }
     } catch (error: any) {
       console.error("Erreur sauvegarde :", error);
-      const message = error?.response?.data?.message || error?.message || "Erreur de communication avec le serveur.";
+      if (error instanceof ApiError) {
+        console.error('❌ Save debug:update:error', {
+          courseId: currentCourseId,
+          userId: user.id,
+          currentCourseAuthorId,
+          status: error.status,
+          statusText: error.statusText,
+          body: error.body,
+          url: error.url,
+        });
+      }
+      const message =
+        error instanceof ApiError
+          ? (error.body?.message || error.body?.error || error.message)
+          : (error?.response?.data?.message || error?.message || "Erreur de communication avec le serveur.");
       if (!silent) toast.error(`${t('toast.saveError')} : ${message}`);
     }
   };
@@ -594,6 +669,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(data.category) ? "" : data.category);
     setCourseDescription(data.description);
     setCurrentCourseId(null);
+    setCurrentCourseAuthorId(null);
     if (editorInstance) {
       editorInstance.commands.setContent('');
     }
@@ -618,832 +694,820 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
-      {/* Entrance Modal */}
-      <EditorEntranceModal
-        isOpen={isEntranceModalOpen}
-        onClose={() => setIsEntranceModalOpen(false)}
-        onCreateNew={(title) => {
-          setCourseTitle(title);
-          setIsEntranceModalOpen(false);
-          if (editorInstance) {
-            // Insérer une structure par défaut complète pour faciliter la saisie
-            const timestamp = Date.now();
-            const defaultContent = {
-              type: 'doc',
-              content: [
-                {
-                  type: 'section',
-                  attrs: { id: `section-${timestamp}`, title: 'Partie' },
-                  content: [
-                    {
-                      type: 'chapitre',
-                      attrs: { id: `chapitre-${timestamp}`, title: 'Chapitre' },
-                      content: [
-                        {
-                          type: 'paragraphe',
-                          attrs: { id: `paragraphe-${timestamp}`, title: 'Paragraphe' },
-                          content: [
-                            {
-                              type: 'notion',
-                              attrs: { id: `notion-${timestamp}`, title: 'Notion' },
-                              content: [
-                                { type: 'paragraph', content: [{ type: 'text', text: 'Contenu de la notion...' }] }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            };
-            editorInstance.commands.setContent(defaultContent);
+    <CollaborationProvider courseId={currentCourseId}>
+      <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+        {/* Entrance Modal */}
+        <EditorEntranceModal
+          isOpen={isEntranceModalOpen}
+          onClose={() => setIsEntranceModalOpen(false)}
+          onCreateNew={(title) => {
+            setCourseTitle(title);
+            setIsEntranceModalOpen(false);
+            if (editorInstance) {
+              // Insérer une structure par défaut complète pour faciliter la saisie
+              const timestamp = Date.now();
+              const defaultContent = {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'section',
+                    attrs: { id: `section-${timestamp}`, title: 'Partie' },
+                    content: [
+                      {
+                        type: 'chapitre',
+                        attrs: { id: `chapitre-${timestamp}`, title: 'Chapitre' },
+                        content: [
+                          {
+                            type: 'paragraphe',
+                            attrs: { id: `paragraphe-${timestamp}`, title: 'Paragraphe' },
+                            content: [
+                              {
+                                type: 'notion',
+                                attrs: { id: `notion-${timestamp}`, title: 'Notion' },
+                                content: [
+                                  { type: 'paragraph', content: [{ type: 'text', text: 'Contenu de la notion...' }] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              };
+              editorInstance.commands.setContent(defaultContent);
+            }
+          }}
+          onModifyExisting={() => {
+            setIsEntranceModalOpen(false);
+            setActivePanel('author'); // Open 'Mes Cours' panel
+          }}
+        />
+
+        {/* Course Creation Modal */}
+        <CreateCourseModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSubmit={handleCreateCourse}
+        />
+
+        {/* Confirmation Modal */}
+        <ConfirmModal
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig({ isOpen: false, type: null })}
+          onConfirm={handleConfirmedAction}
+          title={confirmConfig.type === 'publish' ? t('confirm.publishTitle') : t('confirm.saveTitle')}
+          message={confirmConfig.type === 'publish'
+            ? t('confirm.publishMessage')
+            : t('confirm.saveMessage')
           }
-        }}
-        onModifyExisting={() => {
-          setIsEntranceModalOpen(false);
-          setActivePanel('author'); // Open 'Mes Cours' panel
-        }}
-      />
+          confirmText={confirmConfig.type === 'publish' ? t('confirm.publishConfirm') : t('confirm.saveConfirm')}
+          type={confirmConfig.type === 'publish' ? 'info' : 'warning'}
+        />
+        {/* Spacer for Navbar at the top */}
+        <nav id="navbar" className="h-16 flex-none z-10">
+          <Navbar />
+        </nav>
+        {/* Floating Buttons */}
+        <CollabInviteButton
+          courseId={currentCourseId}
+          courseTitle={courseTitle}
+          canInvite={!!user?.id && !!currentCourseAuthorId && user.id === currentCourseAuthorId}
+        />
 
-      {/* Course Creation Modal */}
-      <CreateCourseModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateCourse}
-      />
-
-      {/* Confirmation Modal */}
-      <ConfirmModal
-        isOpen={confirmConfig.isOpen}
-        onClose={() => setConfirmConfig({ isOpen: false, type: null })}
-        onConfirm={handleConfirmedAction}
-        title={confirmConfig.type === 'publish' ? t('confirm.publishTitle') : t('confirm.saveTitle')}
-        message={confirmConfig.type === 'publish'
-          ? t('confirm.publishMessage')
-          : t('confirm.saveMessage')
-        }
-        confirmText={confirmConfig.type === 'publish' ? t('confirm.publishConfirm') : t('confirm.saveConfirm')}
-        type={confirmConfig.type === 'publish' ? 'info' : 'warning'}
-      />
-      {/* Navbar at the top */}
-      <nav id="navbar" className="h-16 flex-none z-10">
-        <Navbar />
-      </nav>
-
-      {/* Main content area */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Sidebar for TOC */}
-        <aside
-          id="sidebar-toc"
-          className={`${showSidebar ? 'w-80' : 'w-0'
-            } flex-none bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out relative z-0 print:hidden`}
-        >
-          <TableOfContents
-            items={tocItems}
-            onItemClick={handleTOCItemClick}
-            onItemRename={handleTOCItemRename}
-            onItemDelete={handleTOCItemDelete}
-            onItemDuplicate={(itemId) => {
-              if (editorRef.current) {
-                editorRef.current.handleTOCAction('duplicate', itemId);
-              }
-            }}
-            onItemPaste={(targetId, item) => {
-              if (editorRef.current) {
-                editorRef.current.handleTOCAction('paste', targetId, item);
-              }
-            }}
-            onItemCopy={(item) => {
-              if (editorRef.current) {
-                editorRef.current.handleTOCAction('copy', item.id);
-              }
-              console.log('Item copié dans TOC:', item.title);
-            }}
-            onItemMove={(itemId, targetId, position) => {
-              if (editorRef.current) {
-                editorRef.current.handleTOCAction('move', itemId, { targetId, position });
-              }
-            }}
-          />
-        </aside>
-
-        {/* Toggle Sidebar Button */}
-        <button
-          id="btn-toggle-toc"
-          onClick={() => setShowSidebar(!showSidebar)}
-          className={`absolute top-24 z-20 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'
-            }`}
-          title={showSidebar ? t('toolbar.hideToc') : t('toolbar.showToc')}
-        >
-          {showSidebar ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-        </button>
-
-        {/* Main Editor Area */}
-        <main id="main-editor-container" className="flex-1 flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900 relative z-0 overflow-hidden">
-          <MainEditor
-            initialContent=""
-            onContentChange={handleEditorChange}
-            onEditorReady={(editor) => {
-              setEditorInstance(editor);
-            }}
-            ref={editorRef}
-          />
-        </main>
-
-        {/* Resizer Handle */}
-        {activePanel && (
-          <div
-            className={`w-1.5 cursor-col-resize hover:bg-purple-400 active:bg-purple-600 transition-colors h-full flex-none z-30 ${isResizing ? 'bg-purple-600' : 'bg-gray-100 dark:bg-gray-800'}`}
-            onMouseDown={startResizing}
-          />
-        )}
-
-        {/* RIGHT SECTION - Unified Sidebar + Panel Area */}
-        <div className="flex print:hidden relative">
-          {/* Main Sidebar - Unified */}
-          <div id="right-icon-bar" className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-3 z-20">
-            <IconButton
-              icon={<FaList id="icon-structure" />}
-              label={t('panels.structure')}
-              panelType="structure"
-              colorClass="text-purple-600 dark:text-purple-400"
-            />
-            <IconButton
-              icon={<FaInfo id="icon-info" />}
-              label={t('panels.info')}
-              panelType="info"
-              colorClass="text-blue-600 dark:text-blue-400"
-            />
-            <IconButton
-              icon={<FaEye id="icon-preview" />}
-              label={t('panels.pdfPreview')}
-              panelType="preview"
-              colorClass="text-cyan-600 dark:text-cyan-400"
-            />
-            <IconButton
-              icon={<FaComments id="icon-feedback" />}
-              label={t('panels.feedback')}
-              panelType="feedback"
-              colorClass="text-green-600 dark:text-green-400"
-            />
-
-            <IconButton
-              icon={<Sparkles id="icon-recommendations" className="animate-pulse" />}
-              label="Recommandations IA"
-              panelType="recommendations"
-              colorClass="text-purple-600 dark:text-purple-400"
-            />
-
-            <div className="flex-grow" />
-
-            <IconButton
-              icon={<FaFolderOpen id="icon-my-courses" />}
-              label={t('panels.myCourses')}
-              panelType="author"
-              colorClass="text-orange-600 dark:text-orange-400"
-            />
-            <IconButton
-              icon={<FaTasks id="icon-exercises" />}
-              label={t('panels.exercises')}
-              panelType="exercises"
-              badge={exercises.length}
-              colorClass="text-blue-600 dark:text-blue-400"
-              disabled={!currentCourseId}
-            />
-            <IconButton
-              icon={<FaGraduationCap id="icon-grading" />}
-              label={t('panels.grading')}
-              panelType="grading"
-              badge={exerciseStats.pendingGrading}
-              colorClass="text-indigo-600 dark:text-indigo-400"
-              disabled={!currentCourseId}
-            />
-            <IconButton
-              icon={<FaChalkboardTeacher id="icon-workshops" />}
-              label={t('panels.workshops')}
-              panelType="worksheet"
-              colorClass="text-indigo-600 dark:text-indigo-400"
-            />
-            <IconButton
-              icon={<FaCog id="icon-settings" />}
-              label={t('panels.properties')}
-              panelType="properties"
-              colorClass="text-gray-600 dark:text-gray-400"
-            />
-
-            <div className="border-t border-gray-100 dark:border-gray-700 w-8 my-2" />
-
-            {/* Bottom Actions */}
-            <button
-              id="btn-save-course"
-              onClick={() => triggerSaveConfirm(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title={t('toolbar.save')}
-            >
-              <FaSave className="text-lg" />
-            </button>
-            <button
-              id="btn-publish-course"
-              onClick={() => triggerSaveConfirm(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 transition-colors"
-              title={t('toolbar.publish')}
-            >
-              <FaPaperPlane className="text-lg" />
-            </button>
-          </div>
-          {/* Panel Area - Slides based on activePanel */}
-          <div
-            className={`overflow-y-auto border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all ease-in-out ${activePanel ? '' : 'w-0 overflow-hidden'
-              }`}
-            style={{ width: activePanel ? `${panelWidth}px` : '0px', transition: isResizing ? 'none' : 'width 300ms' }}
+        {/* Main content area */}
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* Sidebar for TOC */}
+          <aside
+            id="sidebar-toc"
+            className={`${showSidebar ? 'w-80' : 'w-0'
+              } flex-none bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out relative z-0 print:hidden`}
           >
-            {/* PANEL 1: Structure de cours */}
-            {activePanel === 'structure' && (
-              <StructureDeCours onClose={() => setActivePanel(null)} />
-            )}
+            <TableOfContents
+              items={tocItems}
+              onItemClick={handleTOCItemClick}
+              onItemRename={handleTOCItemRename}
+              onItemDelete={handleTOCItemDelete}
+              onItemDuplicate={(itemId) => {
+                if (editorRef.current) {
+                  editorRef.current.handleTOCAction('duplicate', itemId);
+                }
+              }}
+              onItemPaste={(targetId, item) => {
+                if (editorRef.current) {
+                  editorRef.current.handleTOCAction('paste', targetId, item);
+                }
+              }}
+              onItemCopy={(item) => {
+                if (editorRef.current) {
+                  editorRef.current.handleTOCAction('copy', item.id);
+                }
+                console.log('Item copié dans TOC:', item.title);
+              }}
+              onItemMove={(itemId, targetId, position) => {
+                if (editorRef.current) {
+                  editorRef.current.handleTOCAction('move', itemId, { targetId, position });
+                }
+              }}
+            />
+          </aside>
 
-            {/* PANEL 1.5: Aperçu PDF */}
-            {activePanel === 'preview' && (
-              <PdfPreview
-                content={editorInstance?.getJSON()}
-                title={courseTitle}
-                onElementClick={handleTOCItemClick}
+          {/* Toggle Sidebar Button */}
+          <button
+            id="btn-toggle-toc"
+            onClick={() => setShowSidebar(!showSidebar)}
+            className={`absolute top-24 z-20 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'
+              }`}
+            title={showSidebar ? t('toolbar.hideToc') : t('toolbar.showToc')}
+          >
+            {showSidebar ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          </button>
+
+          {/* Main Editor Area */}
+          <main id="main-editor-container" className="flex-1 flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900 relative z-0 overflow-hidden">
+            <MainEditor
+              initialContent=""
+              onContentChange={handleEditorChange}
+              onEditorReady={(editor) => {
+                setEditorInstance(editor);
+              }}
+              ref={editorRef}
+            >
+              <CollaborationSync editorRef={editorRef} editorInstance={editorInstance} />
+            </MainEditor>
+          </main>
+
+          {/* Resizer Handle */}
+          {activePanel && (
+            <div
+              className={`w-1.5 cursor-col-resize hover:bg-purple-400 active:bg-purple-600 transition-colors h-full flex-none z-30 ${isResizing ? 'bg-purple-600' : 'bg-gray-100 dark:bg-gray-800'}`}
+              onMouseDown={startResizing}
+            />
+          )}
+
+          {/* RIGHT SECTION - Unified Sidebar + Panel Area */}
+          <div className="flex print:hidden relative">
+            {/* Main Sidebar - Unified */}
+            <div id="right-icon-bar" className="w-16 flex-none bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-3 z-20">
+              <IconButton
+                icon={<FaList id="icon-structure" />}
+                label={t('panels.structure')}
+                panelType="structure"
+                colorClass="text-purple-600 dark:text-purple-400"
               />
-            )}
+              <IconButton
+                icon={<FaInfo id="icon-info" />}
+                label={t('panels.info')}
+                panelType="info"
+                colorClass="text-blue-600 dark:text-blue-400"
+              />
+              <IconButton
+                icon={<FaEye id="icon-preview" />}
+                label={t('panels.pdfPreview')}
+                panelType="preview"
+                colorClass="text-cyan-600 dark:text-cyan-400"
+              />
+              <IconButton
+                icon={<FaComments id="icon-feedback" />}
+                label={t('panels.feedback')}
+                panelType="feedback"
+                colorClass="text-green-600 dark:text-green-400"
+              />
 
-            {/* PANEL 2: Infos */}
-            {activePanel === 'info' && (
-              <div className="p-4 h-full">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('info.panelTitle')}</h2>
-                  <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                    <FaTimes />
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                      {t('info.courseTitle')}
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
-                      value={courseTitle}
-                      onChange={(e) => setCourseTitle(e.target.value)}
-                    />
+              <div className="flex-grow" />
+
+              <IconButton
+                icon={<FaFolderOpen id="icon-my-courses" />}
+                label={t('panels.myCourses')}
+                panelType="author"
+                colorClass="text-orange-600 dark:text-orange-400"
+              />
+              <IconButton
+                icon={<FaTasks id="icon-exercises" />}
+                label={t('panels.exercises')}
+                panelType="exercises"
+                badge={exercises.length}
+                colorClass="text-blue-600 dark:text-blue-400"
+                disabled={!currentCourseId}
+              />
+              <IconButton
+                icon={<FaGraduationCap id="icon-grading" />}
+                label={t('panels.grading')}
+                panelType="grading"
+                badge={exerciseStats.pendingGrading}
+                colorClass="text-indigo-600 dark:text-indigo-400"
+                disabled={!currentCourseId}
+              />
+              <IconButton
+                icon={<FaChalkboardTeacher id="icon-workshops" />}
+                label={t('panels.workshops')}
+                panelType="worksheet"
+                colorClass="text-indigo-600 dark:text-indigo-400"
+                disabled={!currentCourseId}
+              />
+              <IconButton
+                icon={<FaCog id="icon-settings" />}
+                label={t('panels.properties')}
+                panelType="properties"
+                colorClass="text-gray-600 dark:text-gray-400"
+              />
+
+              <div className="border-t border-gray-100 dark:border-gray-700 w-8 my-2" />
+
+              {/* Bottom Actions */}
+              <button
+                id="btn-save-course"
+                onClick={() => triggerSaveConfirm(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title={t('toolbar.save')}
+              >
+                <FaSave className="text-lg" />
+              </button>
+              <button
+                id="btn-publish-course"
+                onClick={() => triggerSaveConfirm(true)}
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 transition-colors"
+                title={t('toolbar.publish')}
+              >
+                <FaPaperPlane className="text-lg" />
+              </button>
+            </div>
+            {/* Panel Area - Slides based on activePanel */}
+            <div
+              className={`overflow-y-auto border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all ease-in-out ${activePanel ? '' : 'w-0 overflow-hidden'
+                }`}
+              style={{ width: activePanel ? `${panelWidth}px` : '0px', transition: isResizing ? 'none' : 'width 300ms' }}
+            >
+              {/* PANEL 1: Structure de cours */}
+              {activePanel === 'structure' && (
+                <StructureDeCours onClose={() => setActivePanel(null)} />
+              )}
+
+              {/* PANEL 1.5: Aperçu PDF */}
+              {activePanel === 'preview' && (
+                <PdfPreview
+                  content={editorInstance?.getJSON()}
+                  title={courseTitle}
+                  onElementClick={handleTOCItemClick}
+                />
+              )}
+
+              {/* PANEL 2: Infos */}
+              {activePanel === 'info' && (
+                <div className="p-4 h-full">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('info.panelTitle')}</h2>
+                    <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                      <FaTimes />
+                    </button>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                      {t('info.category')}
-                    </label>
-                    <select
-                      className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
-                      value={["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) ? courseCategory : "Autre"}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "Autre") {
-                          setCourseCategory("Autre");
-                          setCustomCategory("");
-                        } else {
-                          setCourseCategory(val);
-                        }
-                      }}
-                    >
-                      <option value="Informatique">{t('info.categories.computer')}</option>
-                      <option value="Mathématiques">{t('info.categories.mathematics')}</option>
-                      <option value="Physique">{t('info.categories.physics')}</option>
-                      <option value="Langues">{t('info.categories.languages')}</option>
-                      <option value="Autre">{t('info.categories.other')}</option>
-                    </select>
-                  </div>
-
-                  {!["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) && (
-                    <div className="animate-in slide-in-from-top-1 duration-200">
+                  <div className="space-y-4">
+                    <div>
                       <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                        {t('info.categoryName')}
+                        {t('info.courseTitle')}
                       </label>
                       <input
                         type="text"
-                        placeholder={t('info.categoryPlaceholder')}
-                        className="w-full text-sm py-2 px-3 border-b-2 border-purple-400 bg-purple-50/30 dark:bg-purple-900/10 outline-none focus:border-purple-600 transition-colors"
-                        value={courseCategory === "Autre" ? customCategory : courseCategory}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCustomCategory(val);
-                          setCourseCategory(val || "Autre");
-                        }}
+                        className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
+                        value={courseTitle}
+                        onChange={(e) => setCourseTitle(e.target.value)}
                       />
                     </div>
-                  )}
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
-                      {t('info.description')}
-                    </label>
-                    <textarea
-                      rows={4}
-                      className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors resize-none"
-                      value={courseDescription}
-                      onChange={(e) => setCourseDescription(e.target.value)}
-                      placeholder={t('info.descriptionPlaceholder')}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-                      {t('info.coverImage')}
-                    </label>
-                    <ImageUploader
-                      currentImageUrl={courseImage}
-                      onUploadComplete={(url) => setCourseImage(url)}
-                      onUploadError={(err) => toast.error(err)}
-                      placeholder={t('info.coverImagePlaceholder')}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {currentCourseId && (
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-                        {t('info.courseId')}
-                      </div>
-                      <div className="text-sm font-mono bg-gray-100 dark:bg-gray-700 p-2 rounded">
-                        {currentCourseId}
-                      </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                        {t('info.category')}
+                      </label>
+                      <select
+                        className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors"
+                        value={["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) ? courseCategory : "Autre"}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "Autre") {
+                            setCourseCategory("Autre");
+                            setCustomCategory("");
+                          } else {
+                            setCourseCategory(val);
+                          }
+                        }}
+                      >
+                        <option value="Informatique">{t('info.categories.computer')}</option>
+                        <option value="Mathématiques">{t('info.categories.mathematics')}</option>
+                        <option value="Physique">{t('info.categories.physics')}</option>
+                        <option value="Langues">{t('info.categories.languages')}</option>
+                        <option value="Autre">{t('info.categories.other')}</option>
+                      </select>
                     </div>
-                  )}
 
-                  <div className="pt-2">
-                    <button
-                      onClick={() => triggerSaveConfirm(false)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
-                    >
-                      <FaSave /> {t('info.saveInfos')}
-                    </button>
+                    {!["Informatique", "Mathématiques", "Physique", "Langues"].includes(courseCategory) && (
+                      <div className="animate-in slide-in-from-top-1 duration-200">
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                          {t('info.categoryName')}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={t('info.categoryPlaceholder')}
+                          className="w-full text-sm py-2 px-3 border-b-2 border-purple-400 bg-purple-50/30 dark:bg-purple-900/10 outline-none focus:border-purple-600 transition-colors"
+                          value={courseCategory === "Autre" ? customCategory : courseCategory}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCustomCategory(val);
+                            setCourseCategory(val || "Autre");
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                        {t('info.description')}
+                      </label>
+                      <textarea
+                        rows={4}
+                        className="w-full text-sm py-2 px-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded outline-none focus:border-purple-500 transition-colors resize-none"
+                        value={courseDescription}
+                        onChange={(e) => setCourseDescription(e.target.value)}
+                        placeholder={t('info.descriptionPlaceholder')}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
+                        {t('info.coverImage')}
+                      </label>
+                      <ImageUploader
+                        currentImageUrl={courseImage}
+                        onUploadComplete={(url) => setCourseImage(url)}
+                        onUploadError={(err) => toast.error(err)}
+                        placeholder={t('info.coverImagePlaceholder')}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {currentCourseId && (
+                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
+                          {t('info.courseId')}
+                        </div>
+                        <div className="text-sm font-mono bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                          {currentCourseId}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-2">
+                      <button
+                        onClick={() => triggerSaveConfirm(false)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                      >
+                        <FaSave /> {t('info.saveInfos')}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* PANEL 3: Appréciations */}
-            {activePanel === 'feedback' && (
-              <div className="p-4 h-full">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('feedback.panelTitle')}</h2>
-                  <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                    <FaTimes />
-                  </button>
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  <div className="text-center py-8">
-                    <FaComments className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-500">{t('feedback.comingSoon')}</p>
-                    <p className="text-xs text-gray-400 mt-2">{t('feedback.comingSoonDetail')}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* PANEL 4: Mes Cours */}
-            {activePanel === 'author' && (
-              <MyCoursesPanel
-                onClose={() => setActivePanel(null)}
-                onLoadCourse={(content, courseId, title, category, description, photoUrl) => {
-                  if (editorInstance && content) {
-                    editorInstance.commands.setContent(content);
-                    setCurrentCourseId(Number(courseId));
-                    setCourseTitle(title);
-                    setCourseCategory(category);
-                    setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(category) ? "" : category);
-                    setCourseDescription(description);
-                    setCourseImage(photoUrl);
-                    // Force refresh TOC after content change
-                    setTimeout(() => refreshTOC(), 100);
-                  }
-                }}
-              />
-            )}
-
-            {/* PANEL 5: Travaux Dirigés */}
-            {activePanel === 'worksheet' && (
-              <div className="p-4 h-full">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('workshops.panelTitle')}</h2>
-                  <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                    <FaTimes />
-                  </button>
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  <div className="text-center py-8">
-                    <FaChalkboardTeacher className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-500">{t('workshops.description')}</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {t('workshops.hint')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* PANEL 6: Propriétés */}
-            {activePanel === 'properties' && (
-              <div className="p-4 h-full">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('properties.panelTitle')}</h2>
-                  <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                    <FaTimes />
-                  </button>
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  <div className="text-center py-8">
-                    <FaCog className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-500">{t('properties.description')}</p>
-                    <p className="text-xs text-gray-400 mt-2">{t('properties.hint')}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* PANEL 7: Gestion des exercices */}
-            {activePanel === 'exercises' && (
-              <div className="h-full flex flex-col">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <FaTasks /> {t('exercises.panelTitle')}
-                    </h2>
-                    <button
-                      onClick={() => setActivePanel(null)}
-                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
+              {/* PANEL 3: Appréciations */}
+              {activePanel === 'feedback' && (
+                <div className="p-4 h-full">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('feedback.panelTitle')}</h2>
+                    <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                       <FaTimes />
                     </button>
                   </div>
-
-                  {!currentCourseId ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
                     <div className="text-center py-8">
-                      <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        {t('exercises.noCourse')}
+                      <FaComments className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-500">{t('feedback.comingSoon')}</p>
+                      <p className="text-xs text-gray-400 mt-2">{t('feedback.comingSoonDetail')}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PANEL 4: Mes Cours */}
+              {activePanel === 'author' && (
+                <MyCoursesPanel
+                  onClose={() => setActivePanel(null)}
+                  onLoadCourse={async (course) => {
+                    if (!user?.id || !course.id) return;
+                    await loadSpecificCourse(course.id, user.id);
+                    setCustomCategory(["Informatique", "Mathématiques", "Physique", "Langues"].includes(course.category || "") ? "" : (course.category || ""));
+                    setTimeout(() => refreshTOC(), 100);
+                  }}
+                />
+              )}
+
+              {/* PANEL 5: Travaux Dirigés */}
+              {activePanel === 'worksheet' && (
+                <div className="p-4 h-full">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('workshops.panelTitle')}</h2>
+                    <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                      <FaTimes />
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    <div className="text-center py-8">
+                      <FaChalkboardTeacher className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-500">{t('workshops.description')}</p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {t('workshops.hint')}
                       </p>
                     </div>
-                  ) : editingExercise ? (
-                    <div className="flex-1 overflow-y-auto">
-                      {/* Exercise Editor Component */}
-                      <div className="p-2">
-                        <h3 className="font-medium mb-4 dark:text-white">
-                          {editingExercise.id ? t('exercises.editTitle') : t('exercises.newTitle')}
-                        </h3>
+                  </div>
+                </div>
+              )}
 
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                              {t('exercises.titleLabel')}
-                            </label>
-                            <input
-                              type="text"
-                              value={editingExercise.title}
-                              onChange={(e) => setEditingExercise({ ...editingExercise, title: e.target.value })}
-                              className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-                              placeholder={t('exercises.titlePlaceholder')}
-                            />
-                          </div>
+              {/* PANEL 6: Propriétés */}
+              {activePanel === 'properties' && (
+                <div className="p-4 h-full">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('properties.panelTitle')}</h2>
+                    <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                      <FaTimes />
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    <div className="text-center py-8">
+                      <FaCog className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-500">{t('properties.description')}</p>
+                      <p className="text-xs text-gray-400 mt-2">{t('properties.hint')}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                          <div>
-                            <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                              {t('exercises.descLabel')}
-                            </label>
-                            <textarea
-                              value={editingExercise.description}
-                              onChange={(e) => setEditingExercise({ ...editingExercise, description: e.target.value })}
-                              className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-                              rows={3}
-                              placeholder={t('exercises.descPlaceholder')}
-                            />
-                          </div>
+              {/* PANEL 7: Gestion des exercices */}
+              {activePanel === 'exercises' && (
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <FaTasks /> {t('exercises.panelTitle')}
+                      </h2>
+                      <button
+                        onClick={() => setActivePanel(null)}
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
 
-                          <div className="flex gap-4">
-                            <div className="flex-1">
+                    {!currentCourseId ? (
+                      <div className="text-center py-8">
+                        <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-300 mb-4">
+                          {t('exercises.noCourse')}
+                        </p>
+                      </div>
+                    ) : editingExercise ? (
+                      <div className="flex-1 overflow-y-auto">
+                        {/* Exercise Editor Component */}
+                        <div className="p-2">
+                          <h3 className="font-medium mb-4 dark:text-white">
+                            {editingExercise.id ? t('exercises.editTitle') : t('exercises.newTitle')}
+                          </h3>
+
+                          <div className="space-y-4">
+                            <div>
                               <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                                {t('exercises.maxScore')}
+                                {t('exercises.titleLabel')}
                               </label>
                               <input
-                                type="number"
-                                value={editingExercise.maxScore}
-                                onChange={(e) => setEditingExercise({ ...editingExercise, maxScore: parseInt(e.target.value) })}
+                                type="text"
+                                value={editingExercise.title}
+                                onChange={(e) => setEditingExercise({ ...editingExercise, title: e.target.value })}
                                 className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                                placeholder={t('exercises.titlePlaceholder')}
                               />
                             </div>
 
-                            <div className="flex-1">
+                            <div>
                               <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                                {t('exercises.status')}
+                                {t('exercises.descLabel')}
                               </label>
-                              <select
-                                value={editingExercise.status}
-                                onChange={(e) => setEditingExercise({ ...editingExercise, status: e.target.value as any })}
+                              <textarea
+                                value={editingExercise.description}
+                                onChange={(e) => setEditingExercise({ ...editingExercise, description: e.target.value })}
                                 className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-                              >
-                                <option value="DRAFT">{t('exercises.draft')}</option>
-                                <option value="PUBLISHED">{t('exercises.published')}</option>
-                              </select>
+                                rows={3}
+                                placeholder={t('exercises.descPlaceholder')}
+                              />
                             </div>
-                          </div>
 
-                          <div className="flex gap-2 pt-4">
-                            <button
-                              onClick={() => setEditingExercise(null)}
-                              className="flex-1 px-4 py-2 border rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                              {t('exercises.cancel')}
-                            </button>
-                            <button
-                              onClick={() => handleSaveExercise(editingExercise)}
-                              className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                            >
-                              {editingExercise.id ? t('exercises.update') : t('exercises.create')}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mb-4 grid grid-cols-3 gap-2">
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-center">
-                          <div className="text-lg font-bold">{exerciseStats.total}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Exercices</div>
-                        </div>
-                        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded text-center">
-                          <div className="text-lg font-bold">{exerciseStats.published}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Publiés</div>
-                        </div>
-                        <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded text-center">
-                          <div className="text-lg font-bold">{exerciseStats.pendingGrading}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">À corriger</div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={handleCreateExercise}
-                        className="w-full mb-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2"
-                      >
-                        <FaPlus /> {t('exercises.newExercise')}
-                      </button>
-
-                      {exerciseLoading ? (
-                        null
-                      ) : exercises.length === 0 ? (
-                        <div className="text-center py-8">
-                          <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-600 dark:text-gray-300">
-                            Aucun exercice pour ce cours
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Créez votre premier exercice
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex-1 overflow-y-auto">
-                          <div className="space-y-2">
-                            {exercises.map((exercise) => (
-                              <div
-                                key={exercise.id}
-                                className="p-3 border rounded dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                              >
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h4 className="font-medium dark:text-white">{exercise.title}</h4>
-                                    <p className="text-xs text-gray-500 truncate">
-                                      {exercise.description || t('exercises.noDescription')}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <span className={`text-xs px-2 py-1 rounded-full ${exercise.status === 'PUBLISHED'
-                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                        }`}>
-                                        {exercise.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
-                                      </span>
-                                      <span className="text-xs text-gray-500">
-                                        {t('exercises.deadline')}: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : t('exercises.deadlineNone')}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-1">
-                                    <button
-                                      onClick={() => handleEditExercise(exercise)}
-                                      className="p-1 text-blue-500 hover:text-blue-700"
-                                      title="Modifier"
-                                    >
-                                      <FaEye />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteExercise(exercise.id)}
-                                      className="p-1 text-red-500 hover:text-red-700"
-                                      title="Supprimer"
-                                    >
-                                      <FaTimes />
-                                    </button>
-                                  </div>
-                                </div>
+                            <div className="flex gap-4">
+                              <div className="flex-1">
+                                <label className="block text-xs font-medium mb-1 dark:text-gray-300">
+                                  {t('exercises.maxScore')}
+                                </label>
+                                <input
+                                  type="number"
+                                  value={editingExercise.maxScore}
+                                  onChange={(e) => setEditingExercise({ ...editingExercise, maxScore: parseInt(e.target.value) })}
+                                  className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                                />
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
 
-            {/* PANEL 8: Correction des exercices */}
-            {activePanel === 'grading' && (
-              <div className="h-full flex flex-col">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <CheckSquare size={16} /> {t('gradingPanel.panelTitle')}
-                    </h2>
-                    <button
-                      onClick={() => setActivePanel(null)}
-                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      <FaTimes />
-                    </button>
-                  </div>
+                              <div className="flex-1">
+                                <label className="block text-xs font-medium mb-1 dark:text-gray-300">
+                                  {t('exercises.status')}
+                                </label>
+                                <select
+                                  value={editingExercise.status}
+                                  onChange={(e) => setEditingExercise({ ...editingExercise, status: e.target.value as any })}
+                                  className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                                >
+                                  <option value="DRAFT">{t('exercises.draft')}</option>
+                                  <option value="PUBLISHED">{t('exercises.published')}</option>
+                                </select>
+                              </div>
+                            </div>
 
-                  {!currentCourseId ? (
-                    <div className="text-center py-8">
-                      <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        {t('gradingPanel.noCourse')}
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {selectedExercise ? (
-                        <div className="flex-1 overflow-y-auto">
-                          {/* Grading Interface */}
-                          <div className="p-2">
-                            <div className="flex justify-between items-center mb-4">
-                              <h3 className="font-medium dark:text-white">
-                                {selectedExercise.title}
-                              </h3>
+                            <div className="flex gap-2 pt-4">
                               <button
-                                onClick={() => setSelectedExercise(null)}
-                                className="text-sm text-gray-500 hover:text-gray-700"
+                                onClick={() => setEditingExercise(null)}
+                                className="flex-1 px-4 py-2 border rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
-                                {t('gradingPanel.back')}
+                                {t('exercises.cancel')}
+                              </button>
+                              <button
+                                onClick={() => handleSaveExercise(editingExercise)}
+                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                              >
+                                {editingExercise.id ? t('exercises.update') : t('exercises.create')}
                               </button>
                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-4 grid grid-cols-3 gap-2">
+                          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-center">
+                            <div className="text-lg font-bold">{exerciseStats.total}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">Exercices</div>
+                          </div>
+                          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded text-center">
+                            <div className="text-lg font-bold">{exerciseStats.published}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">Publiés</div>
+                          </div>
+                          <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded text-center">
+                            <div className="text-lg font-bold">{exerciseStats.pendingGrading}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">À corriger</div>
+                          </div>
+                        </div>
 
-                            {gradingLoading ? (
+                        <button
+                          onClick={handleCreateExercise}
+                          className="w-full mb-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2"
+                        >
+                          <FaPlus /> {t('exercises.newExercise')}
+                        </button>
+
+                        {exerciseLoading ? (
+                          null
+                        ) : exercises.length === 0 ? (
+                          <div className="text-center py-8">
+                            <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600 dark:text-gray-300">
+                              Aucun exercice pour ce cours
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Créez votre premier exercice
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex-1 overflow-y-auto">
+                            <div className="space-y-2">
+                              {exercises.map((exercise) => (
+                                <div
+                                  key={exercise.id}
+                                  className="p-3 border rounded dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <h4 className="font-medium dark:text-white">{exercise.title}</h4>
+                                      <p className="text-xs text-gray-500 truncate">
+                                        {exercise.description || t('exercises.noDescription')}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <span className={`text-xs px-2 py-1 rounded-full ${exercise.status === 'PUBLISHED'
+                                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                          }`}>
+                                          {exercise.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                          {t('exercises.deadline')}: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : t('exercises.deadlineNone')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => handleEditExercise(exercise)}
+                                        className="p-1 text-blue-500 hover:text-blue-700"
+                                        title="Modifier"
+                                      >
+                                        <FaEye />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteExercise(exercise.id)}
+                                        className="p-1 text-red-500 hover:text-red-700"
+                                        title="Supprimer"
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* PANEL 8: Correction des exercices */}
+              {activePanel === 'grading' && (
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <CheckSquare size={16} /> {t('gradingPanel.panelTitle')}
+                      </h2>
+                      <button
+                        onClick={() => setActivePanel(null)}
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+
+                    {!currentCourseId ? (
+                      <div className="text-center py-8">
+                        <BookOpen className="text-4xl text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-300 mb-4">
+                          {t('gradingPanel.noCourse')}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        {selectedExercise ? (
+                          <div className="flex-1 overflow-y-auto">
+                            {/* Grading Interface */}
+                            <div className="p-2">
+                              <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-medium dark:text-white">
+                                  {selectedExercise.title}
+                                </h3>
+                                <button
+                                  onClick={() => setSelectedExercise(null)}
+                                  className="text-sm text-gray-500 hover:text-gray-700"
+                                >
+                                  {t('gradingPanel.back')}
+                                </button>
+                              </div>
+
+                              {gradingLoading ? (
+                                null
+                              ) : submissions.length === 0 ? (
+                                <div className="text-center py-8">
+                                  <FaList className="text-4xl text-gray-400 mx-auto mb-4" />
+                                  <p className="text-gray-600 dark:text-gray-300">
+                                    Aucune soumission pour cet exercice
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  {submissions.map((submission) => (
+                                    <div
+                                      key={submission.id}
+                                      className="p-3 border rounded dark:border-gray-700"
+                                    >
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <h4 className="font-medium dark:text-white">
+                                            {submission.studentName}
+                                          </h4>
+                                          <p className="text-xs text-gray-500">
+                                            {t('gradingPanel.submittedOn')} {new Date(submission.submittedAt).toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                        <span className={`text-sm font-medium ${submission.graded
+                                          ? 'text-green-600 dark:text-green-400'
+                                          : 'text-orange-600 dark:text-orange-400'
+                                          }`}>
+                                          {submission.graded ? `${submission.score}/${submission.maxScore}` : 'À noter'}
+                                        </span>
+                                      </div>
+
+                                      {!submission.graded && (
+                                        <div className="mt-2">
+                                          <div className="flex gap-2 mb-2">
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              max={submission.maxScore}
+                                              defaultValue={0}
+                                              className="flex-1 px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"
+                                              placeholder="Note"
+                                            />
+                                            <button
+                                              onClick={() => {
+                                                const scoreInput = document.querySelector(`input[type="number"]`) as HTMLInputElement;
+                                                if (scoreInput) {
+                                                  handleGradeSubmission(
+                                                    submission.id,
+                                                    parseInt(scoreInput.value),
+                                                    'Bon travail'
+                                                  );
+                                                }
+                                              }}
+                                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                                            >
+                                              Noter
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {submission.feedback && (
+                                        <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                                            {submission.feedback}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                              {t('gradingPanel.selectExercise')}
+                            </p>
+
+                            {exerciseLoading ? (
                               null
-                            ) : submissions.length === 0 ? (
+                            ) : exercises.length === 0 ? (
                               <div className="text-center py-8">
-                                <FaList className="text-4xl text-gray-400 mx-auto mb-4" />
+                                <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />
                                 <p className="text-gray-600 dark:text-gray-300">
-                                  Aucune soumission pour cet exercice
+                                  Aucun exercice à corriger
                                 </p>
                               </div>
                             ) : (
-                              <div className="space-y-3">
-                                {submissions.map((submission) => (
-                                  <div
-                                    key={submission.id}
-                                    className="p-3 border rounded dark:border-gray-700"
-                                  >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <h4 className="font-medium dark:text-white">
-                                          {submission.studentName}
-                                        </h4>
-                                        <p className="text-xs text-gray-500">
-                                          {t('gradingPanel.submittedOn')} {new Date(submission.submittedAt).toLocaleDateString()}
-                                        </p>
-                                      </div>
-                                      <span className={`text-sm font-medium ${submission.graded
-                                        ? 'text-green-600 dark:text-green-400'
-                                        : 'text-orange-600 dark:text-orange-400'
-                                        }`}>
-                                        {submission.graded ? `${submission.score}/${submission.maxScore}` : 'À noter'}
-                                      </span>
-                                    </div>
-
-                                    {!submission.graded && (
-                                      <div className="mt-2">
-                                        <div className="flex gap-2 mb-2">
-                                          <input
-                                            type="number"
-                                            min="0"
-                                            max={submission.maxScore}
-                                            defaultValue={0}
-                                            className="flex-1 px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"
-                                            placeholder="Note"
-                                          />
-                                          <button
-                                            onClick={() => {
-                                              const scoreInput = document.querySelector(`input[type="number"]`) as HTMLInputElement;
-                                              if (scoreInput) {
-                                                handleGradeSubmission(
-                                                  submission.id,
-                                                  parseInt(scoreInput.value),
-                                                  'Bon travail'
-                                                );
-                                              }
-                                            }}
-                                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                                          >
-                                            Noter
-                                          </button>
+                              <div className="space-y-2">
+                                {exercises
+                                  .filter(ex => ex.status === 'PUBLISHED')
+                                  .map((exercise) => (
+                                    <button
+                                      key={exercise.id}
+                                      onClick={() => setSelectedExercise(exercise)}
+                                      className="w-full p-3 border rounded dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
+                                    >
+                                      <div className="flex justify-between items-center">
+                                        <div>
+                                          <h4 className="font-medium dark:text-white">{exercise.title}</h4>
+                                          <p className="text-xs text-gray-500">
+                                            {t('exercises.deadline')}: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <div className="text-sm font-medium">
+                                            {exercise.submissionCount || 0} soumissions
+                                          </div>
+                                          <div className="text-xs text-gray-500">
+                                            {exercise.averageScore ? `Moyenne: ${exercise.averageScore}/${exercise.maxScore}` : 'Pas encore noté'}
+                                          </div>
                                         </div>
                                       </div>
-                                    )}
-
-                                    {submission.feedback && (
-                                      <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                                          {submission.feedback}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
+                                    </button>
+                                  ))}
                               </div>
                             )}
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                            {t('gradingPanel.selectExercise')}
-                          </p>
-
-                          {exerciseLoading ? (
-                            null
-                          ) : exercises.length === 0 ? (
-                            <div className="text-center py-8">
-                              <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-4" />
-                              <p className="text-gray-600 dark:text-gray-300">
-                                Aucun exercice à corriger
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {exercises
-                                .filter(ex => ex.status === 'PUBLISHED')
-                                .map((exercise) => (
-                                  <button
-                                    key={exercise.id}
-                                    onClick={() => setSelectedExercise(exercise)}
-                                    className="w-full p-3 border rounded dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
-                                  >
-                                    <div className="flex justify-between items-center">
-                                      <div>
-                                        <h4 className="font-medium dark:text-white">{exercise.title}</h4>
-                                        <p className="text-xs text-gray-500">
-                                          {t('exercises.deadline')}: {exercise.dueDate ? new Date(exercise.dueDate).toLocaleDateString() : 'Non définie'}
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="text-sm font-medium">
-                                          {exercise.submissionCount || 0} soumissions
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {exercise.averageScore ? `Moyenne: ${exercise.averageScore}/${exercise.maxScore}` : 'Pas encore noté'}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </button>
-                                ))}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-            {activePanel === 'recommendations' && (
-              <RecommendationsPanel 
-                courseTitle={courseTitle}
-                courseDescription={courseDescription}
-                onImportCourse={(id) => {
-                  toast.success("Importation du contenu du cours " + id);
-                }}
-              />
-            )}
-          </div>
+              )}
+            </div>
 
+          </div>
         </div>
       </div>
-    </div>
+    </CollaborationProvider>
   );
 };
 

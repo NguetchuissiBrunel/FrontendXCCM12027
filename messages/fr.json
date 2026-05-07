@@ -192,7 +192,8 @@
       "enrollments": "Inscriptions",
       "classes": "Mes classes",
       "exercises": "Mes exercices",
-      "compositions": "Mes compositions"
+      "compositions": "Mes compositions",
+      "notifications": "Notifications"
     }
   },
   "adminSidebar": {
@@ -245,8 +246,18 @@
     "addNote": "Ajouter une note",
     "sourceCount": "{count} {count, plural, =0 {source} one {source} other {sources}}",
     "delete": "Supprimer le notebook",
+    "loading": "Création...",
     "saving": "Sauvegarde en cours...",
     "newNotebookCreated": "Nouveau notebook créé",
+    "external": "Externe",
+    "myCourses": "Mes cours",
+    "closeActivity": "Fermer",
+    "selectCourse": "Sélectionner un cours",
+    "noCourses": "Aucun cours trouvé. Vous n'êtes inscrit à aucun cours.",
+    "deleteConfirmTitle": "Supprimer le notebook ?",
+    "deleteConfirmDesc": "Cette action est irréversible. Toutes les sources et conversations associées seront définitivement perdues.",
+    "deleteConfirmYes": "Oui, supprimer",
+    "cancel": "Annuler",
     "tools": {
       "audio": "Résumé audio",
       "presentation": "Présentation",
@@ -674,7 +685,8 @@
       "gradeSuccess": "Soumission notée",
       "gradeError": "Échec de la notation",
       "courseInit": "Nouveau cours initialisé !",
-      "createBeforeExercise": "Créez ou chargez un cours avant de créer un exercice."
+      "createBeforeExercise": "Créez ou chargez un cours avant de créer un exercice.",
+      "notAuthor": "Vous n'êtes pas l'auteur de ce cours, mais vous pouvez le modifier en tant que collaborateur."
     }
   },
   "pdfPreview": {
@@ -2156,6 +2168,27 @@
       "rejectedSuccess": "Enrôlement rejeté avec succès",
       "operationError": "Erreur lors de l'opération. Veuillez réessayer.",
       "student": "Étudiant"
+    },
+    "notifications": {
+      "title": "Mes Notifications",
+      "subtitle": "Gérez vos invitations de collaboration et autres alertes.",
+      "sectionTitle": "Invitations de Collaboration",
+      "pendingCount": "{count} en attente",
+      "loading": "Chargement des notifications...",
+      "emptyTitle": "Aucune nouvelle notification",
+      "emptyDescription": "Vous n'avez aucune invitation en attente pour le moment. Lorsqu'un collègue vous invitera, elle apparaîtra ici.",
+      "invitedOnCourse": "Vous avez été invité à collaborer sur le cours",
+      "invitedBy": "Invitation envoyée par {name}",
+      "receivedOn": "Reçue le {date}",
+      "untitled": "Sans titre",
+      "accept": "Accepter",
+      "reject": "Refuser",
+      "accepted": "Acceptée",
+      "rejected": "Refusée",
+      "acceptSuccess": "Invitation acceptée ! Vous pouvez maintenant accéder au cours.",
+      "acceptError": "Erreur lors de l'acceptation de l'invitation.",
+      "rejectSuccess": "Invitation refusée.",
+      "rejectError": "Erreur lors du refus de l'invitation."
     },
     "manageClassCoursesModal": {
       "title": "Gestion des Cours dans la Classe",

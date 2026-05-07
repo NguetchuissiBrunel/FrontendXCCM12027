@@ -60,6 +60,7 @@ interface MainEditorProps {
   initialContent?: string;
   onContentChange?: (content: string) => void;
   onEditorReady?: (editor: any) => void; // Callback when editor is ready
+  children?: React.ReactNode;
 }
 
 // Define the Indent extension since it's not in starter-kit by default in the way we might want, 
@@ -114,7 +115,7 @@ const nodeTypeFrench: Record<string, string> = {
 };
 
 export interface MainEditorRef {
-  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any) => void;
+  handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: string | { targetId: string, position: 'before' | 'after' | 'inside' } | any, isRemote?: boolean) => void;
 }
 
 let globalIdCounter = 0;
@@ -255,7 +256,8 @@ const CustomDocument = Document.extend({
 export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   initialContent,
   onContentChange,
-  onEditorReady
+  onEditorReady,
+  children
 }, ref) => {
   const [zoom, setZoom] = useState(100);
   const [showQuickExerciseModal, setShowQuickExerciseModal] = useState(false);
@@ -322,6 +324,19 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       MathNode,
     ],
     content: initialContent,
+    onUpdate: ({ editor, transaction }) => {
+      // Don't trigger autosave or broadcast if the transaction came from a remote collaborator
+      if (transaction.getMeta('isRemote')) return;
+
+      onContentChange?.(editor.getHTML());
+
+      const json = editor.getJSON();
+
+      // Dispatch custom event for CollaborationSync to pick up
+      window.dispatchEvent(new CustomEvent('xccm:editor-content-update', {
+        detail: { json }
+      }));
+    },
     editorProps: {
       attributes: {
         class: 'prose dark:prose-invert max-w-none focus:outline-none editor-focusable',
@@ -400,13 +415,12 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     onCreate: ({ editor }) => {
       onEditorReady?.(editor);
     },
-    onUpdate: ({ editor }) => onContentChange?.(editor.getHTML()),
   });
 
   const copiedNodeJsonRef = useRef<any>(null);
 
   React.useImperativeHandle(ref, () => ({
-    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: any) => {
+    handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: any, isRemote: boolean = false) => {
       if (!editor) return;
 
       if (action === 'rename' && typeof payload === 'string') {
@@ -415,6 +429,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           if (node.attrs.id === itemId) {
             if (node.attrs.title !== undefined) {
               editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'title', newTitle));
+              
+              // Diffuser l'action
+              if (!isRemote) {
+                window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+                  detail: { type: 'RENAME', nodeId: itemId, newTitle }
+                }));
+              }
               return false;
             }
           }
@@ -426,6 +447,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
           if (node.attrs.id === itemId) {
             editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
             deleted = true;
+
+            // Diffuser l'action
+            if (!isRemote) {
+              window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+                detail: { type: 'DELETE', nodeId: itemId }
+              }));
+            }
             return false;
           }
         });
@@ -486,6 +514,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
             const finalNode = newNode.type.create(finalAttrs, finalContent, newNode.marks);
             editor.view.dispatch(editor.state.tr.insert(pos + node.nodeSize, finalNode));
+
+            // Diffuser l'action
+            if (!isRemote) {
+              window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+                detail: { type: 'DUPLICATE', nodeId: itemId }
+              }));
+            }
             return false;
           }
         });
@@ -519,6 +554,13 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
 
           tr.insert(insertPos, sourceNode);
           editor.view.dispatch(tr);
+
+          // Diffuser l'action
+          if (!isRemote) {
+            window.dispatchEvent(new CustomEvent('xccm:editor-action', {
+              detail: { type: 'MOVE', payload: { itemId, targetId, position } }
+            }));
+          }
         }
       } else if (action === 'copy') {
         editor.view.state.doc.descendants((node: PMNode, pos: number) => {
@@ -1211,6 +1253,8 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
             onClick={() => editor?.chain().focus().run()}
           >
             <div
+              id="xccm-editor-page"
+              className="relative"
               style={{
                 transform: `scale(${zoom / 100})`,
                 transformOrigin: 'top left',
@@ -1220,6 +1264,7 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
               onDragOver={(e) => e.preventDefault()}
             >
               <EditorContent editor={editor} className="min-h-[29.7cm] p-8 outline-none" />
+              {children}
             </div>
           </div>
         </div>

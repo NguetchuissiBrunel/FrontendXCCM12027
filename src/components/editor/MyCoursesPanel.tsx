@@ -5,13 +5,14 @@ import Image from 'next/image';
 import { FaTimes, FaTrash, FaPaperPlane, FaBook } from 'react-icons/fa';
 import { CourseControllerService, CourseResponse } from '@/lib';
 import { useAuth } from '@/contexts/AuthContext';
+import { EnrollmentControllerService } from '@/lib/services/EnrollmentControllerService';
 import ConfirmModal from '../ui/ConfirmModal';
 import { toast } from 'react-hot-toast';
 import { useLocale, useTranslations } from 'next-intl';
 
 interface MyCoursesPanelProps {
   onClose: () => void;
-  onLoadCourse: (content: CourseResponse['content'], courseId: string, title: string, category: string, description: string, photoUrl?: string) => void;
+  onLoadCourse: (course: CourseResponse) => void;
 }
 
 const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }) => {
@@ -31,17 +32,54 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
     status: undefined
   });
 
+  const normalizeResponseData = (response: unknown): CourseResponse[] => {
+    if (Array.isArray(response)) return response as CourseResponse[];
+    if (response && typeof response === 'object' && 'data' in response) {
+      return ((response as { data?: CourseResponse[] }).data || []) as CourseResponse[];
+    }
+    return [];
+  };
+
   const fetchCourses = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
-      const response = await CourseControllerService.getAuthorCourses(user.id);
-      const responseData = Array.isArray(response)
-        ? response
-        : typeof response === 'object' && response !== null && 'data' in response
-          ? (response as { data?: CourseResponse[] }).data
-          : [];
-      setCourses(responseData || []);
+      const [authorResponse, enrollmentsResponse, allCoursesResponse] = await Promise.all([
+        CourseControllerService.getAuthorCourses(user.id),
+        EnrollmentControllerService.getMyEnrollments(),
+        CourseControllerService.getAllCourses(),
+      ]);
+
+      const authorCourses = normalizeResponseData(authorResponse);
+      const allCourses = normalizeResponseData(allCoursesResponse);
+      const enrollments = enrollmentsResponse.data || [];
+
+      const accessibleCourseIds = new Set<number>();
+
+      authorCourses.forEach((course) => {
+        if (typeof course.id === 'number') {
+          accessibleCourseIds.add(course.id);
+        }
+      });
+
+      enrollments
+        .filter((enrollment) =>
+          typeof enrollment.courseId === 'number' &&
+          (enrollment.status === 'APPROVED' || enrollment.status === 'INVITED')
+        )
+        .forEach((enrollment) => {
+          accessibleCourseIds.add(enrollment.courseId!);
+        });
+
+      const allAccessibleCourses = allCourses.filter((course) =>
+        typeof course.id === 'number' && accessibleCourseIds.has(course.id)
+      );
+
+      const fallbackCollaborativeCourses = authorCourses.filter((course) =>
+        typeof course.id === 'number' && accessibleCourseIds.has(course.id) && !allAccessibleCourses.find((item) => item.id === course.id)
+      );
+
+      setCourses([...allAccessibleCourses, ...fallbackCollaborativeCourses]);
     } catch (error) {
       console.error(t('fetchErrorLog'), error);
     } finally {
@@ -80,14 +118,7 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
   };
 
   const handleLoad = (course: CourseResponse) => {
-    onLoadCourse(
-      course.content,
-      String(course.id),
-      course.title || t('untitled'),
-      course.category || t('defaultCategory'),
-      course.description || "",
-      course.photoUrl
-    );
+    onLoadCourse(course);
     onClose();
   };
 
@@ -175,7 +206,9 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                 const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
                 return dateB - dateA;
               })
-              .map((course) => (
+              .map((course) => {
+                const isAuthor = course.author?.id === user?.id;
+                return (
                 <div
                   key={course.id}
                   className="group rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow bg-gray-50 dark:bg-gray-700"
@@ -217,28 +250,33 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
                       >
                         <FaBook className="text-sm text-blue-600 dark:text-blue-400" />
                       </button>
-                      <button
-                        onClick={() => course.id && setStatusConfirm({ isOpen: true, id: course.id, status: course.status })}
-                        className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
-                        title={course.status === 'PUBLISHED' ? t('unpublishConfirm') : t('publishConfirm')}
-                      >
-                        {course.status === 'PUBLISHED' ? (
-                          <FaPaperPlane className="text-sm text-gray-600 dark:text-gray-400" />
-                        ) : (
-                          <FaPaperPlane className="text-sm text-green-600 dark:text-green-400" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => course.id && setDeleteConfirm({ isOpen: true, id: course.id })}
-                        className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                        title={t('deleteAction')}
-                      >
-                        <FaTrash className="text-sm text-red-600 dark:text-red-400" />
-                      </button>
+                      {isAuthor && (
+                        <>
+                          <button
+                            onClick={() => course.id && setStatusConfirm({ isOpen: true, id: course.id, status: course.status })}
+                            className="p-2 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors"
+                            title={course.status === 'PUBLISHED' ? t('unpublishConfirm') : t('publishConfirm')}
+                          >
+                            {course.status === 'PUBLISHED' ? (
+                              <FaPaperPlane className="text-sm text-gray-600 dark:text-gray-400" />
+                            ) : (
+                              <FaPaperPlane className="text-sm text-green-600 dark:text-green-400" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => course.id && setDeleteConfirm({ isOpen: true, id: course.id })}
+                            className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                            title={t('deleteAction')}
+                          >
+                            <FaTrash className="text-sm text-red-600 dark:text-red-400" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
           </div>
         )}
       </div>

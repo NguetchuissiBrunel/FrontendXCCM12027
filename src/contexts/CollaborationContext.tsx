@@ -150,7 +150,12 @@ export const CollaborationProvider = ({
 export const useCollaboration = () => {
     const context = useContext(CollaborationContext);
     if (context === undefined) {
-        throw new Error('useCollaboration doit être utilisé à l\'intérieur de CollaborationProvider');
+        return {
+            stompClient: null,
+            isConnected: false,
+            courseId: null,
+            collaborators: []
+        };
     }
     return context;
 };

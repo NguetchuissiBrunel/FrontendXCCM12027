@@ -20,7 +20,7 @@ interface BehaviorEventPayload {
   metadata?: Record<string, unknown>;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 /**
  * Hook to track student behavioral events and send them to the Java backend.

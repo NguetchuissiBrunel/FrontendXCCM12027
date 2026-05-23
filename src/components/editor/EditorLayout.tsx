@@ -874,6 +874,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 panelType="feedback"
                 colorClass="text-green-600 dark:text-green-400"
               />
+              <IconButton
+                icon={<Sparkles className="h-4 w-4" id="icon-recommendations" />}
+                label={t('panels.recommendations') || "Recommandations IA"}
+                panelType="recommendations"
+                colorClass="text-purple-600 dark:text-purple-400"
+              />
 
               <div className="flex-grow" />
 
@@ -950,6 +956,25 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                   content={editorInstance?.getJSON()}
                   title={courseTitle}
                   onElementClick={handleTOCItemClick}
+                />
+              )}
+
+              {/* PANEL 1.6: Recommandations IA */}
+              {activePanel === 'recommendations' && (
+                <RecommendationsPanel
+                  courseTitle={courseTitle}
+                  courseDescription={courseDescription}
+                  courseContent={editorInstance?.getText()}
+                  onImportCourse={(id) => {
+                    toast.promise(
+                      loadSpecificCourse(id, user?.id || ''),
+                      {
+                        loading: 'Importation du cours...',
+                        success: 'Cours importé avec succès',
+                        error: 'Erreur lors de l\'importation'
+                      }
+                    );
+                  }}
                 />
               )}
 

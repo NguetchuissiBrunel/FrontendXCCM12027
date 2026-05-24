@@ -267,22 +267,22 @@ export class CourseControllerService {
         });
     }
     /**
-     * @param title
-     * @param description
+     * @param requestBody
      * @returns any OK
      * @throws ApiError
      */
     public static getRecommendations(
-        title: string,
-        description?: string,
+        requestBody: {
+            title: string;
+            description?: string;
+            content?: string;
+        },
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'GET',
+            method: 'POST',
             url: '/courses/recommend',
-            query: {
-                'title': title,
-                'description': description,
-            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 }

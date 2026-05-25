@@ -14,6 +14,7 @@ import { Notebook, Source, ChatMessage, StudioActivity } from '@/types/notebook'
 import { MindMapGraph } from '@/components/studio/MindMapGraph';
 import toast from 'react-hot-toast';
 import { getAuthToken } from '@/utils/authHelpers';
+import AICourseGenerator from '@/components/editor/AICourseGenerator';
 
 
 // Interfaces are now imported from @/types/notebook
@@ -49,6 +50,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [userCourses, setUserCourses] = useState<any[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
 
@@ -720,7 +722,7 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
             {([
               { id: 'mindmap', icon: <MdTableChart className="text-purple-500" />, label: t_nb('tools.mindmap'), color: 'bg-purple-50 dark:bg-purple-900/20' },
               { id: 'reports', icon: <MdQuiz className="text-pink-500" />, label: t_nb('tools.reports'), color: 'bg-pink-50 dark:bg-pink-900/20' },
-            ] as Tool[]).map((tool, idx) => {
+            ] as Tool[]).map((tool) => {
               const hasSelectedSources = sources.some(s => s.selected);
               return (
                 <div
@@ -740,6 +742,20 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
               );
             })}
           </div>
+
+          {/* Bouton Générer un cours IA */}
+          <button
+            onClick={() => setIsAIGeneratorOpen(true)}
+            className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800/50 rounded-2xl hover:shadow-md hover:border-purple-400 dark:hover:border-purple-500 transition-all group"
+          >
+            <div className="w-9 h-9 bg-purple-600 text-white rounded-xl flex items-center justify-center shadow-md flex-none group-hover:bg-indigo-600 transition-colors">
+              <BsLightbulb className="w-4 h-4" />
+            </div>
+            <div className="text-left min-w-0">
+              <p className="text-xs font-black text-gray-800 dark:text-gray-100 leading-tight">Générer un cours</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">IA · PDF · Word</p>
+            </div>
+          </button>
 
           {/* Activity Section */}
           <div className="space-y-4">
@@ -782,6 +798,11 @@ const NotebookWorkspace = ({ params }: { params: Promise<{ id: string, locale: s
         className="hidden"
         multiple
       />
+
+      {/* AI Course Generator Modal */}
+      {isAIGeneratorOpen && (
+        <AICourseGenerator onClose={() => setIsAIGeneratorOpen(false)} />
+      )}
 
       {/* Course Selection Modal */}
       {isCourseModalOpen && (

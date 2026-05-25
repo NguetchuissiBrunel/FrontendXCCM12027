@@ -15,12 +15,14 @@ interface Recommendation {
 interface RecommendationsPanelProps {
     courseTitle: string;
     courseDescription: string;
+    courseContent?: string;
     onImportCourse: (courseId: number) => void;
 }
 
 export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({ 
     courseTitle, 
     courseDescription,
+    courseContent,
     onImportCourse 
 }) => {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -31,10 +33,11 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         
         setIsLoading(true);
         try {
-            const response = await CourseControllerService.getRecommendations(
-                courseTitle, 
-                courseDescription
-            );
+            const response = await CourseControllerService.getRecommendations({
+                title: courseTitle, 
+                description: courseDescription,
+                content: courseContent
+            });
             const data = (response as any).data || response;
             setRecommendations(data || []);
         } catch (error) {
@@ -45,13 +48,13 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         }
     };
 
-    // Auto-fetch on title/description change (debounced)
+    // Auto-fetch on title/description/content change (debounced)
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchRecommendations();
-        }, 2000);
+        }, 3000);
         return () => clearTimeout(timer);
-    }, [courseTitle, courseDescription]);
+    }, [courseTitle, courseDescription, courseContent]);
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-gray-800">

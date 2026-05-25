@@ -16,6 +16,7 @@ import {
   decodeToken,
   isTokenExpired
 } from '@/utils/authHelpers';
+import { OpenAPI } from '@/lib/core/OpenAPI';
 import Cookies from 'js-cookie';
 
 interface User {
@@ -140,6 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<void> => {
     try {
       console.log('🔐 Tentative de connexion:', email);
+
+      // Supprimer tout token périmé avant la tentative de login
+      // (un token expiré en header Authorization ferait rejeter la requête avec 401)
+      OpenAPI.TOKEN = undefined;
 
       let response;
       try {

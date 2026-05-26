@@ -2547,5 +2547,22 @@
     "freeCoursesDescription": "Ces cours sont publiés indépendamment de toute classe et accessibles directement.",
     "loadError": "Impossible de charger le profil",
     "loadErrorToast": "Erreur de chargement du profil"
+  },
+  "downloadOptions": {
+    "title": "Télécharger le cours",
+    "description": "Choisissez le format d'exportation",
+    "pdfOption": {
+      "title": "Format PDF",
+      "description": "Document portable, idéal pour l'impression"
+    },
+    "wordOption": {
+      "title": "Format Word",
+      "description": "Document modifiable (.docx)"
+    },
+    "pdfOrientation": {
+      "back": "← Retour",
+      "portrait": "Portrait",
+      "landscape": "Paysage"
+    }
   }
 }

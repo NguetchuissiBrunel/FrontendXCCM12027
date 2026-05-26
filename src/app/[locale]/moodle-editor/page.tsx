@@ -6,7 +6,9 @@ import MainEditor from '@/components/editor/MainEditor';
 import TableOfContents from '@/components/editor/TableOfContents';
 import StructureDeCours from '@/components/editor/StructureDeCours';
 import { FaSave, FaList, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AICourseGenerator from '@/components/editor/AICourseGenerator';
 import { useTOC } from '@/hooks/useTOC';
 import { Editor } from '@tiptap/react';
 
@@ -32,6 +34,7 @@ function MoodleEditorContent() {
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [activePanel, setActivePanel] = useState<'structure' | null>('structure');
+  const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
 
   // TOC hook
   const [tocItems, refreshTOC] = useTOC(editor, 300);
@@ -193,6 +196,13 @@ function MoodleEditorContent() {
     }
   };
 
+  const handleInsertGeneratedCourse = (tiptapJson: any) => {
+    if (editor) {
+      editor.commands.setContent(tiptapJson);
+      setTimeout(() => refreshTOC(), 300);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <header className="h-16 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-30">
@@ -208,6 +218,16 @@ function MoodleEditorContent() {
             className="text-lg font-bold bg-transparent border-none focus:ring-0 focus:outline-none w-full text-gray-800 dark:text-white"
           />
         </div>
+        {params.mode === 'course_edit' && (
+          <button
+            onClick={() => setIsAIGeneratorOpen(true)}
+            className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 px-4 py-2 rounded-xl font-medium transition-all"
+            title="Générer un cours avec l'IA"
+          >
+            <Sparkles size={16} />
+            Générer avec l&apos;IA
+          </button>
+        )}
         <button
           onClick={saveContent}
           disabled={isSaving || isInitialLoading}
@@ -275,6 +295,14 @@ function MoodleEditorContent() {
           </div>
         </div>
       </div>
+
+      {/* AI Course Generator Modal */}
+      {isAIGeneratorOpen && (
+        <AICourseGenerator
+          onClose={() => setIsAIGeneratorOpen(false)}
+          onInsertToEditor={handleInsertGeneratedCourse}
+        />
+      )}
     </div>
   );
 }

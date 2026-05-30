@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Editor } from '@tiptap/react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Wand2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
@@ -48,6 +48,7 @@ import ImageUploader from '../upload/ImageUploader';
 import CollabInviteButton from './CollabInviteButton';
 import { getAuthToken } from '@/utils/authHelpers';
 import { ApiError } from '@/lib/core/ApiError';
+import AIGenerateCourseModal from './AIGenerateCourseModal';
 
 
 interface EditorLayoutProps {
@@ -161,6 +162,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   const [isEntranceModalOpen, setIsEntranceModalOpen] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -663,6 +665,20 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     setConfirmConfig({ isOpen: false, type: null });
   };
 
+  const handleAIGenerated = (content: object, title: string, description: string) => {
+    setCourseTitle(title);
+    setCourseDescription(description);
+    setCurrentCourseId(null);
+    setCurrentCourseAuthorId(null);
+    if (editorInstance) {
+      editorInstance.commands.setContent(content);
+    } else {
+      setPendingContent(content);
+    }
+    setIsEntranceModalOpen(false);
+    toast.success(`Cours "${title}" généré et inséré dans l'éditeur`);
+  };
+
   const handleCreateCourse = (data: { title: string; category: string; description: string }) => {
     setCourseTitle(data.title);
     setCourseCategory(data.category);
@@ -750,6 +766,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSubmit={handleCreateCourse}
+        />
+
+        {/* AI Course Generation Modal */}
+        <AIGenerateCourseModal
+          isOpen={isAIGenerateModalOpen}
+          onClose={() => setIsAIGenerateModalOpen(false)}
+          onGenerated={handleAIGenerated}
         />
 
         {/* Confirmation Modal */}
@@ -874,6 +897,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 panelType="feedback"
                 colorClass="text-green-600 dark:text-green-400"
               />
+              <button
+                onClick={() => setIsAIGenerateModalOpen(true)}
+                className="relative flex h-12 w-12 items-center justify-center rounded-lg transition-all text-gray-400 dark:text-gray-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-400"
+                title="Générer un cours avec l'IA"
+              >
+                <Wand2 className="h-5 w-5" />
+              </button>
+
               <IconButton
                 icon={<Sparkles className="h-4 w-4" id="icon-recommendations" />}
                 label={t('panels.recommendations') || "Recommandations IA"}

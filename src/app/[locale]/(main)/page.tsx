@@ -157,7 +157,7 @@ export default function HomePage() {
               {/* Image mode clair */}
               <div className="dark:hidden">
                 <Image
-                  src="/images/image1.png"
+                  src="/images/fond3.jpeg"
                   alt="acceuil"
                   width={1000}
                   height={1000}
@@ -169,7 +169,7 @@ export default function HomePage() {
               {/* Image mode sombre */}
               <div className="hidden dark:block">
                 <Image
-                  src="/images/image3.png"
+                  src="/images/fond1.jpeg"
                   alt="acceuil mode sombre"
                   width={1000}
                   height={1000}
@@ -233,7 +233,7 @@ export default function HomePage() {
           <div className="lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start">
             <div className="lg:col-span-1 mb-10 lg:mb-0">
               <Image
-                src="/images/image7.jpg"
+                src="/images/fond2.jpeg"
                 alt="acceuil2"
                 width={1000}
                 height={1000}

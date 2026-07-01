@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Plus, Edit, X, BookOpen, Clock, FileText } from 'lucide-react';
+import { Plus, Edit, X, BookOpen, Clock, FileText, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocale } from 'next-intl';
 
@@ -10,9 +10,10 @@ interface Props {
     onClose: () => void;
     onCreateNew: (title: string) => void;
     onModifyExisting: () => void;
+    onGenerateCourse: () => void;
 }
 
-export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onModifyExisting }: Props) {
+export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onModifyExisting, onGenerateCourse }: Props) {
     const locale = useLocale();
     const [step, setStep] = React.useState<'choice' | 'title'>('choice');
     const [title, setTitle] = React.useState('');
@@ -40,6 +41,8 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                 subtitle: "Que souhaitez-vous faire aujourd'hui ?",
                 createTitle: 'Creer un cours',
                 createDescription: 'Commencer un nouveau projet a partir de zero',
+                generateTitle: 'Generer un cours',
+                generateDescription: "Creer un cours complet avec l'intelligence artificielle",
                 editTitle: 'Modifier un cours',
                 editDescription: 'Reprendre le travail sur une de vos compositions',
                 masterpiece: "Quel est le titre de votre futur chef-d'oeuvre ?",
@@ -56,6 +59,8 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                 subtitle: 'What would you like to do today?',
                 createTitle: 'Create a course',
                 createDescription: 'Start a new project from scratch',
+                generateTitle: 'Generate a course',
+                generateDescription: 'Create a complete course with artificial intelligence',
                 editTitle: 'Edit a course',
                 editDescription: 'Continue working on one of your compositions',
                 masterpiece: 'What is the title of your future masterpiece?',
@@ -89,7 +94,7 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl overflow-hidden border border-purple-100 dark:border-gray-700 w-full max-w-2xl flex flex-col"
+                className="relative bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl overflow-hidden border border-purple-100 dark:border-gray-700 w-full max-w-4xl flex flex-col"
             >
                 {/* Decorative Background Element */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100/50 dark:bg-purple-900/10 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
@@ -119,7 +124,7 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: 20 }}
-                                className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+                                className="grid grid-cols-1 sm:grid-cols-3 gap-6"
                             >
                                 {/* Create New Option */}
                                 <button
@@ -132,6 +137,20 @@ export default function EditorEntranceModal({ isOpen, onClose, onCreateNew, onMo
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{content.createTitle}</h3>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
                                         {content.createDescription}
+                                    </p>
+                                </button>
+
+                                {/* Generate Course Option */}
+                                <button
+                                    onClick={onGenerateCourse}
+                                    className="group relative flex flex-col items-center p-8 bg-indigo-50 dark:bg-indigo-900/10 border-2 border-indigo-100 dark:border-indigo-800/50 rounded-3xl hover:border-indigo-500 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl hover:shadow-indigo-500/10"
+                                >
+                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-200 dark:shadow-none group-hover:scale-110 transition-transform">
+                                        <Sparkles size={30} />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{content.generateTitle}</h3>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+                                        {content.generateDescription}
                                     </p>
                                 </button>
 

@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaBook, FaChevronRight, FaChevronDown, FaSpinner } from 'react-icons/fa';
 import { Sparkles } from 'lucide-react';
-import { mockCourseData } from '@/data/mockEditorData';
 import { Course, Section, Chapter, Paragraph, ItemType, ITEM_COLORS, XCCM_KNOWLEDGE_MIME, KnowledgeDragPayload } from '@/types/editor.types';
 import { useTranslations } from 'next-intl';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { toast } from 'react-hot-toast';
 import { ApiResponseListCourseResponse } from '@/lib/models/ApiResponseListCourseResponse';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface StructureDeCoursProps {
   onClose: () => void;
@@ -29,14 +29,13 @@ const getItemBgClass = (type: ItemType) => {
 
 export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) => {
   const t = useTranslations('editor.structureDeCours');
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<ItemType | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   
-  // Courses state: combined mock + database
-  const [courses, setCourses] = useState<Course[]>(() => 
-    mockCourseData.map(c => ({ ...c, id: c.id + 10000 }))
-  );
+  // Courses state: fetched from database only (no mock data)
+  const [courses, setCourses] = useState<Course[]>([]);
   const [decomposedCache, setDecomposedCache] = useState<Record<string, Section[]>>({});
   const [loadingDecomposition, setLoadingDecomposition] = useState<string | null>(null);
 
@@ -57,8 +56,9 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       try {
         const resp: ApiResponseListCourseResponse = await CourseControllerService.getAllCourses();
         if (resp && resp.data) {
-          // Map DB courses to the Editor's Course type
-          const dbCoursesMapped: Course[] = resp.data.map((c) => ({
+          const dbCoursesMapped: Course[] = resp.data
+            .filter((c) => !user?.id || c.author?.id === user.id)
+            .map((c) => ({
             id: c.id ?? 0, 
             title: c.title || 'Sans titre',
             category: c.category || 'Général',
@@ -75,20 +75,15 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             sections: [] 
           }));
           
-          setCourses(prev => {
-            // Keep DB courses first, then mock courses (IDs >= 10000)
-            const mockCourses = prev.filter(c => c.id >= 10000);
-            return [...dbCoursesMapped, ...mockCourses];
-          });
+          setCourses(dbCoursesMapped);
         }
       } catch (err) {
-        // Silent error to avoid triggering dev error overlays
-        toast.error("Erreur lors de la récupération des cours de la base de données");
+        console.error('Erreur lors de la récupération des cours:', err);
       }
     };
 
     fetchCourses();
-  }, []);
+  }, [user?.id]);
 
   // Sync cache with localStorage
   useEffect(() => {

@@ -106,7 +106,10 @@ export function useCourses(): UseCoursesReturn {
             }
         } catch (err) {
             console.error('❌ Erreur lors du chargement des cours:', err);
-            setError(err instanceof Error ? err.message : 'Impossible de charger les cours');
+            const isNetworkError = err instanceof TypeError || (err instanceof Error && /fetch|network|failed/i.test(err.message));
+            setError(isNetworkError
+                ? 'Impossible de charger la bibliotheque. Verifiez votre connexion internet ou reessayez plus tard.'
+                : (err instanceof Error ? err.message : 'Impossible de charger les cours depuis le serveur.'));
             setCourses([]);
         } finally {
             setLoading(false);

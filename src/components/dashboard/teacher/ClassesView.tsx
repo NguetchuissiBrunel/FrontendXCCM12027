@@ -235,6 +235,12 @@ export default function ClassesView({ mode = 'classes' }: ClassesViewProps) {
                 ? t('classes.classesDescription')
                 : t('classes.compositionsDescription')}
             </p>
+            {mode === 'classes' && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-800 dark:text-blue-200 max-w-2xl">
+                <p className="font-semibold mb-1">{t('classes.whatIsAClassTitle')}</p>
+                <p>{t('classes.whatIsAClassDescription')}</p>
+              </div>
+            )}
           </div>
         </div>
 

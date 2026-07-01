@@ -224,7 +224,7 @@
     "register": "Inscription"
   },
   "notebook": {
-    "title": "NotebookLM",
+    "title": "Carnets IA",
     "all": "Tous",
     "myNotebooks": "Mes notebooks",
     "selection": "Sélection de notebooks",
@@ -462,14 +462,24 @@
         "submit": "S'inscrire",
         "submitting": "Inscription en cours..."
       },
+      "grades": {
+        "notSpecified": "Non précisé",
+        "other": "Autre"
+      },
+      "subjects": {
+        "optionalHint": "Ce champ est optionnel.",
+        "add": "Ajouter"
+      },
       "placeholders": {
         "email": "Votre adresse email",
         "password": "Votre mot de passe",
         "confirmPassword": "Confirmez votre mot de passe",
         "grade": "Selectionnez votre grade",
+        "customGrade": "Precisez votre grade",
+        "customSubject": "Ajouter une matiere personnalisee",
         "firstName": "Prenom",
         "lastName": "Nom",
-        "photo": "Cliquez ou glissez votre photo ici",
+        "photo": "Ajouter une photo de profil",
         "city": "Ville",
         "university": "Universite",
         "specialization": "Specialisation",
@@ -495,6 +505,9 @@
     }
   },
   "editor": {
+    "notion": {
+      "keyNotion": "Notion clé"
+    },
     "panels": {
       "structure": "Structure",
       "info": "Infos",
@@ -2134,6 +2147,8 @@
       "classes": "Classes",
       "compositions": "Compositions",
       "classesDescription": "Consultez et scindez vos cours en créant différentes classes.",
+      "whatIsAClassTitle": "Qu'est-ce qu'une classe ?",
+      "whatIsAClassDescription": "Une classe est un groupe d'etudiants rattache a un ou plusieurs cours. Elle vous permet d'organiser vos enseignements, suivre les inscriptions et gerer les exercices par promotion.",
       "compositionsDescription": "Gérez vos compositions et supports de cours structurés.",
       "myClassesTitle": "Mes Classes de Cours",
       "myCompositionsTitle": "Mes Compositions",

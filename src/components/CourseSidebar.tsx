@@ -50,7 +50,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
   onDownloadRequest,
   isEnrolled
 }) => {
-  const t = useTranslations('course.sidebar');
+  const t = useTranslations('pages.course.sidebar');
   const [expandedParts, setExpandedParts] = useState<{ [key: number]: boolean }>({});
   const [expandedChapters, setExpandedChapters] = useState<{ [key: string]: boolean }>({});
   const [activeParagraph, setActiveParagraph] = useState<string>('');

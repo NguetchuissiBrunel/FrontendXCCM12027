@@ -69,10 +69,10 @@ const Onboarding = () => {
                 position: 'right'
             },
             {
-                target: '#sidebar-toc',
+                target: '#sidebar-structure-panel',
                 title: t('editor.steps.dragDrop.title'),
                 description: t('editor.steps.dragDrop.description'),
-                position: 'right'
+                position: 'left'
             },
             {
                 target: '#main-editor-container',
@@ -199,6 +199,16 @@ const Onboarding = () => {
     const [isActive, setIsActive] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+    const [blockedByEditorModal, setBlockedByEditorModal] = useState(false);
+
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent<{ open: boolean }>).detail;
+            setBlockedByEditorModal(detail?.open ?? false);
+        };
+        window.addEventListener('editor-entrance-modal', handler);
+        return () => window.removeEventListener('editor-entrance-modal', handler);
+    }, []);
 
     const updateTargetRect = useCallback(() => {
         if (!isActive || !steps[currentStep]) return;
@@ -217,14 +227,23 @@ const Onboarding = () => {
     useEffect(() => {
         if (steps.length > 0) {
             const hasSeen = localStorage.getItem(`hasSeenTour_${normalizedPath}`);
-            if (!hasSeen) {
+            if (!hasSeen && !blockedByEditorModal) {
                 const timer = setTimeout(() => setIsActive(true), 1000);
                 return () => clearTimeout(timer);
+            }
+            if (blockedByEditorModal) {
+                setIsActive(false);
             }
         } else {
             setIsActive(false);
         }
-    }, [steps.length, normalizedPath]);
+    }, [steps.length, normalizedPath, blockedByEditorModal]);
+
+    useEffect(() => {
+        if (isActive && steps[currentStep]?.target === '#sidebar-structure-panel') {
+            window.dispatchEvent(new CustomEvent('editor-onboarding-open-structure'));
+        }
+    }, [isActive, currentStep, steps]);
 
     useEffect(() => {
         if (isActive) {

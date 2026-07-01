@@ -292,7 +292,7 @@ const ContactPage = () => {
         {/* Image Section */}
         <div className="w-full md:w-1/2 overflow-hidden relative h-64 md:h-auto rounded-lg">
           <Image
-            src="/images/ima20.jpeg"
+            src="/images/fond4.jpeg"
             alt={content.imageAlt}
             fill
             className="object-cover w-full h-full"

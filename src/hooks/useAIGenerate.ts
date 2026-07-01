@@ -64,7 +64,7 @@ export function useAIGenerate() {
           discipline: req.discipline || 'general',
           level: req.level || 'L1',
           language: req.language || 'fr',
-          exercises_per_chapter: req.exercisesPerChapter ?? 1,
+          exercisesPerChapter: req.exercisesPerChapter ?? 1,
         }),
       });
 

@@ -7,7 +7,7 @@ import { useAIGenerate, type AIGenerateRequest } from '@/hooks/useAIGenerate';
 interface AIGenerateCourseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onGenerated: (content: object, title: string, description: string) => void;
+  onGenerated: (content: object, title: string, description: string) => void | Promise<void>;
 }
 
 const DISCIPLINES = [
@@ -42,6 +42,7 @@ export default function AIGenerateCourseModal({
     language: 'fr',
     exercisesPerChapter: 1,
   });
+  const [isApplying, setIsApplying] = useState(false);
 
   const { generate, isGenerating, steps, result, error, reset } = useAIGenerate();
 
@@ -53,15 +54,20 @@ export default function AIGenerateCourseModal({
     await generate(form);
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!result) return;
-    onGenerated(result.content, result.title, result.description);
-    onClose();
-    reset();
+    try {
+      setIsApplying(true);
+      await onGenerated(result.content, result.title, result.description);
+      onClose();
+      reset();
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   const handleClose = () => {
-    if (isGenerating) return;
+    if (isGenerating || isApplying) return;
     onClose();
     reset();
   };
@@ -72,10 +78,10 @@ export default function AIGenerateCourseModal({
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-indigo-600">
           <Sparkles className="h-5 w-5 text-white" />
-          <h2 className="text-base font-semibold text-white">Générer un cours avec l'IA</h2>
+          <h2 className="text-base font-semibold text-white">Générer un cours avec l&apos;IA</h2>
           <button
             onClick={handleClose}
-            disabled={isGenerating}
+            disabled={isGenerating || isApplying}
             className="ml-auto text-white/70 hover:text-white transition-colors disabled:opacity-40"
           >
             <X size={18} />
@@ -284,15 +290,18 @@ export default function AIGenerateCourseModal({
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
             <button
               onClick={() => { reset(); }}
+              disabled={isApplying}
               className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Recommencer
             </button>
             <button
               onClick={handleApply}
-              className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-sm font-semibold transition-all shadow-sm"
+              disabled={isApplying}
+              className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-sm font-semibold transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Insérer dans l'éditeur
+              {isApplying && <Loader2 size={14} className="animate-spin" />}
+              {isApplying ? 'Enregistrement...' : 'Insérer et enregistrer'}
             </button>
           </div>
         )}

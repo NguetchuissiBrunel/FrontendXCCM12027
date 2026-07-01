@@ -200,11 +200,14 @@ export default function AIChatWidget() {
       requestRef.current = null;
 
       // Remplacer le message de chargement par la réponse
+      const answer = typeof response === 'string'
+        ? response
+        : (response.answer ?? response.response ?? response.message ?? response.text ?? '');
       setMessages(prev => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: 'assistant',
-          content: response.answer || 'Désolé, je n\'ai pas pu générer de réponse.',
+          content: answer || 'Désolé, je n\'ai pas pu générer de réponse.',
           metadata: {
             agent_type: response.agent_type,
             confidence_score: response.confidence_score,

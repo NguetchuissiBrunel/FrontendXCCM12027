@@ -504,7 +504,8 @@
       "exercises": "Exercises",
       "grading": "Grading",
       "workshops": "Workshops",
-      "properties": "Properties"
+      "properties": "Properties",
+      "recommendations": "AI Recommendations"
     },
     "toolbar": {
       "save": "Save",
@@ -2544,5 +2545,22 @@
     "freeCoursesDescription": "These courses are published outside of any class and can be accessed directly.",
     "loadError": "Unable to load profile",
     "loadErrorToast": "Error while loading profile"
+  },
+  "downloadOptions": {
+    "title": "Download course",
+    "description": "Choose the export format",
+    "pdfOption": {
+      "title": "PDF Format",
+      "description": "Portable document, ideal for printing"
+    },
+    "wordOption": {
+      "title": "Word Format",
+      "description": "Editable document (.docx)"
+    },
+    "pdfOrientation": {
+      "back": "← Back",
+      "portrait": "Portrait",
+      "landscape": "Landscape"
+    }
   }
 }

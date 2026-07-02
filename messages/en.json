@@ -224,7 +224,7 @@
     "register": "Sign up"
   },
   "notebook": {
-    "title": "NotebookLM",
+    "title": "AI Notebooks",
     "all": "All",
     "myNotebooks": "My notebooks",
     "selection": "Notebook selection",
@@ -462,14 +462,24 @@
         "submit": "Sign up",
         "submitting": "Signing up..."
       },
+      "grades": {
+        "notSpecified": "Not specified",
+        "other": "Other"
+      },
+      "subjects": {
+        "optionalHint": "This field is optional.",
+        "add": "Add"
+      },
       "placeholders": {
         "email": "Your email address",
         "password": "Your password",
         "confirmPassword": "Confirm your password",
         "grade": "Select your grade",
+        "customGrade": "Specify your grade",
+        "customSubject": "Add a custom subject",
         "firstName": "First name",
         "lastName": "Last name",
-        "photo": "Click or drag your photo here",
+        "photo": "Add a profile photo",
         "city": "City",
         "university": "University",
         "specialization": "Specialization",
@@ -495,6 +505,9 @@
     }
   },
   "editor": {
+    "notion": {
+      "keyNotion": "Key notion"
+    },
     "panels": {
       "structure": "Structure",
       "info": "Info",
@@ -2133,9 +2146,11 @@
       "classes": "Classes",
       "compositions": "Compositions",
       "classesDescription": "Browse and split your courses by creating different classes.",
+      "whatIsAClassTitle": "What is a class?",
+      "whatIsAClassDescription": "A class is a group of students linked to one or more courses. It helps you organize teaching, track enrollments, and manage exercises by cohort.",
       "compositionsDescription": "Manage your compositions and structured course materials.",
       "myClassesTitle": "My Course Classes",
-      "myCompositionsTitle": "My Compositions",
+      "myCompositionsTitle": "My Courses",
       "noClasses": "You don't have any classes yet. Create your first class.",
       "noCompositions": "You don't have any compositions yet. Create your first course.",
       "createClass": "Create a class",

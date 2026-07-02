@@ -6,7 +6,7 @@ import { Users, Award, Clock, Activity, BarChart, TrendingUp } from 'lucide-reac
 import { FaPen, FaSave } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { GestionDesUtilisateursService } from '@/lib/services/GestionDesUtilisateursService';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 export interface Professor {
   id: string;
@@ -56,12 +56,23 @@ interface ProfileCardProps {
 
 export default function ProfileCard({ professor, coursesStats, onUpdate }: ProfileCardProps) {
   const t = useTranslations('teacherDashboard.profileCard');
+  const tRegister = useTranslations('auth.register');
+  const locale = useLocale();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedProfessor, setEditedProfessor] = useState<Professor>(professor);
   const [activeTab, setActiveTab] = useState<'overview' | 'courses'>('overview');
+  const [customGrade, setCustomGrade] = useState('');
   const defaultAvatar = '/images/prof.jpeg';
+
+  const gradeOptions = [
+    tRegister('grades.notSpecified'),
+    tRegister('grades.other'),
+    ...(locale === 'fr'
+      ? ['Professeur des ecoles', 'Certifie (CAPES)', 'Agrege', 'Enseignant-Chercheur', 'Maitre de Conferences', 'Professeur des Universites', 'Doctorant']
+      : ['School teacher', 'Certified teacher (CAPES)', 'Associate professor', 'Teacher-researcher', 'Senior lecturer', 'University professor', 'Doctoral student']),
+  ];
 
   const handleEdit = () => {
     // On garde les valeurs actuelles pour les noms mais on peut vider le reste si souhaité
@@ -97,12 +108,16 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
           throw new Error(t('userIdNotFound'));
         }
 
+        const resolvedGrade = editedProfessor.grade === tRegister('grades.other')
+          ? customGrade.trim()
+          : editedProfessor.grade;
+
         const updatePayload = {
           firstName: editedProfessor.name.split(' ')[0],
           lastName: editedProfessor.name.split(' ').slice(1).join(' '),
           city: editedProfessor.city,
           university: editedProfessor.university,
-          grade: editedProfessor.grade,
+          grade: resolvedGrade,
           certification: editedProfessor.certification,
           photoUrl: editedProfessor.photoUrl || defaultAvatar,
         };
@@ -377,13 +392,27 @@ export default function ProfileCard({ professor, coursesStats, onUpdate }: Profi
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/30">
                 <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">{t('grade')}:</p>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedProfessor.grade}
-                    onChange={(e) => handleChange('grade', e.target.value)}
-                    className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                    placeholder={t('current', { value: professor.grade || t('notSpecified') })}
-                  />
+                  <>
+                    <select
+                      value={editedProfessor.grade || ''}
+                      onChange={(e) => handleChange('grade', e.target.value)}
+                      className="w-full px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
+                    >
+                      <option value="">{t('current', { value: professor.grade || t('notSpecified') })}</option>
+                      {gradeOptions.map((grade) => (
+                        <option key={grade} value={grade}>{grade}</option>
+                      ))}
+                    </select>
+                    {editedProfessor.grade === tRegister('grades.other') && (
+                      <input
+                        type="text"
+                        value={customGrade}
+                        onChange={(e) => setCustomGrade(e.target.value)}
+                        placeholder={tRegister('placeholders.customGrade')}
+                        className="w-full mt-2 px-3 py-2 border border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
+                      />
+                    )}
+                  </>
                 ) : (
                   <p className="font-semibold text-gray-800 dark:text-white">{editedProfessor.grade || professor.grade || t('notSpecified')}</p>
                 )}

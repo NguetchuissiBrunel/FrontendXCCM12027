@@ -161,6 +161,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   }>({ isOpen: false, type: null });
 
   const [isEntranceModalOpen, setIsEntranceModalOpen] = useState(true);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('editor-entrance-modal', { detail: { open: isEntranceModalOpen } }));
+  }, [isEntranceModalOpen]);
+
+  useEffect(() => {
+    const openStructureForTour = () => setActivePanel('structure');
+    window.addEventListener('editor-onboarding-open-structure', openStructureForTour);
+    return () => window.removeEventListener('editor-onboarding-open-structure', openStructureForTour);
+  }, []);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
 
@@ -1014,6 +1024,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             </div>
             {/* Panel Area - Slides based on activePanel */}
             <div
+              id="sidebar-structure-panel"
               className={`overflow-y-auto border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all ease-in-out ${activePanel ? '' : 'w-0 overflow-hidden'
                 }`}
               style={{ width: activePanel ? `${panelWidth}px` : '0px', transition: isResizing ? 'none' : 'width 300ms' }}

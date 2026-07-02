@@ -137,11 +137,11 @@ const ContactPage = () => {
 
           <div className="container mx-auto relative h-full flex flex-col items-center justify-center">
             <div className="w-full max-w-4xl text-center px-4">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white dark:text-white flex items-center">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white dark:text-white flex items-center justify-center">
                 <FaFileAlt className="mr-4" />
                 {content.headerTitle}
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-white mb-6 dark:text-gray-100 sm:mb-8 max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl text-white mb-6 dark:text-gray-100 sm:mb-8 max-w-2xl mx-auto text-center">
                 {content.headerDescription}
               </p>
 

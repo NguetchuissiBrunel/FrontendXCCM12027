@@ -15,12 +15,13 @@
  * @date December 2025
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { BookOpen } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-export default function NotionNodeView({ node, updateAttributes }: NodeViewProps) {
-  // const [isHovered, setIsHovered] = useState(false);
+export default function NotionNodeView({ node }: NodeViewProps) {
+  const t = useTranslations('editor.notion');
 
   return (
     <NodeViewWrapper
@@ -41,7 +42,7 @@ export default function NotionNodeView({ node, updateAttributes }: NodeViewProps
       <div contentEditable={false} className="flex items-center gap-2 mb-4 select-none bg-red-600 text-white px-3 py-1.5 rounded-lg w-fit shadow-sm">
         <BookOpen className="h-4 w-4" />
         <span className="text-xs font-black uppercase tracking-wider">
-          Notion Clé {node.attrs.number || ""}
+          {t('keyNotion')} {node.attrs.number || ""}
         </span>
       </div>
 

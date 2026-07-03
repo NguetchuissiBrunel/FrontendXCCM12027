@@ -50,7 +50,8 @@ const MyCoursesPanel: React.FC<MyCoursesPanelProps> = ({ onClose, onLoadCourse }
         CourseControllerService.getAllCourses(),
       ]);
 
-      const authorCourses = normalizeResponseData(authorResponse);
+      const authorCourses = normalizeResponseData(authorResponse)
+        .filter((course) => course.author?.id === user.id);
       const allCourses = normalizeResponseData(allCoursesResponse);
       const enrollments = enrollmentsResponse.data || [];
 

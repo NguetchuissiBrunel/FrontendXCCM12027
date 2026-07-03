@@ -64,26 +64,29 @@ const SignupPage = () => {
     role: 'student',
     firstName: '',
     lastName: '',
-    photoUrl: '/images/Applying Lean to Education -.jpeg',
+    photoUrl: '',
     city: '',
     university: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string>('/images/Applying Lean to Education -.jpeg');
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [customGrade, setCustomGrade] = useState('');
+  const [customSubject, setCustomSubject] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
   const subjectDropdownRef = useRef<HTMLDivElement>(null);
-  const grades = useMemo(() => (
-    locale === 'fr'
+  const grades = useMemo(() => {
+    const baseGrades = locale === 'fr'
       ? ['Professeur des ecoles', 'Certifie (CAPES)', 'Agrege', 'Enseignant-Chercheur', 'Maitre de Conferences', 'Professeur des Universites', 'Doctorant']
-      : ['School teacher', 'Certified teacher (CAPES)', 'Associate professor', 'Teacher-researcher', 'Senior lecturer', 'University professor', 'Doctoral student']
-  ), [locale]);
+      : ['School teacher', 'Certified teacher (CAPES)', 'Associate professor', 'Teacher-researcher', 'Senior lecturer', 'University professor', 'Doctoral student'];
+    return [t('grades.notSpecified'), t('grades.other'), ...baseGrades];
+  }, [locale, t]);
   const subjects = useMemo(() => (
     locale === 'fr'
-      ? ['Mathematiques', 'Physique-Chimie', 'SVT', 'Informatique', 'Francais', 'Anglais', 'Histoire-Geographie', 'Philosophie', 'Economie', 'Gestion', 'Droit', 'Medecine', 'Genie Civil', 'Genie Electrique']
-      : ['Mathematics', 'Physics-Chemistry', 'Life sciences', 'Computer science', 'French', 'English', 'History-Geography', 'Philosophy', 'Economics', 'Management', 'Law', 'Medicine', 'Civil engineering', 'Electrical engineering']
+      ? ['Mathematiques', 'Physique-Chimie', 'SVT', 'Informatique', 'Francais', 'Anglais', 'Histoire-Geographie', 'Philosophie', 'Economie', 'Gestion', 'Droit', 'Medecine', 'Genie Civil', 'Genie Electrique', 'Arts plastiques', 'Musique', 'EPS', 'Technologie', 'Sciences de l\'ingenieur', 'Comptabilite', 'Marketing', 'Psychologie', 'Sociologie', 'Biologie']
+      : ['Mathematics', 'Physics-Chemistry', 'Life sciences', 'Computer science', 'French', 'English', 'History-Geography', 'Philosophy', 'Economics', 'Management', 'Law', 'Medicine', 'Civil engineering', 'Electrical engineering', 'Visual arts', 'Music', 'Physical education', 'Technology', 'Engineering sciences', 'Accounting', 'Marketing', 'Psychology', 'Sociology', 'Biology']
   ), [locale]);
 
   useEffect(() => {
@@ -126,6 +129,10 @@ const SignupPage = () => {
     }
   }, [formData.password, formData.confirmPassword, t]);
 
+  const resolvedGrade = formData.grade === t('grades.other')
+    ? customGrade.trim()
+    : formData.grade;
+
   const validateStep1 = useCallback(() => {
     const newErrors: Record<string, string> = {};
 
@@ -147,13 +154,13 @@ const SignupPage = () => {
       newErrors.confirmPassword = t('validation.passwordMismatch');
     }
 
-    if (formData.role === 'teacher' && !formData.grade) {
+    if (formData.role === 'teacher' && !resolvedGrade) {
       newErrors.grade = t('validation.gradeRequired');
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, t]);
+  }, [formData, resolvedGrade, t]);
 
   const handleNext = useCallback(() => {
     if (currentStep === 1 && validateStep1()) {
@@ -181,6 +188,17 @@ const SignupPage = () => {
         : [...currentSubjects, subject];
       return { ...prev, subjects: newSubjects };
     });
+  };
+
+  const addCustomSubject = () => {
+    const trimmed = customSubject.trim();
+    if (!trimmed) return;
+    setFormData(prev => {
+      const currentSubjects = prev.subjects || [];
+      if (currentSubjects.includes(trimmed)) return prev;
+      return { ...prev, subjects: [...currentSubjects, trimmed] };
+    });
+    setCustomSubject('');
   };
 
   const handleSubmit = useCallback(async () => {
@@ -218,10 +236,10 @@ const SignupPage = () => {
           confirmPassword: formData.confirmPassword,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          photoUrl: formData.photoUrl,
+          photoUrl: formData.photoUrl || undefined,
           city: formData.city,
           university: formData.university,
-          grade: formData.grade,
+          grade: resolvedGrade,
           subjects: formData.subjects || [],
           certification: formData.certification,
         });
@@ -262,7 +280,7 @@ const SignupPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, registerStudent, registerTeacher, t]);
+  }, [formData, registerStudent, registerTeacher, resolvedGrade, t]);
 
   const renderStep1 = useMemo(() => (
     <motion.div
@@ -365,20 +383,31 @@ const SignupPage = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="relative"
+              className="space-y-2"
             >
-              <FaRocket className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <select
-                value={formData.grade || ''}
-                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all appearance-none"
-              >
-                <option value="" disabled>{t('placeholders.grade')}</option>
-                {grades.map(grade => (
-                  <option key={grade} value={grade}>{grade}</option>
-                ))}
-              </select>
-              {errors.grade && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.grade}</p>}
+              <div className="relative">
+                <FaRocket className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
+                <select
+                  value={formData.grade || ''}
+                  onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 pl-10 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all appearance-none"
+                >
+                  <option value="" disabled>{t('placeholders.grade')}</option>
+                  {grades.map(grade => (
+                    <option key={grade} value={grade}>{grade}</option>
+                  ))}
+                </select>
+              </div>
+              {formData.grade === t('grades.other') && (
+                <input
+                  type="text"
+                  value={customGrade}
+                  onChange={(e) => setCustomGrade(e.target.value)}
+                  placeholder={t('placeholders.customGrade')}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+                />
+              )}
+              {errors.grade && <p className="text-red-500 dark:text-red-400 text-sm">{errors.grade}</p>}
             </motion.div>
           )}
         </AnimatePresence>
@@ -508,6 +537,7 @@ const SignupPage = () => {
           </div>
         ) : (
           <>
+            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2">{t('subjects.optionalHint')}</p>
             <div className="relative" ref={subjectDropdownRef}>
               <FaBook className="absolute left-3 top-4 text-gray-400 dark:text-gray-500 z-10" />
               <div
@@ -546,6 +576,23 @@ const SignupPage = () => {
                   ))}
                 </div>
               )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customSubject}
+                onChange={(e) => setCustomSubject(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomSubject())}
+                placeholder={t('placeholders.customSubject')}
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-2 text-sm focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 transition-all"
+              />
+              <button
+                type="button"
+                onClick={addCustomSubject}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+              >
+                {t('subjects.add')}
+              </button>
             </div>
           </>
         )}

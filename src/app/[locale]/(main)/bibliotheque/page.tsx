@@ -13,6 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
+  Bookmark,
+  ThumbsUp,
   Download,
   Eye,
   Users,
@@ -105,6 +107,31 @@ const Bibliotheque = () => {
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [showOrientation, setShowOrientation] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('xccm_favorites');
+      if (stored) setFavorites(new Set(JSON.parse(stored) as number[]));
+    } catch {
+      setFavorites(new Set());
+    }
+  }, []);
+
+  const toggleFavorite = (courseId: number) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(courseId)) {
+        next.delete(courseId);
+        toast(content.removedFromFavorites, { icon: '💔' });
+      } else {
+        next.add(courseId);
+        toast.success(content.addedToFavorites);
+      }
+      localStorage.setItem('xccm_favorites', JSON.stringify([...next]));
+      return next;
+    });
+  };
   const content = useMemo(() => (
     locale === 'fr'
       ? {
@@ -127,6 +154,7 @@ const Bibliotheque = () => {
         clearFilter: "Effacer le filtre",
         noFavorites: "Aucun favori",
         emptyTitle: "Oups ! Rien n'a ete trouve",
+        loadError: "Impossible de charger la bibliotheque. Verifiez votre connexion internet ou reessayez plus tard.",
         noFavoritesDescription: "Vous n'avez pas encore ajoute de cours a vos favoris. Cliquez sur les coeurs pour en ajouter !",
         emptyDescription: "Nous n'avons trouve aucun cours correspondant a vos criteres actuels. Essayez de reinitialiser les filtres ou de modifier votre recherche.",
         resetSearch: "Reinitialiser la recherche",
@@ -161,6 +189,7 @@ const Bibliotheque = () => {
         clearFilter: "Clear filter",
         noFavorites: "No favorites yet",
         emptyTitle: "Oops! Nothing was found",
+        loadError: "Unable to load the library. Check your internet connection or try again later.",
         noFavoritesDescription: "You have not added any courses to your favorites yet. Click the hearts to save some.",
         emptyDescription: "We could not find any courses matching your current filters. Try resetting the filters or changing your search.",
         resetSearch: "Reset search",
@@ -206,11 +235,11 @@ const Bibliotheque = () => {
     );
 
     if (showFavorites) {
-      filtered = filtered.filter(course => course.isLiked);
+      filtered = filtered.filter(course => favorites.has(course.id));
     }
 
     return filtered;
-  }, [courses, searchTerm, showFavorites]);
+  }, [courses, searchTerm, showFavorites, favorites]);
 
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
   const currentCourses = filteredCourses.slice((currentPage - 1) * coursesPerPage, currentPage * coursesPerPage);
@@ -227,22 +256,14 @@ const Bibliotheque = () => {
 
       if (isCurrentlyLiked) {
         await decrementLike(courseId);
-        toast(content.removedFromFavorites, {
-          icon: '💔',
-          style: {
-            background: '#fef3c7',
-            color: '#92400e',
-          },
-        });
       } else {
         await incrementLike(courseId);
         confetti({
-          particleCount: 100,
-          spread: 70,
+          particleCount: 60,
+          spread: 50,
           origin: { y: 0.8 },
           colors: ['#8B5CF6', '#EC4899', '#3B82F6']
         });
-        toast.success(content.addedToFavorites);
       }
     } catch {
       toast.error(content.likeError);
@@ -353,7 +374,7 @@ const Bibliotheque = () => {
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
             >
-              <Heart className={`w-5 h-5 mr-2 ${showFavorites ? 'fill-current' : ''}`} />
+              <Bookmark className={`w-5 h-5 mr-2 ${showFavorites ? 'fill-current' : ''}`} />
               {showFavorites ? content.allCourses : content.favorites}
             </button>
           </div>
@@ -363,14 +384,14 @@ const Bibliotheque = () => {
       <div className="container mx-auto px-4 py-8">
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 text-red-700 p-4 rounded-xl mb-8 flex items-center">
-            <span>{error}</span>
+            <span>{content.loadError}</span>
           </div>
         )}
 
         {showFavorites && (
           <div className="mb-8 flex items-center justify-between bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/30">
             <div className="flex items-center">
-              <Heart className="w-5 h-5 text-red-500 mr-3 fill-current" />
+              <Bookmark className="w-5 h-5 text-amber-500 mr-3 fill-current" />
               <span className="text-red-700 dark:text-red-300 font-medium">
                 {content.showingFavorites}
               </span>
@@ -429,10 +450,10 @@ const Bibliotheque = () => {
                     {course.category || content.categoryFallback}
                   </span>
                 </div>
-                {course.isLiked && (
+                {favorites.has(course.id) && (
                   <div className="absolute top-3 right-3">
-                    <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase shadow-sm flex items-center">
-                      <Heart className="w-3 h-3 mr-1 fill-current" />
+                    <span className="bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase shadow-sm flex items-center">
+                      <Bookmark className="w-3 h-3 mr-1 fill-current" />
                       {content.favoriteBadge}
                     </span>
                   </div>
@@ -466,16 +487,23 @@ const Bibliotheque = () => {
                     <button
                       onClick={() => handleToggleLike(course.id)}
                       className={`flex items-center gap-1.5 transition-colors ${course.isLiked
-                        ? 'text-red-500 hover:text-red-600'
-                        : 'text-gray-500 hover:text-red-500'
+                        ? 'text-purple-500 hover:text-purple-600'
+                        : 'text-gray-500 hover:text-purple-500'
                         }`}
+                      title={locale === 'fr' ? 'J\'aime' : 'Like'}
                     >
-                      {course.isLiked ? (
-                        <Heart className="w-4 h-4 fill-current" strokeWidth={1.5} />
-                      ) : (
-                        <Heart className="w-4 h-4" strokeWidth={1.5} />
-                      )}
+                      <ThumbsUp className={`w-4 h-4 ${course.isLiked ? 'fill-current' : ''}`} strokeWidth={1.5} />
                       {formatNumber(course.likeCount)}
+                    </button>
+                    <button
+                      onClick={() => toggleFavorite(course.id)}
+                      className={`flex items-center gap-1.5 transition-colors ${favorites.has(course.id)
+                        ? 'text-amber-500 hover:text-amber-600'
+                        : 'text-gray-500 hover:text-amber-500'
+                        }`}
+                      title={content.favorites}
+                    >
+                      <Bookmark className={`w-4 h-4 ${favorites.has(course.id) ? 'fill-current' : ''}`} strokeWidth={1.5} />
                     </button>
                     <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {formatNumber(course.followersCount)}</span>
                     <button

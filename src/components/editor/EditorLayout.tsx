@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Editor } from '@tiptap/react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Wand2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   FaCloudUploadAlt,
@@ -44,10 +44,15 @@ import EditorEntranceModal from './EditorEntranceModal';
 import CreateCourseModal from '@/components/create-course/page';
 import { CollaborationProvider } from '@/contexts/CollaborationContext';
 import CollaborationSync from './CollaborationSync';
+import { useHocuspocus } from '@/hooks/useHocuspocus';
+
+// Édition collaborative temps réel Y.js/Hocuspocus (mettre à false pour désactiver)
+const COLLAB_ENABLED = true;
 import ImageUploader from '../upload/ImageUploader';
 import CollabInviteButton from './CollabInviteButton';
 import { getAuthToken } from '@/utils/authHelpers';
 import { ApiError } from '@/lib/core/ApiError';
+import AIGenerateCourseModal from './AIGenerateCourseModal';
 
 
 interface EditorLayoutProps {
@@ -100,6 +105,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   });
 
   const { user } = useAuth();
+
+  // Connexion collaborative Y.js/Hocuspocus pour le cours courant
+  const { ydoc, provider, isSynced: collabSynced } = useHocuspocus(currentCourseId, COLLAB_ENABLED);
+  const collabUser = React.useMemo(() => {
+    const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
+    return {
+      name: user?.firstName || user?.email?.split('@')[0] || 'Collaborateur',
+      color: colors[Math.abs((user?.email || 'u').charCodeAt(0)) % colors.length],
+    };
+  }, [user?.firstName, user?.email]);
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
@@ -160,7 +175,18 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   }>({ isOpen: false, type: null });
 
   const [isEntranceModalOpen, setIsEntranceModalOpen] = useState(true);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('editor-entrance-modal', { detail: { open: isEntranceModalOpen } }));
+  }, [isEntranceModalOpen]);
+
+  useEffect(() => {
+    const openStructureForTour = () => setActivePanel('structure');
+    window.addEventListener('editor-onboarding-open-structure', openStructureForTour);
+    return () => window.removeEventListener('editor-onboarding-open-structure', openStructureForTour);
+  }, []);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -193,6 +219,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       // Defer execution to avoid "flushSync was called from inside a lifecycle method"
       const timer = setTimeout(() => {
         try {
+          if (COLLAB_ENABLED) {
+            // Y.js : seed le doc partagé UNE fois, uniquement s'il est vide après sync.
+            // Tant que la sync n'est pas faite, on garde pendingContent (l'effet se relance).
+            if (!collabSynced) return;
+            if (editorInstance.isEmpty) {
+              editorInstance.commands.setContent(pendingContent);
+            }
+            setPendingContent(null);
+            return;
+          }
           editorInstance.commands.setContent(pendingContent);
           setPendingContent(null); // Clear after applying
         } catch (error) {
@@ -202,7 +238,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [editorInstance, pendingContent]);
+  }, [editorInstance, pendingContent, collabSynced]);
 
   const getAccessibleCourses = React.useCallback(async (userId: string) => {
     const [authorResponse, enrollmentsResponse, allCoursesResponse] = await Promise.all([
@@ -482,6 +518,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   // Ref for auto-save timer
   const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const skipNextAutoSaveRef = React.useRef(false);
 
   const handleTOCItemRename = (itemId: string, newTitle: string) => {
     if (editorRef.current) {
@@ -663,6 +700,61 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     setConfirmConfig({ isOpen: false, type: null });
   };
 
+  const handleAIGenerated = async (content: object, title: string, description: string) => {
+    if (!user?.id) {
+      toast.error(t('toast.notLoggedIn'));
+      throw new Error('Utilisateur non connecté');
+    }
+
+    const finalTitle = title.trim() || 'Cours généré par IA';
+    const finalDescription = description.trim() || "Cours généré avec l'IA";
+    const finalCategory = courseCategory.trim() || 'Informatique';
+
+    try {
+      const createData: CourseCreateRequest = {
+        title: finalTitle,
+        content: content as CourseCreateRequest['content'],
+        category: finalCategory,
+        description: finalDescription,
+        photoUrl: courseImage,
+      };
+
+      const response = await CourseControllerService.createCourse(user.id, createData);
+      const responseData = (response as { data?: { id?: number }; id?: number }).data || response;
+      const createdCourseId = responseData?.id;
+
+      if (!createdCourseId) {
+        throw new Error("Impossible de récupérer l'ID du cours créé.");
+      }
+
+      setCourseTitle(finalTitle);
+      setCourseDescription(finalDescription);
+      setCurrentCourseId(createdCourseId);
+      setCurrentCourseAuthorId(user.id);
+
+      if (editorInstance) {
+        skipNextAutoSaveRef.current = true;
+        editorInstance.commands.setContent(content);
+      } else {
+        setPendingContent(content);
+      }
+
+      setIsEntranceModalOpen(false);
+      setActivePanel('structure');
+      toast.success(`Cours "${finalTitle}" généré et enregistré`);
+    } catch (error: unknown) {
+      console.error('Erreur création du cours généré par IA :', error);
+      const message =
+        error instanceof ApiError
+          ? (error.body?.message || error.body?.error || error.message)
+          : error instanceof Error
+            ? error.message
+            : "Erreur de communication avec le serveur.";
+      toast.error(`${t('toast.saveError')} : ${message}`);
+      throw error;
+    }
+  };
+
   const handleCreateCourse = (data: { title: string; category: string; description: string }) => {
     setCourseTitle(data.title);
     setCourseCategory(data.category);
@@ -682,6 +774,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
    */
   const handleEditorChange = (content: string) => {
     // Determine title from content if needed? No, title is separate.
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
 
     // Debounced auto-save
     if (autoSaveTimerRef.current) {
@@ -743,6 +839,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             setIsEntranceModalOpen(false);
             setActivePanel('author'); // Open 'Mes Cours' panel
           }}
+          onGenerateCourse={() => {
+            setIsEntranceModalOpen(false);
+            setIsAIGenerateModalOpen(true);
+          }}
         />
 
         {/* Course Creation Modal */}
@@ -750,6 +850,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSubmit={handleCreateCourse}
+        />
+
+        {/* AI Course Generation Modal */}
+        <AIGenerateCourseModal
+          isOpen={isAIGenerateModalOpen}
+          onClose={() => setIsAIGenerateModalOpen(false)}
+          onGenerated={handleAIGenerated}
         />
 
         {/* Confirmation Modal */}
@@ -833,8 +940,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 setEditorInstance(editor);
               }}
               ref={editorRef}
+              ydoc={ydoc}
+              provider={provider}
+              collaborationEnabled={COLLAB_ENABLED}
+              isSynced={collabSynced}
+              collabUser={collabUser}
             >
-              <CollaborationSync editorRef={editorRef} editorInstance={editorInstance} />
+              <CollaborationSync editorRef={editorRef} editorInstance={editorInstance} yjsEnabled={COLLAB_ENABLED && !!ydoc} />
             </MainEditor>
           </main>
 
@@ -941,6 +1053,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             </div>
             {/* Panel Area - Slides based on activePanel */}
             <div
+              id="sidebar-structure-panel"
               className={`overflow-y-auto border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all ease-in-out ${activePanel ? '' : 'w-0 overflow-hidden'
                 }`}
               style={{ width: activePanel ? `${panelWidth}px` : '0px', transition: isResizing ? 'none' : 'width 300ms' }}

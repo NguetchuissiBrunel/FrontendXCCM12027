@@ -153,9 +153,10 @@ const Navbar = () => {
 	    }
 	  } else {
 	    // Cas : Utilisateur CONNECTÉ
-	    
-	    // 1. Ajouter le Notebook ici
-	    links.push(notebookNavLink);
+	    const isEditorPage = pathname?.includes('/editor');
+	    if (!isEditorPage) {
+	      links.push(notebookNavLink);
+	    }
 
 	    // 2. Masquer "Accueil" si vous le souhaitez toujours
 	    const homeIndex = links.findIndex(link => link.href === '/');

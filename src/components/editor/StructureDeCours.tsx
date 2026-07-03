@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
 import { toast } from 'react-hot-toast';
 import { ApiResponseListCourseResponse } from '@/lib/models/ApiResponseListCourseResponse';
+import { mockCourses } from '@/data/mockEditorData';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface StructureDeCoursProps {
@@ -495,7 +496,13 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   ];
 
   const renderFilteredContent = () => {
-    const dataToFilter = courses;
+    // Cours de la BD, puis données mock (structure complète) en dessous : permet le
+    // drag & drop de connaissances de démonstration quand XCSM est indisponible.
+    // Offset d'ID sur les mocks pour éviter les collisions de clés avec la BD.
+    const dataToFilter = [
+      ...courses,
+      ...mockCourses.map((m) => ({ ...m, id: 9000000 + Number(m.id) })),
+    ];
     if (!activeFilter) return dataToFilter.map((course) => renderCourse(course));
 
     switch (activeFilter) {

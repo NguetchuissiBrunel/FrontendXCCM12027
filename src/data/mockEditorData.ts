@@ -1657,3 +1657,15 @@ export const flattenCourseStructure = (courses: Course[]): CourseStructureItem[]
  * Flattened items for right sidebar (Structure de cours)
  */
 export const mockFlattenedItems = flattenCourseStructure(mockCourseData);
+
+/**
+ * Ensemble des cours de démonstration (mock) — affichés dans le panneau
+ * "Importer des connaissances" sous les cours de la BD, pour permettre le
+ * drag & drop de connaissances quand XCSM est indisponible.
+ */
+export const mockCourses: Course[] = [
+  mockCourse1, mockCourse2, mockCourse3, mockCourse4, mockCourse5,
+  mockCourse6, mockCourse7, mockCourse8, mockCourse9, mockCourse10,
+  mockCourse11, mockCourse12, mockCourse13, mockCourse14, mockCourse15,
+  mockCourse16, mockCourse17, mockCourse18, mockCourse19,
+];

@@ -46,8 +46,10 @@ import { CollaborationProvider } from '@/contexts/CollaborationContext';
 import CollaborationSync from './CollaborationSync';
 import { useHocuspocus } from '@/hooks/useHocuspocus';
 
-// Édition collaborative temps réel Y.js/Hocuspocus (mettre à false pour désactiver)
-const COLLAB_ENABLED = true;
+// Édition collaborative temps réel Y.js/Hocuspocus (Phase 2).
+// Désactivé par défaut tant que non testé à 2 navigateurs (risque de duplication
+// de contenu). Mettre à true + tester à 2 comptes avant de faire confiance.
+const COLLAB_ENABLED = false;
 import ImageUploader from '../upload/ImageUploader';
 import CollabInviteButton from './CollabInviteButton';
 import { getAuthToken } from '@/utils/authHelpers';

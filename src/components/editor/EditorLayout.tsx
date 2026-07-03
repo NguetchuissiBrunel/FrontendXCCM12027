@@ -286,24 +286,20 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   const loadSpecificCourse = async (id: number, userId: string) => {
     try {
       setIsLoadingCourse(true);
-      const courses = await getAccessibleCourses(userId);
-      const course = Array.isArray(courses) ? courses.find((c: any) => c.id === id) : null;
+      // Chargement direct par ID : le backend autorise selon les droits (auteur,
+      // collaborateur/éditeur via course_editors, ou inscription). On ne bloque plus
+      // sur la liste pré-agrégée (getAccessibleCourses) qui excluait les cours non
+      // publiés et les collaborations -> "Cours non trouvé dans votre bibliothèque".
+      let resolvedCourse: any = null;
+      try {
+        const response = await fetchCourseContentById(id);
+        // Le service renvoie ApiResponseEnrichedCourseResponse, on extrait .data
+        resolvedCourse = (response as any)?.data || response;
+      } catch (error) {
+        console.error('Chargement du cours par ID échoué (accès refusé ?) :', error);
+      }
 
-      if (course) {
-        let resolvedCourse = course;
-
-        try {
-          const response = await fetchCourseContentById(id);
-          // Le service renvoie ApiResponseEnrichedCourseResponse, on extrait .data
-          resolvedCourse = response?.data || response;
-        
-          if (!resolvedCourse || (!resolvedCourse.content && !resolvedCourse.data?.content)) {
-            throw new Error("Le contenu du cours est vide ou invalide.");
-          }
-        } catch (error) {
-          console.warn('Chargement detaille du cours indisponible, utilisation des donnees deja chargees.', error);
-        }
-
+      if (resolvedCourse && resolvedCourse.id) {
         let content = resolvedCourse.content;
 
         // Handle cases where content might be a string (JSON) instead of an object
@@ -327,7 +323,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         setIsEntranceModalOpen(false);
         setActivePanel('structure');
       } else {
-        toast.error('Cours non trouve dans votre bibliotheque collaborative');
+        toast.error('Cours introuvable ou accès non autorisé.');
       }
     } catch (error) {
       console.error('Erreur chargement cours spécifique:', error);

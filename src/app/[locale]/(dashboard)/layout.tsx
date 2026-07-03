@@ -2,8 +2,7 @@
 import type { Metadata } from 'next';
 import Navbar from '@/components/layout/Navbar';
 import { AuthProvider } from "@/contexts/AuthContext";
-import Onboarding from '@/components/Onboarding';
-import StudentOnboarding from '@/components/StudentOnboarding';
+import OnboardingSwitcher from '@/components/OnboardingSwitcher';
 import { dashboardFont } from '../fonts';
 
 export const metadata: Metadata = {
@@ -24,8 +23,7 @@ export default function RootLayout({
           <div className="grow">
             {children}
           </div>
-          <Onboarding />
-          <StudentOnboarding />
+          <OnboardingSwitcher />
         </AuthProvider>
 
       </div>

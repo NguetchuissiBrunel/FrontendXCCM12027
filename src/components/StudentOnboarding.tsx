@@ -253,6 +253,19 @@ const StudentOnboarding = () => {
         }
     }, [isActive, currentStep, steps]);
 
+    const getStorageKey = useCallback(() => {
+        if (typeof window === 'undefined') return `student_tour_${getCleanPath()}`;
+
+        try {
+            const currentUserRaw = localStorage.getItem('currentUser');
+            const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null;
+            const userIdentifier = currentUser?.id || currentUser?.email || 'anonymous';
+            return `student_tour_${userIdentifier}_${getCleanPath()}`;
+        } catch {
+            return `student_tour_${getCleanPath()}`;
+        }
+    }, [getCleanPath]);
+
     // Initialize onboarding
     useEffect(() => {
         setIsActive(false);
@@ -265,7 +278,7 @@ const StudentOnboarding = () => {
             if (pageSteps.length > 0) {
                 setSteps(pageSteps);
                 
-                const storageKey = `student_tour_${getCleanPath()}`;
+                const storageKey = getStorageKey();
                 const hasSeen = localStorage.getItem(storageKey);
                 
                 if (!hasSeen) {
@@ -278,7 +291,7 @@ const StudentOnboarding = () => {
         } else {
             setSteps([]);
         }
-    }, [pathname, isStudentDashboardPage, getStepsForCurrentPage, getCleanPath]);
+    }, [pathname, isStudentDashboardPage, getStepsForCurrentPage, getCleanPath, getStorageKey]);
 
     // Update listeners
     useEffect(() => {
@@ -321,7 +334,7 @@ const StudentOnboarding = () => {
     const handleEnd = () => {
         setIsActive(false);
         setCurrentStep(0);
-        const storageKey = `student_tour_${getCleanPath()}`;
+        const storageKey = getStorageKey();
         localStorage.setItem(storageKey, 'true');
     };
 
@@ -494,49 +507,63 @@ function getTooltipStyles(targetRect: DOMRect | null, position?: string, highlig
     const viewportHeight = window.innerHeight;
     const tooltipWidth = Math.min(400, viewportWidth - 40);
     const tooltipHeight = 280;
-    
+
+    const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+
+    const centerLeft = targetRect.left + targetRect.width / 2 - tooltipWidth / 2;
+    const clampedCenterLeft = clamp(centerLeft, spacing, viewportWidth - tooltipWidth - spacing);
+
+    const sideTop = clamp(
+        targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
+        spacing,
+        viewportHeight - tooltipHeight - spacing
+    );
+
+    if (position === 'left') {
+        return {
+            position: 'fixed',
+            top: sideTop,
+            left: clamp(targetRect.left - tooltipWidth - spacing, spacing, viewportWidth - tooltipWidth - spacing),
+            zIndex: 10000,
+            maxWidth: `${tooltipWidth}px`,
+            width: 'auto',
+            minWidth: '280px'
+        };
+    }
+
+    if (position === 'right') {
+        return {
+            position: 'fixed',
+            top: sideTop,
+            left: clamp(targetRect.right + spacing, spacing, viewportWidth - tooltipWidth - spacing),
+            zIndex: 10000,
+            maxWidth: `${tooltipWidth}px`,
+            width: 'auto',
+            minWidth: '280px'
+        };
+    }
+
     const spaceAbove = targetRect.top;
     const spaceBelow = viewportHeight - targetRect.bottom;
-    const spaceLeft = targetRect.left;
-    const spaceRight = viewportWidth - targetRect.right;
-    
     let top: number;
-    
+
     if (position === 'top') {
         top = spaceAbove >= tooltipHeight + spacing ? targetRect.top - tooltipHeight - spacing : targetRect.bottom + spacing;
     } else if (position === 'bottom') {
         top = spaceBelow >= tooltipHeight + spacing ? targetRect.bottom + spacing : targetRect.top - tooltipHeight - spacing;
-    } else if (position === 'left' && spaceLeft >= tooltipWidth + spacing) {
-        return {
-            position: 'fixed',
-            top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-            left: targetRect.left - tooltipWidth - spacing,
-            zIndex: 10000,
-            maxWidth: `${tooltipWidth}px`,
-            width: 'auto',
-            minWidth: '280px'
-        };
-    } else if (position === 'right' && spaceRight >= tooltipWidth + spacing) {
-        return {
-            position: 'fixed',
-            top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-            left: targetRect.right + spacing,
-            zIndex: 10000,
-            maxWidth: `${tooltipWidth}px`,
-            width: 'auto',
-            minWidth: '280px'
-        };
     } else {
-        top = spaceBelow >= tooltipHeight + spacing ? targetRect.bottom + spacing : (spaceAbove >= tooltipHeight + spacing ? targetRect.top - tooltipHeight - spacing : (viewportHeight - tooltipHeight) / 2);
+        top = spaceBelow >= tooltipHeight + spacing
+            ? targetRect.bottom + spacing
+            : (spaceAbove >= tooltipHeight + spacing
+                ? targetRect.top - tooltipHeight - spacing
+                : (viewportHeight - tooltipHeight) / 2);
     }
-    
-    const left = Math.min(viewportWidth - tooltipWidth / 2 - spacing, Math.max(tooltipWidth / 2 + spacing, targetRect.left + targetRect.width / 2));
-    
+
     return {
         position: 'fixed',
-        top: Math.min(viewportHeight - tooltipHeight - spacing, Math.max(spacing, top)),
-        left: left,
-        transform: 'translateX(-50%)',
+        top: clamp(top, spacing, viewportHeight - tooltipHeight - spacing),
+        left: clampedCenterLeft,
+        transform: 'translateX(0)',
         zIndex: 10000,
         maxWidth: `${tooltipWidth}px`,
         width: 'auto',

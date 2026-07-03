@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, Sparkles, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
@@ -200,6 +200,9 @@ const Onboarding = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [blockedByEditorModal, setBlockedByEditorModal] = useState(false);
+    const waitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const retryCountRef = useRef(0);
+    const observerRef = useRef<MutationObserver | null>(null);
 
     useEffect(() => {
         const handler = (e: Event) => {
@@ -219,8 +222,22 @@ const Onboarding = () => {
             const rect = element.getBoundingClientRect();
             setTargetRect(rect);
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // reset retry counters when element is found
+            retryCountRef.current = 0;
+            if (waitTimeoutRef.current) {
+                clearTimeout(waitTimeoutRef.current);
+                waitTimeoutRef.current = null;
+            }
         } else {
             setTargetRect(null);
+            // retry a few times in case the element is rendered later
+            if (retryCountRef.current < 10) {
+                if (waitTimeoutRef.current) clearTimeout(waitTimeoutRef.current);
+                waitTimeoutRef.current = setTimeout(() => {
+                    retryCountRef.current++;
+                    updateTargetRect();
+                }, 500);
+            }
         }
     }, [isActive, currentStep, steps]);
 
@@ -250,9 +267,24 @@ const Onboarding = () => {
             updateTargetRect();
             window.addEventListener('resize', updateTargetRect);
             window.addEventListener('scroll', updateTargetRect);
+            // observe DOM changes to detect late-mounted targets
+            observerRef.current = new MutationObserver(() => {
+                updateTargetRect();
+            });
+            observerRef.current.observe(document.body, { childList: true, subtree: true });
+
             return () => {
                 window.removeEventListener('resize', updateTargetRect);
                 window.removeEventListener('scroll', updateTargetRect);
+                if (observerRef.current) {
+                    observerRef.current.disconnect();
+                    observerRef.current = null;
+                }
+                if (waitTimeoutRef.current) {
+                    clearTimeout(waitTimeoutRef.current);
+                    waitTimeoutRef.current = null;
+                }
+                retryCountRef.current = 0;
             };
         }
     }, [isActive, updateTargetRect]);

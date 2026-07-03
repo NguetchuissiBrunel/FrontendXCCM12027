@@ -54,10 +54,13 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     // 2. Fetch courses from DB
     const fetchCourses = async () => {
       try {
-        const resp: ApiResponseListCourseResponse = await CourseControllerService.getAllCourses();
+        if (!user?.id) { setCourses([]); return; }
+        // Cours de l'utilisateur (brouillons + publiés). getAllCourses ne renvoyait
+        // que les cours PUBLIÉS filtrés sur l'auteur -> panneau vide tant qu'aucun
+        // cours n'est publié (publish etait casse par le bug yjs_state).
+        const resp: ApiResponseListCourseResponse = await CourseControllerService.getAuthorCourses(user.id);
         if (resp && resp.data) {
           const dbCoursesMapped: Course[] = resp.data
-            .filter((c) => !user?.id || c.author?.id === user.id)
             .map((c) => ({
             id: c.id ?? 0, 
             title: c.title || 'Sans titre',

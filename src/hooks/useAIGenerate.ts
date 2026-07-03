@@ -91,9 +91,14 @@ export function useAIGenerate() {
               setIsGenerating(false);
               return;
             }
-            if (currentEvent === 'done') {
+            // Le backend (SseEmitter) perd le nom d'événement du LLM : la trame finale
+            // arrive souvent comme "message" au lieu de "done". On détecte donc la fin
+            // aussi par la forme du payload (content + generation_meta).
+            const isDone = currentEvent === 'done'
+              || (data && data.generation_meta && data.content);
+            if (isDone) {
               setResult(data as AIGenerateResult);
-              addStep('done', `Cours généré en ${(data.generation_meta?.duration_ms / 1000).toFixed(1)}s`);
+              addStep('done', `Cours généré en ${((data.generation_meta?.duration_ms ?? 0) / 1000).toFixed(1)}s`);
             } else {
               addStep(currentEvent, data.message || currentEvent);
             }

@@ -5,10 +5,16 @@ import { OpenAPI } from '@/lib/core/OpenAPI';
 // Configuration des cookies (sécurisé)
 const COOKIE_OPTIONS = {
     expires: 7, // 7 jours
-    secure: process.env.NODE_ENV === 'production', // HTTPS en production
     sameSite: 'lax' as const,
     path: '/',
 };
+
+// Un cookie `Secure` n'est PAS enregistré sur une page HTTP.
+// On active Secure uniquement si la page est réellement servie en HTTPS
+// (sinon le login échoue silencieusement sur http://xccm1.enspy-gi.gandal).
+function isSecureContext(): boolean {
+    return typeof window !== 'undefined' && window.location.protocol === 'https:';
+}
 
 /**
  * Configure le token JWT dans OpenAPI et dans les cookies
@@ -22,8 +28,10 @@ export function setAuthToken(token: string): void {
     // Configurer le token dans OpenAPI pour toutes les requêtes futures
     OpenAPI.TOKEN = token;
 
-    // Stocker le token dans les cookies
-    Cookies.set('authToken', token, COOKIE_OPTIONS);
+    // Stocker le token dans les cookies (Secure seulement en HTTPS réel)
+    Cookies.set('authToken', token, { ...COOKIE_OPTIONS, secure: isSecureContext() });
+    // Fallback localStorage (robustesse sur HTTP / contextes cross-origin)
+    try { if (typeof window !== 'undefined') localStorage.setItem('authToken', token); } catch { /* ignore */ }
 
     console.log('✅ Token configuré avec succès');
 }
@@ -32,7 +40,11 @@ export function setAuthToken(token: string): void {
  * Récupère le token JWT depuis les cookies
  */
 export function getAuthToken(): string | null {
-    const token = Cookies.get('authToken');
+    let token = Cookies.get('authToken');
+    // Repli sur localStorage si le cookie est absent (page HTTP / cookie rejeté)
+    if (!token && typeof window !== 'undefined') {
+        try { token = localStorage.getItem('authToken') || undefined; } catch { /* ignore */ }
+    }
 
     if (token) {
         // S'assurer que OpenAPI.TOKEN est synchronisé
@@ -49,8 +61,9 @@ export function clearAuthToken(): void {
     // Supprimer de OpenAPI
     OpenAPI.TOKEN = undefined;
 
-    // Supprimer des cookies
+    // Supprimer des cookies + localStorage
     Cookies.remove('authToken', { path: '/' });
+    try { if (typeof window !== 'undefined') localStorage.removeItem('authToken'); } catch { /* ignore */ }
 
     console.log('🗑️ Token supprimé');
 }

@@ -2,7 +2,7 @@
 import toast from 'react-hot-toast';
 import './tiptap-editor.css';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
@@ -15,6 +15,10 @@ import Link from '@tiptap/extension-link';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import FontFamily from '@tiptap/extension-font-family';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import type { HocuspocusProvider } from '@hocuspocus/provider';
+import type * as Y from 'yjs';
 import { Fragment, Slice, Node as PMNode, Schema } from '@tiptap/pm/model';
 import { QuickExerciseModal, QuestionData } from './QuickExerciseModal';
 import { QuestionType } from '@/types/exercise';
@@ -61,6 +65,12 @@ interface MainEditorProps {
   onContentChange?: (content: string) => void;
   onEditorReady?: (editor: any) => void; // Callback when editor is ready
   children?: React.ReactNode;
+  // Collaboration temps réel Y.js/Hocuspocus (optionnel)
+  ydoc?: Y.Doc | null;
+  provider?: HocuspocusProvider | null;
+  collaborationEnabled?: boolean;
+  isSynced?: boolean;
+  collabUser?: { name: string; color: string };
 }
 
 // Define the Indent extension since it's not in starter-kit by default in the way we might want, 
@@ -257,8 +267,14 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
   initialContent,
   onContentChange,
   onEditorReady,
-  children
+  children,
+  ydoc,
+  provider,
+  collaborationEnabled = false,
+  isSynced = false,
+  collabUser,
 }, ref) => {
+  const collabActive = collaborationEnabled && !!ydoc;
   const [zoom, setZoom] = useState(100);
   const [showQuickExerciseModal, setShowQuickExerciseModal] = useState(false);
   // Stores the ID of the node that triggered exercise creation (Section/Chapitre buttons)
@@ -289,6 +305,8 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
         heading: false, // Disable default heading to use our custom one
         dropcursor: false,
         gapcursor: false,
+        // Y.js gère son propre historique undo/redo par utilisateur
+        ...(collabActive ? { history: false } : {}),
       }),
       Heading.configure({
         levels: [1, 2, 3, 4, 5, 6],
@@ -322,11 +340,19 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
       Notion,
       Exercice,
       MathNode,
+      // Extensions collaboration Y.js (actives seulement si ydoc/provider fournis)
+      ...(collabActive ? [Collaboration.configure({ document: ydoc! })] : []),
+      ...(collabActive && provider ? [CollaborationCursor.configure({
+        provider,
+        user: collabUser || { name: 'Collaborateur', color: '#8B5CF6' },
+      })] : []),
     ],
-    content: initialContent,
+    // En mode collab, le contenu vient du Y.Doc (pas de initialContent -> évite la duplication)
+    content: collabActive ? undefined : initialContent,
     onUpdate: ({ editor, transaction }) => {
       // Don't trigger autosave or broadcast if the transaction came from a remote collaborator
       if (transaction.getMeta('isRemote')) return;
+      if (transaction.getMeta('y-sync$')) return; // transactions internes Y.js
 
       onContentChange?.(editor.getHTML());
 
@@ -415,9 +441,20 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
     onCreate: ({ editor }) => {
       onEditorReady?.(editor);
     },
-  });
+  }, [collabActive, ydoc, provider]); // recrée l'éditeur quand la collaboration Y.js devient prête
 
   const copiedNodeJsonRef = useRef<any>(null);
+
+  // Seeding Y.js : à la 1re collaboration sur un cours existant, le Y.Doc serveur est vide.
+  // On l'initialise UNE seule fois avec le contenu du cours (sinon éditeur blanc / perte de contenu).
+  const yjsSeededRef = useRef(false);
+  useEffect(() => {
+    if (!collabActive || !editor || !isSynced || yjsSeededRef.current) return;
+    if (editor.isEmpty && initialContent) {
+      editor.commands.setContent(initialContent);
+    }
+    yjsSeededRef.current = true;
+  }, [collabActive, editor, isSynced, initialContent]);
 
   React.useImperativeHandle(ref, () => ({
     handleTOCAction: (action: 'rename' | 'delete' | 'move' | 'duplicate' | 'paste' | 'copy', itemId: string, payload?: any, isRemote: boolean = false) => {

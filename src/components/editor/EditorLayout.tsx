@@ -44,6 +44,10 @@ import EditorEntranceModal from './EditorEntranceModal';
 import CreateCourseModal from '@/components/create-course/page';
 import { CollaborationProvider } from '@/contexts/CollaborationContext';
 import CollaborationSync from './CollaborationSync';
+import { useHocuspocus } from '@/hooks/useHocuspocus';
+
+// Édition collaborative temps réel Y.js/Hocuspocus (mettre à false pour désactiver)
+const COLLAB_ENABLED = true;
 import ImageUploader from '../upload/ImageUploader';
 import CollabInviteButton from './CollabInviteButton';
 import { getAuthToken } from '@/utils/authHelpers';
@@ -101,6 +105,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   });
 
   const { user } = useAuth();
+
+  // Connexion collaborative Y.js/Hocuspocus pour le cours courant
+  const { ydoc, provider, isSynced: collabSynced } = useHocuspocus(currentCourseId, COLLAB_ENABLED);
+  const collabUser = React.useMemo(() => {
+    const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
+    return {
+      name: user?.firstName || user?.email?.split('@')[0] || 'Collaborateur',
+      color: colors[Math.abs((user?.email || 'u').charCodeAt(0)) % colors.length],
+    };
+  }, [user?.firstName, user?.email]);
 
   // State to store editor instance
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
@@ -205,6 +219,16 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       // Defer execution to avoid "flushSync was called from inside a lifecycle method"
       const timer = setTimeout(() => {
         try {
+          if (COLLAB_ENABLED) {
+            // Y.js : seed le doc partagé UNE fois, uniquement s'il est vide après sync.
+            // Tant que la sync n'est pas faite, on garde pendingContent (l'effet se relance).
+            if (!collabSynced) return;
+            if (editorInstance.isEmpty) {
+              editorInstance.commands.setContent(pendingContent);
+            }
+            setPendingContent(null);
+            return;
+          }
           editorInstance.commands.setContent(pendingContent);
           setPendingContent(null); // Clear after applying
         } catch (error) {
@@ -214,7 +238,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [editorInstance, pendingContent]);
+  }, [editorInstance, pendingContent, collabSynced]);
 
   const getAccessibleCourses = React.useCallback(async (userId: string) => {
     const [authorResponse, enrollmentsResponse, allCoursesResponse] = await Promise.all([
@@ -916,8 +940,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                 setEditorInstance(editor);
               }}
               ref={editorRef}
+              ydoc={ydoc}
+              provider={provider}
+              collaborationEnabled={COLLAB_ENABLED}
+              isSynced={collabSynced}
+              collabUser={collabUser}
             >
-              <CollaborationSync editorRef={editorRef} editorInstance={editorInstance} />
+              <CollaborationSync editorRef={editorRef} editorInstance={editorInstance} yjsEnabled={COLLAB_ENABLED && !!ydoc} />
             </MainEditor>
           </main>
 

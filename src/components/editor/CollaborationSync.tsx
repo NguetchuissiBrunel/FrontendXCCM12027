@@ -11,9 +11,12 @@ import throttle from 'lodash.throttle';
 interface CollaborationSyncProps {
     editorRef: React.MutableRefObject<MainEditorRef | null>;
     editorInstance?: Editor | null;
+    // Si true, Y.js/Hocuspocus gère la sync de contenu : on désactive LOCK/UNLOCK/BLOCK_UPDATE
+    // (les opérations structurelles MOVE/DELETE/RENAME/DUPLICATE restent via STOMP).
+    yjsEnabled?: boolean;
 }
 
-export default function CollaborationSync({ editorRef, editorInstance }: CollaborationSyncProps) {
+export default function CollaborationSync({ editorRef, editorInstance, yjsEnabled = false }: CollaborationSyncProps) {
     const { stompClient, isConnected, courseId } = useCollaboration();
     const { user } = useAuth();
 
@@ -178,6 +181,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
     // ─── Verrouillage (Selection) ────────────────────────────────────────────────
     useEffect(() => {
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
+        if (yjsEnabled) return; // Y.js gère le contenu -> pas de verrouillage pessimiste
         const colors = ['#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#EC4899'];
         const myColor = colors[Math.abs((user?.id || 'a').charCodeAt(0)) % colors.length];
 
@@ -247,6 +251,7 @@ export default function CollaborationSync({ editorRef, editorInstance }: Collabo
     // ─── Mise à jour du contenu et structure ─────────────────────────────────────
     useEffect(() => {
         if (!editorInstance || !stompClient || !isConnected || !courseId) return;
+        if (yjsEnabled) return; // Y.js diffuse le contenu -> pas de BLOCK_UPDATE via STOMP
 
         const handleUpdate = throttle((props?: any) => {
             const { transaction } = props || {};

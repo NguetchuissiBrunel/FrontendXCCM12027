@@ -57,4 +57,21 @@ export class CourseInvitationControllerService {
             },
         });
     }
+    /**
+     * Liste des collaborateurs (éditeurs) d'un cours.
+     * @param courseId
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getCollaborators(
+        courseId: number,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/invitations/collaborators/{courseId}',
+            path: {
+                'courseId': courseId,
+            },
+        });
+    }
 }

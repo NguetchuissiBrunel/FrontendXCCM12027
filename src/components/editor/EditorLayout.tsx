@@ -641,7 +641,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           content: jsonContent as any,
           category: finalCategory,
           description: finalDescription,
-          coverImage: courseImage,
           photoUrl: courseImage,
         };
 
@@ -719,7 +718,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       };
 
       const response = await CourseControllerService.createCourse(user.id, createData);
-      const responseData = (response as { data?: { id?: number }; id?: number }).data || response;
+      const responseData = (response as any).data || response;
       const createdCourseId = responseData?.id;
 
       if (!createdCourseId) {

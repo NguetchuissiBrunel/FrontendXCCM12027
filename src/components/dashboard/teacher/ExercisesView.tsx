@@ -542,7 +542,7 @@ export default function ExercisesView() {
                 </p>
                 {!searchTerm && exercises.length === 0 && (
                   <button
-                    onClick={() => router.push('/profdashboard/courses/create')}
+                    onClick={() => router.push('/editor')}
                     className="mt-4 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
                   >
                     <PlusCircle className="w-4 h-4" />

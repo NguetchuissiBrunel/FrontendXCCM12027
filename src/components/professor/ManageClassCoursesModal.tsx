@@ -56,11 +56,13 @@ export default function ManageClassCoursesModal({ isOpen, onClose, classId, onCo
             // Fetch specific class data
             const classRes = await ClassesDeCoursService.getClassById(classId);
             const classDetails = classRes.data;
-            setClassData({
-                id: classDetails.id,
-                name: classDetails.name,
-                courses: classDetails.courses || []
-            });
+            if (classDetails) {
+                setClassData({
+                    id: classDetails.id ?? 0,
+                    name: classDetails.name ?? '',
+                    courses: (classDetails.courses || []) as unknown as Course[]
+                });
+            }
         } catch (error) {
             console.error('Failed to load courses for class management', error);
             toast.error('Erreur lors du chargement des cours');

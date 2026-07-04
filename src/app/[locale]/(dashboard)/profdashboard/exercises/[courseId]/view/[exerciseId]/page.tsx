@@ -118,7 +118,7 @@ export default function ViewExercisePage() {
       const response = await ClassesDeCoursService.getClassById(paramId);
       if (response && response.data) {
         setClassInfo({
-          name: response.data.name,
+          name: response.data.name ?? '',
           theme: response.data.theme,
         });
       }

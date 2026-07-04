@@ -52,6 +52,7 @@ import { useHocuspocus } from '@/hooks/useHocuspocus';
 const COLLAB_ENABLED = false;
 import ImageUploader from '../upload/ImageUploader';
 import CollabInviteButton from './CollabInviteButton';
+import CollaboratorsPanel from './CollaboratorsPanel';
 import { getAuthToken } from '@/utils/authHelpers';
 import { ApiError } from '@/lib/core/ApiError';
 import AIGenerateCourseModal from './AIGenerateCourseModal';
@@ -640,7 +641,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           content: jsonContent as any,
           category: finalCategory,
           description: finalDescription,
-          coverImage: courseImage,
           photoUrl: courseImage,
         };
 
@@ -718,7 +718,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
       };
 
       const response = await CourseControllerService.createCourse(user.id, createData);
-      const responseData = (response as { data?: { id?: number }; id?: number }).data || response;
+      const responseData = (response as any).data || response;
       const createdCourseId = responseData?.id;
 
       if (!createdCourseId) {
@@ -1076,6 +1076,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                   courseTitle={courseTitle}
                   courseDescription={courseDescription}
                   courseContent={editorInstance?.getText()}
+                  onClose={() => setActivePanel(null)}
                   onImportCourse={(id) => {
                     toast.promise(
                       loadSpecificCourse(id, user?.id || ''),
@@ -1238,43 +1239,67 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
               {/* PANEL 5: Travaux Dirigés */}
               {activePanel === 'worksheet' && (
-                <div className="p-4 h-full">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('workshops.panelTitle')}</h2>
-                    <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                      <FaTimes />
-                    </button>
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">
-                    <div className="text-center py-8">
-                      <FaChalkboardTeacher className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-500">{t('workshops.description')}</p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {t('workshops.hint')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <CollaboratorsPanel
+                  courseId={currentCourseId}
+                  owner={{
+                    name: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email,
+                    email: user?.email,
+                    image: user?.photoUrl,
+                  }}
+                  onClose={() => setActivePanel(null)}
+                />
               )}
 
               {/* PANEL 6: Propriétés */}
-              {activePanel === 'properties' && (
-                <div className="p-4 h-full">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('properties.panelTitle')}</h2>
-                    <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                      <FaTimes />
-                    </button>
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">
-                    <div className="text-center py-8">
-                      <FaCog className="text-4xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-500">{t('properties.description')}</p>
-                      <p className="text-xs text-gray-400 mt-2">{t('properties.hint')}</p>
+              {activePanel === 'properties' && (() => {
+                const plainText = editorInstance?.getText() ?? '';
+                const wordCount = plainText.trim() ? plainText.trim().split(/\s+/).length : 0;
+                const charCount = plainText.length;
+                const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+                const rows: { label: string; value: React.ReactNode }[] = [
+                  { label: 'Identifiant', value: currentCourseId ?? '— (non enregistré)' },
+                  { label: 'Titre', value: courseTitle || '—' },
+                  { label: 'Catégorie', value: courseCategory || '—' },
+                  { label: 'Éléments (plan)', value: tocItems?.length ?? 0 },
+                  { label: 'Mots', value: wordCount.toLocaleString('fr-FR') },
+                  { label: 'Caractères', value: charCount.toLocaleString('fr-FR') },
+                  { label: 'Lecture estimée', value: `~${readingMinutes} min` },
+                  {
+                    label: 'Collaboration temps réel',
+                    value: (
+                      <span className={COLLAB_ENABLED ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
+                        {COLLAB_ENABLED ? 'Activée' : 'Désactivée'}
+                      </span>
+                    ),
+                  },
+                ];
+                return (
+                  <div className="flex h-full flex-col">
+                    <div className="mb-4 flex items-center justify-between p-4 pb-0">
+                      <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('properties.panelTitle')}</h2>
+                      <button onClick={() => setActivePanel(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <FaTimes />
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto px-4 pb-4">
+                      <div className="rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+                        {rows.map((row) => (
+                          <div key={row.label} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{row.label}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white text-right truncate max-w-[55%]">{row.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {courseDescription && (
+                        <div className="mt-4">
+                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">Description</p>
+                          <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-300">{courseDescription}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* PANEL 7: Gestion des exercices */}
               {activePanel === 'exercises' && (

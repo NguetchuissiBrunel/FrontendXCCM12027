@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ArrowRight, Book, Search, Loader2 } from 'lucide-react';
+import { Sparkles, Search, Loader2 } from 'lucide-react';
 import { CourseControllerService } from '@/lib/services/CourseControllerService';
-import { toast } from 'react-hot-toast';
+import { Course } from '@/types/editor.types';
+import StructureDeCours from './StructureDeCours';
 
 interface Recommendation {
     id: number;
     title: string;
     description: string;
+    similarity?: number;
     metadata?: any;
 }
 
@@ -17,24 +19,26 @@ interface RecommendationsPanelProps {
     courseDescription: string;
     courseContent?: string;
     onImportCourse: (courseId: number) => void;
+    onClose?: () => void;
 }
 
-export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({ 
-    courseTitle, 
+export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
+    courseTitle,
     courseDescription,
     courseContent,
-    onImportCourse 
+    onClose,
 }) => {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [hasFetched, setHasFetched] = useState(false);
 
     const fetchRecommendations = async () => {
         if (!courseTitle || courseTitle === "Nouveau cours") return;
-        
+
         setIsLoading(true);
         try {
             const response = await CourseControllerService.getRecommendations({
-                title: courseTitle, 
+                title: courseTitle,
                 description: courseDescription,
                 content: courseContent
             });
@@ -45,6 +49,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
             // Silent fail to not disturb user
         } finally {
             setIsLoading(false);
+            setHasFetched(true);
         }
     };
 
@@ -56,60 +61,90 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         return () => clearTimeout(timer);
     }, [courseTitle, courseDescription, courseContent]);
 
-    return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-800">
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3 bg-purple-50 dark:bg-purple-900/20">
-                <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <h2 className="text-sm font-bold text-purple-900 dark:text-purple-100 uppercase tracking-wider">Recommandations IA</h2>
-                </div>
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin text-purple-600" />}
-            </div>
+    // Mapping Recommendation -> Course : on réutilise EXACTEMENT le rendu du panneau
+    // "Importer des connaissances" (drag & drop + décomposition en granules via XCSM,
+    // toast si XCSM indisponible). sections:[] => clic = décomposition à la demande.
+    const mappedCourses: Course[] = recommendations.map((rec) => ({
+        id: rec.id,
+        title: rec.title,
+        category: rec.description || 'Recommandé',
+        image: '/images/courses/default.jpg',
+        views: 0,
+        likes: 0,
+        downloads: 0,
+        author: { name: 'Bibliothèque XCCM', image: '/images/blog/author-01.png' },
+        conclusion: '',
+        learningObjectives: [],
+        sections: [],
+    }));
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {recommendations.length === 0 && !isLoading ? (
-                    <div className="flex flex-col items-center justify-center h-40 text-center space-y-2 opacity-50">
-                        <Search className="h-8 w-8 text-gray-400" />
-                        <p className="text-xs text-gray-500">Modifiez le titre ou la description pour voir des recommandations basées sur votre contenu actuel.</p>
+    // Badge de similarité par cours : score réel calculé par le LLM (distance
+    // cosinus -> pourcentage). Fallback 85% si le service ne le fournit pas.
+    const similarityById: Record<number, number> = {};
+    recommendations.forEach((rec) => {
+        const score = rec.similarity ?? rec.metadata?.similarity ?? rec.metadata?.score;
+        similarityById[rec.id] = typeof score === 'number'
+            ? Math.round(score <= 1 ? score * 100 : score)
+            : 85;
+    });
+
+    // Pendant le tout premier chargement : skeleton dédié (feedback de loading).
+    if (isLoading && !hasFetched) {
+        return (
+            <div className="flex flex-col h-full bg-white dark:bg-gray-800">
+                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3 bg-purple-50 dark:bg-purple-900/20">
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <h2 className="text-sm font-bold text-purple-900 dark:text-purple-100 uppercase tracking-wider">Recommandations IA</h2>
                     </div>
-                ) : (
-                    recommendations.map((rec) => (
-                        <div 
-                            key={rec.id}
-                            className="group relative bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all cursor-pointer hover:shadow-md"
-                            onClick={() => onImportCourse(rec.id)}
-                        >
-                            <div className="flex items-start gap-3">
-                                <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg text-purple-600 dark:text-purple-400">
-                                    <Book size={18} />
+                    <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 animate-pulse">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="rounded-lg border border-gray-100 dark:border-gray-700 p-3 bg-gray-50/50 dark:bg-gray-700/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-gray-200 dark:bg-gray-600 rounded-lg flex-shrink-0"></div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+                                    <div className="h-3 bg-gray-100 dark:bg-gray-600 rounded w-1/2"></div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{rec.title}</h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 italic">
-                                        {rec.description || "Aucune description disponible"}
-                                    </p>
-                                </div>
-                                <ArrowRight size={14} className="text-gray-400 group-hover:text-purple-500 transition-colors mt-1" />
-                            </div>
-                            
-                            <div className="mt-3 flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-tighter">
-                                    Similaire à 85%
-                                </span>
-                                <button className="text-[10px] font-bold text-white bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded transition-colors uppercase">
-                                    Importer
-                                </button>
                             </div>
                         </div>
-                    ))
-                )}
+                    ))}
+                </div>
             </div>
+        );
+    }
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-                    L'IA analyse votre travail en temps réel pour suggérer des ressources pertinentes de la bibliothèque XCCM.
-                </p>
+    // Aucune recommandation : état vide informatif.
+    if (hasFetched && recommendations.length === 0) {
+        return (
+            <div className="flex flex-col h-full bg-white dark:bg-gray-800">
+                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3 bg-purple-50 dark:bg-purple-900/20">
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <h2 className="text-sm font-bold text-purple-900 dark:text-purple-100 uppercase tracking-wider">Recommandations IA</h2>
+                    </div>
+                    {isLoading && <Loader2 className="h-4 w-4 animate-spin text-purple-600" />}
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-2 p-6 opacity-50">
+                    <Search className="h-8 w-8 text-gray-400" />
+                    <p className="text-xs text-gray-500">Modifiez le titre ou la description pour voir des recommandations basées sur votre contenu actuel.</p>
+                </div>
             </div>
-        </div>
+        );
+    }
+
+    // Recommandations disponibles : rendu identique à "Importer des connaissances"
+    // (drag & drop + décomposition en granules), enrichi du badge de similarité.
+    return (
+        <StructureDeCours
+            onClose={() => onClose?.()}
+            externalCourses={mappedCourses}
+            similarityById={similarityById}
+            title="Recommandations IA"
+        />
     );
 };
+
+export default RecommendationsPanel;

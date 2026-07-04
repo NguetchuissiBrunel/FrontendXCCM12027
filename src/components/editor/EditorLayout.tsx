@@ -1076,6 +1076,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
                   courseTitle={courseTitle}
                   courseDescription={courseDescription}
                   courseContent={editorInstance?.getText()}
+                  onClose={() => setActivePanel(null)}
                   onImportCourse={(id) => {
                     toast.promise(
                       loadSpecificCourse(id, user?.id || ''),

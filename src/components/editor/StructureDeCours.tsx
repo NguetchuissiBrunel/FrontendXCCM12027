@@ -13,6 +13,16 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface StructureDeCoursProps {
   onClose: () => void;
+  /**
+   * Liste de cours à afficher au lieu de ceux de l'utilisateur (BD + mocks).
+   * Utilisé par le panneau Recommandations IA pour réutiliser exactement le
+   * même rendu (drag & drop + décomposition en granules).
+   */
+  externalCourses?: Course[];
+  /** Pourcentage de similarité par id de cours (badge affiché sur la carte). */
+  similarityById?: Record<number, number>;
+  /** Titre du panneau (par défaut : "Importer des connaissances"). */
+  title?: string;
 }
 
 // Helper to get background color class for items
@@ -28,7 +38,7 @@ const getItemBgClass = (type: ItemType) => {
   return bgColors[type];
 };
 
-export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) => {
+export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose, externalCourses, similarityById, title }) => {
   const t = useTranslations('editor.structureDeCours');
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +63,14 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
       }
     }
 
-    // 2. Fetch courses from DB
+    // 2. Cours externes fournis (ex : recommandations IA) -> on saute l'appel BD.
+    if (externalCourses) {
+      setCourses(externalCourses);
+      setLoadingCourses(false);
+      return;
+    }
+
+    // 3. Fetch courses from DB
     const fetchCourses = async () => {
       setLoadingCourses(true);
       try {
@@ -91,7 +108,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     };
 
     fetchCourses();
-  }, [user?.id]);
+  }, [user?.id, externalCourses]);
 
   // Sync cache with localStorage
   useEffect(() => {
@@ -469,11 +486,16 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
             if (payload) e.dataTransfer.setData(XCCM_KNOWLEDGE_MIME, JSON.stringify(payload));
           }}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
             <FaBook className="h-5 w-5 shrink-0" style={{ color: ITEM_COLORS.course }} />
             <span className="text-sm font-medium line-clamp-2" style={{ color: ITEM_COLORS.course }}>{course.title}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
+            {similarityById && similarityById[course.id] != null && (
+              <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-purple-600 dark:bg-purple-900/50 dark:text-purple-300">
+                {similarityById[course.id]}%
+              </span>
+            )}
             {isLoading && <FaSpinner className="h-4 w-4 animate-spin text-blue-500" />}
             {(hasVisibleChildren || !hasSections) && (
               <button disabled={isLoading} className="shrink-0 opacity-70 hover:opacity-100" style={{ color: ITEM_COLORS.course }}>
@@ -503,10 +525,12 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
     // Cours de la BD, puis données mock (structure complète) en dessous : permet le
     // drag & drop de connaissances de démonstration quand XCSM est indisponible.
     // Offset d'ID sur les mocks pour éviter les collisions de clés avec la BD.
-    const dataToFilter = [
-      ...courses,
-      ...mockCourses.map((m) => ({ ...m, id: 9000000 + Number(m.id) })),
-    ];
+    const dataToFilter = externalCourses
+      ? courses
+      : [
+          ...courses,
+          ...mockCourses.map((m) => ({ ...m, id: 9000000 + Number(m.id) })),
+        ];
     if (!activeFilter) return dataToFilter.map((course) => renderCourse(course));
 
     switch (activeFilter) {
@@ -538,7 +562,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   return (
     <div className="flex h-full flex-col bg-white dark:bg-gray-800">
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('title')}</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title || t('title')}</h2>
         <button onClick={onClose} className="text-gray-400 dark:text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300">
           <FaTimes className="text-sm" />
         </button>

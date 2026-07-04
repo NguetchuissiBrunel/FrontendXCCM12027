@@ -20,6 +20,14 @@ export default function CollaborationSync({ editorRef, editorInstance, yjsEnable
     const { stompClient, isConnected, courseId } = useCollaboration();
     const { user } = useAuth();
 
+    // Publie via STOMP seulement si le WebSocket est réellement connecté, pour éviter
+    // "There is no underlying STOMP connection" quand le WS est tombé (ex: /ws injoignable).
+    const safePublish = (opts: any) => {
+        try {
+            if (stompClient && (stompClient as any).connected) stompClient.publish(opts);
+        } catch { /* WS non connecté : on ignore silencieusement */ }
+    };
+
     const [lockedNodes, setLockedNodes] = useState<Map<string, any>>(new Map());
     const [remoteCursors, setRemoteCursors] = useState<Map<string, any>>(new Map());
 
@@ -157,7 +165,7 @@ export default function CollaborationSync({ editorRef, editorInstance, yjsEnable
             const y = (e.clientY - rect.top) / scale;
 
             try {
-                stompClient.publish({
+                safePublish({
                     destination: `/app/projet/${courseId}/action`,
                     body: JSON.stringify({
                         type: 'CURSOR',
@@ -200,7 +208,7 @@ export default function CollaborationSync({ editorRef, editorInstance, yjsEnable
                 const oldId = lastLockedNodeIdRef.current;
                 const myId = user?.id || sessionId.current;
                 if (oldId) {
-                    stompClient.publish({
+                    safePublish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'UNLOCK',
@@ -210,7 +218,7 @@ export default function CollaborationSync({ editorRef, editorInstance, yjsEnable
                     });
                 }
                 if (currentNodeId) {
-                    stompClient.publish({
+                    safePublish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'LOCK',
@@ -235,7 +243,7 @@ export default function CollaborationSync({ editorRef, editorInstance, yjsEnable
             if (lastLockedNodeIdRef.current && stompClient.active) {
                 try {
                     const myId = user?.id || sessionId.current;
-                    stompClient.publish({
+                    safePublish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'UNLOCK',
@@ -300,7 +308,7 @@ export default function CollaborationSync({ editorRef, editorInstance, yjsEnable
             if (targetNode) {
                 const nodeJson = JSON.stringify(targetNode.toJSON());
                 try {
-                    stompClient.publish({
+                    safePublish({
                         destination: `/app/projet/${courseId}/action`,
                         body: JSON.stringify({
                             type: 'BLOCK_UPDATE',
@@ -326,7 +334,7 @@ export default function CollaborationSync({ editorRef, editorInstance, yjsEnable
             const { type, nodeId, newTitle, payload } = customEvent.detail;
             
             try {
-                stompClient.publish({
+                safePublish({
                     destination: `/app/projet/${courseId}/action`,
                     body: JSON.stringify({
                         type,

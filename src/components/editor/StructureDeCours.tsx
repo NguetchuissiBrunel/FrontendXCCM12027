@@ -39,6 +39,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
   const [courses, setCourses] = useState<Course[]>([]);
   const [decomposedCache, setDecomposedCache] = useState<Record<string, Section[]>>({});
   const [loadingDecomposition, setLoadingDecomposition] = useState<string | null>(null);
+  const [loadingCourses, setLoadingCourses] = useState(true);
 
   // Load cache and fetch DB courses on mount
   useEffect(() => {
@@ -54,6 +55,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
 
     // 2. Fetch courses from DB
     const fetchCourses = async () => {
+      setLoadingCourses(true);
       try {
         if (!user?.id) { setCourses([]); return; }
         // Cours de l'utilisateur (brouillons + publiés). getAllCourses ne renvoyait
@@ -83,6 +85,8 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         }
       } catch (err) {
         console.error('Erreur lors de la récupération des cours:', err);
+      } finally {
+        setLoadingCourses(false);
       }
     };
 
@@ -573,7 +577,24 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose }) =
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        <div className="space-y-2">{renderFilteredContent()}</div>
+        <div className="space-y-2">
+          {loadingCourses ? (
+            <div className="space-y-3 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 bg-gray-50/50 dark:bg-gray-700/50">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-md flex-shrink-0"></div>
+                    <div className="flex-1 space-y-3 py-1">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-100 dark:bg-gray-600 rounded w-1/2"></div>
+                      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded-full w-20 mt-4"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : renderFilteredContent()}
+        </div>
       </div>
       <div className="border-t border-gray-200 dark:border-gray-700 bg-purple-50/50 dark:bg-purple-900/10 p-4">
         <div className="flex items-center gap-2 mb-3">

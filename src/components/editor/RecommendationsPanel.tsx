@@ -10,6 +10,7 @@ interface Recommendation {
     id: number;
     title: string;
     description: string;
+    similarity?: number;
     metadata?: any;
 }
 
@@ -77,10 +78,11 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         sections: [],
     }));
 
-    // Badge de similarité par cours (score fourni par l'IA sinon 85% par défaut).
+    // Badge de similarité par cours : score réel calculé par le LLM (distance
+    // cosinus -> pourcentage). Fallback 85% si le service ne le fournit pas.
     const similarityById: Record<number, number> = {};
     recommendations.forEach((rec) => {
-        const score = rec.metadata?.similarity ?? rec.metadata?.score;
+        const score = rec.similarity ?? rec.metadata?.similarity ?? rec.metadata?.score;
         similarityById[rec.id] = typeof score === 'number'
             ? Math.round(score <= 1 ? score * 100 : score)
             : 85;

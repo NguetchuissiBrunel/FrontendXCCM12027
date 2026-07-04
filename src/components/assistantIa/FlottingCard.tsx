@@ -202,7 +202,7 @@ export default function AIChatWidget() {
       // Remplacer le message de chargement par la réponse
       const answer = typeof response === 'string'
         ? response
-        : (response.answer ?? response.response ?? response.message ?? response.text ?? '');
+        : (response.answer ?? (response as any).response ?? (response as any).message ?? (response as any).text ?? '');
       setMessages(prev => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {

@@ -57,6 +57,7 @@ import { getAuthToken } from '@/utils/authHelpers';
 import { ApiError } from '@/lib/core/ApiError';
 import AIGenerateCourseModal from './AIGenerateCourseModal';
 import AIGenerationBackgroundNotifier from './AIGenerationBackgroundNotifier';
+import AIGenerationLeaveWarning from './AIGenerationLeaveWarning';
 import { AIGenerationProvider } from '@/contexts/AIGenerationContext';
 
 
@@ -863,6 +864,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
         <AIGenerationBackgroundNotifier
           onOpenModal={() => setIsAIGenerateModalOpen(true)}
         />
+
+        <AIGenerationLeaveWarning />
 
         {/* Confirmation Modal */}
         <ConfirmModal

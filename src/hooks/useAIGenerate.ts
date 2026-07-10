@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getAuthToken } from '@/utils/authHelpers';
 
 export interface AIGenerateRequest {
@@ -32,7 +32,26 @@ export interface AIGenerateResult {
   };
 }
 
+type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+
+interface AIGenerationJobCreatedResponse {
+  jobId: string;
+  status: JobStatus;
+}
+
+interface AIGenerationJobResponse {
+  jobId: string;
+  status: JobStatus;
+  progressEvent?: string | null;
+  progressMessage?: string | null;
+  progressPercent?: number | null;
+  result?: AIGenerateResult | null;
+  errorMessage?: string | null;
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const ACTIVE_JOB_STORAGE_KEY = 'xccm_ai_generation_job_id';
+const POLL_INTERVAL_MS = 2500;
 
 function isDonePayload(data: unknown): data is AIGenerateResult {
   if (!data || typeof data !== 'object') return false;
@@ -40,17 +59,8 @@ function isDonePayload(data: unknown): data is AIGenerateResult {
   return Boolean(payload.content && payload.generation_meta);
 }
 
-function formatStepMessage(event: string, data: Record<string, unknown>): string {
-  if (typeof data.message === 'string' && data.message.trim()) {
-    return data.message;
-  }
-  if (event === 'spec_ready' && typeof data.title === 'string') {
-    return `Plan généré pour « ${data.title} »`;
-  }
-  return event;
-}
-
 export function useAIGenerate() {
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isInBackground, setIsInBackground] = useState(false);
   const [hasUnreadCompletion, setHasUnreadCompletion] = useState(false);
@@ -59,11 +69,142 @@ export function useAIGenerate() {
   const [result, setResult] = useState<AIGenerateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const activeJobIdRef = useRef<string | null>(null);
   const isInBackgroundRef = useRef(false);
+  const lastStepSignatureRef = useRef<string | null>(null);
+  const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const addStep = (event: string, message: string) => {
+  const addStep = useCallback((event: string, message: string) => {
     setSteps(prev => [...prev, { event, message }]);
-  };
+  }, []);
+
+  const clearPolling = useCallback(() => {
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+  }, []);
+
+  const persistActiveJobId = useCallback((jobId: string | null) => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      if (jobId) {
+        localStorage.setItem(ACTIVE_JOB_STORAGE_KEY, jobId);
+      } else {
+        localStorage.removeItem(ACTIVE_JOB_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore localStorage failures
+    }
+  }, []);
+
+  const setTrackedJobId = useCallback((jobId: string | null) => {
+    activeJobIdRef.current = jobId;
+    setActiveJobId(jobId);
+    persistActiveJobId(jobId);
+  }, [persistActiveJobId]);
+
+  const finalizeJob = useCallback((jobId: string | null) => {
+    if (activeJobIdRef.current === jobId) {
+      clearPolling();
+      setTrackedJobId(null);
+      setIsGenerating(false);
+    }
+  }, [clearPolling, setTrackedJobId]);
+
+  const parseApiResponse = useCallback(async <T,>(response: Response): Promise<T> => {
+    const payload = await response.json().catch(() => null) as
+      | { message?: string; error?: string; data?: T }
+      | T
+      | null;
+
+    if (!response.ok) {
+      if (payload && typeof payload === 'object' && 'message' in payload && typeof payload.message === 'string') {
+        throw new Error(payload.message);
+      }
+      if (payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string') {
+        throw new Error(payload.error);
+      }
+      throw new Error(`Erreur HTTP ${response.status}`);
+    }
+
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      return payload.data as T;
+    }
+
+    return payload as T;
+  }, []);
+
+  const handleJobSnapshot = useCallback((job: AIGenerationJobResponse) => {
+    if (job.jobId !== activeJobIdRef.current) return;
+
+    const progressEvent = job.progressEvent || 'progress';
+    const progressMessage = job.progressMessage?.trim() || 'Génération en cours...';
+    const stepSignature = `${job.status}:${progressEvent}:${progressMessage}:${job.progressPercent ?? ''}`;
+
+    if (job.status === 'PENDING' || job.status === 'RUNNING') {
+      if (lastStepSignatureRef.current !== stepSignature) {
+        lastStepSignatureRef.current = stepSignature;
+        addStep(progressEvent, progressMessage);
+      }
+      setIsGenerating(true);
+      return;
+    }
+
+    if (job.status === 'COMPLETED' && job.result && isDonePayload(job.result)) {
+      const durationMs = job.result.generation_meta?.duration_ms ?? 0;
+      setResult(job.result);
+      setError(null);
+      addStep('done', `Cours généré en ${(durationMs / 1000).toFixed(1)}s`);
+      if (isInBackgroundRef.current) {
+        setHasUnreadCompletion(true);
+      }
+      finalizeJob(job.jobId);
+      return;
+    }
+
+    if (job.status === 'FAILED') {
+      const message = job.errorMessage?.trim() || 'La génération IA a échoué.';
+      setError(message);
+      if (isInBackgroundRef.current) {
+        setHasUnreadError(true);
+      }
+      finalizeJob(job.jobId);
+    }
+  }, [addStep, finalizeJob]);
+
+  const pollJob = useCallback(async (jobId: string) => {
+    const token = getAuthToken();
+
+    try {
+      const response = await fetch(`${BASE_URL}/courses/generate-ai/jobs/${jobId}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const job = await parseApiResponse<AIGenerationJobResponse>(response);
+      handleJobSnapshot(job);
+
+      if (activeJobIdRef.current === jobId && (job.status === 'PENDING' || job.status === 'RUNNING')) {
+        pollingTimeoutRef.current = setTimeout(() => {
+          void pollJob(jobId);
+        }, POLL_INTERVAL_MS);
+      }
+    } catch (e: unknown) {
+      if (activeJobIdRef.current !== jobId) return;
+
+      const message = e instanceof Error ? e.message : 'Erreur de connexion';
+      setError(message);
+      if (isInBackgroundRef.current) {
+        setHasUnreadError(true);
+      }
+      finalizeJob(jobId);
+    }
+  }, [finalizeJob, handleJobSnapshot, parseApiResponse]);
 
   const sendToBackground = useCallback(() => {
     isInBackgroundRef.current = true;
@@ -78,25 +219,26 @@ export function useAIGenerate() {
   }, []);
 
   const generate = useCallback(async (req: AIGenerateRequest) => {
+    clearPolling();
+    setTrackedJobId(null);
     setIsGenerating(true);
     setSteps([]);
     setResult(null);
     setError(null);
     setHasUnreadCompletion(false);
     setHasUnreadError(false);
+    lastStepSignatureRef.current = null;
     isInBackgroundRef.current = false;
     setIsInBackground(false);
 
     const token = getAuthToken();
-    let receivedResult = false;
-    let receivedError = false;
 
     try {
-      const response = await fetch(`${BASE_URL}/courses/generate-ai`, {
+      const response = await fetch(`${BASE_URL}/courses/generate-ai/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
+          Accept: 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
@@ -108,121 +250,62 @@ export function useAIGenerate() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('Pas de flux de réponse');
-
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let currentEvent = 'message';
-      let currentData = '';
-
-      const flushEvent = () => {
-        const rawData = currentData.trim();
-        currentData = '';
-
-        if (!rawData) {
-          currentEvent = 'message';
-          return;
-        }
-
-        try {
-          const data = JSON.parse(rawData) as Record<string, unknown>;
-
-          if (currentEvent === 'error') {
-            receivedError = true;
-            const errMsg = String(data.message || 'Erreur inconnue');
-            setError(errMsg);
-            if (isInBackgroundRef.current) {
-              setHasUnreadError(true);
-            }
-            return;
-          }
-
-          if (isDonePayload(data)) {
-            receivedResult = true;
-            setResult(data);
-            const durationMs = data.generation_meta?.duration_ms ?? 0;
-            addStep('done', `Cours généré en ${(durationMs / 1000).toFixed(1)}s`);
-            if (isInBackgroundRef.current) {
-              setHasUnreadCompletion(true);
-            }
-          } else {
-            addStep(currentEvent, formatStepMessage(currentEvent, data));
-          }
-        } catch {
-          // JSON incomplet ou ligne intermédiaire : ignorer silencieusement
-        } finally {
-          currentEvent = 'message';
-        }
-      };
-
-      const processLine = (line: string) => {
-        if (line.startsWith('event:')) {
-          if (currentData.trim()) {
-            flushEvent();
-          }
-          currentEvent = line.slice(6).trim();
-        } else if (line.startsWith('data:')) {
-          const chunk = line.slice(5).trimStart();
-          currentData = currentData ? `${currentData}\n${chunk}` : chunk;
-        } else if (line === '') {
-          flushEvent();
-        }
-      };
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          processLine(line);
-        }
-      }
-
-      if (buffer.trim()) {
-        processLine(buffer);
-      }
-      flushEvent();
-
-      if (!receivedResult && !receivedError) {
-        throw new Error(
-          'Le flux de génération s’est interrompu avant la fin. Vérifiez le proxy nginx ou relancez la génération.'
-        );
-      }
+      const created = await parseApiResponse<AIGenerationJobCreatedResponse>(response);
+      setTrackedJobId(created.jobId);
+      addStep('queued', 'Job de génération créé.');
+      void pollJob(created.jobId);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Erreur de connexion';
-      const normalized = message.toLowerCase().includes('network')
-        ? 'Connexion interrompue pendant la génération (timeout proxy ou flux SSE coupé).'
-        : message;
-      setError(normalized);
+      setError(message);
       if (isInBackgroundRef.current) {
         setHasUnreadError(true);
       }
-    } finally {
       setIsGenerating(false);
     }
-  }, []);
+  }, [addStep, clearPolling, parseApiResponse, pollJob, setTrackedJobId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const storedJobId = localStorage.getItem(ACTIVE_JOB_STORAGE_KEY);
+      if (storedJobId && !activeJobIdRef.current) {
+        setResult(null);
+        setError(null);
+        setSteps([{ event: 'resume', message: 'Reprise du suivi de la génération en cours...' }]);
+        lastStepSignatureRef.current = null;
+        isInBackgroundRef.current = true;
+        setIsInBackground(true);
+        setIsGenerating(true);
+        setTrackedJobId(storedJobId);
+        void pollJob(storedJobId);
+      }
+    } catch {
+      // Ignore localStorage failures
+    }
+
+    return () => {
+      clearPolling();
+    };
+  }, [clearPolling, pollJob, setTrackedJobId]);
 
   const reset = useCallback(() => {
+    clearPolling();
+    setTrackedJobId(null);
     setSteps([]);
     setResult(null);
     setError(null);
     setHasUnreadCompletion(false);
     setHasUnreadError(false);
+    lastStepSignatureRef.current = null;
     isInBackgroundRef.current = false;
     setIsInBackground(false);
-  }, []);
+    setIsGenerating(false);
+  }, [clearPolling, setTrackedJobId]);
 
   return {
     generate,
+    activeJobId,
     isGenerating,
     isInBackground,
     hasUnreadCompletion,

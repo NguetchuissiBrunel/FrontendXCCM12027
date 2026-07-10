@@ -5,7 +5,7 @@ import { usePathname } from '@/i18n/navigation';
 import { useAIGeneration } from '@/contexts/AIGenerationContext';
 
 export const AI_GENERATION_LEAVE_WARNING =
-  'Quitter cette page annulera la génération en cours';
+  'Une génération IA est en cours en arrière-plan. Vous pourrez reprendre le suivi en revenant dans l\'éditeur.';
 
 function isEditorPath(pathname: string): boolean {
   return pathname === '/editor' || pathname.startsWith('/editor/');
@@ -26,7 +26,8 @@ function shouldConfirmLeave(currentPath: string, targetPath: string): boolean {
 }
 
 /**
- * Avertit l'utilisateur s'il quitte l'éditeur pendant une génération IA en arrière-plan.
+ * Informe l'utilisateur s'il quitte l'éditeur pendant une génération IA en arrière-plan
+ * (la génération continue côté serveur via job asynchrone).
  */
 export function useAIGenerationLeaveWarning() {
   const { isGenerating, isInBackground } = useAIGeneration();

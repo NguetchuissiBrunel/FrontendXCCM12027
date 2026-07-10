@@ -2,12 +2,12 @@
 import type { Metadata } from 'next';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { AuthProvider } from "@/contexts/AuthContext"; 
+import { AuthProvider } from "@/contexts/AuthContext";
 import { dashboardFont } from '../fonts';
 
 export const metadata: Metadata = {
-  title: 'XCCM1 - Plateforme de création de contenu pédagogique',
-  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
+  title: 'XCCM - Plateforme de création de contenu pédagogique',
+  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM',
 };
 
 export default function RootLayout({
@@ -16,19 +16,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-   
-      <div className={dashboardFont.className}>
-        <div className="min-h-screen flex flex-col">
+
+    <div className={dashboardFont.className}>
+      <div className="min-h-screen flex flex-col">
         <AuthProvider>
           <Navbar />
           <div className="grow">
             {children}
           </div>
-         
+
           <Footer />
         </AuthProvider>
-        </div>
       </div>
- 
+    </div>
+
   );
 }

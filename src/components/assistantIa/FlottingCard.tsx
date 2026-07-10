@@ -27,7 +27,7 @@ export default function AIChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Bonjour ! Je suis votre assistant éducatif XCCM1. Posez-moi une question sur les mathématiques, physique, informatique, ou d\'autres disciplines.',
+      content: 'Bonjour ! Je suis votre assistant éducatif XCCM. Posez-moi une question sur les mathématiques, physique, informatique, ou d\'autres disciplines.',
     }
   ]);
   const [input, setInput] = useState('');
@@ -80,7 +80,7 @@ export default function AIChatWidget() {
         // Mettre à jour le message de bienvenue personnalisé
         setMessages([{
           role: 'assistant',
-          content: `Bonjour ${parsedUser.firstName || ''} ! Je suis votre assistant éducatif XCCM1. Comment puis-je vous aider aujourd'hui ?`
+          content: `Bonjour ${parsedUser.firstName || ''} ! Je suis votre assistant éducatif XCCM. Comment puis-je vous aider aujourd'hui ?`
         }]);
       } catch (e) {
         console.error('Erreur parsing user data:', e);
@@ -167,7 +167,7 @@ export default function AIChatWidget() {
     }
   };
 
-  const handleSend = async () => { 
+  const handleSend = async () => {
     const trimmedInput = input.trim();
     if (!trimmedInput || isLoading) return;
 
@@ -316,16 +316,16 @@ export default function AIChatWidget() {
           className={`pointer-events-auto fixed bg-white dark:bg-gray-900 shadow-2xl flex flex-col border border-purple-200 dark:border-gray-700 transition-all duration-200
             ${isFullscreen
               ? 'inset-0 rounded-none w-full h-full'
-              : isMobile 
-                ? 'inset-x-2 bottom-20 top-16 rounded-3xl w-auto h-auto' 
+              : isMobile
+                ? 'inset-x-2 bottom-20 top-16 rounded-3xl w-auto h-auto'
                 : 'rounded-2xl w-[400px] h-[550px]'
             }
           `}
-          style={!isMobile && !isFullscreen ? { 
-            left: `${position.x}px`, 
-            top: `${position.y}px`, 
+          style={!isMobile && !isFullscreen ? {
+            left: `${position.x}px`,
+            top: `${position.y}px`,
             cursor: isDragging ? 'grabbing' : 'default',
-            touchAction: 'none' 
+            touchAction: 'none'
           } : { touchAction: 'none' }}
           onMouseDown={handleMouseDown}
         >
@@ -356,8 +356,8 @@ export default function AIChatWidget() {
               >
                 {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
               </button>
-              <button 
-                onClick={() => setIsOpen(false)} 
+              <button
+                onClick={() => setIsOpen(false)}
                 className="p-2 hover:bg-white/20 rounded-full transition-colors"
               >
                 <X size={20} />
@@ -388,8 +388,8 @@ export default function AIChatWidget() {
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-3 text-sm shadow-sm border ${msg.role === 'user'
-                    ? 'bg-purple-600 text-white border-purple-500 rounded-2xl rounded-tr-none'
-                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-purple-100 dark:border-gray-700 rounded-2xl rounded-tl-none'
+                  ? 'bg-purple-600 text-white border-purple-500 rounded-2xl rounded-tr-none'
+                  : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-purple-100 dark:border-gray-700 rounded-2xl rounded-tl-none'
                   }`}>
                   {msg.loading || (isLoading && idx === messages.length - 1 && msg.role === 'assistant' && !msg.content) ? (
                     <div className="flex items-center gap-2">
@@ -459,7 +459,7 @@ export default function AIChatWidget() {
                 className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-purple-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none text-sm dark:text-white disabled:opacity-50"
               />
               {isLoading ? (
-                <button 
+                <button
                   type="button"
                   onClick={handleStop}
                   className="bg-red-500 text-white p-3 rounded-2xl shadow-lg active:scale-95 hover:bg-red-600 transition-colors flex items-center justify-center"
@@ -468,9 +468,9 @@ export default function AIChatWidget() {
                   <Square size={20} fill="currentColor" />
                 </button>
               ) : (
-                <button 
+                <button
                   type="button"
-                  onClick={handleSend} 
+                  onClick={handleSend}
                   disabled={!input.trim()}
                   className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors flex items-center justify-center"
                 >

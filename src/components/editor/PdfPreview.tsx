@@ -37,7 +37,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                 // We do this by looking at paper-content height
                 const contentEl = paperRef.current.querySelector('.pdf-page-content');
                 if (!contentEl) return;
-                
+
                 const height = contentEl.getBoundingClientRect().height / scale;
                 // Use a reliable conversion for 297mm to pixels
                 const pageHeightPx = (297 * 96) / 25.4; // 96 DPI, 25.4 mm per inch
@@ -47,7 +47,7 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                     // and avoid edge cases where content is exactly pageHeight and goes to next page
                     const count = Math.ceil(height / (pageHeightPx * 0.999));
                     const finalCount = Math.min(Math.max(1, count), 100);
-                    
+
                     setPageCount(prev => prev !== finalCount ? finalCount : prev);
                 }
             }
@@ -295,8 +295,8 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                 </style>
                 <div className="pdf-preview-container">
                     <div
-                        style={{ 
-                            transform: `scale(${scale})`, 
+                        style={{
+                            transform: `scale(${scale})`,
                             transformOrigin: 'top center',
                             width: '210mm',
                             height: `${pageCount * 297 * scale}mm`, // Exact page height
@@ -313,18 +313,18 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                             {/* Render Headers and Footers for each page */}
                             {Array.from({ length: pageCount }).map((_, i) => (
                                 <React.Fragment key={i}>
-                                    <div 
-                                        className="page-header" 
+                                    <div
+                                        className="page-header"
                                         style={{ top: `calc(${i * 297}mm + 5mm)` }}
                                     >
                                         <span>{t('platform')}</span>
                                         <span>{previewTitle || t('noTitle')}</span>
                                     </div>
-                                    <div 
-                                        className="page-footer" 
+                                    <div
+                                        className="page-footer"
                                         style={{ top: `calc(${(i + 1) * 297}mm - 12mm)` }}
                                     >
-                                        <span>© {new Date().getFullYear()} XCCM1</span>
+                                        <span>© {new Date().getFullYear()} XCCM</span>
                                         <span>{i + 1} / {pageCount}</span>
                                     </div>
                                 </React.Fragment>
@@ -334,146 +334,146 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                                 {/* PDF Course Structure Rendering */}
                                 <div className="document-content">
                                     {courseData && (courseData.sections && courseData.sections.length > 0 || courseData.title) ? (
-                                    <>
-                                        {courseData.title && (
-                                            <div className="mb-8">
-                                                <h1 className="text-4xl font-black mb-4 break-words" style={{ color: '#4430B5' }}>
-                                                    {courseData.title}
-                                                </h1>
-                                                {courseData.introduction && (
-                                                    <div className="mb-4 text-gray-700 italic border-l-4 border-purple-200 pl-4 py-2">
-                                                        {courseData.introduction}
-                                                    </div>
-                                                )}
-                                                <div className="w-full h-0.5 mb-6" style={{ backgroundColor: '#6432C8' }} />
-                                            </div>
-                                        )}
+                                        <>
+                                            {courseData.title && (
+                                                <div className="mb-8">
+                                                    <h1 className="text-4xl font-black mb-4 break-words" style={{ color: '#4430B5' }}>
+                                                        {courseData.title}
+                                                    </h1>
+                                                    {courseData.introduction && (
+                                                        <div className="mb-4 text-gray-700 italic border-l-4 border-purple-200 pl-4 py-2">
+                                                            {courseData.introduction}
+                                                        </div>
+                                                    )}
+                                                    <div className="w-full h-0.5 mb-6" style={{ backgroundColor: '#6432C8' }} />
+                                                </div>
+                                            )}
 
-                                        {courseData.sections && courseData.sections.map((section: any, sIdx: number) => (
-                                            <div key={sIdx} className="mb-10">
-                                                <h2 
-                                                    className={`text-2xl font-bold mb-6 break-words ${onElementClick && section.id ? 'interactive-heading' : ''}`}
-                                                    style={{ color: '#6432C8' }}
-                                                    onClick={() => onElementClick && section.id && onElementClick(section.id)}
-                                                >
-                                                    {section.title}
-                                                </h2>
-                                                <div className="w-full h-0.5 mb-4" style={{ backgroundColor: '#6432C8' }} />
+                                            {courseData.sections && courseData.sections.map((section: any, sIdx: number) => (
+                                                <div key={sIdx} className="mb-10">
+                                                    <h2
+                                                        className={`text-2xl font-bold mb-6 break-words ${onElementClick && section.id ? 'interactive-heading' : ''}`}
+                                                        style={{ color: '#6432C8' }}
+                                                        onClick={() => onElementClick && section.id && onElementClick(section.id)}
+                                                    >
+                                                        {section.title}
+                                                    </h2>
+                                                    <div className="w-full h-0.5 mb-4" style={{ backgroundColor: '#6432C8' }} />
 
-                                                {section.introduction && (
-                                                    <div className="mb-6 text-gray-700 italic border-l-4 border-purple-200 pl-4 py-1">
-                                                        {section.introduction}
-                                                    </div>
-                                                )}
+                                                    {section.introduction && (
+                                                        <div className="mb-6 text-gray-700 italic border-l-4 border-purple-200 pl-4 py-1">
+                                                            {section.introduction}
+                                                        </div>
+                                                    )}
 
-                                                {section.chapters && section.chapters.map((chapter: any, cIdx: number) => (
-                                                    <div key={cIdx} className="mb-8">
-                                                        <h3 
-                                                            className={`text-xl font-bold mb-4 break-words ${onElementClick && chapter.id ? 'interactive-heading' : ''}`}
-                                                            style={{ color: '#008250' }}
-                                                            onClick={() => onElementClick && chapter.id && onElementClick(chapter.id)}
-                                                        >
-                                                            {chapter.title}
-                                                        </h3>
+                                                    {section.chapters && section.chapters.map((chapter: any, cIdx: number) => (
+                                                        <div key={cIdx} className="mb-8">
+                                                            <h3
+                                                                className={`text-xl font-bold mb-4 break-words ${onElementClick && chapter.id ? 'interactive-heading' : ''}`}
+                                                                style={{ color: '#008250' }}
+                                                                onClick={() => onElementClick && chapter.id && onElementClick(chapter.id)}
+                                                            >
+                                                                {chapter.title}
+                                                            </h3>
 
-                                                        {chapter.introduction && (
-                                                            <div className="mb-4 text-gray-700 italic border-l-4 border-green-200 pl-4 py-1">
-                                                                {chapter.introduction}
-                                                            </div>
-                                                        )}
+                                                            {chapter.introduction && (
+                                                                <div className="mb-4 text-gray-700 italic border-l-4 border-green-200 pl-4 py-1">
+                                                                    {chapter.introduction}
+                                                                </div>
+                                                            )}
 
-                                                        {chapter.subItems && chapter.subItems.map((subItem: any, idx: number) => {
-                                                            if (subItem.type === 'paragraph') {
-                                                                const paragraph = subItem.data;
-                                                                return (
-                                                                    <div key={idx} className="mb-6">
-                                                                        <h4 
-                                                                            className={`text-lg font-bold mb-3 break-words ${onElementClick && paragraph.id ? 'interactive-heading' : ''}`}
-                                                                            style={{ color: '#E6B400' }}
-                                                                            onClick={() => onElementClick && paragraph.id && onElementClick(paragraph.id)}
-                                                                        >
-                                                                            {paragraph.title}
-                                                                        </h4>
-                                                                        {paragraph.introduction && (
-                                                                            <div className="mb-3 text-gray-700 italic border-l-4 border-yellow-200 pl-4 py-1">
-                                                                                {paragraph.introduction}
+                                                            {chapter.subItems && chapter.subItems.map((subItem: any, idx: number) => {
+                                                                if (subItem.type === 'paragraph') {
+                                                                    const paragraph = subItem.data;
+                                                                    return (
+                                                                        <div key={idx} className="mb-6">
+                                                                            <h4
+                                                                                className={`text-lg font-bold mb-3 break-words ${onElementClick && paragraph.id ? 'interactive-heading' : ''}`}
+                                                                                style={{ color: '#E6B400' }}
+                                                                                onClick={() => onElementClick && paragraph.id && onElementClick(paragraph.id)}
+                                                                            >
+                                                                                {paragraph.title}
+                                                                            </h4>
+                                                                            {paragraph.introduction && (
+                                                                                <div className="mb-3 text-gray-700 italic border-l-4 border-yellow-200 pl-4 py-1">
+                                                                                    {paragraph.introduction}
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="max-w-none text-gray-800 text-justify">
+                                                                                <CourseContentRenderer content={paragraph.content} forceLight={true} />
                                                                             </div>
-                                                                        )}
-                                                                        <div className="max-w-none text-gray-800 text-justify">
-                                                                            <CourseContentRenderer content={paragraph.content} forceLight={true} />
+                                                                            {paragraph.subItems && paragraph.subItems.length > 0 && (
+                                                                                <div className="mt-4">
+                                                                                    {paragraph.subItems.map((pSub: any, psIdx: number) => (
+                                                                                        <div key={psIdx} className="mb-4 last:mb-0">
+                                                                                            {pSub.type === 'notion' ? (
+                                                                                                <div className="ml-6 text-gray-700">
+                                                                                                    <ul className="list-disc ml-5">
+                                                                                                        <li className="text-sm italic">{pSub.data}</li>
+                                                                                                    </ul>
+                                                                                                </div>
+                                                                                            ) : (
+                                                                                                <div className="p-4 bg-yellow-50 rounded-lg">
+                                                                                                    <h5 className="text-yellow-800 font-bold mb-3 flex items-center gap-2 text-sm">
+                                                                                                        <span className="w-2 h-2 bg-yellow-600 rounded-full"></span>
+                                                                                                        {t('exercice')}
+                                                                                                    </h5>
+                                                                                                    {pSub.data.content ? (
+                                                                                                        <CourseContentRenderer content={pSub.data.content} forceLight={true} />
+                                                                                                    ) : (
+                                                                                                        <p className="text-sm text-yellow-600 font-medium">{pSub.data.title}</p>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
                                                                         </div>
-                                                                        {paragraph.subItems && paragraph.subItems.length > 0 && (
-                                                                            <div className="mt-4">
-                                                                                {paragraph.subItems.map((pSub: any, psIdx: number) => (
-                                                                                    <div key={psIdx} className="mb-4 last:mb-0">
-                                                                                        {pSub.type === 'notion' ? (
-                                                                                            <div className="ml-6 text-gray-700">
-                                                                                                <ul className="list-disc ml-5">
-                                                                                                    <li className="text-sm italic">{pSub.data}</li>
-                                                                                                </ul>
-                                                                                            </div>
-                                                                                        ) : (
-                                                                                            <div className="p-4 bg-yellow-50 rounded-lg">
-                                                                                                <h5 className="text-yellow-800 font-bold mb-3 flex items-center gap-2 text-sm">
-                                                                                                    <span className="w-2 h-2 bg-yellow-600 rounded-full"></span>
-                                                                                                    {t('exercice')}
-                                                                                                </h5>
-                                                                                                {pSub.data.content ? (
-                                                                                                    <CourseContentRenderer content={pSub.data.content} forceLight={true} />
-                                                                                                ) : (
-                                                                                                    <p className="text-sm text-yellow-600 font-medium">{pSub.data.title}</p>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            } else if (subItem.type === 'exercise') {
-                                                                const ex = subItem.data;
-                                                                return (
-                                                                    <div key={idx} className="mt-4 mb-6 p-4 bg-green-50 rounded-lg">
-                                                                        <h4 className="text-green-800 font-bold mb-3 flex items-center gap-2 text-sm">
-                                                                            <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                                                                            {t('chapterExercise')}
-                                                                        </h4>
-                                                                        {ex.content ? (
-                                                                            <CourseContentRenderer content={ex.content} forceLight={true} />
-                                                                        ) : (
-                                                                            <p className="text-sm text-green-600 font-medium">{ex.title}</p>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            }
-                                                            return null;
-                                                        })}
-                                                    </div>
-                                                ))}
+                                                                    );
+                                                                } else if (subItem.type === 'exercise') {
+                                                                    const ex = subItem.data;
+                                                                    return (
+                                                                        <div key={idx} className="mt-4 mb-6 p-4 bg-green-50 rounded-lg">
+                                                                            <h4 className="text-green-800 font-bold mb-3 flex items-center gap-2 text-sm">
+                                                                                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                                                                                {t('chapterExercise')}
+                                                                            </h4>
+                                                                            {ex.content ? (
+                                                                                <CourseContentRenderer content={ex.content} forceLight={true} />
+                                                                            ) : (
+                                                                                <p className="text-sm text-green-600 font-medium">{ex.title}</p>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })}
+                                                        </div>
+                                                    ))}
 
-                                                {section.subItems && section.subItems.map((subItem: any, idx: number) => {
-                                                    if (subItem.type === 'exercise') {
-                                                        const ex = subItem.data;
-                                                        return (
-                                                            <div key={idx} className="mt-4 mb-8 p-4 bg-purple-50 rounded-lg">
-                                                                <h4 className="text-purple-800 font-bold mb-3 flex items-center gap-2">
-                                                                    <span className="w-2 h-2 bg-purple-600 rounded-full"></span>
-                                                                    {t('sectionExercise')}
-                                                                </h4>
-                                                                {ex.content ? (
-                                                                    <CourseContentRenderer content={ex.content} forceLight={true} />
-                                                                ) : (
-                                                                    <p className="text-sm text-purple-600 font-medium">{ex.title}</p>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                })}
-                                            </div>
-                                        ))}
-                                    </>
+                                                    {section.subItems && section.subItems.map((subItem: any, idx: number) => {
+                                                        if (subItem.type === 'exercise') {
+                                                            const ex = subItem.data;
+                                                            return (
+                                                                <div key={idx} className="mt-4 mb-8 p-4 bg-purple-50 rounded-lg">
+                                                                    <h4 className="text-purple-800 font-bold mb-3 flex items-center gap-2">
+                                                                        <span className="w-2 h-2 bg-purple-600 rounded-full"></span>
+                                                                        {t('sectionExercise')}
+                                                                    </h4>
+                                                                    {ex.content ? (
+                                                                        <CourseContentRenderer content={ex.content} forceLight={true} />
+                                                                    ) : (
+                                                                        <p className="text-sm text-purple-600 font-medium">{ex.title}</p>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })}
+                                                </div>
+                                            ))}
+                                        </>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center py-20 text-gray-300">
                                             <FileText size={64} className="mb-4 opacity-20" />

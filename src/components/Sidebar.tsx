@@ -66,7 +66,7 @@ export default function Sidebar({ userRole, userName, userLevel, activeTab }: Si
           />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">XCCM1</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">XCCM</h1>
           <p className="text-xs text-purple-600 dark:text-purple-400">{t('online')}</p>
         </div>
       </div>

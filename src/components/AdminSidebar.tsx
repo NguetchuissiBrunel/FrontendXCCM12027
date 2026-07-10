@@ -37,7 +37,7 @@ const AdminSidebar = () => {
                     </div>
                     <div className="flex flex-col">
                         <h1 className="font-black text-xl bg-gradient-to-br from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">
-                            XCCM1
+                            XCCM
                         </h1>
                         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest -mt-1">{t('administrator')}</span>
                     </div>

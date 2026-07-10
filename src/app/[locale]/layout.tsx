@@ -10,8 +10,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
 export const metadata: Metadata = {
-  title: 'XCCM1 - Plateforme de création de contenu pédagogique',
-  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
+  title: 'XCCM - Plateforme de création de contenu pédagogique',
+  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM',
 };
 
 // Force la version desktop sr mobile

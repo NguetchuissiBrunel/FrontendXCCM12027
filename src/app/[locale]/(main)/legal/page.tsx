@@ -53,7 +53,7 @@ export default function LegalMentionsPage() {
           <h1 className="mt-4 text-4xl font-bold text-transparent bg-gradient-to-r from-purple-700 to-purple-700 bg-clip-text md:text-5xl">
             Mentions Légales
           </h1>
-          <p className="mt-3 text-gray-600 dark:text-slate-300">Plateforme XCCM1 – ENSPY Yaoundé</p>
+          <p className="mt-3 text-gray-600 dark:text-slate-300">Plateforme XCCM – ENSPY Yaoundé</p>
           <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
             Mise à jour : <strong>13 novembre 2025</strong>
           </p>
@@ -291,7 +291,7 @@ export default function LegalMentionsPage() {
               </p>
             </section>
 
-              {/* 7. Contact */}
+            {/* 7. Contact */}
             <section
               id="contact"
               className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-lg dark:border-slate-800 dark:bg-slate-900"
@@ -376,7 +376,7 @@ export default function LegalMentionsPage() {
                   Contact rapide
                 </h3>
                 <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                  Pour toute demande officielle, contactez l&apos;équipe XCCM1 par e-mail.
+                  Pour toute demande officielle, contactez l&apos;équipe XCCM par e-mail.
                 </p>
                 <button
                   onClick={() => copyEmail('xccm@enspy.cm')}

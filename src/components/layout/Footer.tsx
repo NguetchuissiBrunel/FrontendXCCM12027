@@ -39,7 +39,7 @@ const Footer = () => {
               </div>
               <div>
                 <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
-                  XCCM1
+                  XCCM
                 </span>
                 <p className="text-xs text-gray-400 mt-1">{t('platform')}</p>
               </div>
@@ -52,7 +52,7 @@ const Footer = () => {
               <div className="flex items-center space-x-3 text-sm text-gray-400 hover:text-purple-300 transition-colors">
                 <MailIcon className="h-5 w-5 text-purple-400 flex-shrink-0" />
                 <a href="mailto:azangueleonel9@gmail.com" className="hover:text-white">
-                  contact@xccm1.com
+                  contact@xccm.com
                 </a>
               </div>
               <div className="flex items-center space-x-3 text-sm text-gray-400">
@@ -183,7 +183,7 @@ const Footer = () => {
 
             {/* Copyright */}
             <p className="text-sm text-gray-400 order-1 md:order-1 text-center md:text-left">
-              &copy; {new Date().getFullYear()} <span className="text-purple-400 font-medium">XCCM1</span>. {t('allRightsReserved')}
+              &copy; {new Date().getFullYear()} <span className="text-purple-400 font-medium">XCCM</span>. {t('allRightsReserved')}
             </p>
 
             {/* Social Icons */}

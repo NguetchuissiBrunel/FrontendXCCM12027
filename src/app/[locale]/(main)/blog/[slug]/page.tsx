@@ -38,7 +38,7 @@ const articles: Article[] = [
   },
   {
     slug: 'bien-demarrer-xccm1',
-    title: 'Bien demarrer avec XCCM1',
+    title: 'Bien demarrer avec XCCM',
     excerpt: 'Les bonnes pratiques pour creer vos premiers granules.',
     tag: 'Tutoriel',
     date: '12 novembre 2025',
@@ -82,7 +82,7 @@ const articles: Article[] = [
   },
   {
     slug: 'collaborer-enseignants',
-    title: 'Collaborer entre enseignants sur XCCM1',
+    title: 'Collaborer entre enseignants sur XCCM',
     excerpt: 'Synchroniser vos contenus et versionner les ressources pedagogiques.',
     tag: 'Collaboration',
     date: '8 novembre 2025',
@@ -175,10 +175,10 @@ function getArticle(slug: string) {
 }
 
 // ✅ Make the component async and await params
-export default async function BlogArticlePage({ 
-  params 
-}: { 
-  params: Promise<{ slug: string }> 
+export default async function BlogArticlePage({
+  params
+}: {
+  params: Promise<{ slug: string }>
 }) {
   // ✅ Await the params promise
   const { slug } = await params;

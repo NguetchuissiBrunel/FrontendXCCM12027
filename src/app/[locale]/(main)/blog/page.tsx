@@ -13,13 +13,13 @@ const featuredPost = {
   tag: 'Guide',
   date: '13 novembre 2025',
   readTime: '8 min',
-  author: 'Équipe XCCM1',
+  author: 'Équipe XCCM',
   href: '/blog/structurer-un-cours',
 };
 
 const posts = [
   {
-    title: 'Bien démarrer avec XCCM1',
+    title: 'Bien démarrer avec XCCM',
     excerpt: 'Les bonnes pratiques pour créer vos premiers granules.',
     tag: 'Tutoriel',
     date: '12 novembre 2025',
@@ -35,7 +35,7 @@ const posts = [
     href: '/blog/modeles-de-granules',
   },
   {
-    title: 'Collaborer entre enseignants sur XCCM1',
+    title: 'Collaborer entre enseignants sur XCCM',
     excerpt: 'Synchroniser vos contenus et versionner les ressources pédagogiques.',
     tag: 'Collaboration',
     date: '8 novembre 2025',
@@ -95,7 +95,7 @@ export default function BlogPage() {
           </h1>
           <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">
             Des articles, guides et checklists pour créer des contenus pédagogiques clairs et
-            réutilisables avec XCCM1.
+            réutilisables avec XCCM.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
@@ -251,7 +251,7 @@ export default function BlogPage() {
 
               {/* Section Newsletter - CONNECTÉE À L'API */}
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <NewsletterForm 
+                <NewsletterForm
                   title="Newsletter pédagogique"
                   description="Recevez un résumé mensuel des nouveaux guides et cas d'usage directement dans votre boîte mail."
                   compact={false}
@@ -265,32 +265,32 @@ export default function BlogPage() {
                   Guides recommandés
                 </h3>
                 <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                  <Link 
-                    href="/blog/granules-exemples" 
+                  <Link
+                    href="/blog/granules-exemples"
                     className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
                   >
                     Exemples de granules par niveau
                   </Link>
-                  <Link 
-                    href="/blog/qualite-contenu" 
+                  <Link
+                    href="/blog/qualite-contenu"
                     className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
                   >
                     Checklist qualité des contenus
                   </Link>
-                  <Link 
-                    href="/blog/export-pdf" 
+                  <Link
+                    href="/blog/export-pdf"
                     className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
                   >
                     Optimiser un export PDF
                   </Link>
-                  <Link 
-                    href="/blog/collaboration-etudiants" 
+                  <Link
+                    href="/blog/collaboration-etudiants"
                     className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
                   >
                     Faire collaborer les étudiants
                   </Link>
-                  <Link 
-                    href="/blog/accessibilite" 
+                  <Link
+                    href="/blog/accessibilite"
                     className="block hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
                   >
                     Rendre son cours accessible

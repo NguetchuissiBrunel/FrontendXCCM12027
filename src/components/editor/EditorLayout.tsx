@@ -56,6 +56,9 @@ import CollaboratorsPanel from './CollaboratorsPanel';
 import { getAuthToken } from '@/utils/authHelpers';
 import { ApiError } from '@/lib/core/ApiError';
 import AIGenerateCourseModal from './AIGenerateCourseModal';
+import AIGenerationBackgroundNotifier from './AIGenerationBackgroundNotifier';
+import AIGenerationLeaveWarning from './AIGenerationLeaveWarning';
+import { AIGenerationProvider } from '@/contexts/AIGenerationContext';
 
 
 interface EditorLayoutProps {
@@ -789,6 +792,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
 
   return (
     <CollaborationProvider courseId={currentCourseId}>
+      <AIGenerationProvider>
       <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
         {/* Entrance Modal */}
         <EditorEntranceModal
@@ -856,6 +860,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           onClose={() => setIsAIGenerateModalOpen(false)}
           onGenerated={handleAIGenerated}
         />
+
+        <AIGenerationBackgroundNotifier
+          onOpenModal={() => setIsAIGenerateModalOpen(true)}
+        />
+
+        <AIGenerationLeaveWarning />
 
         {/* Confirmation Modal */}
         <ConfirmModal
@@ -1668,6 +1678,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
           </div>
         </div>
       </div>
+      </AIGenerationProvider>
     </CollaborationProvider>
   );
 };

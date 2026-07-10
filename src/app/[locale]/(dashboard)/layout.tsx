@@ -6,8 +6,8 @@ import OnboardingSwitcher from '@/components/OnboardingSwitcher';
 import { dashboardFont } from '../fonts';
 
 export const metadata: Metadata = {
-  title: 'XCCM1 - Plateforme de création de contenu pédagogique',
-  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM1',
+  title: 'XCCM - Plateforme de création de contenu pédagogique',
+  description: 'Créez, organisez et partagez vos contenus pédagogiques de manière intuitive avec XCCM',
 };
 
 export default function RootLayout({

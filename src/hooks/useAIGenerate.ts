@@ -60,18 +60,33 @@ function isDonePayload(data: unknown): data is AIGenerateResult {
 }
 
 export function useAIGenerate() {
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isInBackground, setIsInBackground] = useState(false);
+  const [initialStoredJobId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+      return localStorage.getItem(ACTIVE_JOB_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
+
+  const [activeJobId, setActiveJobId] = useState<string | null>(initialStoredJobId);
+  const [isGenerating, setIsGenerating] = useState(Boolean(initialStoredJobId));
+  const [isInBackground, setIsInBackground] = useState(Boolean(initialStoredJobId));
   const [hasUnreadCompletion, setHasUnreadCompletion] = useState(false);
   const [hasUnreadError, setHasUnreadError] = useState(false);
-  const [steps, setSteps] = useState<AIGenerateStep[]>([]);
+  const [steps, setSteps] = useState<AIGenerateStep[]>(
+    initialStoredJobId
+      ? [{ event: 'resume', message: 'Reprise du suivi de la génération en cours...' }]
+      : []
+  );
   const [result, setResult] = useState<AIGenerateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const activeJobIdRef = useRef<string | null>(null);
-  const isInBackgroundRef = useRef(false);
-  const lastStepSignatureRef = useRef<string | null>(null);
+  const activeJobIdRef = useRef<string | null>(initialStoredJobId);
+  const isInBackgroundRef = useRef(Boolean(initialStoredJobId));
+  const lastStepSignatureRef = useRef<string | null>(initialStoredJobId ? 'resume' : null);
+  const pollJobRef = useRef<((jobId: string) => Promise<void>) | null>(null);
   const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const addStep = useCallback((event: string, message: string) => {
@@ -164,6 +179,15 @@ export function useAIGenerate() {
       return;
     }
 
+    if (job.status === 'COMPLETED') {
+      setError('La génération est terminée mais le résultat est incomplet.');
+      if (isInBackgroundRef.current) {
+        setHasUnreadError(true);
+      }
+      finalizeJob(job.jobId);
+      return;
+    }
+
     if (job.status === 'FAILED') {
       const message = job.errorMessage?.trim() || 'La génération IA a échoué.';
       setError(message);
@@ -191,7 +215,7 @@ export function useAIGenerate() {
 
       if (activeJobIdRef.current === jobId && (job.status === 'PENDING' || job.status === 'RUNNING')) {
         pollingTimeoutRef.current = setTimeout(() => {
-          void pollJob(jobId);
+          void pollJobRef.current?.(jobId);
         }, POLL_INTERVAL_MS);
       }
     } catch (e: unknown) {
@@ -205,6 +229,10 @@ export function useAIGenerate() {
       finalizeJob(jobId);
     }
   }, [finalizeJob, handleJobSnapshot, parseApiResponse]);
+
+  useEffect(() => {
+    pollJobRef.current = pollJob;
+  }, [pollJob]);
 
   const sendToBackground = useCallback(() => {
     isInBackgroundRef.current = true;
@@ -265,29 +293,14 @@ export function useAIGenerate() {
   }, [addStep, clearPolling, parseApiResponse, pollJob, setTrackedJobId]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const storedJobId = localStorage.getItem(ACTIVE_JOB_STORAGE_KEY);
-      if (storedJobId && !activeJobIdRef.current) {
-        setResult(null);
-        setError(null);
-        setSteps([{ event: 'resume', message: 'Reprise du suivi de la génération en cours...' }]);
-        lastStepSignatureRef.current = null;
-        isInBackgroundRef.current = true;
-        setIsInBackground(true);
-        setIsGenerating(true);
-        setTrackedJobId(storedJobId);
-        void pollJob(storedJobId);
-      }
-    } catch {
-      // Ignore localStorage failures
+    if (initialStoredJobId && activeJobIdRef.current === initialStoredJobId) {
+      void pollJob(initialStoredJobId);
     }
 
     return () => {
       clearPolling();
     };
-  }, [clearPolling, pollJob, setTrackedJobId]);
+  }, [clearPolling, initialStoredJobId, pollJob]);
 
   const reset = useCallback(() => {
     clearPolling();

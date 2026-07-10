@@ -269,7 +269,7 @@
   },
   "footer": {
     "platform": "Learning platform",
-    "description": "A platform for creating and sharing learning content. Bring modern tools into education with XCCM1.",
+    "description": "A platform for creating and sharing learning content. Bring modern tools into education with XCCM.",
     "services": "Services",
     "courseCreation": "Course creation",
     "collaborativeSpaces": "Collaborative spaces",
@@ -929,7 +929,7 @@
         "avenir": "Next steps"
       },
       "badge": "ENSPY academic project",
-      "title": "About XCCM1",
+      "title": "About XCCM",
       "description": "A modular platform to create, structure and share learning content.",
       "discover": "Discover the project",
       "github": "View on GitHub",
@@ -1099,8 +1099,8 @@
           "title": "General questions",
           "items": {
             "0": {
-              "q": "What is XCCM1 for?",
-              "a": "XCCM1 is an academic platform for creating, structuring and sharing learning content as granules."
+              "q": "What is XCCM for?",
+              "a": "XCCM is an academic platform for creating, structuring and sharing learning content as granules."
             },
             "1": {
               "q": "Who can use the platform?",
@@ -1108,7 +1108,7 @@
             },
             "2": {
               "q": "Is the platform free?",
-              "a": "Yes. XCCM1 is a prototype developed for educational use."
+              "a": "Yes. XCCM is a prototype developed for educational use."
             }
           }
         },
@@ -1117,7 +1117,7 @@
           "items": {
             "0": {
               "q": "How do I create an account?",
-              "a": "Contact the XCCM1 team or your academic coordinator to activate your account."
+              "a": "Contact the XCCM team or your academic coordinator to activate your account."
             },
             "1": {
               "q": "I forgot my password. What should I do?",
@@ -1125,7 +1125,7 @@
             },
             "2": {
               "q": "Can I change my role?",
-              "a": "Yes, on request through the XCCM1 administration."
+              "a": "Yes, on request through the XCCM administration."
             }
           }
         },
@@ -1176,20 +1176,20 @@
             },
             "2": {
               "q": "How do I report an issue?",
-              "a": "Use the support page or contact the XCCM1 team."
+              "a": "Use the support page or contact the XCCM team."
             }
           }
         }
       },
       "title": "Frequently asked questions",
-      "subtitle": "Find quick answers about using XCCM1.",
+      "subtitle": "Find quick answers about using XCCM.",
       "searchPlaceholder": "Search a question...",
       "results": "Results",
       "highlightsTitle": "Key points",
       "highlights": {
         "support": {
           "title": "Academic support",
-          "desc": "The XCCM1 team is available for teachers and students."
+          "desc": "The XCCM team is available for teachers and students."
         },
         "guides": {
           "title": "Getting started guides",
@@ -1202,12 +1202,12 @@
       },
       "noResults": "No results. Try another keyword or browse the categories.",
       "helpTitle": "Need help?",
-      "helpDescription": "Contact the XCCM1 team for personalized assistance.",
+      "helpDescription": "Contact the XCCM team for personalized assistance.",
       "contactSupport": "Contact support",
       "categoriesTitle": "Categories",
       "guidesTitle": "Useful guides",
       "guides": {
-        "0": "Getting started with XCCM1",
+        "0": "Getting started with XCCM",
         "1": "Granule templates",
         "2": "Publishing checklist"
       }
@@ -1477,7 +1477,7 @@
     "presse": {
       "title": "Press",
       "headline": "News & Media Resources",
-      "description": "Find official information, press releases, and media contacts regarding XCCM1.",
+      "description": "Find official information, press releases, and media contacts regarding XCCM.",
       "contactPress": "Contact Press",
       "seePartners": "View Partners",
       "toRememberTitle": "Key Takeaways",
@@ -1500,7 +1500,7 @@
         {
           "title": "Launch Press Release",
           "date": "November 13, 2025",
-          "desc": "Official presentation of XCCM1 at ENSPY Yaounde."
+          "desc": "Official presentation of XCCM at ENSPY Yaounde."
         },
         {
           "title": "Academic Partnerships",
@@ -1542,7 +1542,7 @@
       "contacts": [
         {
           "title": "Press & Communication",
-          "name": "XCCM1 Team",
+          "name": "XCCM Team",
           "email": "press@xccm.enspy.cm"
         },
         {
@@ -2168,7 +2168,7 @@
       "backToDashboard": "Back to dashboard",
       "title": "Enrollment management",
       "subtitle": "Review and validate student access requests to your teaching materials.",
-      "footer": "© {year} XCCM1 • Intelligent Learning Platform"
+      "footer": "© {year} XCCM • Intelligent Learning Platform"
     },
     "pendingEnrollments": {
       "loading": "Loading requests...",

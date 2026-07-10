@@ -11,7 +11,7 @@ const openings = [
     team: 'Design',
     type: 'Stage',
     location: 'Yaounde / Hybride',
-    summary: 'Ameliorer l experience enseignant et etudiant sur XCCM1.',
+    summary: 'Ameliorer l experience enseignant et etudiant sur XCCM.',
   },
   {
     title: 'Frontend Developer',
@@ -48,7 +48,7 @@ const process = [
   'Candidature en ligne',
   'Echange rapide',
   'Mini cas pratique',
-  'Onboarding XCCM1',
+  'Onboarding XCCM',
 ];
 
 export default function CareersPage() {
@@ -67,7 +67,7 @@ export default function CareersPage() {
             Carrieres
           </div>
           <h1 className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-white">
-            Rejoignez l equipe XCCM1
+            Rejoignez l equipe XCCM
           </h1>
           <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">
             Contribuez a une plateforme pedagogique ouverte, modulaire et collaborative.
@@ -208,7 +208,7 @@ export default function CareersPage() {
               </p>
               <form
                 className="mt-4 grid gap-4"
-                action="mailto:xccm1-enspy@gmail.com"
+                action="mailto:xccm-enspy@gmail.com"
                 method="post"
                 encType="text/plain"
                 onSubmit={handleSubmit}
@@ -268,7 +268,7 @@ export default function CareersPage() {
               <div className="rounded-2xl border border-purple-600 bg-slate-900 p-6 text-white shadow-md">
                 <div className="flex items-center gap-3">
                   <Sparkles className="h-5 w-5" />
-                  <p className="text-sm font-semibold uppercase tracking-wide">Equipe XCCM1</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide">Equipe XCCM</p>
                 </div>
                 <p className="mt-3 text-sm text-slate-200">
                   Rejoignez un collectif motive par l innovation pedagogique.

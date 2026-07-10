@@ -22,7 +22,7 @@ import {
 export default function PrivacyPolicyPage() {
   const [copied, setCopied] = useState(false);
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
-  const contactEmail = 'xccm1-enspy@gmail.com';
+  const contactEmail = 'xccm-enspy@gmail.com';
 
   const copyEmail = async (email: string) => {
     try {
@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
               Protection des données
             </h1>
             <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">
-              XCCM1 - Plateforme académique ENSPY
+              XCCM - Plateforme académique ENSPY
             </p>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm dark:bg-slate-900">
@@ -146,7 +146,7 @@ export default function PrivacyPolicyPage() {
                 </h2>
                 <div className="prose prose-purple max-w-none">
                   <p className="text-gray-700 leading-relaxed">
-                    XCCM1 est une <strong>plateforme académique open-source</strong> développée par les étudiants de
+                    XCCM est une <strong>plateforme académique open-source</strong> développée par les étudiants de
                     <strong> 4ᵉ année Génie Informatique</strong> à l'<strong>ENSPY Yaoundé</strong> sous la supervision du
                     <strong> Pr. Bernabe BATCHAKUI</strong>.
                   </p>

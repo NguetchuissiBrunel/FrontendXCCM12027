@@ -8,75 +8,75 @@ export default function PartnersPage() {
   const locale = useLocale();
   const content = locale === 'fr'
     ? {
-        badge: 'Partenaires',
-        title: 'Construire XCCM1 ensemble',
-        description: 'Des partenaires academiques et techniques pour renforcer la creation de contenus pedagogiques modulaires.',
-        becomePartner: 'Devenir partenaire',
-        contactUs: 'Nous contacter',
-        highlightsTitle: 'A retenir',
-        highlights: [
-          { title: 'Cadre ENSPY', desc: 'Un projet academique supervise et aligne sur les objectifs pedagogiques.' },
-          { title: 'Co-creation', desc: 'Partage d expertises entre enseignants, chercheurs et etudiants.' },
-          { title: 'Impact durable', desc: 'Des contenus reutilisables et une methodologie transferrable.' }
-        ],
-        partnersTitle: 'Nos partenaires',
-        offersTitle: 'Ce que nous proposons',
-        openTitle: 'Collaboration ouverte',
-        openDescription: 'Nous construisons un reseau de partenaires academiques et techniques.',
-        propose: 'Proposer un partenariat',
-        priorities: 'Domaines prioritaires',
-        quickContact: 'Contact rapide',
-        quickDescription: 'Ecrivez a l equipe XCCM1 pour discuter d un partenariat.',
-        contactTeam: "Contacter l'equipe",
-        prioritiesItems: ['Structuration pedagogique', 'Evaluation des apprentissages', 'Interoparabilite des contenus', 'Accessibilite numerique'],
-        partners: [
-          { name: 'ENSPY', type: 'Institution', description: 'Ecole Nationale Superieure Polytechnique, cadre academique du projet.' },
-          { name: 'Departement Genie Informatique', type: 'Academique', description: 'Encadrement pedagogique et validation scientifique.' },
-          { name: 'Laboratoires partenaires', type: 'Recherche', description: 'Appui sur les methodes de structuration et d evaluation.' },
-          { name: 'Communautes open-source', type: 'Technique', description: 'Partage de bonnes pratiques et retours utilisateurs.' }
-        ],
-        offers: [
-          { title: 'Partenariat academique', desc: 'Co-creation de contenus pedagogiques et experimentation terrain.', icon: Building2 },
-          { title: 'Recherche & innovation', desc: 'Etudes sur les granules, l evaluation et la collaboration.', icon: Rocket },
-          { title: 'Formation enseignants', desc: 'Accompagnement a l adoption des pratiques modulaires.', icon: Users },
-          { title: 'Ouverture internationale', desc: 'Echanges et compatibilite avec d autres universites.', icon: Globe }
-        ]
-      }
+      badge: 'Partenaires',
+      title: 'Construire XCCM ensemble',
+      description: 'Des partenaires academiques et techniques pour renforcer la creation de contenus pedagogiques modulaires.',
+      becomePartner: 'Devenir partenaire',
+      contactUs: 'Nous contacter',
+      highlightsTitle: 'A retenir',
+      highlights: [
+        { title: 'Cadre ENSPY', desc: 'Un projet academique supervise et aligne sur les objectifs pedagogiques.' },
+        { title: 'Co-creation', desc: 'Partage d expertises entre enseignants, chercheurs et etudiants.' },
+        { title: 'Impact durable', desc: 'Des contenus reutilisables et une methodologie transferrable.' }
+      ],
+      partnersTitle: 'Nos partenaires',
+      offersTitle: 'Ce que nous proposons',
+      openTitle: 'Collaboration ouverte',
+      openDescription: 'Nous construisons un reseau de partenaires academiques et techniques.',
+      propose: 'Proposer un partenariat',
+      priorities: 'Domaines prioritaires',
+      quickContact: 'Contact rapide',
+      quickDescription: 'Ecrivez a l equipe XCCM pour discuter d un partenariat.',
+      contactTeam: "Contacter l'equipe",
+      prioritiesItems: ['Structuration pedagogique', 'Evaluation des apprentissages', 'Interoparabilite des contenus', 'Accessibilite numerique'],
+      partners: [
+        { name: 'ENSPY', type: 'Institution', description: 'Ecole Nationale Superieure Polytechnique, cadre academique du projet.' },
+        { name: 'Departement Genie Informatique', type: 'Academique', description: 'Encadrement pedagogique et validation scientifique.' },
+        { name: 'Laboratoires partenaires', type: 'Recherche', description: 'Appui sur les methodes de structuration et d evaluation.' },
+        { name: 'Communautes open-source', type: 'Technique', description: 'Partage de bonnes pratiques et retours utilisateurs.' }
+      ],
+      offers: [
+        { title: 'Partenariat academique', desc: 'Co-creation de contenus pedagogiques et experimentation terrain.', icon: Building2 },
+        { title: 'Recherche & innovation', desc: 'Etudes sur les granules, l evaluation et la collaboration.', icon: Rocket },
+        { title: 'Formation enseignants', desc: 'Accompagnement a l adoption des pratiques modulaires.', icon: Users },
+        { title: 'Ouverture internationale', desc: 'Echanges et compatibilite avec d autres universites.', icon: Globe }
+      ]
+    }
     : {
-        badge: 'Partners',
-        title: 'Building XCCM1 together',
-        description: 'Academic and technical partners helping strengthen modular learning content creation.',
-        becomePartner: 'Become a partner',
-        contactUs: 'Contact us',
-        highlightsTitle: 'Key points',
-        highlights: [
-          { title: 'ENSPY framework', desc: 'An academic project supervised and aligned with teaching goals.' },
-          { title: 'Co-creation', desc: 'Shared expertise between teachers, researchers and students.' },
-          { title: 'Long-term impact', desc: 'Reusable content and a transferable methodology.' }
-        ],
-        partnersTitle: 'Our partners',
-        offersTitle: 'What we offer',
-        openTitle: 'Open collaboration',
-        openDescription: 'We are building a network of academic and technical partners.',
-        propose: 'Propose a partnership',
-        priorities: 'Priority areas',
-        quickContact: 'Quick contact',
-        quickDescription: 'Write to the XCCM1 team to discuss a partnership.',
-        contactTeam: 'Contact the team',
-        prioritiesItems: ['Learning content structuring', 'Assessment of learning', 'Content interoperability', 'Digital accessibility'],
-        partners: [
-          { name: 'ENSPY', type: 'Institution', description: 'National Advanced School of Engineering, the academic framework of the project.' },
-          { name: 'Computer Engineering Department', type: 'Academic', description: 'Teaching supervision and scientific validation.' },
-          { name: 'Partner laboratories', type: 'Research', description: 'Support on structuring and assessment methods.' },
-          { name: 'Open-source communities', type: 'Technical', description: 'Sharing best practices and user feedback.' }
-        ],
-        offers: [
-          { title: 'Academic partnership', desc: 'Co-creation of learning content and field experimentation.', icon: Building2 },
-          { title: 'Research & innovation', desc: 'Studies on granules, assessment and collaboration.', icon: Rocket },
-          { title: 'Teacher training', desc: 'Support for adopting modular practices.', icon: Users },
-          { title: 'International openness', desc: 'Exchanges and compatibility with other universities.', icon: Globe }
-        ]
-      };
+      badge: 'Partners',
+      title: 'Building XCCM together',
+      description: 'Academic and technical partners helping strengthen modular learning content creation.',
+      becomePartner: 'Become a partner',
+      contactUs: 'Contact us',
+      highlightsTitle: 'Key points',
+      highlights: [
+        { title: 'ENSPY framework', desc: 'An academic project supervised and aligned with teaching goals.' },
+        { title: 'Co-creation', desc: 'Shared expertise between teachers, researchers and students.' },
+        { title: 'Long-term impact', desc: 'Reusable content and a transferable methodology.' }
+      ],
+      partnersTitle: 'Our partners',
+      offersTitle: 'What we offer',
+      openTitle: 'Open collaboration',
+      openDescription: 'We are building a network of academic and technical partners.',
+      propose: 'Propose a partnership',
+      priorities: 'Priority areas',
+      quickContact: 'Quick contact',
+      quickDescription: 'Write to the XCCM team to discuss a partnership.',
+      contactTeam: 'Contact the team',
+      prioritiesItems: ['Learning content structuring', 'Assessment of learning', 'Content interoperability', 'Digital accessibility'],
+      partners: [
+        { name: 'ENSPY', type: 'Institution', description: 'National Advanced School of Engineering, the academic framework of the project.' },
+        { name: 'Computer Engineering Department', type: 'Academic', description: 'Teaching supervision and scientific validation.' },
+        { name: 'Partner laboratories', type: 'Research', description: 'Support on structuring and assessment methods.' },
+        { name: 'Open-source communities', type: 'Technical', description: 'Sharing best practices and user feedback.' }
+      ],
+      offers: [
+        { title: 'Academic partnership', desc: 'Co-creation of learning content and field experimentation.', icon: Building2 },
+        { title: 'Research & innovation', desc: 'Studies on granules, assessment and collaboration.', icon: Rocket },
+        { title: 'Teacher training', desc: 'Support for adopting modular practices.', icon: Users },
+        { title: 'International openness', desc: 'Exchanges and compatibility with other universities.', icon: Globe }
+      ]
+    };
 
   return (
     <main className="min-h-screen bg-slate-50 pt-16 dark:bg-slate-950">

@@ -125,7 +125,7 @@ export default function AboutPage() {
               <ArrowRight className="h-4 w-4" />
             </button>
             <Link
-              href="https://github.com/Prrojet-XCCM1/FrontendXCCM12027.git"
+              href="https://github.com/Prrojet-XCCM/FrontendXCCM2027.git"
               target="_blank"
               rel="noopener"
               className="inline-flex items-center gap-2 rounded-xl border border-purple-600 px-5 py-2.5 text-sm font-semibold text-purple-700 transition hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-500/10"
@@ -166,8 +166,8 @@ export default function AboutPage() {
                       key={item.id}
                       onClick={() => scrollTo(item.id)}
                       className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition ${activeSection === item.id
-                          ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-200'
-                          : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                        ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-200'
+                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
                         }`}
                     >
                       <item.icon className="h-4 w-4" />

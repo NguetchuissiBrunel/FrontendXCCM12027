@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAIGeneration } from '@/contexts/AIGenerationContext';
@@ -116,7 +116,7 @@ export default function AIGenerationBackgroundNotifier({
     }
   }, [hasUnreadError, error, handleOpenModal]);
 
-  if (!isInBackground || !isGenerating) return null;
+  if (!mounted || !isInBackground || !isGenerating) return null;
 
   const lastStep = steps[steps.length - 1];
 

@@ -1,8 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, X, Loader2, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
-import { useAIGenerate, type AIGenerateRequest } from '@/hooks/useAIGenerate';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, X, Loader2, CheckCircle2, AlertCircle, ChevronRight, Minimize2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAIGeneration } from '@/contexts/AIGenerationContext';
+import type { AIGenerateRequest } from '@/hooks/useAIGenerate';
+
+const TOAST_SUCCESS_ID = 'ai-generation-complete';
+const TOAST_ERROR_ID = 'ai-generation-error';
 
 interface AIGenerateCourseModalProps {
   isOpen: boolean;
@@ -44,7 +49,27 @@ export default function AIGenerateCourseModal({
   });
   const [isApplying, setIsApplying] = useState(false);
 
-  const { generate, isGenerating, steps, result, error, reset } = useAIGenerate();
+  const {
+    generate,
+    isGenerating,
+    isInBackground,
+    steps,
+    result,
+    error,
+    reset,
+    sendToBackground,
+    returnToForeground,
+  } = useAIGeneration();
+
+  useEffect(() => {
+    if (isOpen) {
+      toast.dismiss(TOAST_SUCCESS_ID);
+      toast.dismiss(TOAST_ERROR_ID);
+      if (isInBackground) {
+        returnToForeground();
+      }
+    }
+  }, [isOpen, isInBackground, returnToForeground]);
 
   if (!isOpen) return null;
 
@@ -66,11 +91,19 @@ export default function AIGenerateCourseModal({
     }
   };
 
+  const handleSendToBackground = () => {
+    sendToBackground();
+    onClose();
+  };
+
   const handleClose = () => {
     if (isGenerating || isApplying) return;
     onClose();
     reset();
   };
+
+  const showForm = !result && !isGenerating && steps.length === 0;
+  const showProgress = isGenerating || (steps.length > 0 && !result);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -90,7 +123,7 @@ export default function AIGenerateCourseModal({
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Form */}
-          {!result && (
+          {showForm && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -99,9 +132,8 @@ export default function AIGenerateCourseModal({
                 <textarea
                   rows={5}
                   required
-                  disabled={isGenerating}
                   placeholder="Ex: Un cours d'introduction à la programmation orientée objet en Java pour des étudiants de L2 informatique, couvrant les classes, l'héritage, le polymorphisme et les interfaces..."
-                  className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none disabled:opacity-60"
+                  className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 />
@@ -113,8 +145,7 @@ export default function AIGenerateCourseModal({
                     Discipline
                   </label>
                   <select
-                    disabled={isGenerating}
-                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60"
+                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={form.discipline}
                     onChange={e => setForm(f => ({ ...f, discipline: e.target.value }))}
                   >
@@ -129,8 +160,7 @@ export default function AIGenerateCourseModal({
                     Niveau
                   </label>
                   <select
-                    disabled={isGenerating}
-                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60"
+                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={form.level}
                     onChange={e => setForm(f => ({ ...f, level: e.target.value }))}
                   >
@@ -145,8 +175,7 @@ export default function AIGenerateCourseModal({
                     Langue
                   </label>
                   <select
-                    disabled={isGenerating}
-                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60"
+                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={form.language}
                     onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
                   >
@@ -163,30 +192,27 @@ export default function AIGenerateCourseModal({
                     type="number"
                     min={0}
                     max={5}
-                    disabled={isGenerating}
-                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60"
+                    className="w-full text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={form.exercisesPerChapter}
                     onChange={e => setForm(f => ({ ...f, exercisesPerChapter: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
               </div>
 
-              {!isGenerating && (
-                <button
-                  type="submit"
-                  disabled={!form.description.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Sparkles size={16} />
-                  Générer le cours
-                </button>
-              )}
+              <button
+                type="submit"
+                disabled={!form.description.trim()}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sparkles size={16} />
+                Générer le cours
+              </button>
             </form>
           )}
 
           {/* Progress */}
-          {(isGenerating || steps.length > 0) && !result && (
-            <div className="space-y-2">
+          {showProgress && (
+            <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 {isGenerating && <Loader2 size={14} className="animate-spin text-purple-500" />}
                 Génération en cours...
@@ -208,6 +234,17 @@ export default function AIGenerateCourseModal({
                   </div>
                 )}
               </div>
+
+              {isGenerating && (
+                <button
+                  type="button"
+                  onClick={handleSendToBackground}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                >
+                  <Minimize2 size={16} />
+                  Continuer en arrière-plan
+                </button>
+              )}
             </div>
           )}
 

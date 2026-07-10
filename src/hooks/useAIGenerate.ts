@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { getAuthToken } from '@/utils/authHelpers';
 
 export interface AIGenerateRequest {
@@ -52,19 +52,40 @@ function formatStepMessage(event: string, data: Record<string, unknown>): string
 
 export function useAIGenerate() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isInBackground, setIsInBackground] = useState(false);
+  const [hasUnreadCompletion, setHasUnreadCompletion] = useState(false);
+  const [hasUnreadError, setHasUnreadError] = useState(false);
   const [steps, setSteps] = useState<AIGenerateStep[]>([]);
   const [result, setResult] = useState<AIGenerateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const isInBackgroundRef = useRef(false);
+
   const addStep = (event: string, message: string) => {
     setSteps(prev => [...prev, { event, message }]);
   };
+
+  const sendToBackground = useCallback(() => {
+    isInBackgroundRef.current = true;
+    setIsInBackground(true);
+  }, []);
+
+  const returnToForeground = useCallback(() => {
+    isInBackgroundRef.current = false;
+    setIsInBackground(false);
+    setHasUnreadCompletion(false);
+    setHasUnreadError(false);
+  }, []);
 
   const generate = useCallback(async (req: AIGenerateRequest) => {
     setIsGenerating(true);
     setSteps([]);
     setResult(null);
     setError(null);
+    setHasUnreadCompletion(false);
+    setHasUnreadError(false);
+    isInBackgroundRef.current = false;
+    setIsInBackground(false);
 
     const token = getAuthToken();
     let receivedResult = false;
@@ -113,15 +134,22 @@ export function useAIGenerate() {
 
           if (currentEvent === 'error') {
             receivedError = true;
-            setError(String(data.message || 'Erreur inconnue'));
+            const errMsg = String(data.message || 'Erreur inconnue');
+            setError(errMsg);
+            if (isInBackgroundRef.current) {
+              setHasUnreadError(true);
+            }
             return;
           }
 
-          if (currentEvent === 'done' || isDonePayload(data)) {
+          if (isDonePayload(data)) {
             receivedResult = true;
-            setResult(data as AIGenerateResult);
-            const durationMs = (data as AIGenerateResult).generation_meta?.duration_ms ?? 0;
+            setResult(data);
+            const durationMs = data.generation_meta?.duration_ms ?? 0;
             addStep('done', `Cours généré en ${(durationMs / 1000).toFixed(1)}s`);
+            if (isInBackgroundRef.current) {
+              setHasUnreadCompletion(true);
+            }
           } else {
             addStep(currentEvent, formatStepMessage(currentEvent, data));
           }
@@ -175,6 +203,9 @@ export function useAIGenerate() {
         ? 'Connexion interrompue pendant la génération (timeout proxy ou flux SSE coupé).'
         : message;
       setError(normalized);
+      if (isInBackgroundRef.current) {
+        setHasUnreadError(true);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -184,7 +215,23 @@ export function useAIGenerate() {
     setSteps([]);
     setResult(null);
     setError(null);
+    setHasUnreadCompletion(false);
+    setHasUnreadError(false);
+    isInBackgroundRef.current = false;
+    setIsInBackground(false);
   }, []);
 
-  return { generate, isGenerating, steps, result, error, reset };
+  return {
+    generate,
+    isGenerating,
+    isInBackground,
+    hasUnreadCompletion,
+    hasUnreadError,
+    steps,
+    result,
+    error,
+    reset,
+    sendToBackground,
+    returnToForeground,
+  };
 }

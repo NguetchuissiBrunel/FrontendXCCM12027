@@ -34,6 +34,22 @@ export interface AIGenerateResult {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
+function isDonePayload(data: unknown): data is AIGenerateResult {
+  if (!data || typeof data !== 'object') return false;
+  const payload = data as Partial<AIGenerateResult>;
+  return Boolean(payload.content && payload.generation_meta);
+}
+
+function formatStepMessage(event: string, data: Record<string, unknown>): string {
+  if (typeof data.message === 'string' && data.message.trim()) {
+    return data.message;
+  }
+  if (event === 'spec_ready' && typeof data.title === 'string') {
+    return `Plan généré pour « ${data.title} »`;
+  }
+  return event;
+}
+
 export function useAIGenerate() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [steps, setSteps] = useState<AIGenerateStep[]>([]);
@@ -51,12 +67,15 @@ export function useAIGenerate() {
     setError(null);
 
     const token = getAuthToken();
+    let receivedResult = false;
+    let receivedError = false;
 
     try {
       const response = await fetch(`${BASE_URL}/courses/generate-ai`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
@@ -78,34 +97,52 @@ export function useAIGenerate() {
       const decoder = new TextDecoder();
       let buffer = '';
       let currentEvent = 'message';
+      let currentData = '';
+
+      const flushEvent = () => {
+        const rawData = currentData.trim();
+        currentData = '';
+
+        if (!rawData) {
+          currentEvent = 'message';
+          return;
+        }
+
+        try {
+          const data = JSON.parse(rawData) as Record<string, unknown>;
+
+          if (currentEvent === 'error') {
+            receivedError = true;
+            setError(String(data.message || 'Erreur inconnue'));
+            return;
+          }
+
+          if (currentEvent === 'done' || isDonePayload(data)) {
+            receivedResult = true;
+            setResult(data as AIGenerateResult);
+            const durationMs = (data as AIGenerateResult).generation_meta?.duration_ms ?? 0;
+            addStep('done', `Cours généré en ${(durationMs / 1000).toFixed(1)}s`);
+          } else {
+            addStep(currentEvent, formatStepMessage(currentEvent, data));
+          }
+        } catch {
+          // JSON incomplet ou ligne intermédiaire : ignorer silencieusement
+        } finally {
+          currentEvent = 'message';
+        }
+      };
 
       const processLine = (line: string) => {
         if (line.startsWith('event:')) {
+          if (currentData.trim()) {
+            flushEvent();
+          }
           currentEvent = line.slice(6).trim();
         } else if (line.startsWith('data:')) {
-          const rawData = line.slice(5).trim();
-          try {
-            const data = JSON.parse(rawData);
-            if (currentEvent === 'error') {
-              setError(data.message || 'Erreur inconnue');
-              setIsGenerating(false);
-              return;
-            }
-            // Le backend (SseEmitter) perd le nom d'événement du LLM : la trame finale
-            // arrive souvent comme "message" au lieu de "done". On détecte donc la fin
-            // aussi par la forme du payload (content + generation_meta).
-            const isDone = currentEvent === 'done'
-              || (data && data.generation_meta && data.content);
-            if (isDone) {
-              setResult(data as AIGenerateResult);
-              addStep('done', `Cours généré en ${((data.generation_meta?.duration_ms ?? 0) / 1000).toFixed(1)}s`);
-            } else {
-              addStep(currentEvent, data.message || currentEvent);
-            }
-            currentEvent = 'message';
-          } catch {
-            // ignore malformed line
-          }
+          const chunk = line.slice(5).trimStart();
+          currentData = currentData ? `${currentData}\n${chunk}` : chunk;
+        } else if (line === '') {
+          flushEvent();
         }
       };
 
@@ -113,7 +150,7 @@ export function useAIGenerate() {
         const { value, done } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
 
@@ -122,12 +159,22 @@ export function useAIGenerate() {
         }
       }
 
-      // Flush remaining buffer in case the stream ended without a trailing newline
       if (buffer.trim()) {
         processLine(buffer);
       }
-    } catch (e: any) {
-      setError(e.message || 'Erreur de connexion');
+      flushEvent();
+
+      if (!receivedResult && !receivedError) {
+        throw new Error(
+          'Le flux de génération s’est interrompu avant la fin. Vérifiez le proxy nginx ou relancez la génération.'
+        );
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erreur de connexion';
+      const normalized = message.toLowerCase().includes('network')
+        ? 'Connexion interrompue pendant la génération (timeout proxy ou flux SSE coupé).'
+        : message;
+      setError(normalized);
     } finally {
       setIsGenerating(false);
     }

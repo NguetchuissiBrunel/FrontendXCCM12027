@@ -1,20 +1,20 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAIGeneration } from '@/contexts/AIGenerationContext';
-
-interface AIGenerationBackgroundNotifierProps {
-  onOpenModal: () => void;
-}
+import { usePathname, useRouter } from '@/i18n/navigation';
+import {
+  dispatchAIGenerationModalOpen,
+  isEditorPath,
+  requestAIGenerationModalOpenOnNextVisit,
+} from '@/utils/aiGenerationNavigation';
 
 const TOAST_SUCCESS_ID = 'ai-generation-complete';
 const TOAST_ERROR_ID = 'ai-generation-error';
 
-export default function AIGenerationBackgroundNotifier({
-  onOpenModal,
-}: AIGenerationBackgroundNotifierProps) {
+export default function AIGenerationBackgroundNotifier() {
   const {
     isGenerating,
     isInBackground,
@@ -25,16 +25,30 @@ export default function AIGenerationBackgroundNotifier({
     returnToForeground,
     steps,
   } = useAIGeneration();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const notifiedCompletionRef = useRef(false);
   const notifiedErrorRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleOpenModal = useCallback(() => {
     toast.dismiss(TOAST_SUCCESS_ID);
     toast.dismiss(TOAST_ERROR_ID);
-    returnToForeground();
-    onOpenModal();
-  }, [returnToForeground, onOpenModal]);
+
+    if (isEditorPath(pathname)) {
+      returnToForeground();
+      dispatchAIGenerationModalOpen();
+      return;
+    }
+
+    requestAIGenerationModalOpenOnNextVisit();
+    router.push('/editor');
+  }, [pathname, returnToForeground, router]);
 
   useEffect(() => {
     if (hasUnreadCompletion && result && !notifiedCompletionRef.current) {
@@ -116,7 +130,7 @@ export default function AIGenerationBackgroundNotifier({
     }
   }, [hasUnreadError, error, handleOpenModal]);
 
-  if (!isInBackground || !isGenerating) return null;
+  if (!mounted || !isInBackground || !isGenerating) return null;
 
   const lastStep = steps[steps.length - 1];
 

@@ -60,32 +60,18 @@ function isDonePayload(data: unknown): data is AIGenerateResult {
 }
 
 export function useAIGenerate() {
-  const [initialStoredJobId] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-
-    try {
-      return localStorage.getItem(ACTIVE_JOB_STORAGE_KEY);
-    } catch {
-      return null;
-    }
-  });
-
-  const [activeJobId, setActiveJobId] = useState<string | null>(initialStoredJobId);
-  const [isGenerating, setIsGenerating] = useState(Boolean(initialStoredJobId));
-  const [isInBackground, setIsInBackground] = useState(Boolean(initialStoredJobId));
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isInBackground, setIsInBackground] = useState(false);
   const [hasUnreadCompletion, setHasUnreadCompletion] = useState(false);
   const [hasUnreadError, setHasUnreadError] = useState(false);
-  const [steps, setSteps] = useState<AIGenerateStep[]>(
-    initialStoredJobId
-      ? [{ event: 'resume', message: 'Reprise du suivi de la génération en cours...' }]
-      : []
-  );
+  const [steps, setSteps] = useState<AIGenerateStep[]>([]);
   const [result, setResult] = useState<AIGenerateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const activeJobIdRef = useRef<string | null>(initialStoredJobId);
-  const isInBackgroundRef = useRef(Boolean(initialStoredJobId));
-  const lastStepSignatureRef = useRef<string | null>(initialStoredJobId ? 'resume' : null);
+  const activeJobIdRef = useRef<string | null>(null);
+  const isInBackgroundRef = useRef(false);
+  const lastStepSignatureRef = useRef<string | null>(null);
   const pollJobRef = useRef<((jobId: string) => Promise<void>) | null>(null);
   const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -293,14 +279,31 @@ export function useAIGenerate() {
   }, [addStep, clearPolling, parseApiResponse, pollJob, setTrackedJobId]);
 
   useEffect(() => {
-    if (initialStoredJobId && activeJobIdRef.current === initialStoredJobId) {
-      void pollJob(initialStoredJobId);
+    let storedJobId: string | null = null;
+
+    try {
+      storedJobId = localStorage.getItem(ACTIVE_JOB_STORAGE_KEY);
+    } catch {
+      storedJobId = null;
     }
+
+    if (!storedJobId) return;
+
+    activeJobIdRef.current = storedJobId;
+    isInBackgroundRef.current = true;
+    lastStepSignatureRef.current = 'resume';
+
+    setActiveJobId(storedJobId);
+    setIsGenerating(true);
+    setIsInBackground(true);
+    setSteps([{ event: 'resume', message: 'Reprise du suivi de la génération en cours...' }]);
+
+    void pollJob(storedJobId);
 
     return () => {
       clearPolling();
     };
-  }, [clearPolling, initialStoredJobId, pollJob]);
+  }, [clearPolling, pollJob]);
 
   const reset = useCallback(() => {
     clearPolling();

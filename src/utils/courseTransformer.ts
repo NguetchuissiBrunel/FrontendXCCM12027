@@ -167,8 +167,15 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                                 (grandChild.children || []).forEach(cc => {
                                     if (cc.type === 'notion') {
                                         const notionText = extractTextFromContent(cc.content);
+                                        const notionData = {
+                                            id: cc.id,
+                                            title: cc.title || "Notion",
+                                            content: cc.content,
+                                            plainText: notionText,
+                                            number: cc.number
+                                        };
                                         paragraph.notions.push(notionText);
-                                        paragraph.subItems!.push({ type: 'notion', data: notionText });
+                                        paragraph.subItems!.push({ type: 'notion', data: notionData });
                                     } else if (cc.type === 'exercise') {
                                         const exData = {
                                             title: cc.title || "Exercice",
@@ -222,8 +229,15 @@ export function transformTiptapToCourseData(apiCourse: any): CourseData {
                         (child.children || []).forEach(cc => {
                             if (cc.type === 'notion') {
                                 const notionText = extractTextFromContent(cc.content);
+                                const notionData = {
+                                    id: cc.id,
+                                    title: cc.title || "Notion",
+                                    content: cc.content,
+                                    plainText: notionText,
+                                    number: cc.number
+                                };
                                 paragraph.notions.push(notionText);
-                                paragraph.subItems!.push({ type: 'notion', data: notionText });
+                                paragraph.subItems!.push({ type: 'notion', data: notionData });
                             } else if (cc.type === 'exercise') {
                                 const exData = {
                                     title: cc.title || "Exercice",

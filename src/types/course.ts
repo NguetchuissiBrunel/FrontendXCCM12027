@@ -11,16 +11,24 @@ export interface QuestionData {
   options: string[];
 }
 
+export interface NotionContentData {
+  id?: string;
+  title: string;
+  content?: any;
+  plainText?: string;
+  number?: string;
+}
+
 export type ContentItem = 
   | { type: 'chapter'; data: Chapter }
   | { type: 'paragraph'; data: Paragraph }
-  | { type: 'notion'; data: string }
+  | { type: 'notion'; data: string | NotionContentData }
   | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string; number?: string } };
 
 export type SubItem = 
   | { type: 'chapter'; data: Chapter }
   | { type: 'paragraph'; data: Paragraph }
-  | { type: 'notion'; data: string }
+  | { type: 'notion'; data: string | NotionContentData }
   | { type: 'exercise'; data: { title: string; content?: any; questions?: QuestionData[]; id?: string; number?: string } };
 
 export interface Paragraph {

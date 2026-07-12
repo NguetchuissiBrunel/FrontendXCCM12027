@@ -9,7 +9,7 @@ import CourseSidebar from "@/components/CourseSidebar";
 import SmartNotes from "@/components/SmartNotes";
 import CourseComments from "@/components/CourseComments";
 import DownloadOptions from './DownloadOptions';
-import { CourseData, Section, Chapter, Paragraph, QuestionData } from "@/types/course";
+import { CourseData, Section, Chapter, Paragraph, QuestionData, NotionContentData, SubItem } from "@/types/course";
 import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +38,47 @@ interface Step {
   exL: 'section' | 'chapter' | 'paragraph' | null;
   comp: boolean;
 }
+
+const notionLabel = 'Notion';
+
+const normalizeNotionData = (notionData: string | NotionContentData): NotionContentData => {
+  if (typeof notionData === 'string') {
+    return {
+      title: notionLabel,
+      plainText: notionData,
+    };
+  }
+
+  return notionData;
+};
+
+const renderParagraphNotions = (subItems?: SubItem[]) => {
+  const notionItems = subItems?.filter((item): item is Extract<SubItem, { type: 'notion' }> => item.type === 'notion') ?? [];
+
+  if (notionItems.length === 0) return null;
+
+  return (
+    <div className="mt-6 space-y-4">
+      {notionItems.map((item, idx) => {
+        const notionData = normalizeNotionData(item.data);
+        const notionKey = notionData.id ?? `${notionData.title}-${idx}`;
+
+        return (
+          <div key={notionKey} className="rounded-2xl border border-red-100 bg-red-50/70 px-5 py-4 dark:border-red-900/40 dark:bg-red-950/20">
+            <div className="mb-3 text-xs font-black uppercase tracking-wide text-red-600 dark:text-red-300">
+              {notionData.title || notionLabel}
+            </div>
+            {notionData.content ? (
+              <CourseContentRenderer content={notionData.content} notionTitle={notionData.title || notionLabel} />
+            ) : notionData.plainText ? (
+              <p className="text-[16px] leading-relaxed text-gray-700 dark:text-gray-300">{notionData.plainText}</p>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleLike, incrementDownload }) => {
   const t = useTranslations('pages.course');
@@ -422,6 +463,7 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
                           <h4 className="text-[25px] font-bold text-[#F97316] mb-4 leading-tight">{paragraph.title}</h4>
                           {paragraph.introduction && <div className="text-[16px] leading-relaxed text-gray-700 dark:text-gray-400 italic mb-6">{paragraph.introduction}</div>}
                           <div className="mt-4"><CourseContentRenderer content={paragraph.content} /></div>
+                          {renderParagraphNotions(paragraph.subItems)}
                         </div>
                       )}
                     </div>
@@ -432,6 +474,7 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
                       <h4 className="text-[25px] font-bold text-[#F97316] mb-4 leading-tight">{paragraph.title}</h4>
                       {paragraph.introduction && <div className="text-[16px] leading-relaxed text-gray-700 dark:text-gray-400 italic mb-6">{paragraph.introduction}</div>}
                       <div className="mt-4"><CourseContentRenderer content={paragraph.content} /></div>
+                      {renderParagraphNotions(paragraph.subItems)}
                     </div>
                   )}
                 </div>

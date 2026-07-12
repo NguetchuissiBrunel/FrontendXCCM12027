@@ -7,6 +7,7 @@ import DownloadOptions from '../DownloadOptions';
 import { transformTiptapToCourseData } from '@/utils/courseTransformer';
 import { downloadCourseAsPDF } from '@/utils/DownloadPdf';
 import { downloadCourseAsDocx } from '@/utils/DownloadDocx';
+import type { NotionContentData } from '@/types/course';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -18,6 +19,7 @@ interface PdfPreviewProps {
 
 const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick }) => {
     const t = useTranslations('pdfPreview');
+    const notionLabel = 'Notion';
     const [scale, setScale] = useState(0.8);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -26,6 +28,17 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
     const [courseData, setCourseData] = useState<any>(null);
     const [pageCount, setPageCount] = useState(1);
     const paperRef = useRef<HTMLDivElement>(null);
+
+    const normalizeNotionData = (notionData: string | NotionContentData): NotionContentData => {
+        if (typeof notionData === 'string') {
+            return {
+                title: notionLabel,
+                plainText: notionData,
+            };
+        }
+
+        return notionData;
+    };
 
     // Calculate page count based on height
     useEffect(() => {
@@ -407,11 +420,23 @@ const PdfPreview: React.FC<PdfPreviewProps> = ({ content, title, onElementClick 
                                                                                     {paragraph.subItems.map((pSub: any, psIdx: number) => (
                                                                                         <div key={psIdx} className="mb-4 last:mb-0">
                                                                                             {pSub.type === 'notion' ? (
-                                                                                                <div className="ml-6 text-gray-700">
-                                                                                                    <ul className="list-disc ml-5">
-                                                                                                        <li className="text-sm italic">{pSub.data}</li>
-                                                                                                    </ul>
-                                                                                                </div>
+                                                                                                (() => {
+                                                                                                    const notionData = normalizeNotionData(pSub.data);
+                                                                                                    return (
+                                                                                                        <div className="ml-6 rounded-lg border border-red-100 bg-red-50/60 px-4 py-3 text-gray-700">
+                                                                                                            <div className="mb-2 text-xs font-bold uppercase tracking-wide text-red-600">
+                                                                                                                {notionData.title || notionLabel}
+                                                                                                            </div>
+                                                                                                            {notionData.content ? (
+                                                                                                                <CourseContentRenderer content={notionData.content} forceLight={true} />
+                                                                                                            ) : (
+                                                                                                                <ul className="list-disc pl-5">
+                                                                                                                    <li className="text-sm italic">{notionData.plainText}</li>
+                                                                                                                </ul>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    );
+                                                                                                })()
                                                                                             ) : (
                                                                                                 <div className="p-4 bg-yellow-50 rounded-lg">
                                                                                                     <h5 className="text-yellow-800 font-bold mb-3 flex items-center gap-2 text-sm">

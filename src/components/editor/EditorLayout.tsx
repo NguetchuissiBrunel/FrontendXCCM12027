@@ -194,13 +194,14 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
   }, []);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
+  const [isQuickCreateMenuOpen, setIsQuickCreateMenuOpen] = useState(false);
+  const quickCreateMenuRef = React.useRef<HTMLDivElement | null>(null);
 
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const openAIGenerationModal = () => {
-      setIsEntranceModalOpen(false);
-      setIsAIGenerateModalOpen(true);
+      handleOpenAIGenerateCourseModal();
     };
 
     if (consumeAIGenerationModalOpenRequest()) {
@@ -210,6 +211,19 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     window.addEventListener(AI_GENERATION_OPEN_MODAL_EVENT, openAIGenerationModal);
     return () => window.removeEventListener(AI_GENERATION_OPEN_MODAL_EVENT, openAIGenerationModal);
   }, []);
+
+  useEffect(() => {
+    if (!isQuickCreateMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (quickCreateMenuRef.current && !quickCreateMenuRef.current.contains(event.target as Node)) {
+        setIsQuickCreateMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isQuickCreateMenuOpen]);
 
   // Handle initialization from query params
   useEffect(() => {
@@ -771,6 +785,20 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
     }
   };
 
+  const handleOpenCreateCourseModal = () => {
+    setIsEntranceModalOpen(false);
+    setIsAIGenerateModalOpen(false);
+    setIsQuickCreateMenuOpen(false);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleOpenAIGenerateCourseModal = () => {
+    setIsEntranceModalOpen(false);
+    setIsCreateModalOpen(false);
+    setIsQuickCreateMenuOpen(false);
+    setIsAIGenerateModalOpen(true);
+  };
+
   const handleCreateCourse = (data: { title: string; category: string; description: string }) => {
     setCourseTitle(data.title);
     setCourseCategory(data.category);
@@ -855,10 +883,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
             setIsEntranceModalOpen(false);
             setActivePanel('author'); // Open 'Mes Cours' panel
           }}
-          onGenerateCourse={() => {
-            setIsEntranceModalOpen(false);
-            setIsAIGenerateModalOpen(true);
-          }}
+          onGenerateCourse={handleOpenAIGenerateCourseModal}
         />
 
         {/* Course Creation Modal */}
@@ -1050,6 +1075,41 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ children }) => {
               <div className="border-t border-gray-100 dark:border-gray-700 w-8 my-2" />
 
               {/* Bottom Actions */}
+              <div ref={quickCreateMenuRef} className="relative">
+                <button
+                  id="btn-new-course-actions"
+                  onClick={() => setIsQuickCreateMenuOpen((prev) => !prev)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${isQuickCreateMenuOpen
+                    ? 'bg-purple-50 text-purple-600 dark:bg-purple-900 dark:text-purple-300'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  title="Créer un nouveau cours"
+                  aria-label="Créer un nouveau cours"
+                  aria-haspopup="menu"
+                  aria-expanded={isQuickCreateMenuOpen}
+                >
+                  <FaPlus className="text-base" />
+                </button>
+
+                {isQuickCreateMenuOpen && (
+                  <div className="absolute bottom-0 right-full mr-3 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 shadow-xl">
+                    <button
+                      onClick={handleOpenCreateCourseModal}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <FaPlus className="text-purple-600 dark:text-purple-400" />
+                      <span>Nouveau cours</span>
+                    </button>
+                    <button
+                      onClick={handleOpenAIGenerateCourseModal}
+                      className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Wand2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <span>Générer avec l&apos;IA</span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 id="btn-save-course"
                 onClick={() => triggerSaveConfirm(false)}

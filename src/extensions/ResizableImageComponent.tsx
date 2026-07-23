@@ -49,11 +49,19 @@ export default function ResizableImageComponent({ node, updateAttributes, select
         }
     }, [updateAttributes]);
 
+    // Alignement de l'image (attribut textAlign posé par l'extension TextAlign).
+    // Le wrapper est un bloc pleine largeur avec text-align, et l'image est un
+    // inline-block → left / center / right positionnent réellement l'image.
+    const align = (node.attrs.textAlign as string) || 'left';
+
     return (
-        <NodeViewWrapper className="resizable-image-wrapper inline-block relative group" style={{ width: 'fit-content', maxWidth: '100%' }}>
+        <NodeViewWrapper
+            className="resizable-image-wrapper relative group"
+            style={{ display: 'block', width: '100%', textAlign: align as any }}
+        >
             <div
-                className={`relative ${selected ? 'ring-2 ring-purple-500' : ''}`}
-                style={{ width: width, maxWidth: '100%' }}
+                className={`relative inline-block align-top ${selected ? 'ring-2 ring-purple-500' : ''}`}
+                style={{ width: width, maxWidth: '100%', textAlign: 'left' }}
             >
                 <img
                     ref={imageRef}

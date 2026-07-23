@@ -173,10 +173,14 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
     }
   }, [currentStepIndex, isEnrolled, enrollmentLoading, isInitialized]);
 
+  // NB: le like ne déclenche PAS le loader global de route.
+  // Sinon la page parente (CoursePage) retourne null tant que globalLoading est vrai,
+  // ce qui démonte tout le cours et le remonte à zéro (effet « rechargement complet »).
+  // Le like reste géré de façon optimiste et locale (localIsLiked / localLikeCount).
   useEffect(() => {
-    if (pdfGenerating || docxGenerating || isLiking || isCertifying) startLoading();
+    if (pdfGenerating || docxGenerating || isCertifying) startLoading();
     else stopLoading();
-  }, [pdfGenerating, docxGenerating, isLiking, isCertifying, startLoading, stopLoading]);
+  }, [pdfGenerating, docxGenerating, isCertifying, startLoading, stopLoading]);
 
   useEffect(() => {
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });

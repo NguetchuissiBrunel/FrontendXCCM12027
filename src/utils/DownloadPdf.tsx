@@ -287,6 +287,47 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       y += 20;
     };
 
+    // Rendu riche d'une notion (titre + corps complet). Les cours générés stockent
+    // TOUT le contenu pédagogique dans des nœuds `notion` enfants du paragraphe ;
+    // ce corps n'est PAS dans paragraph.content (filtré) mais dans paragraph.subItems.
+    const renderNotionBlock = (notionData: any, xPos: number = margin) => {
+      if (!notionData) return;
+      const bodyText = notionData.plainText || extractTextFromContent(notionData.content);
+      if (!bodyText || !bodyText.trim()) return;
+
+      if (notionData.title) {
+        if (y > pageHeight - margin * 1.5) {
+          doc.addPage();
+          y = margin;
+        }
+        y = renderWrappedText(notionData.title, xPos, y, fontSize.paragraphe, colors.notion, "bold", pageWidth - xPos - margin);
+        y += 6;
+      }
+
+      y = renderWrappedText(bodyText, xPos, y, fontSize.normal, colors.dark, "normal", pageWidth - xPos - margin);
+      y += 12;
+    };
+
+    // Rend les notions/exercices d'un paragraphe dans l'ordre (via subItems),
+    // avec repli sur les champs legacy notions[]/exercises[] si subItems absent.
+    const renderParagraphSubItems = (paragraph: any, xPos: number) => {
+      if (paragraph.subItems && paragraph.subItems.length > 0) {
+        paragraph.subItems.forEach((sub: any) => {
+          if (sub.type === 'notion') {
+            renderNotionBlock(sub.data, xPos);
+          } else if (sub.type === 'exercise') {
+            renderExercise(sub.data?.content, sub.data, colors.paragraphe, xPos);
+          }
+        });
+        return;
+      }
+      // Legacy
+      renderNotions(paragraph.notions, xPos);
+      if (paragraph.exercises && paragraph.exercises.length > 0) {
+        paragraph.exercises.forEach((ex: any) => renderExercise(ex.content, ex, colors.paragraphe, xPos));
+      }
+    };
+
     const renderNotions = (notions: string[] | undefined, xPos: number = margin) => {
       if (!notions || notions.length === 0) return;
 
@@ -401,30 +442,20 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
                 renderIntro(paragraph.introduction, [249, 115, 22], margin + 25); 
 
-                // Render interleaved content sequentially
+                // 1. Texte direct du paragraphe (notions/exercices déjà filtrés hors de content)
                 if (paragraph.content && Array.isArray(paragraph.content)) {
                   paragraph.content.forEach(node => {
-                    if (node.type === 'notion') {
-                      const notionText = extractTextFromContent(node.content || node);
-                      renderNotions([notionText], margin + 25);
-                    } else if (node.type === 'exercice' || node.type === 'exercise') {
-                      renderExercise(node.content, node.attrs || node, colors.paragraphe, margin + 25);
-                    } else {
-                      const nodeText = extractTextFromContent([node]);
-                      if (nodeText.trim()) {
-                        y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
-                      }
+                    const nodeText = extractTextFromContent([node]);
+                    if (nodeText.trim()) {
+                      y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
                     }
                   });
-                } else {
-                  // Fallback for legacy data
+                } else if (paragraph.content) {
                   y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
                   y += 10;
-                  renderNotions(paragraph.notions, margin + 25);
-                  if (paragraph.exercises && paragraph.exercises.length > 0) {
-                    paragraph.exercises.forEach(ex => renderExercise(ex.content, ex, colors.paragraphe, margin + 25));
-                  }
                 }
+                // 2. Notions et exercices (stockés séparément dans subItems)
+                renderParagraphSubItems(paragraph, margin + 25);
 
                 y += 20; // Augmenté de 10 à 20
               });
@@ -460,29 +491,20 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
             renderIntro(paragraph.introduction, [249, 115, 22], margin + 25);
 
-            // Interleaved content for Section-level paragraphs
+            // 1. Texte direct du paragraphe (notions/exercices déjà filtrés hors de content)
             if (paragraph.content && Array.isArray(paragraph.content)) {
               paragraph.content.forEach(node => {
-                if (node.type === 'notion') {
-                  const notionText = extractTextFromContent(node.content || node);
-                  renderNotions([notionText], margin + 25);
-                } else if (node.type === 'exercice' || node.type === 'exercise') {
-                  renderExercise(node.content, node.attrs || node, colors.paragraphe, margin + 25);
-                } else {
-                  const nodeText = extractTextFromContent([node]);
-                  if (nodeText.trim()) {
-                    y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
-                  }
+                const nodeText = extractTextFromContent([node]);
+                if (nodeText.trim()) {
+                  y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
                 }
               });
-            } else {
+            } else if (paragraph.content) {
               y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
               y += 10;
-              renderNotions(paragraph.notions, margin + 25);
-              if (paragraph.exercises && paragraph.exercises.length > 0) {
-                paragraph.exercises.forEach(ex => renderExercise(ex.content, ex, colors.paragraphe, margin + 25));
-              }
             }
+            // 2. Notions et exercices (stockés séparément dans subItems)
+            renderParagraphSubItems(paragraph, margin + 25);
           });
         }
 

@@ -47,7 +47,10 @@ function SidebarLayoutInner({ children, role }: Props) {
             level?: string;
             grade?: string;
         } : null;
-    }, [user]);
+        // isMounted doit être en dépendance : sinon, quand il passe à true après
+        // le montage sans que `user` change de référence, le memo n'est pas recalculé
+        // et userData reste null → carte utilisateur bloquée sur « Chargement… ».
+    }, [user, isMounted]);
 
     const getActiveTab = () => {
         if (!pathname) return 'accueil';

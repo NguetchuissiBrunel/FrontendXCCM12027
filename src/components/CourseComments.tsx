@@ -86,7 +86,7 @@ const CourseComments: React.FC<CourseCommentsProps> = ({ courseId }) => {
     const handleDelete = async (commentId: number, isReply?: boolean, parentId?: number) => {
         if (!confirm("Voulez-vous vraiment supprimer ce commentaire ?")) return;
         try {
-            await CommentService.deleteComment(commentId);
+            await CommentService.deleteComment(courseId, commentId);
             if (isReply && parentId) {
                 setComments(prev => prev.map(c =>
                     c.id === parentId
@@ -105,7 +105,7 @@ const CourseComments: React.FC<CourseCommentsProps> = ({ courseId }) => {
     const handleUpdateComment = async (commentId: number) => {
         if (!editContent.trim()) return;
         try {
-            const response = await CommentService.updateComment(commentId, editContent.trim());
+            const response = await CommentService.updateComment(courseId, commentId, editContent.trim());
             if (response?.data) {
                 setComments(prev => prev.map(c =>
                     c.id === commentId ? { ...c, content: editContent, updatedAt: new Date().toISOString() } : c

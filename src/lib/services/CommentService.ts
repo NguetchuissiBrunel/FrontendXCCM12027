@@ -38,42 +38,48 @@ export type ApiResponseVoid = {
 };
 
 export class CommentService {
+    // NB: le backend expose les commentaires sous
+    // /api/courses/{courseId}/interactions/comments (CourseInteractionController),
+    // et NON /api/v1/comments — d'où les 404 en lecture et à l'envoi.
+    // Le backend ne gère ni les réponses (parentCommentId) ni les likes par
+    // commentaire : seul `content` est transmis.
+
     /** Ajouter un commentaire sur un cours */
     public static addComment(
         courseId: number,
         content: string,
-        parentCommentId?: number,
+        _parentCommentId?: number,
     ): CancelablePromise<ApiResponseCommentDTO> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/comments',
-            body: { courseId, content, ...(parentCommentId ? { parentCommentId } : {}) },
+            url: '/api/courses/{courseId}/interactions/comments',
+            path: { courseId },
+            body: { content },
             mediaType: 'application/json',
         });
     }
 
-    /** Récupérer les commentaires d'un cours (paginés, avec réponses) */
+    /** Récupérer les commentaires d'un cours (public, sans authentification) */
     public static getComments(
         courseId: number,
-        page: number = 0,
-        size: number = 20,
     ): CancelablePromise<ApiResponseCommentList> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/comments',
-            query: { courseId, page, size },
+            url: '/api/courses/{courseId}/interactions/comments',
+            path: { courseId },
         });
     }
 
     /** Modifier un commentaire (auteur uniquement) */
     public static updateComment(
+        courseId: number,
         commentId: number,
         content: string,
     ): CancelablePromise<ApiResponseCommentDTO> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/v1/comments/{commentId}',
-            path: { commentId },
+            url: '/api/courses/{courseId}/interactions/comments/{commentId}',
+            path: { courseId, commentId },
             body: { content },
             mediaType: 'application/json',
         });
@@ -81,12 +87,13 @@ export class CommentService {
 
     /** Supprimer logiquement un commentaire (auteur ou admin) */
     public static deleteComment(
+        courseId: number,
         commentId: number,
     ): CancelablePromise<ApiResponseVoid> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/comments/{commentId}',
-            path: { commentId },
+            url: '/api/courses/{courseId}/interactions/comments/{commentId}',
+            path: { courseId, commentId },
         });
     }
 }

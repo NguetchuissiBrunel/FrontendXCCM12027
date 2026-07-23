@@ -320,7 +320,10 @@ export const MainEditor = React.forwardRef<MainEditorRef, MainEditorProps>(({
         types: ['textStyle'],
       }),
       TextAlignWithShortcuts.configure({
-        types: ['heading', 'paragraph'],
+        // 'image' inclus pour pouvoir aligner les images (gauche/centre/droite)
+        // via les boutons d'alignement existants (setTextAlign applique alors
+        // l'attribut textAlign au nœud image, lu par ResizableImageComponent).
+        types: ['heading', 'paragraph', 'image'],
         alignments: ['left', 'center', 'right', 'justify'],
         defaultAlignment: 'left',
       }),

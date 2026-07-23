@@ -11,6 +11,40 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
     const margin = 60;
     let y = margin;
 
+    // --- Préchargement des images du contenu ---
+    // Les images (nœuds TipTap `image`, souvent en data:base64) sont noyées dans
+    // le contenu des notions/paragraphes. On collecte tous les `src` et on charge
+    // leurs dimensions naturelles à l'avance pour pouvoir les insérer de façon
+    // synchrone (avec le bon ratio) pendant le rendu.
+    const detectImgFormat = (src: string): 'PNG' | 'JPEG' => {
+      const s = src.slice(0, 30).toLowerCase();
+      if (s.includes('image/jpeg') || s.includes('image/jpg') || s.includes('.jpg') || s.includes('.jpeg')) return 'JPEG';
+      return 'PNG';
+    };
+    const imageSrcSet = new Set<string>();
+    const scanForImages = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+      if (Array.isArray(obj)) { obj.forEach(scanForImages); return; }
+      if (obj.type === 'image' && obj.attrs?.src) imageSrcSet.add(obj.attrs.src as string);
+      Object.values(obj).forEach(v => { if (v && typeof v === 'object') scanForImages(v); });
+    };
+    scanForImages(courseData.sections);
+    scanForImages(courseData.introduction);
+    scanForImages(courseData.conclusion);
+
+    const imageDims = new Map<string, { w: number; h: number; fmt: 'PNG' | 'JPEG' }>();
+    await Promise.all([...imageSrcSet].map(src => new Promise<void>((resolve) => {
+      try {
+        const img = new window.Image();
+        img.onload = () => {
+          imageDims.set(src, { w: img.naturalWidth || 300, h: img.naturalHeight || 200, fmt: detectImgFormat(src) });
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = src;
+      } catch { resolve(); }
+    })));
+
     const fontSize = {
       title: 22,
       subtitle: 20,
@@ -287,6 +321,116 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
       y += 20;
     };
 
+    // Insère une image (nœud TipTap `image`) dans le PDF, en respectant le ratio
+    // et la largeur demandée (attribut width en px), bornée à la colonne.
+    const renderImage = (src: string | undefined, widthAttr: any, xPos: number, maxWidth: number) => {
+      if (!src) return;
+      const dim = imageDims.get(src);
+      if (!dim || !dim.w || !dim.h) return; // image non chargée → on ignore
+
+      let targetW = dim.w;
+      if (typeof widthAttr === 'string' && widthAttr.endsWith('px')) {
+        const px = parseFloat(widthAttr);
+        if (px > 0) targetW = px;
+      }
+      if (targetW > maxWidth) targetW = maxWidth;
+      const ratio = dim.h / dim.w;
+      let targetH = targetW * ratio;
+      const maxH = pageHeight - margin * 2;
+      if (targetH > maxH) { targetH = maxH; targetW = targetH / ratio; }
+
+      if (y + targetH > pageHeight - margin) { doc.addPage(); y = margin; }
+      try {
+        doc.addImage(src, dim.fmt, xPos, y, targetW, targetH);
+        y += targetH + 12;
+      } catch (e) {
+        // format non supporté / src invalide → on ignore proprement
+      }
+    };
+
+    // Rend un contenu TipTap en préservant l'ordre texte / image (récursif dans
+    // les conteneurs type blockquote). Le texte consécutif est aggloméré puis
+    // rendu, et chaque image est insérée à sa place.
+    const renderRichBlocks = (content: any, xPos: number) => {
+      if (!content) return;
+      const nodes = Array.isArray(content) ? content : [content];
+      const maxWidth = pageWidth - xPos - margin;
+      let textBuf = '';
+      const flushText = () => {
+        const txt = textBuf.trim();
+        textBuf = '';
+        if (txt) {
+          y = renderWrappedText(txt, xPos, y, fontSize.normal, colors.dark, "normal", maxWidth);
+        }
+      };
+      const walk = (node: any) => {
+        if (!node) return;
+        if (node.type === 'image') {
+          flushText();
+          renderImage(node.attrs?.src, node.attrs?.width, xPos, maxWidth);
+          return;
+        }
+        if (node.type === 'paragraph' || node.type === 'heading' ||
+            node.type === 'bulletList' || node.type === 'orderedList' ||
+            node.type === 'codeBlock' || node.type === 'math') {
+          const t = extractTextFromContent([node]);
+          if (t) textBuf += t.endsWith('\n') ? t : t + '\n';
+          return;
+        }
+        if (node.type === 'text') { textBuf += node.text || ''; return; }
+        if (node.content && Array.isArray(node.content)) node.content.forEach(walk);
+      };
+      nodes.forEach(walk);
+      flushText();
+    };
+
+    // Rendu riche d'une notion (titre + corps complet). Les cours générés stockent
+    // TOUT le contenu pédagogique dans des nœuds `notion` enfants du paragraphe ;
+    // ce corps n'est PAS dans paragraph.content (filtré) mais dans paragraph.subItems.
+    const renderNotionBlock = (notionData: any, xPos: number = margin) => {
+      if (!notionData) return;
+      const hasContent = notionData.content &&
+        (Array.isArray(notionData.content) ? notionData.content.length > 0 : true);
+      const bodyText = notionData.plainText || extractTextFromContent(notionData.content);
+      if (!hasContent && !(bodyText && bodyText.trim())) return;
+
+      if (notionData.title) {
+        if (y > pageHeight - margin * 1.5) {
+          doc.addPage();
+          y = margin;
+        }
+        y = renderWrappedText(notionData.title, xPos, y, fontSize.paragraphe, colors.notion, "bold", pageWidth - xPos - margin);
+        y += 6;
+      }
+
+      if (hasContent) {
+        renderRichBlocks(notionData.content, xPos);
+      } else {
+        y = renderWrappedText(bodyText, xPos, y, fontSize.normal, colors.dark, "normal", pageWidth - xPos - margin);
+      }
+      y += 12;
+    };
+
+    // Rend les notions/exercices d'un paragraphe dans l'ordre (via subItems),
+    // avec repli sur les champs legacy notions[]/exercises[] si subItems absent.
+    const renderParagraphSubItems = (paragraph: any, xPos: number) => {
+      if (paragraph.subItems && paragraph.subItems.length > 0) {
+        paragraph.subItems.forEach((sub: any) => {
+          if (sub.type === 'notion') {
+            renderNotionBlock(sub.data, xPos);
+          } else if (sub.type === 'exercise') {
+            renderExercise(sub.data?.content, sub.data, colors.paragraphe, xPos);
+          }
+        });
+        return;
+      }
+      // Legacy
+      renderNotions(paragraph.notions, xPos);
+      if (paragraph.exercises && paragraph.exercises.length > 0) {
+        paragraph.exercises.forEach((ex: any) => renderExercise(ex.content, ex, colors.paragraphe, xPos));
+      }
+    };
+
     const renderNotions = (notions: string[] | undefined, xPos: number = margin) => {
       if (!notions || notions.length === 0) return;
 
@@ -401,30 +545,15 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
                 renderIntro(paragraph.introduction, [249, 115, 22], margin + 25); 
 
-                // Render interleaved content sequentially
+                // 1. Texte + images direct du paragraphe (notions/exercices déjà filtrés hors de content)
                 if (paragraph.content && Array.isArray(paragraph.content)) {
-                  paragraph.content.forEach(node => {
-                    if (node.type === 'notion') {
-                      const notionText = extractTextFromContent(node.content || node);
-                      renderNotions([notionText], margin + 25);
-                    } else if (node.type === 'exercice' || node.type === 'exercise') {
-                      renderExercise(node.content, node.attrs || node, colors.paragraphe, margin + 25);
-                    } else {
-                      const nodeText = extractTextFromContent([node]);
-                      if (nodeText.trim()) {
-                        y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
-                      }
-                    }
-                  });
-                } else {
-                  // Fallback for legacy data
+                  renderRichBlocks(paragraph.content, margin + 25);
+                } else if (paragraph.content) {
                   y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
                   y += 10;
-                  renderNotions(paragraph.notions, margin + 25);
-                  if (paragraph.exercises && paragraph.exercises.length > 0) {
-                    paragraph.exercises.forEach(ex => renderExercise(ex.content, ex, colors.paragraphe, margin + 25));
-                  }
                 }
+                // 2. Notions et exercices (stockés séparément dans subItems)
+                renderParagraphSubItems(paragraph, margin + 25);
 
                 y += 20; // Augmenté de 10 à 20
               });
@@ -460,29 +589,15 @@ export const downloadCourseAsPDF = async (courseData: CourseData, orientation: '
 
             renderIntro(paragraph.introduction, [249, 115, 22], margin + 25);
 
-            // Interleaved content for Section-level paragraphs
+            // 1. Texte + images direct du paragraphe (notions/exercices déjà filtrés hors de content)
             if (paragraph.content && Array.isArray(paragraph.content)) {
-              paragraph.content.forEach(node => {
-                if (node.type === 'notion') {
-                  const notionText = extractTextFromContent(node.content || node);
-                  renderNotions([notionText], margin + 25);
-                } else if (node.type === 'exercice' || node.type === 'exercise') {
-                  renderExercise(node.content, node.attrs || node, colors.paragraphe, margin + 25);
-                } else {
-                  const nodeText = extractTextFromContent([node]);
-                  if (nodeText.trim()) {
-                    y = renderWrappedText(nodeText, margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
-                  }
-                }
-              });
-            } else {
+              renderRichBlocks(paragraph.content, margin + 25);
+            } else if (paragraph.content) {
               y = renderWrappedText(extractTextFromContent(paragraph.content), margin + 25, y, fontSize.normal, colors.dark, "normal", pageWidth - margin - 25 - margin);
               y += 10;
-              renderNotions(paragraph.notions, margin + 25);
-              if (paragraph.exercises && paragraph.exercises.length > 0) {
-                paragraph.exercises.forEach(ex => renderExercise(ex.content, ex, colors.paragraphe, margin + 25));
-              }
             }
+            // 2. Notions et exercices (stockés séparément dans subItems)
+            renderParagraphSubItems(paragraph, margin + 25);
           });
         }
 

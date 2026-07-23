@@ -13,7 +13,6 @@ import { CourseData, Section, Chapter, Paragraph, QuestionData, NotionContentDat
 import { toast } from "react-hot-toast";
 import EnrollmentButton from '@/components/EnrollmentButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLoading } from '@/contexts/LoadingContext';
 import Link from 'next/link';
 import CourseContentRenderer from './CourseContentRenderer';
 import confetti from 'canvas-confetti';
@@ -109,7 +108,6 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
     setLocalLikeCount(likeCount ?? courseData.likeCount ?? 0);
   }, [likeCount, courseData.likeCount]);
 
-  const { startLoading, stopLoading } = useLoading();
   const { isEnrolled, loading: enrollmentLoading, updateProgress: updateCourseProgress, progress: savedProgress, enrollment } = useEnrollment(courseData.id);
 
   const isStudent = user?.role?.includes('student');
@@ -173,10 +171,12 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
     }
   }, [currentStepIndex, isEnrolled, enrollmentLoading, isInitialized]);
 
-  useEffect(() => {
-    if (pdfGenerating || docxGenerating || isLiking || isCertifying) startLoading();
-    else stopLoading();
-  }, [pdfGenerating, docxGenerating, isLiking, isCertifying, startLoading, stopLoading]);
+  // NB: le téléchargement (PDF/DOCX), la certification et le like ne déclenchent
+  // PAS le loader global de route. Sinon la page parente (CoursePage) retourne
+  // null tant que globalLoading est vrai, ce qui démonte tout le cours et le
+  // remonte à zéro (effet « rechargement complet » pendant la génération).
+  // Ces actions ont déjà leur propre indicateur local : le modal de
+  // téléchargement (isPdfLoading/isWordLoading) et le bouton certif (t('generating')).
 
   useEffect(() => {
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -247,24 +247,38 @@ const Course: React.FC<CourseProps> = ({ courseData, isLiked, likeCount, toggleL
     } finally { setIsLiking(false); }
   };
 
-  const handleOrientationSelect = async (orientation: 'p' | 'l') => {
+  // Le modal se ferme immédiatement et la génération se fait en arrière-plan.
+  // Retour utilisateur via toast (le PDF/DOCX est produit côté client, ça peut
+  // prendre quelques secondes selon le cours).
+  const handleOrientationSelect = (orientation: 'p' | 'l') => {
+    setShowDownloadModal(false);
     setPdfGenerating(true);
-    try {
-      await incrementDownload(courseData.id);
-      await downloadCourseAsPDF(courseData, orientation);
-      setShowDownloadModal(false);
-    } catch (e) { }
-    finally { setPdfGenerating(false); }
+    const toastId = toast.loading('Génération du PDF en cours…');
+    (async () => {
+      try {
+        await incrementDownload(courseData.id);
+        const ok = await downloadCourseAsPDF(courseData, orientation);
+        if (ok) toast.success('PDF téléchargé', { id: toastId });
+        else toast.error('Échec de la génération du PDF', { id: toastId });
+      } catch (e) {
+        toast.error('Échec de la génération du PDF', { id: toastId });
+      } finally { setPdfGenerating(false); }
+    })();
   };
 
-  const handleDownloadDocx = async () => {
+  const handleDownloadDocx = () => {
+    setShowDownloadModal(false);
     setDocxGenerating(true);
-    try {
-      await incrementDownload(courseData.id);
-      await downloadCourseAsDocx(courseData);
-      setShowDownloadModal(false);
-    } catch (e) { }
-    finally { setDocxGenerating(false); }
+    const toastId = toast.loading('Génération du document Word en cours…');
+    (async () => {
+      try {
+        await incrementDownload(courseData.id);
+        await downloadCourseAsDocx(courseData);
+        toast.success('Document Word téléchargé', { id: toastId });
+      } catch (e) {
+        toast.error('Échec de la génération du document', { id: toastId });
+      } finally { setDocxGenerating(false); }
+    })();
   };
 
   const handleCertificationClick = async () => {

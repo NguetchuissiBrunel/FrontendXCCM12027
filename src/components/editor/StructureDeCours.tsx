@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface StructureDeCoursProps {
   onClose: () => void;
+  authorId?: string;
   /**
    * Liste de cours à afficher au lieu de ceux de l'utilisateur (BD + mocks).
    * Utilisé par le panneau Recommandations IA pour réutiliser exactement le
@@ -38,7 +39,7 @@ const getItemBgClass = (type: ItemType) => {
   return bgColors[type];
 };
 
-export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose, externalCourses, similarityById, title }) => {
+export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose, authorId, externalCourses, similarityById, title }) => {
   const t = useTranslations('editor.structureDeCours');
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,11 +75,19 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose, ext
     const fetchCourses = async () => {
       setLoadingCourses(true);
       try {
-        if (!user?.id) { setCourses([]); return; }
-        // Cours de l'utilisateur (brouillons + publiés). getAllCourses ne renvoyait
-        // que les cours PUBLIÉS filtrés sur l'auteur -> panneau vide tant qu'aucun
-        // cours n'est publié (publish etait casse par le bug yjs_state).
-        const resp: ApiResponseListCourseResponse = await CourseControllerService.getAuthorCourses(user.id);
+        const finalUserId = authorId || user?.id;
+        if (!finalUserId) { setCourses([]); return; }
+
+        let resp: ApiResponseListCourseResponse;
+        
+        // Si on est dans l'éditeur Moodle (authorId présent) mais non connecté à XCCM (!user?.id),
+        // on charge tous les cours disponibles.
+        if (authorId && !user?.id) {
+          resp = await CourseControllerService.getAllCourses();
+        } else {
+          resp = await CourseControllerService.getAuthorCourses(finalUserId);
+        }
+        
         if (resp && resp.data) {
           const dbCoursesMapped: Course[] = resp.data
             .map((c) => ({
@@ -108,7 +117,7 @@ export const StructureDeCours: React.FC<StructureDeCoursProps> = ({ onClose, ext
     };
 
     fetchCourses();
-  }, [user?.id, externalCourses]);
+  }, [user?.id, authorId, externalCourses]);
 
   // Sync cache with localStorage
   useEffect(() => {

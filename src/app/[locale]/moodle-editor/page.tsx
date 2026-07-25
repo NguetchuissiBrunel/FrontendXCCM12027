@@ -279,7 +279,7 @@ function MoodleEditorContent() {
           {/* Panel Area */}
           <div className={`${activePanel ? 'w-80' : 'w-0'} bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden`}>
             {activePanel === 'structure' && (
-              <StructureDeCours onClose={() => setActivePanel(null)} />
+              <StructureDeCours onClose={() => setActivePanel(null)} authorId={params.userId} />
             )}
           </div>
 
